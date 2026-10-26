@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/SLICE_11_FOUNDING.md",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "ec31bc9f01e7ea82b8bd0fe4bdb39bd492e3aa5c",
+  "readBlob": "ec31bc9f01e7ea82b8bd0fe4bdb39bd492e3aa5c",
+  "sourceSha256": "59312738a8cce55ccbb8121f30927d3c27e64d834de0e02a6d2dce97759addfa",
+  "sourceBytes": 61513,
+  "copiedAt": "2026-10-26T15:30:05.436Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: lines 452 copied verbatim, every other line left empty so line numbers hold",
+  "readMatchesCommitted": true,
+  "writtenSha256": "721fb471ed909ba24aa52180b335e8a928dc1ed18f42fabfdf17574ea7c71677",
+  "writtenBytes": 1266
+}

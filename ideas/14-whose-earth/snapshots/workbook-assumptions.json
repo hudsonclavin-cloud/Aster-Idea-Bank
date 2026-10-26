@@ -1,0 +1,51 @@
+{
+ "sheet": "Assumptions",
+ "sheetPart": "xl/worksheets/sheet2.xml",
+ "columns": [
+  "Conservative",
+  "Baseline",
+  "Optimistic"
+ ],
+ "rows": {
+  "3": {
+   "label": "Fiber strength retention (1 - derate); joints/weave/aging",
+   "values": [
+    0.7,
+    0.85,
+    1
+   ],
+   "note": "Rev A ladder = rev_a.json derate_fraction 30%/15%/0%; Conservative is Rule 4 base case"
+  },
+  "6": {
+   "label": "Power chain efficiency (ED reboost)",
+   "values": [
+    0.15,
+    0.2,
+    0.3
+   ],
+   "note": "array->PMAD->thrust, MXER studies"
+  },
+  "7": {
+   "label": "Electricity cost ($/kWh, amortized array)",
+   "values": [
+    0.08,
+    0.06,
+    0.04
+   ],
+   "note": "labeled assumption"
+  },
+  "15": {
+   "label": "Design tip speed (km/s) — fixed at Rev A 2.5 km/s reference",
+   "values": [
+    2.5,
+    2.5,
+    2.5
+   ],
+   "note": "Rev A reference (rev_a.json); conservatism lever is fiber derate (row 3), not tip speed"
+  }
+ },
+ "retentionRow": 3,
+ "etaRow": 6,
+ "priceRow": 7,
+ "tipRow": 15
+}

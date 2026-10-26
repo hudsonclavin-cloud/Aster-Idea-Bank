@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/decision_grid.json",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "34935cb 2026-09-10T23:52:55-04:00",
+  "committedBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "readBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "sourceSha256": "3787eb7a4ed8efa14b9d4b59dc5df6a42cc3b46ecdb129f52b8d2a0b69474acf",
+  "sourceBytes": 251394,
+  "copiedAt": "2026-10-26T15:30:07.689Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: header fields and the first point (construction_launch_per_kg 100) of each of the 9 (tier, column) series, fields tier, column, construction_launch_per_kg, mass_ratio_x, reboost_electricity_per_kg, ops_wear_insurance_per_kg, marginal_cost_per_kg, delivered_total_per_kg; mass ratio and reboost do not vary along a series",
+  "readMatchesCommitted": true,
+  "writtenSha256": "de6cb02d8a65bdfba9c5adb3c35b05aebdc9e5b039650e4d446222c4f4caead9",
+  "writtenBytes": 2808
+}

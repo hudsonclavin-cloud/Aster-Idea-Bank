@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whose Earth</title>
+<meta name="description" content="A concordance of the Earth constants Aster and Skyhook compute on, and what their differences do at the K2 interface.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">Aster + Skyhook · K2 interface · idea-bank study</p>
+    <h1>Whose Earth</h1>
+    <p class="lede">When an Aster mission hands a payload to a Skyhook tether, both sides compute speeds and energies about the same planet, with different numbers for it. This page lists every line in either repository that states Earth's gravitational parameter, radius, standard gravity or rotation speed, recomputes Skyhook's canon on each program's Earth, and sizes every difference at the interface. It also reconciles the reboost energies Skyhook quotes for one throw.</p>
+    <p class="src" id="src">Loading…</p>
+  </header>
+
+  <section aria-labelledby="short-h">
+    <h2 id="short-h" class="sr">In short</h2>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section class="card" aria-labelledby="radii-h">
+    <h2 id="radii-h">Earth radii in two programs</h2>
+    <p class="note">Each dot is a distinct radius stated somewhere in a repository (implied values included: Aster's parking radius minus its disclosed parking altitude, Skyhook's tip and CoM radii minus the tether geometry). Tap or hover a dot for its sources.</p>
+    <div class="legend" aria-hidden="true"><span><span class="dot aster"></span>Aster</span><span><span class="dot skyhook"></span>Skyhook</span></div>
+    <div class="chart" id="radii-chart" role="img" aria-label="Earth radii stated in Aster and Skyhook"></div>
+    <details class="line"><summary>Table view</summary><div class="scroll" id="radii-table"></div></details>
+  </section>
+
+  <section class="card" aria-labelledby="pick-h">
+    <h2 id="pick-h">Recompute <code>params/rev_a.json</code> on any Earth</h2>
+    <p class="note">Pick a gravitational parameter, a radius and a rotation speed from the concordance. Every Earth-dependent number in Skyhook's canon is recomputed from the canon's own inputs and checked against the number the file prints (✓ rounds to it, ✗ does not). The last column is the shift from the Earth Skyhook's physics module uses.</p>
+    <div class="controls">
+      <label class="ctl">Gravitational parameter μ<select id="pick-mu"></select></label>
+      <label class="ctl">Earth radius R<select id="pick-r"></select></label>
+      <label class="ctl">Equatorial rotation speed<select id="pick-rot"></select></label>
+    </div>
+    <div class="chips" role="group" aria-label="Presets" id="presets"></div>
+    <p id="pick-summary" aria-live="polite"></p>
+    <div id="pick-refusal"></div>
+    <div class="scroll"><table id="pick-table"></table></div>
+  </section>
+
+  <section class="card" aria-labelledby="k2-h">
+    <h2 id="k2-h">At the K2 interface</h2>
+    <p class="note">The quantity the two programs would hand each other is energy: the tether's release C3 (v∞² for a hyperbolic throw) or a payload's arrival v∞. Going from Skyhook's Earth to Aster's, the shift splits into what μ does, what the radius does, and what happens when one program's speed meets the other's radius.</p>
+    <div class="chart" id="k2-chart" role="img" aria-label="C3 shift for the reference tier, by cause"></div>
+    <div class="scroll"><table id="k2-table"></table></div>
+    <h3>Aster's own published injection values</h3>
+    <p class="note">Aster's porkchop computes the injection Δv from a C3 (<code>src/v2/porkchop/delta-v.ts</code>). Its founding record and an audit report print worked values of it; here they are, recomputed with its function on each Earth:</p>
+    <div class="scroll"><table id="pins-table"></table></div>
+  </section>
+
+  <section class="card" aria-labelledby="rb-h">
+    <h2 id="rb-h">Reboost energy per kilogram thrown</h2>
+    <p class="note">After a catch and a throw the tether has lost what the payload gained, and electrodynamic reboost has to put it back. Skyhook's finance model, its MP-001 research note and its founding document each give a figure per kilogram.</p>
+    <div class="scroll"><table id="rb-table"></table></div>
+    <p id="rb-text" class="note"></p>
+    <h3>Stated in the repository</h3>
+    <div class="scroll"><table id="rb-stated"></table></div>
+    <p id="rb-sweep" class="note"></p>
+    <h3>What the decision grid prices</h3>
+    <p class="note"><code>finance/decision_grid.json</code> publishes a reboost electricity line per tier and ladder column. It equals E ÷ η ÷ 3.6 × $/kWh with the workbook's η and electricity price:</p>
+    <div class="scroll"><table id="grid-table"></table></div>
+    <p id="grid-text" class="note"></p>
+  </section>
+
+  <section class="card" aria-labelledby="conc-h">
+    <h2 id="conc-h">The concordance</h2>
+    <p class="note">Every line in either repository that states one of these constants, grouped by the value it states. Open a site to see the line as it was read. Relative differences are against Skyhook's canon μ and physics-module constants.</p>
+    <div class="chips" role="group" aria-label="Constant" id="fam-chips"></div>
+    <div class="chips" role="group" aria-label="Repository" id="repo-chips"></div>
+    <div id="conc-list"></div>
+    <p class="small" id="conc-excluded"></p>
+  </section>
+
+  <section class="card" aria-labelledby="gates-h">
+    <h2 id="gates-h">Reconciliation gates</h2>
+    <p class="note">What has to hold for these numbers to be trusted at the commits read. The command-line tool fails when any does.</p>
+    <ul class="gates" id="gates"></ul>
+  </section>
+
+  <footer>
+    <p id="prov"></p>
+    <p>Idea-bank prototype, not a release: two-body arithmetic, no multi-agent math audit, no Rule 1 canon review. Run <code>node ideas/14-whose-earth/whose-earth.mjs</code> from the bank root to re-verify every line against the checkouts.</p>
+  </footer>
+</main>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<script src="data.js"></script>
+<script src="registry.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

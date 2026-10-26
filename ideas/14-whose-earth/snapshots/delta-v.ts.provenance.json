@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/porkchop/delta-v.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "8d8646b179df0ecdde23d4fdf9d9a456478e4a55",
+  "readBlob": "8d8646b179df0ecdde23d4fdf9d9a456478e4a55",
+  "sourceSha256": "a58421c647110c0cbe2eea4a4d16ab53eeb7336f21b484c295911c6e63b6a2db",
+  "sourceBytes": 1963,
+  "copiedAt": "2026-10-26T15:30:06.091Z",
+  "mode": "copy",
+  "note": "whole file: its numbers feed the arithmetic, and its concordance rows are verified here offline",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a58421c647110c0cbe2eea4a4d16ab53eeb7336f21b484c295911c6e63b6a2db",
+  "writtenBytes": 1963
+}

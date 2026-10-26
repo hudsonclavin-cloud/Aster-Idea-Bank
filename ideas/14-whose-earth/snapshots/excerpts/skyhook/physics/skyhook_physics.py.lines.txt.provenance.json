@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "physics/skyhook_physics.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "ce4c48d78c9d9942b54b6877b80ad852015e675b",
+  "readBlob": "ce4c48d78c9d9942b54b6877b80ad852015e675b",
+  "sourceSha256": "e58897b1d10dd01248c1cbf2845dd8b1a8d2503dea9333a1dc0c8f186292991c",
+  "sourceBytes": 12085,
+  "copiedAt": "2026-10-26T15:30:07.124Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: lines 39, 40, 41, 105, 109 copied verbatim, every other line left empty so line numbers hold",
+  "readMatchesCommitted": true,
+  "writtenSha256": "5f9ca7f935968a6b03763c1c8823fd8f2f5afe3b807feaa295b47b200b8a5a8b",
+  "writtenBytes": 694
+}

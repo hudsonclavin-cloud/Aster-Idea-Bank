@@ -1,0 +1,99 @@
+{
+ "schema_version": "2.0.0",
+ "git_commit": "27229e25ebf7308f66ab5d60bfa0574a9c177a60",
+ "rev_a_md5": "6e84f7adab62bab1a9b1590e963c85fa",
+ "workbook_md5": "5ccdee4d43e91f8dd98884678c8e99bb",
+ "totalPoints": 450,
+ "points": [
+  {
+   "tier": "reference",
+   "column": "Conservative",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 121.8261,
+   "reboost_electricity_per_kg": 5.5973,
+   "ops_wear_insurance_per_kg": 12,
+   "marginal_cost_per_kg": 17.5973,
+   "delivered_total_per_kg": 284.6162
+  },
+  {
+   "tier": "reference",
+   "column": "Baseline",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 64.3046,
+   "reboost_electricity_per_kg": 3.1485,
+   "ops_wear_insurance_per_kg": 8,
+   "marginal_cost_per_kg": 11.1485,
+   "delivered_total_per_kg": 119.8506
+  },
+  {
+   "tier": "reference",
+   "column": "Optimistic",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 40.3214,
+   "reboost_electricity_per_kg": 1.3993,
+   "ops_wear_insurance_per_kg": 5,
+   "marginal_cost_per_kg": 6.3993,
+   "delivered_total_per_kg": 63.6684
+  },
+  {
+   "tier": "cislunar_revenue_gated_option",
+   "column": "Conservative",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 295.2697,
+   "reboost_electricity_per_kg": 6.2689,
+   "ops_wear_insurance_per_kg": 12,
+   "marginal_cost_per_kg": 18.2689,
+   "delivered_total_per_kg": 290.9901
+  },
+  {
+   "tier": "cislunar_revenue_gated_option",
+   "column": "Baseline",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 136.9408,
+   "reboost_electricity_per_kg": 3.5263,
+   "ops_wear_insurance_per_kg": 8,
+   "marginal_cost_per_kg": 11.5263,
+   "delivered_total_per_kg": 121.2898
+  },
+  {
+   "tier": "cislunar_revenue_gated_option",
+   "column": "Optimistic",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 78.576,
+   "reboost_electricity_per_kg": 1.5672,
+   "ops_wear_insurance_per_kg": 5,
+   "marginal_cost_per_kg": 6.5672,
+   "delivered_total_per_kg": 64.1624
+  },
+  {
+   "tier": "phase3_growth_option",
+   "column": "Conservative",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 3085.9535,
+   "reboost_electricity_per_kg": 7.8362,
+   "ops_wear_insurance_per_kg": 12,
+   "marginal_cost_per_kg": 19.8362,
+   "delivered_total_per_kg": 384.3059
+  },
+  {
+   "tier": "phase3_growth_option",
+   "column": "Baseline",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 990.2933,
+   "reboost_electricity_per_kg": 4.4078,
+   "ops_wear_insurance_per_kg": 8,
+   "marginal_cost_per_kg": 12.4078,
+   "delivered_total_per_kg": 134.6404
+  },
+  {
+   "tier": "phase3_growth_option",
+   "column": "Optimistic",
+   "construction_launch_per_kg": 100,
+   "mass_ratio_x": 440.3996,
+   "reboost_electricity_per_kg": 1.959,
+   "ops_wear_insurance_per_kg": 5,
+   "marginal_cost_per_kg": 6.959,
+   "delivered_total_per_kg": 67.6382
+  }
+ ]
+}

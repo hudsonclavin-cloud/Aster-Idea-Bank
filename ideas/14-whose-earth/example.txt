@@ -1,0 +1,263 @@
+WHOSE EARTH — the Earth constants Aster and Skyhook compute on, and what the differences do at the K2 interface
+Aster   62ddb17  2026-10-25  /home/user/asteroid-mining-planner
+Skyhook 34935cb  2026-09-10  /home/user/skyhook
+Registry: 94 rows; 94 ok.
+Scan: Aster 566 files, 36 lines with a candidate; Skyhook 73 files, 45 lines; 0 not in the registry.
+
+In short
+  μ   Aster 398,600.4418 vs Skyhook 398,600 km³/s² (+1.11×10⁻⁶): moves the tether C3 by −0.000037 km²/s².
+      Negligible.
+  R   Aster 6,378.137 (WGS84 a, implied by its 200 km parking orbit) vs Skyhook 6,371 (mean): C3 +0.021 to +0.029
+      km²/s² with each program self-consistent, +0.107 if one's speed meets the other's radius; cislunar apogee
+      +5,730 km (+1.44 %). rev_a.json is on neither Earth alone: 3 Earth-dependent values miss on Skyhook's, 7 on
+      Aster's (its orbital block is 6378, its kinematics 6371).
+  g0  9.80665 in both programs' code; Skyhook's two browser sims divide by 9.81 (+3.42×10⁻⁴).
+  rot Skyhook hard-codes 0.465 km/s in code (the canon has it only in a note); Aster states none. It enters no K2
+      quantity, only the lower-tip ground speed.
+  E   Reboost per kg: finance 2·v_orb·v_tip = 37.78 MJ/kg; the orbital energy the tether gives up is 43.03
+      (+13.9 %); MP-001 says 44.8, which none of 144 readings of the canon reproduces; at the conservative column
+      the gap is +0.78 $/kg on 17.60 $/kg marginal.
+
+1. CONCORDANCE: every line in either repository that states the constant (rows verified this run)
+
+Gravitational parameter μ⊕ [km³/s²]
+  relative to: Skyhook canon (params/rev_a.json:11)
+           value   rel. diff  where             file:line
+  ──────────────  ──────────  ────────────────  ──────────────────────────────────────────────────────────────
+    398,600.4418  +1.11×10⁻⁶  Skyhook page/sim  tools/sims/skyhook_calculator.jsx:4,
+                                                tools/sims/skyhook_program_site.html:1133
+                              Aster code        src/v2/porkchop/delta-v.ts:3
+                              Aster docs        src/v2/SLICE_11_FOUNDING.md:452
+                              Aster research    tools/audit/sanity-69472a3/s19-5-runs/verify-REPORT.md:96,
+                                                tools/slice13-research/literature/3d-verification-record.md:27
+  398,600.435507  +1.09×10⁻⁶  Aster research    tools/slice18-research/dv-scope.mjs:33,
+                                                tools/slice18-research/part3-no-encounter-drift.mjs:38
+         398,600           0  Skyhook canon     params/rev_a.json:11
+                              Skyhook code      physics/skyhook_physics.py:39 (comment)
+                              Skyhook page/sim  tools/sims/skyhook_orbit_theater.html:38,
+                                                tools/sims/skyhook_program_site.html:238,
+                                                tools/sims/skyhook_program_site.html:794,
+                                                tools/sims/skyhook_program_site.html:1268
+                              Skyhook docs      docs/project_instructions.md:37
+                              Aster test        tests/v2-lambert/lambert-endtoend.test.mjs:37,
+                                                tests/v2-lambert/lambert-multi-rev.test.mjs:58
+  Not in the table: Aster legacy V1 (9 files) states 398600 ×5, 398600.4418 ×8.
+
+Earth radius R⊕ [km]
+  relative to: Skyhook physics module (physics/skyhook_physics.py)
+       value   rel. diff  where                  file:line
+  ──────────  ──────────  ─────────────────────  ─────────────────────────────────────────────────────────────────────────
+    6,378.14  +1.12×10⁻³  Aster vendored kernel  vendor/naif/pck00010.tpc:3354 (comment)
+   6,378.137  +1.12×10⁻³  Aster code             src/v2/porkchop/delta-v.ts:4 (implied)
+                          Aster docs             src/v2/SLICE_11_FOUNDING.md:452 (implied),
+                                                 strategy/ASTER_ROADMAP_2026-08.md:287,
+                                                 strategy/RESEARCH_LEDGER_2026-08.md:42
+                          Aster research         tools/audit/sanity-69472a3/s19-5-runs/verify-REPORT.md:96 (implied),
+                                                 tools/slice13-research/literature/3d-verification-record.md:27 (implied),
+                                                 tools/slice21-research/literature/P2_EARTH_ORIENTATION_RESULT.md:22,
+                                                 tools/slice21-research/literature/P2_EARTH_ORIENTATION_RESULT.md:42,
+                                                 tools/slice21-research/literature/P2_EARTH_ORIENTATION_RESULT.md:73
+  6,378.1366  +1.12×10⁻³  Aster code             src/v2/core/constants/bodies.ts:45
+                          Aster docs             src/v2/core/constants/README.md:24,
+                                                 src/v2/core/constants/README.md:34,
+                                                 src/v2/core/constants/README.md:39,
+                                                 src/v2/core/constants/README.md:345
+                          Aster vendored kernel  vendor/naif/pck00010.tpc:3362,
+                                                 vendor/naif/pck00010.tpc:555 (comment),
+                                                 vendor/naif/pck00010.tpc:562 (comment),
+                                                 vendor/naif/pck00010.tpc:563 (comment),
+                                                 vendor/naif/pck00010.tpc:831 (comment)
+       6,378  +1.10×10⁻³  Skyhook canon          params/rev_a.json:10 (implied)
+    6,371.01  +1.57×10⁻⁶  Aster page/sim         src/v2/app/earth-moon/runtime.ts:17
+       6,371           0  Skyhook canon          params/rev_a.json:27 (implied), params/rev_a.json:31 (implied),
+                                                 params/rev_a.json:114 (implied)
+                          Skyhook code           physics/skyhook_physics.py:40, tools/twin/physics.js:21
+                          Skyhook test           tests/test_rev_a_physics.py:79
+                          Skyhook page/sim       tools/sims/skyhook_calculator.jsx:5,
+                                                 tools/sims/skyhook_orbit_theater.html:38,
+                                                 tools/sims/skyhook_program_site.html:794,
+                                                 tools/sims/skyhook_program_site.html:975,
+                                                 tools/sims/skyhook_program_site.html:1133,
+                                                 tools/sims/skyhook_program_site.html:1268
+                          Skyhook docs           docs/DECISION_LOG.md:30 (implied)
+  Not in the table: Aster legacy V1 (9 files) states 6371 ×7.
+
+Standard gravity g0 [m/s²]
+  relative to: Skyhook physics module (physics/skyhook_physics.py)
+    value   rel. diff  where             file:line
+  ───────  ──────────  ────────────────  ──────────────────────────────────────────────────────────────
+     9.81  +3.42×10⁻⁴  Skyhook page/sim  tools/sims/skyhook_calculator.jsx:252,
+                                         tools/sims/skyhook_calculator.jsx:268,
+                                         tools/sims/skyhook_program_site.html:1172,
+                                         tools/sims/skyhook_program_site.html:1177,
+                                         tools/sims/skyhook_program_site.html:1191,
+                                         tools/sims/skyhook_program_site.html:1209
+  9.80665           0  Skyhook code      physics/skyhook_physics.py:41, tools/twin/physics.js:23,
+                                         finance/leg_cost.py:46
+                       Skyhook test      tests/test_tether_dynamics.py:39
+                       Aster code        src/v2/porkchop/launch-vehicles.ts:63
+                       Aster test        src/v2/porkchop/launch-vehicles.test.mjs:236 (comment),
+                                         tests/v2-golden/launch-vehicles.golden.test.mjs:77 (comment)
+                       Aster research    tools/slice17-research/recon/S17_RECON_REPORT.md:329 (comment)
+  Not in the table: Aster legacy V1 (9 files) states 9.80665 ×4.
+
+Earth surface rotation speed at the equator [km/s]
+  relative to: Skyhook physics module (physics/skyhook_physics.py)
+  value   rel. diff  where             file:line
+  ─────  ──────────  ────────────────  ────────────────────────────────────────────────────────────────────────────────────────
+  0.465           0  Skyhook canon     params/rev_a.json:25
+                     Skyhook code      physics/skyhook_physics.py:109
+                     Skyhook page/sim  tools/sims/skyhook_calculator.jsx:6,
+                                       tools/sims/skyhook_program_site.html:355 (~),
+                                       tools/sims/skyhook_program_site.html:1133
+                     Aster docs        strategy/ASTER_ROADMAP_2026-08.md:285 (as m per s of UT1)
+                     Aster research    tools/slice21-research/literature/P2_EARTH_ORIENTATION_RESULT.md:18 (as m per s of UT1),
+                                       tools/slice21-research/literature/P2_EARTH_ORIENTATION_RESULT.md:68 (as m per s of UT1)
+   0.46  −1.08×10⁻²  Skyhook code      physics/skyhook_physics.py:105 (~)
+                     Skyhook page/sim  tools/sims/skyhook_program_site.html:317 (~)
+                     Skyhook docs      docs/project_instructions.md:39 (~),
+                                       docs/project_instructions.md:45 (~)
+  Aster src/v2 states no Earth rotation rate: refused, not zero (what would help: Slice 21 plans one,
+    strategy/ASTER_ROADMAP_2026-08.md:283-285).
+
+Reboost energy per kilogram thrown [MJ/kg mechanical; kWh/kg electrical where marked]
+  relative to: Skyhook finance 2·v_orb·v_tip at 2.5 km/s = 37.78 (finance/skyhook_finance.py:215)
+                  value   rel. diff  where             file:line
+  ─────────────────────  ──────────  ────────────────  ────────────────────────────────────────────────────────
+          48 kWh/kg el.              Skyhook research  docs/research/mp001_market_pricing.md:37,
+                                                       docs/research/perplexity_research_brief.md:75
+                                     Skyhook docs      docs/program_manifest.md:53, docs/program_manifest.md:65
+          33 kWh/kg el.              Skyhook page/sim  tools/sims/skyhook_no_leo_stress_test.jsx:58
+                   44.8  +1.86×10⁻¹  Skyhook research  docs/research/mp001_market_pricing.md:37
+  44.64 (= 12.4 kWh/kg)  +1.82×10⁻¹  Skyhook research  docs/research/mp001_market_pricing.md:37
+                                     Skyhook docs      docs/program_manifest.md:65
+                     30  −2.06×10⁻¹  Skyhook page/sim  tools/sims/skyhook_program_site.html:648 (~)
+                                     Skyhook docs      docs/project_instructions.md:218 (~)
+  Also: docs/program_manifest.md:71 says the founding document's figure became "30–60 MJ/kg";
+    docs/project_instructions.md:218 still says ~30.
+
+2. THE EARTHS (each value comes from a concordance row above)
+  Earth                         μ km³/s²       R km  g0 m/s²      v_rot km/s
+  ────────────────────────  ────────────  ─────────  ───────  ──────────────
+  Skyhook physics module    398,600.0000  6,371.000  9.80665           0.465
+  Aster v2 porkchop         398,600.4418  6,378.137  9.80665  none (refused)
+  rev_a.json orbital block  398,600.0000  6,378.000  9.80665           0.465
+  Skyhook physics module: mu params/rev_a.json:11; R physics/skyhook_physics.py:40; g0
+    physics/skyhook_physics.py:41; vRot physics/skyhook_physics.py:109
+  Aster v2 porkchop: mu src/v2/porkchop/delta-v.ts:3; R src/v2/porkchop/delta-v.ts:4; g0
+    src/v2/porkchop/launch-vehicles.ts:63
+  rev_a.json orbital block: mu params/rev_a.json:11; R params/rev_a.json:10; g0 physics/skyhook_physics.py:41; vRot
+    physics/skyhook_physics.py:109
+  Aster's R is its parking radius minus the altitude the porkchop page discloses (200 km).
+
+3. params/rev_a.json RECOMPUTED FROM ITS OWN INPUTS ON EACH EARTH (✓ = rounds to the printed value)
+  key (Earth-dependent)                      printed  Skyhook Earth   Aster Earth  Aster − Skyhook  R from com_radius
+  ─────────────────────────────────────────  ───────  ─────────────  ────────────  ───────────────  ─────────────────
+  orbital.com_radius_km                         6988     6,981.00 ✗    6,988.14 ✓            +7.14         6,988.00 ✓
+  orbital.v_orb_kms                             7.55       7.5563 ✗      7.5525 ✓          −0.0039           7.5525 ✓
+  ref.v_upper_release_kms                      10.06      10.0563 ✓     10.0525 ✗          −0.0039          10.0525 ✗
+  ref.c3_kms2                                  −8.06      −8.0611 ✓     −8.0321 ✗          +0.0290          −8.0327 ✗
+  ref.apogee_altitude_km                       85222    85,222.33 ✓   85,565.03 ✗          +342.70        85,558.77 ✗
+  ref.v_lower_tip_groundrel_kms                 4.59       4.5913 ✓       refused                            4.5875 ✓
+  ref.tip_acceleration_g                        1.99       1.9916 ✓      1.9916 ✓           0.0000           1.9916 ✓
+  cislunar.v_upper_release_kms                 10.36      10.3563 ✓     10.3525 ✗          −0.0039          10.3525 ✗
+  cislunar.c3_kms2                             −1.94      −1.9373 ✓     −1.9107 ✗          +0.0267          −1.9111 ✗
+  cislunar.apogee_altitude_km                 397819   397,819.44 ✓  403,549.68 ✗        +5,730.24       403,445.17 ✗
+  cislunar.tip_acceleration_g                    2.5        2.498 ✓       2.498 ✓            0.000            2.498 ✓
+  phase3.v_upper_release_kms                   11.05      11.0563 ✗     11.0525 ✓          −0.0039          11.0525 ✓
+  phase3.c3_kms2                               13.05      13.0515 ✓     13.0728 ✗          +0.0213          13.0724 ✗
+  phase3.v_lower_tip_groundrel_kms              3.59       3.5913 ✓       refused                            3.5875 ✓
+  phase3.tip_acceleration_g                      3.9        3.904 ✓       3.904 ✓            0.000            3.904 ✓
+  mkt.escape_C3_0_tip_speed_kms                  2.9        2.893 ✓       2.892 ✓           −0.001            2.892 ✓
+  mkt.mars_class_C3_8_to_13_tip_speed_kms.0      3.3        3.269 ✓       3.268 ✓           −0.001            3.268 ✓
+  mkt.mars_class_C3_8_to_13_tip_speed_kms.1      3.5        3.498 ✓       3.497 ✓           −0.001            3.497 ✓
+  mkt.GTO_tip_speed_kms                          2.1        refused       refused                             refused
+  mkt.cislunar_TLI_tip_speed_kms                 2.8        refused       refused                             refused
+
+  19 more values need no Earth constant and are identical on all three Earths; all reproduce:
+    tip_altitude_lower_km 290 (290.00) · rotation_period_min 13.4 (13.404)
+    V_c_kms 2.73 (2.7269) · specific_strength_MJkg 3.72 (3.7179)
+    tip_speed_to_Vc_ratio 0.92 (0.9168) · EQ-6 optimistic_0pct_derate 40.32 (40.3214)
+    EQ-6 optimistic_0pct_fiber_mass_t 201.6 (201.607) · EQ-6 baseline_15pct_derate 64.3 (64.305)
+    EQ-6 baseline_15pct_fiber_mass_t 321.5 (321.523) · EQ-6 conservative_30pct_derate 121.83 (121.8261)
+    EQ-6 conservative_30pct_fiber_mass_t 609.1 (609.130) · EQ-6 phase3_3p5kms_30pct_derate 3085.95 (3,085.9535)
+    EQ-6 phase3_3p5kms_30pct_fiber_mass_t 15429.8 (15,429.768) · EQ-6 cislunar_2p8kms_30pct_derate 295.27 (295.2697)
+    EQ-6 cislunar_2p8kms_30pct_fiber_mass_t 1476.3 (1,476.348) · cislunar mass ratio 295.27 (295.2697)
+    cislunar fiber_mass_t_at_5000kg_payload 1476.3 (1,476.348) · phase3 mass ratio 3085.95 (3,085.9535)
+    phase3 fiber_mass_t_at_5000kg_payload 15429.8 (15,429.768)
+  refused: market_thresholds.GTO_tip_speed_kms (2.1): needs a target apogee radius rev_a.json does not state; what
+    would help: a GEO radius and a lunar distance in params/rev_a.json (the only GEO radius in Skyhook is
+    finance/reboost_bound.py:28, flagged)
+  refused: market_thresholds.cislunar_TLI_tip_speed_kms (2.8): needs a target apogee radius rev_a.json does not
+    state; what would help: a GEO radius and a lunar distance in params/rev_a.json (the only GEO radius in Skyhook
+    is finance/reboost_bound.py:28, flagged)
+
+4. THE K2 INTERFACE: what the Earth choice moves (Skyhook Earth → Aster Earth)
+  tier                C3 Skyhook  C3 Aster   Δ both   Δ μ only  Δ R only  Δ mixed*
+  ──────────────────  ──────────  ────────  ───────  ─────────  ────────  ────────
+  reference 2.5 km/s     −8.0611   −8.0321  +0.0290  −0.000037   +0.0290   +0.1066
+  cislunar 2.8 km/s      −1.9373   −1.9107  +0.0267  −0.000034   +0.0267   +0.1066
+  Phase 3 3.5 km/s       13.0515   13.0728  +0.0213  −0.000028   +0.0213   +0.1066
+  * mixed: v_orb from the Skyhook Earth, r_tip from the Aster Earth: one program's speed with the other's radius.
+
+  apogee altitude     Skyhook km  Aster km    Δ km        Δ  Δ mixed km
+  ──────────────────  ──────────  ────────  ──────  ───────  ──────────
+  reference 2.5 km/s      85,222    85,565    +343  +0.40 %      +1,319
+  cislunar 2.8 km/s      397,819   403,550  +5,730  +1.44 %     +23,961
+
+  tier                       v∞* km/s  trim at v∞=0 km/s  Aster injection to this C3  Δ m/s
+  ──────────────────  ───────────────  ─────────────────  ──────────────────────────  ─────
+  reference 2.5 km/s    none (C3 < 0)    0.3931 → 0.3919             2.8539 → 2.8533  −0.60
+  cislunar 2.8 km/s     none (C3 < 0)    0.0931 → 0.0919             3.1378 → 3.1372  −0.58
+  Phase 3 3.5 km/s    3.6127 → 3.6156  −0.6069 → −0.6081             3.8034 → 3.8029  −0.53
+  Aster injection: src/v2/porkchop/delta-v.ts:18-26 from a 200 km parking orbit, on each Earth. Earth rotation
+    enters none of these.
+
+  Aster's own published injection values, recomputed with its function on each Earth:
+  case          published km/s  Aster Earth  Skyhook Earth  published at
+  ────────────  ──────────────  ───────────  ─────────────  ─────────────────────────────────────────────────────────
+  C3 = 1781.29           35.83    35.8332 ✓      35.8304 ✓  src/v2/SLICE_11_FOUNDING.md:452
+  C3 = 8.78              3.616     3.6162 ✓       3.6177 ✗  src/v2/SLICE_11_FOUNDING.md:452
+  C3 = 32.16             4.599     4.5992 ✓       4.6003 ✗  src/v2/SLICE_11_FOUNDING.md:452
+  C3 = 0                 3.224     3.2243 ✓       3.2261 ✗  tools/audit/sanity-69472a3/s19-5-runs/verify-REPORT.md:96
+
+5. REBOOST ENERGY PER KILOGRAM THROWN (MJ/kg = km²/s²)
+  tier                2·v_orb·v_tip  orbital energy  n·ΔH check  ground-rel catch  orbital, Aster Earth
+  ──────────────────  ─────────────  ──────────────  ──────────  ────────────────  ────────────────────
+  reference 2.5 km/s          37.78           43.03       43.02             45.27                 43.00
+  cislunar 2.8 km/s           42.32           47.56       47.55             49.66                 47.53
+  Phase 3 3.5 km/s            52.89           58.14       58.13             59.92                 58.10
+  The orbital-energy view adds μ(1/r_low − 1/r_tip) = 5.246 MJ/kg to 2·v_orb·v_tip (+13.9 %), the lever-arm term the
+    finance model leaves out; n·ΔH (mean motion times the payload's angular-momentum gain) agrees with it to 0.03 %.
+    The ground-relative column uses the catch speed in the wrong frame and is shown only because it is the nearest
+    principled reading to MP-001's 44.8.
+  Sweep: 144 readings of the canon (3 radii × v_orb computed or printed × release computed or printed × 3 catch
+    speeds × 4 potential terms); none rounds to 44.8. Nearest: 45.19 (catch printed, g(r_com)·Δh, v_orb printed, R
+    6378.137).
+
+  finance/decision_grid.json reboost_electricity_per_kg = E / η / 3.6 × $/kWh (η, $/kWh: workbook Assumptions rows 6, 7):
+  tier       column           η  $/kWh  published $/kg  2·v_orb·v_tip  same, Aster Earth    orbital view  marginal $/kg
+  ─────────  ────────────  ────  ─────  ──────────────  ─────────────  ─────────────────  ──────────────  ─────────────
+  reference  Conservative  0.15   0.08          5.5973       5.5973 ✓           5.5944 ✗  6.3744 (+0.78)          17.60
+  reference  Baseline      0.20   0.06          3.1485       3.1485 ✓           3.1469 ✗  3.5856 (+0.44)          11.15
+  reference  Optimistic    0.30   0.04          1.3993       1.3993 ✓           1.3986 ✗  1.5936 (+0.19)           6.40
+  cislunar   Conservative  0.15   0.08          6.2689       6.2689 ✓           6.2657 ✗  7.0461 (+0.78)          18.27
+  cislunar   Baseline      0.20   0.06          3.5263       3.5263 ✓           3.5245 ✗  3.9634 (+0.44)          11.53
+  cislunar   Optimistic    0.30   0.04          1.5672       1.5672 ✓           1.5664 ✗  1.7615 (+0.19)           6.57
+  phase3     Conservative  0.15   0.08          7.8362       7.8362 ✓           7.8322 ✗  8.6133 (+0.78)          19.84
+  phase3     Baseline      0.20   0.06          4.4078       4.4078 ✓           4.4056 ✗  4.8450 (+0.44)          12.41
+  phase3     Optimistic    0.30   0.04          1.9590       1.9590 ✓           1.9580 ✗  2.1533 (+0.19)           6.96
+  published $/kg ÷ v_tip per column (constant iff the line is linear in v_tip): Conservative 2.2389–2.2389, Baseline
+    1.2594–1.2594, Optimistic 0.5597–0.5597.
+
+6. RECONCILIATION GATES
+  pass  canon-on-skyhook-earth: 15 of 18 Earth-dependent values reproduce on the Skyhook module Earth; not
+        reproduced: kinematics.phase3_growth_option.v_upper_release_kms, orbital.com_radius_km, orbital.v_orb_kms
+  pass  canon-earth-independent: 19 of 19 Earth-independent values reproduce
+  pass  grid-mass-ratios: 9 of 9 decision-grid mass ratios reproduce at 4 decimals
+  pass  grid-reboost-momentum-view: 9 of 9 reboost lines reproduce as 2·v_orb·v_tip on the Skyhook Earth (0 on the
+        Aster Earth)
+  pass  aster-injection-pins: 4 of 4 of Aster's published injection values reproduce with Aster's constants
+  pass  mp001-not-reproduced: nearest of 144 accountings to 44.8 MJ/kg is 45.19
+
+Result: every row on its stated line, nothing unregistered, every gate holds.

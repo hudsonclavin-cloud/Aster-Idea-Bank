@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tools/audit/sanity-69472a3/s19-5-runs/verify-REPORT.md",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "01fb28a 2026-10-21T23:16:17-04:00",
+  "committedBlob": "010dae991ccaf5963f02f63e6139b9db38abe93e",
+  "readBlob": "010dae991ccaf5963f02f63e6139b9db38abe93e",
+  "sourceSha256": "6fe63841bc70a3b41e4c5721180258ed5cb1f76a43177bae16d0261995ab10e9",
+  "sourceBytes": 33265,
+  "copiedAt": "2026-10-26T15:30:06.614Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: lines 96 copied verbatim, every other line left empty so line numbers hold",
+  "readMatchesCommitted": true,
+  "writtenSha256": "9d6202d3ab34e0e726b0c15e9ca1866d7e8b4de282481fe670a75a9e3645dd97",
+  "writtenBytes": 669
+}
