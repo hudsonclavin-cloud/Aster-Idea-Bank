@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Rule One</title>
-<meta name="description" content="A saved canon-drift report for the Skyhook repository: every number that claims to be a Rev A quantity, read against params/rev_a.json, classed by docs/DEVIATIONS.md, with a quote card for the next number anyone cites.">
+<meta name="description" content="A saved canon-drift report for the Skyhook repository: the numbers its rules attribute to Rev A quantities, read against params/rev_a.json, classed by docs/DEVIATIONS.md, with a quote card for the next number anyone cites.">
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -12,7 +12,7 @@
 <header class="top">
   <div class="wrap">
     <h1>Rule One</h1>
-    <p class="tag">Skyhook's Rule 1 says tether numbers come from <code>params/rev_a.json</code>, never from memory. This page is the saved output of <code>lint_canon.py</code>: every number in the repository's prose, HTML, JSX, JS and Python that claims to be a canonical quantity, compared with that file and classed by <code>docs/DEVIATIONS.md</code>.</p>
+    <p class="tag">Skyhook's Rule 1 says tether numbers come from <code>params/rev_a.json</code>, never from memory. This page is the saved output of <code>lint_canon.py</code>: the numbers in the repository's prose, HTML, JSX, JS and Python that its rules attribute to a canonical quantity, compared with that file and classed by <code>docs/DEVIATIONS.md</code>, plus a self-check of the file against its own inputs.</p>
     <p class="meta" id="meta">Loading the saved report…</p>
   </div>
 </header>
@@ -20,7 +20,7 @@
 <main class="wrap">
   <section class="card" aria-labelledby="h-findings">
     <h2 id="h-findings">Findings</h2>
-    <p class="lead"><b>NEW</b> is not in the deviations register and fails the run (exit 1). <b>KNOWN OPEN</b> is tracked there and not yet fixed. <b>ACCEPTED</b> is a deviation the register says to leave because it states itself. <b>LABELLED</b> is a mismatch that sits next to a word such as <i>Phase 3</i>, <i>historical</i> or <i>SF 5</i>: shown, never failing, worth reading anyway. Tap a tile to filter.</p>
+    <p class="lead"><b>NEW</b> is not in the deviations register and fails the run (exit 1). <b>KNOWN OPEN</b> is tracked there and not yet fixed. <b>ACCEPTED</b> is a deviation whose register row starts with <i>Leave</i> for that file. <b>LABELLED</b> is a mismatch that sits under a strong marker such as <i>Phase 3</i>, <i>historical</i> or <i>SF 5</i>, or next to a near one such as <i>corrected from</i> in its own clause: shown, never failing, worth reading anyway. Tap a tile to filter.</p>
     <div class="tiles" id="tiles" role="group" aria-label="Filter by class"></div>
     <div class="filter">
       <label class="visually-hidden" for="q">Filter findings by text</label>
@@ -46,19 +46,19 @@
 
   <section class="card" aria-labelledby="h-verify">
     <h2 id="h-verify">Canon self-check</h2>
-    <p class="lead">Every derived value in <code>rev_a.json</code> recomputed from the file's own inputs (<code>--verify-canon</code>). A row that disagrees is a number inside the canon that does not follow from the others.</p>
+    <p class="lead">Every derived value in <code>rev_a.json</code> (42 of its 66 numeric keys; the rest are inputs or stated figures) recomputed from the file's own inputs (<code>--verify-canon</code>), once with the Earth radius its notes use and once with the radius its <code>com_radius_km</code> implies. A row that disagrees is a number inside the canon that does not follow from the others. The two-radii finding was first documented by idea 01 (Tip Match, F1/F2); this is an independent reproduction.</p>
     <div class="tablewrap">
       <table id="verify">
-        <thead><tr><th>quantity</th><th>from inputs</th><th>canon</th><th>verdict</th><th>how</th></tr></thead>
+        <thead><tr><th>rev_a.json key</th><th>canon</th><th id="re-a">at R_E</th><th>verdict</th><th id="re-b">at R_E</th><th>verdict</th><th>how</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-    <p class="small" id="verify-summary"></p>
+    <div id="verify-summary"></div>
   </section>
 
   <section class="card" aria-labelledby="h-rules">
     <h2 id="h-rules">What it checks</h2>
-    <p class="lead">A number followed by a unit is attributed to the nearest keyword on its line, counted in tokens, and compared with the keys that keyword names. Words in the <i>sinks</i> list claim a number without checking it. A literal matches canon when canon rounded to the literal's own precision equals it, within 5 % of canon; an integer ending in zeros is read at its last non-zero digit within 3 %. A range passes when it brackets canon.</p>
+    <p class="lead">A number followed by a unit is attributed to the nearest keyword on its line, counted in tokens, and compared with the keys that keyword names. Words in the <i>sinks</i> list claim a number without checking it. A literal matches canon when canon rounded to the literal's own precision equals it, within 5 % of canon; an integer ending in zeros is read at its last non-zero digit within 3 %. A range passes when it brackets canon. A number that is canon only for a tier its clause does not name (295× at "the 2.5 km/s reference") is a <code>tier</code> finding; a clause that names no tier is read as the reference.</p>
     <details open>
       <summary>Quantity rules and stale patterns</summary>
       <div class="tablewrap"><table class="rulegrid" id="rules"><thead><tr><th>rule</th><th>what</th><th>unit</th><th>keywords</th><th>allowed values from</th></tr></thead><tbody></tbody></table></div>
@@ -69,7 +69,12 @@
     </details>
     <details>
       <summary>Self-labels: words that make a mismatch LABELLED instead of NEW</summary>
-      <p class="small" id="labels"></p>
+      <p class="small"><b>Strong</b>, read in the wide window and the section heading:</p>
+      <p class="small" id="labels-strong"></p>
+      <p class="small"><b>Near</b>, read only in the number's own clause:</p>
+      <p class="small" id="labels-near"></p>
+      <p class="small"><b>Weak</b>, which excuse a stale pattern (3.5 km/s, 440×, a ladder) but never a quantity:</p>
+      <p class="small" id="labels-weak"></p>
     </details>
     <details>
       <summary id="sup-summary">Labelled pattern mentions that were skipped</summary>

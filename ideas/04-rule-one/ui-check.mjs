@@ -63,6 +63,8 @@ const tileCount = (page, cls) => page.locator(`.tile[data-cls="${cls}"] .n`).tex
   ok(text.includes('skyhook_program_site.html:1135'), 'DEVIATIONS #8 (KNOWN OPEN) is listed');
   ok(/DEVIATIONS #8/.test(text), 'the KNOWN OPEN card names its register row');
   ok(text.includes('glossary.md:27'), 'the glossary 100-200x finding is listed');
+  ok(text.includes('our 100–200× planning range'), 'the glossary excerpt reaches the offending literal');
+  ok(text.includes('program_manifest.md:6') && text.includes('mass ratio ~41×'), 'the 25 August banner values are listed with their excerpt');
   await page.locator('.tile[data-cls="NEW"]').tap();
   await page.waitForTimeout(100);
   const newText = await page.locator('#findings').innerText();
@@ -103,14 +105,25 @@ const tileCount = (page, cls) => page.locator(`.tile[data-cls="${cls}"] .n`).tex
   await page.waitForTimeout(100);
   ok((await page.locator('#copy-status').textContent()).length > 0, 'Copy reports what it did');
   const verifyRows = await page.locator('#verify tbody tr').count();
-  ok(verifyRows === data.verify.length, `canon self-check lists ${data.verify.length} rows`);
+  ok(verifyRows === data.verify.rows.length && verifyRows === 42, `canon self-check lists ${data.verify.rows.length} rows`);
   const badRows = await page.locator('#verify tbody tr.bad').count();
-  ok(badRows === data.verify.filter((r) => !r.ok).length, 'disagreeing rows are marked');
-  ok((await page.locator('#verify-summary').textContent()).includes('CoM radius'), 'the summary names the CoM radius disagreement');
+  ok(badRows === data.verify.rows.filter((r) => !(r.ok && r.ok_alt)).length && badRows === 10, `disagreeing rows are marked (${badRows})`);
+  ok((await page.locator('#re-a').textContent()) === 'at R_E 6371 km' && (await page.locator('#re-b').textContent()) === 'at R_E 6378 km',
+    'the two radius columns are named');
+  const summary = await page.locator('#verify-summary').textContent();
+  ok(summary.includes('39 of 42 reproduce') && summary.includes('orbital.com_radius_km') && summary.includes('No single Earth radius'),
+    'the summary names both conventions and the com_radius_km disagreement');
+  const p3 = page.locator('#verify tbody tr', { hasText: 'phase3_growth_option.v_upper_release_kms' });
+  ok((await p3.locator('td').nth(2).textContent()) === '11.0563' && (await p3.locator('td').nth(3).textContent()) === 'DISAGREES',
+    'the Phase 3 release row shows 11.0563 against the file’s 11.05');
   await page.focus('#q');
   await page.keyboard.press('Tab');
   const focused = await page.evaluate(() => document.activeElement && (document.activeElement.id || document.activeElement.className));
   ok(!!focused, `Tab moves focus to a control (${focused})`);
+  ok((await page.locator('#labels-weak').textContent()).includes('\\bwas\\b') && (await page.locator('#labels-strong').textContent()).includes('historical'),
+    'the three label strengths are listed');
+  ok((await page.locator('#devs tbody tr').nth(6).textContent()).includes('original_README.md: accepted; skyhook_program_site.html: fixed'),
+    'register row 7 shows its per-file states');
   const rulesRows = await page.locator('#rules tbody tr').count();
   ok(rulesRows === data.rules.rules.length, 'every rule is listed');
   ok(errors.length === 0, `no console errors on the desktop (${errors.join(' | ')})`);

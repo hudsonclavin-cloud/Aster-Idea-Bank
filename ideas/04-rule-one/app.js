@@ -88,16 +88,18 @@
   }
   $('declared').textContent += ' Skipped on purpose: ' + m.skipped.join(', ') + '.';
 
-  // Quote card: every numeric key, grouped by its top-level section.
+  // Quote card: every numeric key, grouped by its top-level section. D.cards rows are [key, unit, line indices].
   var sel = $('key');
-  var keys = Object.keys(D.cards);
+  var CARD = {}, UNIT = {};
+  D.cards.forEach(function (c) { CARD[c[0]] = c[2]; UNIT[c[0]] = c[1]; });
+  var keys = D.cards.map(function (c) { return c[0]; });
   var groups = {};
   keys.forEach(function (k) { var g = k.split('.')[0]; (groups[g] = groups[g] || []).push(k); });
   Object.keys(groups).forEach(function (g) {
     var og = el('optgroup', { label: g });
     groups[g].forEach(function (k) {
       var leaf = k.slice(g.length + 1);
-      og.appendChild(el('option', { value: k, text: leaf + '  (' + flatValue(k) + (D.units[k] ? ' ' + D.units[k] : '') + ')' }));
+      og.appendChild(el('option', { value: k, text: leaf + '  (' + flatValue(k) + (UNIT[k] ? ' ' + UNIT[k] : '') + ')' }));
     });
     sel.appendChild(og);
   });
@@ -111,8 +113,13 @@
     }
     return node;
   }
+  // Cards are stored once as a table of distinct lines; each key lists its lines in order.
+  function cardText(key) {
+    var idx = CARD[key];
+    return idx ? idx.map(function (i) { return D.card_lines[i]; }).join('\n') + '\n' : '';
+  }
   function showCard() {
-    $('card').textContent = D.cards[sel.value] || '';
+    $('card').textContent = cardText(sel.value);
     $('copy-status').textContent = '';
   }
   sel.value = keys.indexOf('kinematics.v_tip_kms') >= 0 ? 'kinematics.v_tip_kms' : keys[0];
@@ -139,19 +146,20 @@
     } catch (e) { fail(); }
   });
 
-  // Canon self-check table.
+  // Canon self-check table: every derived value under the two Earth radii the file mixes.
+  var V = D.verify || { rows: [], summary: [] };
+  $('re-a').textContent = 'at R_E ' + V.r_earth_km + ' km';
+  $('re-b').textContent = 'at R_E ' + V.r_earth_implied_km + ' km';
   var tb = $('verify').querySelector('tbody');
-  var bad = 0;
-  (D.verify || []).forEach(function (r) {
-    if (!r.ok) bad++;
-    tb.appendChild(el('tr', { class: r.ok ? '' : 'bad' }, [
-      el('td', { text: r.quantity }), el('td', { class: 'num', text: String(r.computed) }), el('td', { class: 'num', text: String(r.canon) }),
-      el('td', { class: 'verdict ' + (r.ok ? 'ok' : 'bad'), text: r.ok ? 'matches' : 'DISAGREES' }), el('td', { text: r.how })]));
+  function verdict(ok) { return el('td', { class: 'verdict ' + (ok ? 'ok' : 'bad'), text: ok ? 'matches' : 'DISAGREES' }); }
+  V.rows.forEach(function (r) {
+    tb.appendChild(el('tr', { class: (r.ok && r.ok_alt) ? '' : 'bad' }, [
+      el('td', null, [el('code', { text: r.key })]), el('td', { class: 'num', text: String(r.canon) }),
+      el('td', { class: 'num', text: r.computed == null ? 'none' : String(r.computed) }), verdict(r.ok),
+      el('td', { class: 'num', text: r.computed_alt == null ? 'none' : String(r.computed_alt) }), verdict(r.ok_alt), el('td', { text: r.how })]));
   });
-  var n = (D.verify || []).length;
-  $('verify-summary').textContent = (n - bad) + ' of ' + n + ' derived values reproduce from the file’s own inputs' +
-    (bad ? '; ' + bad + ' do not: ' + D.verify.filter(function (r) { return !r.ok; }).map(function (r) { return r.quantity; }).join('; ') + '.' : '.') +
-    ' Physical constants used that are not in rev_a.json: R_E 6371 km (as physics/skyhook_physics.py), the sidereal day 86164.0905 s, g0 9.80665 m/s².';
+  var vs = $('verify-summary');
+  V.summary.forEach(function (line) { vs.appendChild(el('p', { class: 'small', text: line })); });
 
   // Rules, sinks, labels, suppressed, deviations.
   var rb = $('rules').querySelector('tbody');
@@ -163,7 +171,9 @@
       el('td', null, [el('code', { text: allowed.join(', ').replace(/mass_ratio\.integrated_tether_to_payload_both_arms\./g, 'mass_ratio.*.') })])]));
   });
   $('sinks').textContent = D.rules.sinks.join('   ');
-  $('labels').textContent = D.rules.self_labels.join('   ');
+  $('labels-strong').textContent = D.rules.self_labels.strong.join('   ');
+  $('labels-near').textContent = D.rules.self_labels.near.join('   ');
+  $('labels-weak').textContent = D.rules.self_labels.weak_patterns_only.join('   ');
   var sup = $('suppressed');
   $('sup-summary').textContent = 'Labelled pattern mentions that were skipped (' + D.suppressed.length + ')';
   D.suppressed.forEach(function (s) {
@@ -172,7 +182,10 @@
   var db = $('devs').querySelector('tbody');
   (D.deviations || []).forEach(function (r) {
     db.appendChild(el('tr', null, [
-      el('td', { class: 'num', text: String(r.no) }), el('td', null, [el('code', { text: r.paths.join(', ') })]), el('td', { text: r.state }),
+      el('td', { class: 'num', text: String(r.no) }), el('td', null, [el('code', { text: r.paths.join(', ') })]),
+      el('td', { text: Object.keys(r.path_states || {}).length > 1
+        ? Object.keys(r.path_states).map(function (k) { return k.split('/').pop() + ': ' + r.path_states[k]; }).join('; ')
+        : r.state }),
       el('td', null, [el('code', { text: r.snippets.join(' | ') })]), el('td', { class: 'num', text: r.values.join(' ') })]));
   });
 })();

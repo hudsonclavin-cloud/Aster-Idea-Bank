@@ -177,6 +177,10 @@ summary { cursor: pointer; font-weight: 600; }
 ul.plain { margin: 6px 0; padding-left: 18px; }
 ul.plain li { margin: 3px 0; overflow-wrap: anywhere; }
 .rulegrid td code { font-size: 0.78rem; overflow-wrap: anywhere; }
+#verify td:first-child code { font-size: 0.78rem; overflow-wrap: anywhere; }
+#verify td:first-child { min-width: 9rem; }
+#verify td:last-child { font-size: 0.78rem; color: var(--soft); min-width: 10rem; }
+#verify-summary p { margin: 8px 0 0; }
 .small { font-size: 0.86rem; color: var(--soft); }
 footer { color: var(--soft); font-size: 0.86rem; padding: 10px 0 30px; border-top: 1px solid var(--line); }
 footer code { font-size: 0.8rem; }
