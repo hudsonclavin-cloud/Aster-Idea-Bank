@@ -1,24 +1,13 @@
 #!/usr/bin/env python3
-"""Tests for ladder_export.py (Python 3 standard library, unittest).
-
-From the bank root:  python3 -m unittest discover -s ideas/08-blue-cells -p 'test_*.py'
-
-What is pinned to something outside this code (see README "Tests"):
-  * the derate ladder, to snapshots/rev_a.json (materials.derate_fraction and the mass_ratio key
-    names baseline_15pct_derate / optimistic_0pct_derate);
-  * the integrated mass ratios and fiber masses, to the values rev_a.json publishes, through the
-    workbook's own Design Calcs formulas (rows 3-12) evaluated on the extracted inputs;
-  * the lower-tip ground-relative speed, to rev_a.json kinematics.v_lower_tip_groundrel_kms;
-  * total capex and payback years, to docs/DECISION_LOG.md item 6 (snapshots/DECISION_LOG.md), through
-    the workbook's Design Calcs row 19 and Cash Flow & Payback rows 4-16 evaluated on the extracted
-    inputs; and the conservative column's $2,500/kg launch price to the same item's line 51;
-  * the workbook md5, to finance/decision_grid.json's workbook_md5 (snapshots/decision_grid.json);
-  * the workbook sha256 and byte count, to the snapshot's provenance sidecar;
-  * the row map, to finance/skyhook_finance.py as read by build_data.py (snapshots/ladder_rows.json).
-The 14 x 3 ladder values and the census counts are regression pins: they were read off the sheet
-XML by hand when this was built and are what every other test depends on.
+"""Tests for ladder_export.py (unittest). From the bank root:
+    python3 -m unittest discover -s ideas/08-blue-cells -p 'test_*.py'
+External pins (README "Tests"): rev_a.json through the workbook's own formulas, DECISION_LOG items 6-8,
+decision_grid.json's md5, the sidecar, skyhook_finance.py's row map, blob id 46bc02e. The ladder values
+and census counts are regression pins read off the sheet XML.
 """
+import contextlib
 import functools
+import hashlib
 import importlib.util
 import io
 import json
@@ -26,6 +15,7 @@ import math
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import unittest
@@ -43,6 +33,7 @@ SIDECAR = XLSX + ".provenance.json"
 LADDER_JSON = os.path.join(SNAPS, "ladder.json")
 FIXTURE = os.path.join(HERE, "fixtures", "shuffled_assumptions.xlsx")
 RECALC = os.path.join(HERE, "fixtures", "recalculated_by_libreoffice.xlsx")
+PRE_FIX = os.path.join(HERE, "fixtures", "pre_fix_7bb5b5f.xlsx")
 SKYHOOK = "/home/user/skyhook"
 
 
@@ -66,13 +57,13 @@ def setUpModule():
 
 
 def tearDownModule():
-    # The checker runs plain `python3 -m unittest`, which would otherwise leave a __pycache__ here.
+    # plain `python3 -m unittest` would otherwise leave a __pycache__ here
     shutil.rmtree(os.path.join(HERE, "__pycache__"), ignore_errors=True)
 
 
 SCN = ("Conservative", "Baseline", "Optimistic")
 
-# Regression table: Assumptions!B3:D16 as read off xl/worksheets/sheet2.xml at Skyhook 34935cb.
+# Regression table: Assumptions!B3:D16 at Skyhook 34935cb.
 EXPECTED_LADDER = {
     "strength_retention": (0.7, 0.85, 1.0),
     "ascent_losses_ms": (1800, 1500, 1200),
@@ -103,23 +94,25 @@ def constant(key):
     return RESULT["constants"]["entries"][key]["value"]
 
 
-def workbook_chain(scn, years=15):
-    """The workbook's own formulas, transcribed from xl/worksheets/sheet3.xml (Design Calcs rows
-    3-25) and sheet5.xml (Cash Flow & Payback rows 4-16), evaluated on the extracted inputs.
-    Returns the quantities the DECISION_LOG and rev_a.json publish."""
-    ret = ladder_value("strength_retention", scn)
-    v_tip = ladder_value("tip_speed_kms", scn)
-    payload = ladder_value("payload_kg", scn)
-    launch = ladder_value("construction_launch_per_kg", scn)
-    hw = ladder_value("hardware_mass_factor", scn)
-    fleet = ladder_value("program_fleet_capex_M", scn)
-    eff = ladder_value("power_chain_efficiency", scn)
-    kwh = ladder_value("electricity_per_kwh", scn)
-    ops = ladder_value("ops_wear_per_kg", scn)
-    cad = ladder_value("catches_per_day", scn)
-    price = ladder_value("customer_price_per_kg", scn)
-    ramp = ladder_value("revenue_ramp_y1", scn)
-    fixed = ladder_value("fixed_ops_M", scn)
+def workbook_chain(scn, years=15, inputs=None, design=None, constant=None):
+    """The workbook's formulas, transcribed from sheet3.xml (Design Calcs rows 3-4, 8-9, 11-13, 19-25)
+    and sheet5.xml (Cash Flow rows 4-16), on the extracted inputs or on the given inputs/design/constant."""
+    get = inputs or ladder_value
+    design = design or globals()["design"]
+    constant = constant or globals()["constant"]
+    ret = get("strength_retention", scn)
+    v_tip = get("tip_speed_kms", scn)
+    payload = get("payload_kg", scn)
+    launch = get("construction_launch_per_kg", scn)
+    hw = get("hardware_mass_factor", scn)
+    fleet = get("program_fleet_capex_M", scn)
+    eff = get("power_chain_efficiency", scn)
+    kwh = get("electricity_per_kwh", scn)
+    ops = get("ops_wear_per_kg", scn)
+    cad = get("catches_per_day", scn)
+    price = get("customer_price_per_kg", scn)
+    ramp = get("revenue_ramp_y1", scn)
+    fixed = get("fixed_ops_M", scn)
     R = constant("earth_radius_km") + design("com_altitude_km")                       # Design Calcs B3
     v_orb = math.sqrt(constant("mu_earth_km3_s2") / R)                                # B4, EQ 2
     Vc = math.sqrt(2 * design("fiber_tensile_strength_sigma_gpa") * 1e9 * ret
@@ -135,7 +128,7 @@ def workbook_chain(scn, years=15):
     rev = upmass * 1000 * price / 1e6                                                  # B24
     mcost = upmass * 1000 * marginal / 1e6                                             # B25
     total = sys_capex + fleet                                                          # Cash Flow B4
-    cum, payback = 0.0, None
+    cum, payback, cumulative, net = 0.0, None, [], []
     for y in range(1, years + 1):
         spend = total * (0.15, 0.3, 0.35, 0.2)[y - 1] if y <= 4 else 0.0               # row 11
         if y >= 5:
@@ -143,10 +136,15 @@ def workbook_chain(scn, years=15):
             r, o = rev * m, mcost * m + fixed
         else:
             r, o = 0.0, 0.0
-        cum += r - spend - o                                                           # rows 14-15
+        net.append(r - spend - o)                                                      # row 14
+        cum += net[-1]                                                                 # row 15
+        cumulative.append(cum)
         if payback is None and cum > 0:                                                # row 16
             payback = y
-    return {"ratio": 2 * single, "tons": tons, "catch": catch, "total_capex": total, "payback": payback}
+    # NPV is not in the workbook; skyhook_finance.npv_M discounts year t's net flow by (1+rate)^t.
+    npv10 = sum(cf / 1.10 ** t for t, cf in enumerate(net, start=1))
+    return {"ratio": 2 * single, "tons": tons, "catch": catch, "total_capex": total, "payback": payback,
+            "cumulative": cumulative, "npv10": npv10, "v_orb": v_orb, "R": R}
 
 
 class TestLadderValues(unittest.TestCase):
@@ -262,6 +260,61 @@ class TestReconciliation(unittest.TestCase):
             else:
                 self.assertEqual(got["payback"], payback, scn)
 
+    def test_conservative_npv_reproduces_decision_log_item_8(self):
+        """DECISION_LOG.md:57 'NPV@10% -$3,883M over 15 years'. A 3% change in any Conservative cost row
+        or the ramp changes the rounded figure, so this pin is tight."""
+        m = re.search(r"conservative case \*\*fails the 15-year window\*\*: payback ~Y(\d+), NPV@10% −\$([\d,]+)M over 15 years", LOG)
+        self.assertIsNotNone(m, "DECISION_LOG excerpt still states the conservative NPV (item 8, line 57)")
+        published = -int(m.group(2).replace(",", ""))
+        got = workbook_chain("Conservative")
+        self.assertEqual(round(got["npv10"]), published)
+        self.assertEqual(workbook_chain("Conservative", years=40)["payback"], int(m.group(1)))
+        for key in ("electricity_per_kwh", "power_chain_efficiency", "ops_wear_per_kg", "fixed_ops_M", "revenue_ramp_y1"):
+            nudged = workbook_chain("Conservative", inputs=lambda k, s, key=key: ladder_value(k, s) * (1.03 if k == key else 1))
+            self.assertNotEqual(round(nudged["npv10"]), published, f"the NPV pin constrains {key}")
+
+    def test_the_payback_years_are_loose_pins(self):
+        """README 'How tight those pins are': on a 0.01 grid, Y9 and Y7 survive these single-input
+        scalings (inclusive) and change one step beyond each end."""
+        ranges = {  # (scenario, key): (lowest factor that keeps the year, highest)
+            ("Baseline", "revenue_ramp_y1"): (0.13, 1.33),
+            ("Baseline", "customer_price_per_kg"): (0.84, 1.08),
+            ("Baseline", "catches_per_day"): (0.83, 1.08),
+            ("Baseline", "power_chain_efficiency"): (0.04, None),
+            ("Baseline", "fixed_ops_M"): (None, 5.14),
+            ("Optimistic", "revenue_ramp_y1"): (0.32, 1.29),
+            ("Optimistic", "customer_price_per_kg"): (0.71, 1.22),
+            ("Optimistic", "catches_per_day"): (0.71, 1.22),
+        }
+        want = {"Baseline": 9, "Optimistic": 7}
+
+        def payback(scn, key, f):
+            return workbook_chain(scn, inputs=lambda k, s: ladder_value(k, s) * (f if k == key else 1))["payback"]
+
+        for (scn, key), (lo, hi) in ranges.items():
+            with self.subTest(scn=scn, key=key):
+                for f, keeps in ((lo, True), (hi, True), (lo and round(lo - 0.01, 2), False),
+                                 (hi and round(hi + 0.01, 2), False)):
+                    if f:
+                        self.assertEqual(payback(scn, key, f) == want[scn], keeps, f"x{f}")
+        for scn in want:
+            for key in ("electricity_per_kwh", "ops_wear_per_kg"):
+                for f in (0.01, 10):
+                    self.assertEqual(payback(scn, key, f), want[scn], f"{scn} {key} x{f}")
+
+    def test_earth_radius_convention(self):
+        """B33 = 6371 (physics/skyhook_physics.py:40), so R = 6981 km; rev_a.json's com_radius_km is 6988
+        (R_E 6378). The 4.59 km/s lower-tip pin cannot tell the two apart."""
+        self.assertEqual(constant("earth_radius_km"), 6371)
+        R = workbook_chain("Conservative")["R"]
+        self.assertEqual(R, 6981)
+        self.assertNotEqual(R, REV_A["orbital"]["com_radius_km"])
+        self.assertEqual(REV_A["orbital"]["com_radius_km"] - REV_A["orbital"]["com_altitude_km"], 6378)
+        other = workbook_chain("Conservative", constant=lambda k: 6378.0 if k == "earth_radius_km" else constant(k))
+        self.assertEqual(round(other["catch"], 2), round(workbook_chain("Conservative")["catch"], 2),
+                         "both radii round to rev_a.json's 4.59, so that pin does not choose between them")
+        self.assertAlmostEqual(other["v_orb"], REV_A["orbital"]["v_orb_kms"], places=2)
+
     def test_conservative_launch_price_is_the_one_decision_log_names(self):
         m = re.search(r"conservative column's own launch price is \$([\d,]+)/kg \(workbook Assumptions (B\d+)\)", LOG)
         self.assertIsNotNone(m)
@@ -273,9 +326,8 @@ class TestReconciliation(unittest.TestCase):
 
     @unittest.skipUnless(importlib.util.find_spec("openpyxl"), "openpyxl is not installed; the side-by-side read is skipped")
     def test_agrees_with_openpyxl_the_way_skyhook_finance_reads_it(self):
-        """finance/skyhook_finance.py:load_ladder_from_workbook reads ws[f"{col}{row}"].value with
-        openpyxl in read-only mode; the same 42 cells must give the same numbers here. Loaded with
-        data_only=True, openpyxl reports the cached value of every formula cell: None for all 146."""
+        """The 42 cells as load_ladder_from_workbook reads them (read_only, data_only=False) equal
+        this reader's; with data_only=True openpyxl gives None for all 146 formula cells."""
         import openpyxl
         wb = openpyxl.load_workbook(XLSX, read_only=True, data_only=False)
         ws = wb[ROWS["sheet"]]
@@ -311,8 +363,7 @@ class TestReconciliation(unittest.TestCase):
 
 
 class TestCensus(unittest.TestCase):
-    """Regression pins for what the file stores, read off the sheet XML at 34935cb; the three
-    judges' notes on the proposal reproduced 81/63/2 and 0 cached values independently."""
+    """Regression pins for what the file stores at 34935cb (81/63/2, 0 cached; the judges agree)."""
 
     def test_per_sheet_counts(self):
         cs = RESULT["census"]["sheets"]
@@ -358,6 +409,33 @@ class TestCensus(unittest.TestCase):
                     self.assertIsNone(c["cached"], f"{s['name']}!{c['ref']}")
                     self.assertTrue(c["formula"], f"{s['name']}!{c['ref']} has a formula body")
 
+    def test_equation_labels_predate_eq6(self):
+        """Finding 7: README!A3, A5 and Design Calcs!A1, E20 number the equations as before EQ-6/EQ-7,
+        now and before the fix; physics/skyhook_physics.py:13-16 is read when the checkout is
+        present. A relabelled workbook fails this test and retires the finding."""
+        stale = {
+            ("README", "A3"): "Design Calcs (physics, EQ 1-5)",
+            ("README", "A5"): "taper & Moravec/Forward mass ratio (EQ 4), ED reboost energy (EQ 5)",
+            ("Design Calcs", "A1"): "all formulas, per scenario (EQ 1-5)",
+            ("Design Calcs", "E20"): "EQ 5 momentum view: 2 v_orb v_tip",
+            ("Design Calcs", "E8"): "EQ 4 with ladder derate",
+        }
+        for wb in (WB, LE.read_workbook(PRE_FIX)):
+            grid = {(s["name"], c["ref"]): c for s in wb["sheets"] for c in s["cells"]}
+            for where, text in stale.items():
+                self.assertIn(text, grid[where]["value"], f"{wb['file']} {where}")
+            self.assertTrue(grid[("Design Calcs", "A8")]["value"].startswith("Derated char. velocity V_c"))
+            self.assertEqual(grid[("Design Calcs", "B11")]["formula"], "SQRT(PI())*B9*EXP(B9^2)*ERF(B9)")
+        physics = os.path.join(SKYHOOK, "physics", "skyhook_physics.py")
+        if not os.path.isfile(physics):
+            self.skipTest(f"{physics} is not present; the canonical numbering is cited, not read")
+        with open(physics, encoding="utf-8") as fh:
+            lines = fh.read().split("\n")
+        self.assertTrue(lines[12].strip().startswith("EQ-4  Characteristic velocity"), lines[12])
+        self.assertTrue(lines[13].strip().startswith("EQ-5  Taper ratio"), lines[13])
+        self.assertTrue(lines[14].strip().startswith("EQ-6  Integrated tether mass ratio"), lines[14])
+        self.assertTrue(lines[15].strip().startswith("EQ-7  Upper-tip release energy"), lines[15])
+
     def test_yellow_cells_are_the_weakest_assumptions(self):
         cs = RESULT["census"]["sheets"]
         self.assertEqual(cs["Assumptions"]["yellow_fill_cells"], ["B8", "C8", "D8"])
@@ -373,7 +451,9 @@ class TestCensus(unittest.TestCase):
         self.assertEqual(w["media"], [{"member": "xl/media/image1.png", "bytes": 53976,
                                        "md5": "11384969e42362346381174c57ddc7ae"}])
         self.assertTrue(w["legend"].startswith("Color code: BLUE = hardcoded inputs"))
-        self.assertEqual([c["ok"] for c in RESULT["checks"]], [True] * 6)
+        self.assertEqual([c["ok"] for c in RESULT["checks"]], [True] * 4)
+        self.assertEqual([c["name"] for c in RESULT["checks"]], ["ladder-blue", "no-blue-formula", "green-are-links", "design-point"])
+        self.assertEqual([g["name"] for g in RESULT["guards"]], ["ladder-rows", "ladder-literals"])
 
     def test_styles_read_the_legend_colours(self):
         grid = {(s["name"], c["ref"]): c for s in WB["sheets"] for c in s["cells"]}
@@ -428,7 +508,7 @@ class TestParser(unittest.TestCase):
             r = i + 3
             rows.append(f'<row r="{r}"><c r="A{r}" t="s"><v>{4 + i}</v></c>'
                         + "".join(f'<c r="{col}{r}"><v>{v}</v></c>' for col, v in zip("BCD", vals))
-                        + (f'<c r="F{r}"><f>B{r}*2</f><v>{vals[0] * 2}</v></c>' if i == 0 else "")
+                        + (f'<c r="F{r}"><f>B{r}*2</f><v>{vals[0] * 2}</v></c><c r="G{r}"><f>B{r}*3</f><v/></c>' if i == 0 else "")
                         + "</row>")
         sheet = f'<worksheet {SHEET_NS}><sheetData>{"".join(rows)}</sheetData></worksheet>'
         wbxml = ('<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
@@ -449,11 +529,34 @@ class TestParser(unittest.TestCase):
             self.assertEqual([res["ladder"]["rows"][k]["values"][s] for s in SCN], [float(v) for v in vals], k)
         self.assertFalse(res["ladder"]["rows"]["strength_retention"]["blue"], "no styles part: nothing is blue")
         c = res["census"]["sheets"]["Assumptions"]
-        self.assertEqual((c["formula_cells"], c["formula_cells_with_cached_value"], c["cached_refs"]), (1, 1, ["F3"]))
-        self.assertIn("1 of them with a cached result", res["finding"])
-        self.assertFalse(res["checks"][2]["ok"], "ladder-blue reports the missing input styling")
+        self.assertEqual((c["formula_cells"], c["formula_cells_with_cached_value"], c["cached_refs"]), (2, 1, ["F3"]))
+        self.assertIn("2 formula cells, 1 of them with a cached result stored in the file; the other 1 store none",
+                      res["finding"])
+        checks = {c["name"]: c["ok"] for c in res["checks"]}
+        self.assertFalse(checks["ladder-blue"], "ladder-blue reports the missing input styling")
         self.assertEqual(res["design_point"]["entries"], {})
-        self.assertFalse(res["checks"][5]["ok"])
+        self.assertFalse(checks["design-point"])
+
+    def test_any_relationships_prefix_and_single_quotes(self):
+        """The relationship id is found by namespace, not the literal 'r:', and single quotes are XML
+        too (bluecells.test.mjs runs the same XML)."""
+        wbxml = ("<x:workbook xmlns:x='http://schemas.openxmlformats.org/spreadsheetml/2006/main' "
+                 "xmlns:rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships'>"
+                 "<x:sheets><x:sheet name='Only' sheetId='1' rel:id='rId7'></x:sheet></x:sheets></x:workbook>")
+        rels = ("<Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'>"
+                "<Relationship Id='rId7' Type='x' Target='/xl/worksheets/one.xml'/></Relationships>")
+        sheet = ("<x:worksheet xmlns:x='http://schemas.openxmlformats.org/spreadsheetml/2006/main'><x:sheetData>"
+                 "<x:row r='1'><x:c r='A1' t='inlineStr'><x:is><x:t>hi</x:t></x:is></x:c><x:c r='B1'><x:v>7</x:v></x:c>"
+                 "</x:row></x:sheetData></x:worksheet>")
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("xl/workbook.xml", wbxml)
+            z.writestr("xl/_rels/workbook.xml.rels", rels)
+            z.writestr("xl/worksheets/one.xml", sheet)
+        wb = LE.read_workbook(buf.getvalue(), name="prefixed.xlsx")
+        self.assertEqual([(s["name"], s["part"]) for s in wb["sheets"]], [("Only", "xl/worksheets/one.xml")])
+        self.assertEqual([(c["ref"], c["kind"], c["value"]) for c in wb["sheets"][0]["cells"]],
+                         [("A1", "string", "hi"), ("B1", "number", 7.0)])
 
     def test_missing_shared_strings_part_is_a_workbook_error(self):
         xml = f'<worksheet {SHEET_NS}><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>'.encode()
@@ -471,8 +574,7 @@ class TestParser(unittest.TestCase):
 
 
 def _swap_rows_in_snapshot(a, b):
-    """The snapshot with Assumptions rows a and b exchanged, in memory (what build_data.py does for
-    the committed fixture, without dropping the chart)."""
+    """The snapshot with Assumptions rows a and b exchanged, in memory, chart kept."""
     sys.path.insert(0, HERE)
     import build_data  # noqa: E402
     with zipfile.ZipFile(io.BytesIO(XLSX_BYTES)) as zin:
@@ -484,6 +586,28 @@ def _swap_rows_in_snapshot(a, b):
                     data = build_data.swap_rows(data.decode(), a, b).encode()
                 zout.writestr(name, data)
     return out.getvalue()
+
+
+def corrupt_sheet2():
+    """(flipped, bad_crc): sheet2.xml with one deflate byte inverted, or its CRC-32 changed in both headers."""
+    data = bytearray(XLSX_BYTES)
+    with zipfile.ZipFile(io.BytesIO(XLSX_BYTES)) as z:
+        info = z.getinfo("xl/worksheets/sheet2.xml")
+        cd_offset = z.start_dir
+    off = info.header_offset
+    name_len, extra_len = struct.unpack("<HH", data[off + 26:off + 30])
+    start = off + 30 + name_len + extra_len
+    flipped = bytearray(data)
+    flipped[start + 50] ^= 0xFF
+    bad = bytearray(data)
+    bad[off + 14] ^= 0x01
+    p = cd_offset
+    while struct.unpack("<I", bad[p:p + 4])[0] == 0x02014B50:
+        n, x, c = struct.unpack("<HHH", bad[p + 28:p + 34])
+        if bad[p + 46:p + 46 + n] == b"xl/worksheets/sheet2.xml":
+            bad[p + 16] ^= 0x01
+        p += 46 + n + x + c
+    return bytes(flipped), bytes(bad)
 
 
 def _edit_sheet2(fn):
@@ -515,7 +639,7 @@ class TestRefusals(unittest.TestCase):
         with self.assertRaises(LE.LadderError) as cm:
             LE.analyze(wb, ROWS)
         self.assertIn("ladder row 5 (construction_launch_per_kg)", str(cm.exception))
-        # the swap moved the yellow fill too: row 8 is untouched, so the weakest-assumption cells still read B8:D8
+        # row 8 is untouched: yellow is still B8:D8
         self.assertEqual(LE.census(wb["sheets"][1])["yellow_fill_cells"], ["B8", "C8", "D8"])
 
     def test_formula_in_a_ladder_cell_is_refused(self):
@@ -546,6 +670,20 @@ class TestRefusals(unittest.TestCase):
             LE.analyze(WB, rows)
         self.assertIn("no sheet named 'Inputs'", str(cm.exception))
 
+    def test_a_corrupt_member_is_a_workbook_error_not_a_crash(self):
+        """sheet2.xml damaged under an intact central directory (a flipped deflate byte, a changed CRC)
+        is 'cannot read', naming the member, never an uncaught zlib.error/BadZipFile."""
+        flipped, bad_crc = corrupt_sheet2()
+        with self.assertRaises(LE.WorkbookError) as cm:
+            LE.read_workbook(flipped, name="flipped.xlsx")
+        self.assertIn("member xl/worksheets/sheet2.xml could not be read", str(cm.exception))
+        self.assertIn("decompressing", str(cm.exception))
+        with self.assertRaises(LE.WorkbookError) as cm:
+            LE.read_workbook(bad_crc, name="badcrc.xlsx")
+        self.assertIn("member xl/worksheets/sheet2.xml could not be read: Bad CRC-32", str(cm.exception))
+        with self.assertRaises(LE.WorkbookError):
+            LE.read_workbook(XLSX_BYTES[:40000], name="truncated.xlsx")
+
     def test_not_a_zip_is_a_workbook_error(self):
         with self.assertRaises(LE.WorkbookError):
             LE.read_workbook(b"PK not really", name="x.xlsx")
@@ -553,10 +691,91 @@ class TestRefusals(unittest.TestCase):
             LE.read_workbook(os.path.join(SNAPS, "rev_a.json"))
 
 
+CASES = os.path.join(HERE, "fixtures", "malformed_cases.json")
+
+
+def build_case(case: dict) -> bytes:
+    """The case's base workbook with one member edited, re-zipped (the JS suite does the same)."""
+    with open(os.path.join(HERE, _load(CASES)["bases"][case.get("base", "snapshot")]), "rb") as fh:
+        base = fh.read()
+    with zipfile.ZipFile(io.BytesIO(base)) as zin:
+        out = io.BytesIO()
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zout:
+            for name in zin.namelist():
+                data = zin.read(name)
+                if name == case.get("member", "xl/worksheets/sheet2.xml"):
+                    if "replace" in case:
+                        old, new = (s.encode() for s in case["replace"])
+                        assert old in data, case["name"]
+                        data = data.replace(old, new, 1)
+                    elif "truncate" in case:
+                        data = data[:-case["truncate"]]
+                    else:
+                        after, byte = case["insert_byte"]
+                        i = data.index(after.encode()) + len(after.encode())
+                        data = data[:i] + bytes([byte]) + data[i:]
+                zout.writestr(name, data)
+    return out.getvalue()
+
+
+def verdict(data: bytes):
+    """('ok', result) | ('unreadable', message) | ('refused', message)."""
+    try:
+        return "ok", LE.analyze(LE.read_workbook(data, name="case.xlsx"), ROWS)
+    except LE.WorkbookError as e:
+        return "unreadable", str(e)
+    except LE.LadderError as e:
+        return "refused", str(e)
+
+
+class TestCraftedDamage(unittest.TestCase):
+    """fixtures/malformed_cases.json, shared with the JavaScript suite: both readers give each case the
+    same verdict, and the CLI's exit code follows it."""
+
+    def test_each_case_gets_its_verdict_and_message(self):
+        cases = _load(CASES)["cases"]
+        self.assertGreaterEqual(len(cases), 20)
+        for case in cases:
+            with self.subTest(case["name"]):
+                kind, got = verdict(build_case(case))
+                self.assertEqual(kind, case["expect"], got if isinstance(got, str) else "read without complaint")
+                if kind == "ok":
+                    key, scn, want = case["value"]
+                    self.assertEqual(got["ladder"]["rows"][key]["values"][scn], want)
+                    failed = [c["name"] for c in got["checks"] if not c["ok"]]
+                    self.assertEqual(failed, [case["failedCheck"]] if "failedCheck" in case else [])
+                else:
+                    self.assertIn(case["message"], got)
+
+    def test_the_cli_exit_code_follows_the_verdict_and_json_stays_json(self):
+        import tempfile
+        codes = {"ok": 0, "refused": 1, "unreadable": 2}
+        with tempfile.TemporaryDirectory() as tmp:
+            for i, case in enumerate(_load(CASES)["cases"]):
+                with self.subTest(case["name"]):
+                    path = os.path.join(tmp, f"case{i}.xlsx")
+                    with open(path, "wb") as fh:
+                        fh.write(build_case(case))
+                    out, err = io.StringIO(), io.StringIO()
+                    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                        code = LE.main([path, "--format", "json"])
+                    self.assertEqual(code, codes[case["expect"]], err.getvalue())
+                    self.assertNotIn("Traceback", err.getvalue())
+                    if code == 0:  # strict JSON: a bare NaN/Infinity raises
+                        json.loads(out.getvalue(), parse_constant=lambda n: 1 / 0)
+                    else:
+                        self.assertEqual(out.getvalue(), "")
+
+    def test_json_output_refuses_a_non_finite_number(self):
+        with self.assertRaises(ValueError):
+            LE.to_json({"x": float("nan")})
+        with self.assertRaises(ValueError):
+            LE.to_js({"x": float("inf")})
+
+
 @functools.lru_cache(maxsize=None)
 def recalculated():
-    """The snapshot as re-saved by headless LibreOffice (build_data.py): every formula carries the
-    result LibreOffice computed, strings live in a shared-strings part."""
+    """The snapshot re-saved by headless LibreOffice (build_data.py): cached results, shared strings."""
     wb = LE.read_workbook(RECALC)
     res = LE.analyze(wb, ROWS)
     grid = {(s["name"], c["ref"]): c for s in wb["sheets"] for c in s["cells"]}
@@ -570,14 +789,14 @@ def cached_number(grid, sheet, ref):
 
 
 class TestRecalculatedCopy(unittest.TestCase):
-    """A copy saved by a spreadsheet program is the shape this reader must also handle, and its
-    cached values are an independent engine's evaluation of the workbook's formulas."""
+    """A spreadsheet-saved copy: a shape this reader must handle, and an independent evaluation."""
 
     def test_census_shared_strings_and_the_same_ladder(self):
         wb, res, grid = recalculated()
         self.assertTrue(wb["application"].startswith("LibreOffice"), wb["application"])
         self.assertEqual(wb["shared_strings"], 158)
-        self.assertEqual(wb["members"], 19)
+        self.assertEqual(wb["members"], 15, "the chart parts were removed before LibreOffice saved it")
+        self.assertEqual(wb["media"], [])
         t = res["census"]["totals"]
         self.assertEqual((t["formula_cells"], t["formula_cells_with_cached_value"]), (146, 146))
         for name, c in res["census"]["sheets"].items():
@@ -585,9 +804,9 @@ class TestRecalculatedCopy(unittest.TestCase):
             self.assertEqual((c["literal_numbers"], c["strings"], c["blue_cells"]),
                              (RESULT["census"]["sheets"][name]["literal_numbers"], RESULT["census"]["sheets"][name]["strings"],
                               RESULT["census"]["sheets"][name]["blue_cells"]), name)
-        self.assertIn("146 of them with a cached result", res["finding"])
+        self.assertIn("146 formula cells, all 146 with a cached result", res["finding"])
         self.assertNotEqual(res["workbook"]["md5"], RESULT["workbook"]["md5"])
-        self.assertEqual([c["ok"] for c in res["checks"]], [True] * 6)
+        self.assertEqual([c["ok"] for c in res["checks"]], [True] * 4)
         for key, row in RESULT["ladder"]["rows"].items():
             self.assertEqual(res["ladder"]["rows"][key]["values"], row["values"], key)
             self.assertTrue(res["ladder"]["rows"][key]["blue"], key)
@@ -615,16 +834,17 @@ class TestRecalculatedCopy(unittest.TestCase):
         b16 = grid[("Cash Flow & Payback", "B16")]
         self.assertEqual((b16["t"], b16["cached"]), ("str", "beyond Y15"), "payback cell is a string result")
         self.assertLess(cached_number(grid, "Cash Flow & Payback", "P15"), 0, "cumulative cash at Y15 is negative")
+        # B15:P15 (Conservative selector) against the transcription
+        mine = workbook_chain("Conservative")["cumulative"]
+        for i, col in enumerate("BCDEFGHIJKLMNOP"):
+            self.assertAlmostEqual(cached_number(grid, "Cash Flow & Payback", f"{col}15"), mine[i], places=6, msg=col)
         pb = [grid[("Phase Budgets", f"{c}{r}")]["value"] for c in "BC" for r in range(3, 7)]
         self.assertEqual(cached_number(grid, "Phase Budgets", "B7"), sum(pb[:4]))
         self.assertEqual(cached_number(grid, "Phase Budgets", "C7"), sum(pb[4:]))
 
     def test_erf_audit_block_fails_under_spreadsheet_precedence(self):
-        """Design Calcs rows 28-31 cross-check Excel's ERF() against Abramowitz & Stegun 7.1.26 and
-        say the difference 'should be < 2e-7'. The approximation is written EXP(-B9^2); spreadsheet
-        programs bind unary minus tighter than ^, so that is EXP((-B9)^2) = EXP(+x^2) and the
-        cross-check fails by about 5.8. Pinned here so a fixed workbook makes this test fail and
-        the README's finding gets retired."""
+        """Finding 6: rows 28-31 check ERF() against A&S 7.1.26, "should be < 2e-7". EXP(-B9^2) binds
+        as EXP((-B9)^2) in spreadsheets, so the check fails by about 5.8. A fixed workbook fails this."""
         _, _, grid = recalculated()
         x = cached_number(grid, "Design Calcs", "B9")
         t = cached_number(grid, "Design Calcs", "B28")
@@ -643,6 +863,84 @@ class TestRecalculatedCopy(unittest.TestCase):
         self.assertIn("should be < 2e-7", grid[("Design Calcs", "E31")]["value"])
         for col in "CD":
             self.assertGreater(cached_number(grid, "Design Calcs", f"{col}31"), 1.0, col)
+
+
+@functools.lru_cache(maxsize=None)
+def pre_fix():
+    wb = LE.read_workbook(PRE_FIX)
+    grid = {(s["name"], c["ref"]): c for s in wb["sheets"] for c in s["cells"]}
+    return wb, grid
+
+
+class TestPreFixWorkbook(unittest.TestCase):
+    """The workbook before the ladder fix (blob 46bc02e at 7bb5b5f, parent of the fix 2c27b05); the
+    local Skyhook checkout is shallow (from 30419ef), so it is not there."""
+
+    def test_blob_id_is_the_one_github_reports(self):
+        with open(PRE_FIX, "rb") as fh:
+            data = fh.read()
+        self.assertEqual(hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest(),
+                         "46bc02ed26367805f0e920b00a52de9098e42613")
+        # the same function gives the snapshot its sidecar blob
+        self.assertEqual(hashlib.sha1(b"blob %d\0" % len(XLSX_BYTES) + XLSX_BYTES).hexdigest(), PROV["committedBlob"])
+
+    def test_it_stored_134_results_written_by_libreoffice(self):
+        wb, _ = pre_fix()
+        self.assertTrue(wb["application"].startswith("LibreOffice/24.2.7.2"), wb["application"])
+        per = {s["name"]: LE.census(s) for s in wb["sheets"]}
+        self.assertEqual({n: (c["formula_cells"], c["formula_cells_with_cached_value"]) for n, c in per.items()},
+                         {"README": (0, 0), "Assumptions": (0, 0), "Design Calcs": (69, 69),
+                          "Phase Budgets": (2, 2), "Cash Flow & Payback": (63, 63)})
+        self.assertEqual(LE.totals(per)["formula_cells"], 134, "docs/original_README.md:29's '134 live formulas'")
+
+    def test_the_twelve_formulas_added_since_are_the_erf_audit_block(self):
+        wb, _ = pre_fix()
+
+        def formulas(w, name):
+            s = next(s for s in w["sheets"] if s["name"] == name)
+            return {c["ref"]: c["formula"] for c in s["cells"] if c["kind"] == "formula"}
+        for name in ("Design Calcs", "Phase Budgets", "Cash Flow & Payback"):
+            old, new = formulas(wb, name), formulas(WB, name)
+            added = sorted(set(new) - set(old))
+            self.assertEqual(set(old) - set(new), set(), name)
+            self.assertEqual({r: new[r] for r in old}, old, f"{name}: every pre-fix formula is unchanged")
+            self.assertEqual(added, [f"{c}{r}" for c in "BCD" for r in range(28, 32)] if name == "Design Calcs" else [], name)
+        self.assertFalse(any(c["kind"] == "string" and "ERF" in (c["value"] or "") for s in wb["sheets"] for c in s["cells"]))
+
+    def test_the_a18_note_was_true_before_the_fix_and_was_kept_after_it(self):
+        _, grid = pre_fix()
+        now = {(s["name"], c["ref"]): c for s in WB["sheets"] for c in s["cells"]}
+        note = grid[("Cash Flow & Payback", "A18")]["value"]
+        self.assertIn("Conservative scenario also spins slower (row 15), per Rule 2.3.", note)
+        self.assertEqual(now[("Cash Flow & Payback", "A18")]["value"], note, "unchanged by the fix")
+        self.assertIn("conservative spins slower", grid[("Assumptions", "A15")]["value"])
+        self.assertEqual([grid[("Assumptions", f"{c}15")]["value"] for c in "BCD"], [2.0, 2.8, 3.5])
+        self.assertEqual([ladder_value("tip_speed_kms", s) for s in SCN], [2.5, 2.5, 2.5])
+
+    def test_its_stored_results_are_the_formula_chain_on_its_own_inputs(self):
+        """A second, older LibreOffice evaluation, on different inputs, against the transcription."""
+        wb, grid = pre_fix()
+        cols = ROWS["columns"]
+        dp = LE.extract_block(wb, "Assumptions", LE.DESIGN_POINT_HEADER, (LE.CONSTANTS_HEADER, LE.LADDER_HEADER))["entries"]
+        cs = LE.extract_block(wb, "Assumptions", LE.CONSTANTS_HEADER, (LE.DESIGN_POINT_HEADER, LE.LADDER_HEADER))["entries"]
+        got = workbook_chain("Conservative",
+                             inputs=lambda k, s: grid[("Assumptions", f"{cols[s]}{ROWS['rows'][k]}")]["value"],
+                             design=lambda k: dp[k]["value"], constant=lambda k: cs[k]["value"])
+        self.assertEqual(grid[("Cash Flow & Payback", "B2")]["value"], "Conservative")
+        self.assertAlmostEqual(got["ratio"], 2 * cached_number(grid, "Design Calcs", "B11"), places=9)
+        self.assertAlmostEqual(got["total_capex"], cached_number(grid, "Cash Flow & Payback", "B4"), places=6)
+        self.assertEqual(got["payback"], int(cached_number(grid, "Cash Flow & Payback", "B16")))
+        self.assertEqual(got["payback"], 15)
+        self.assertEqual(round(got["total_capex"]), 7085, "not the post-fix $8,741M: the file never stored those")
+
+    def test_the_row_guard_refuses_it_on_row_3(self):
+        wb, _ = pre_fix()
+        with self.assertRaises(LE.LadderError) as cm:
+            LE.analyze(wb, ROWS)
+        msg = str(cm.exception)
+        self.assertIn("ladder row 3 (strength_retention): column A reads 'Fiber strength derate (joints/weave/aging)', "
+                      "expected a label containing 'strength retention'", msg)
+        self.assertEqual(msg.count("ladder row"), 1, "only row 3's label changed in the fix")
 
 
 class TestOutputs(unittest.TestCase):
@@ -670,7 +968,8 @@ class TestOutputs(unittest.TestCase):
         self.assertIn("  construction_launch_per_kg            2500          1500           800  B5:D5    "
                       "Launch price during construction ($/kg)", rep)
         self.assertIn("  TOTAL                     395       146       0       81      164    63      5       4", rep)
-        self.assertIn("Checks    6 of 6 passed", rep)
+        self.assertIn("Checks    4 of 4 passed (reported, not enforced)", rep)
+        self.assertIn("  held ladder-rows: 14 rows from finance/skyhook_finance.py found where the map says", rep)
         self.assertIn("provenance  https://github.com/hudsonclavin-cloud/skyhook tools/financial/skyhook_financial_model.xlsx @ 34935cb", rep)
 
 
@@ -720,6 +1019,100 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
         self.assertIn("not a zip archive", r.stderr)
         self.assertEqual(self.run_cli("--rows-map", "/nonexistent.json").returncode, 2)
+        r = self.run_cli("--rows-map", os.path.join(SNAPS, "decision_grid.json"))
+        self.assertEqual((r.returncode, "Traceback" in r.stderr), (2, False), r.stderr)
+        self.assertIn("the row map must hold", r.stderr)
+
+    def test_a_corrupt_member_exits_2_without_a_traceback(self):
+        import tempfile
+        flipped, bad_crc = corrupt_sheet2()
+        with tempfile.TemporaryDirectory() as tmp:
+            for label, data in (("flipped", flipped), ("badcrc", bad_crc)):
+                path = os.path.join(tmp, f"{label}.xlsx")
+                with open(path, "wb") as fh:
+                    fh.write(data)
+                r = self.run_cli(path)
+                self.assertEqual(r.returncode, 2, f"{label}: {r.stderr}")
+                self.assertNotIn("Traceback", r.stderr, label)
+                self.assertIn("cannot read the workbook — member xl/worksheets/sheet2.xml could not be read", r.stderr)
+                self.assertEqual(r.stdout, "")
+
+    def test_an_internal_error_exits_3_not_1(self):
+        def broken(*_a, **_k):
+            raise KeyError("a bug")
+        err = io.StringIO()
+        original = LE.analyze
+        LE.analyze = broken
+        try:
+            with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                code = LE.main([XLSX])
+        finally:
+            LE.analyze = original
+        self.assertEqual(code, 3)
+        self.assertIn("internal error", err.getvalue())
+        self.assertIn("KeyError", err.getvalue())
+
+    def test_an_output_it_cannot_write_exits_2_without_a_traceback(self):
+        """A missing directory, a directory, a closed stdout, a bad sidecar or row map: exit 2, one
+        line, never exit 1 (a refusal)."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = os.path.join(tmp, "no_such_dir", "ladder.json")
+            r = self.run_cli("--out", missing)
+            self.assertEqual((r.returncode, "Traceback" in r.stderr), (2, False), r.stderr)
+            self.assertEqual(r.stderr, f"ladder_export.py: cannot write {missing} — [Errno 2] No such file or directory: "
+                                       f"'{missing}'\n")
+            self.assertEqual(r.stdout, "")
+            r = self.run_cli("--js", tmp)
+            self.assertEqual((r.returncode, "Traceback" in r.stderr), (2, False), r.stderr)
+            self.assertTrue(r.stderr.startswith(f"ladder_export.py: cannot write {tmp} — "), r.stderr)
+            self.assertEqual(r.stderr.count("\n"), 1)
+            prov = os.path.join(tmp, "list.json")
+            with open(prov, "w", encoding="utf-8") as fh:
+                fh.write("[1, 2]")
+            r = self.run_cli("--provenance", prov)
+            self.assertEqual((r.returncode, "Traceback" in r.stderr), (2, False), r.stderr)
+            self.assertIn("the provenance sidecar must be a JSON object", r.stderr)
+            rows = os.path.join(tmp, "rows.json")
+            with open(rows, "w", encoding="utf-8") as fh:
+                json.dump(dict(ROWS, scenarios=[["Conservative"]]), fh)
+            r = self.run_cli("--rows-map", rows)
+            self.assertEqual((r.returncode, "Traceback" in r.stderr), (2, False), r.stderr)
+        # stdout whose reader has gone (EPIPE)
+        rd, wr = os.pipe()
+        os.close(rd)
+        try:
+            p = subprocess.run([sys.executable, "-I", os.path.join(HERE, "ladder_export.py")],
+                               stdout=wr, stderr=subprocess.PIPE, text=True, cwd=HERE)
+        finally:
+            os.close(wr)
+        self.assertEqual((p.returncode, "Traceback" in p.stderr), (2, False), p.stderr)
+        self.assertEqual(p.stderr, "ladder_export.py: cannot write standard output — [Errno 32] Broken pipe\n")
+
+    def test_an_internal_error_while_writing_exits_3_not_1(self):
+        def broken(*_a, **_k):
+            raise KeyError("a bug in to_js")
+        import tempfile
+        err = io.StringIO()
+        original = LE.to_js
+        LE.to_js = broken
+        try:
+            with tempfile.TemporaryDirectory() as tmp, contextlib.redirect_stderr(err), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                code = LE.main([XLSX, "--js", os.path.join(tmp, "x.js")])
+        finally:
+            LE.to_js = original
+        self.assertEqual(code, 3)
+        self.assertIn("a bug in to_js", err.getvalue())
+
+    def test_census_reads_a_file_the_row_map_refuses(self):
+        r = self.run_cli(PRE_FIX)
+        self.assertEqual(r.returncode, 1)
+        r = self.run_cli("--census", PRE_FIX)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("  TOTAL                     372       134     134       81      153    63      5       4", r.stdout)
+        self.assertIn("This workbook holds 134 formula cells, all 134 with a cached result", r.stdout)
+        self.assertNotIn("Ladder", r.stdout)
 
     def test_example_txt_matches_a_live_run_when_the_checkout_is_present(self):
         with open(os.path.join(HERE, "example.txt"), encoding="utf-8") as fh:

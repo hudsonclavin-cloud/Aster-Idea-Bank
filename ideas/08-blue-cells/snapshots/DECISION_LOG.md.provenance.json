@@ -8,9 +8,9 @@
   "readBlob": "79e205e9e6d67dad2ce2583e3c2f455d9f183866",
   "sourceSha256": "e535473dec7beb9f2d261aeea2c069a39a400c3fecde2317b2486d651c2c54d7",
   "sourceBytes": 12615,
-  "copiedAt": "2026-10-26T10:36:02.093Z",
+  "copiedAt": "2026-10-26T15:25:23.439Z",
   "mode": "derived",
-  "note": "derived by build_data.py: lines 45-57 (item 6, the workbook ladder conflation and its fix, with the 'post-fix workbook results') copied verbatim, every other line left empty so line numbers match the source",
+  "note": "derived by build_data.py: lines 45-57 (items 6-8: the workbook ladder fix and its 'post-fix workbook results' at :47, item 7's '$2,500/kg (workbook Assumptions B5)' at :51, item 8's conservative NPV@10% at :57) copied verbatim, every other line left empty so line numbers match the source",
   "readMatchesCommitted": true,
   "writtenSha256": "4cf00e32efe77986c41a8b651f3d9339dd4446a72345bebbc7e9c229c0303905",
   "writtenBytes": 2108

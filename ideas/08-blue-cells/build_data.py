@@ -1,42 +1,21 @@
 #!/usr/bin/env python3
-"""Derive the small data files this idea needs from a Skyhook checkout.
+"""Derive this idea's small data files from a Skyhook checkout (README "Data" has the details).
 
     python3 ideas/08-blue-cells/build_data.py [/home/user/skyhook]
 
 Writes only inside ideas/08-blue-cells/:
-
-  snapshots/ladder_rows.json     the row map ladder_export.py keys the ladder by: _LADDER_ROWS,
-                                 SCENARIOS and the column letters, read out of
-                                 finance/skyhook_finance.py with the ast module (never retyped),
-                                 with the line numbers they were read from; provenance sidecar
-                                 written by the bank's tools/snapshot.mjs --sidecar-only.
-  snapshots/DECISION_LOG.md      lines 45-57 of docs/DECISION_LOG.md (item 6, the workbook ladder
-                                 fix and its "post-fix workbook results") copied verbatim with every
-                                 other line left empty so file:line still matches the repository;
-                                 the tests parse the published figures out of this excerpt.
-  fixtures/shuffled_assumptions.xlsx
-                                 the snapshot workbook with Assumptions rows 5 and 10 swapped
-                                 (launch price <-> customer price) and the embedded chart PNG,
-                                 its drawing and their relationship parts removed so the fixture
-                                 stays small. ladder_export.py must refuse it: the row map says
-                                 row 5 is construction_launch_per_kg, the label there now says
-                                 "Boost price to customer". Not a snapshot of anything, so it
-                                 lives under fixtures/ and carries no sidecar.
-  fixtures/recalculated_by_libreoffice.xlsx
-                                 the snapshot workbook opened and re-saved by headless LibreOffice
-                                 (soffice --headless --convert-to xlsx), which recalculates every
-                                 formula and stores the results, and writes strings to a shared-
-                                 strings part: the shape a copy saved by a spreadsheet program has.
-                                 Only written when `soffice` is on PATH; the bytes are not
-                                 reproducible (LibreOffice stamps the file), the values are. The
-                                 tests use its cached values as an independent engine's evaluation
-                                 of the workbook's formulas.
-
-The three raw snapshots (skyhook_financial_model.xlsx whole, rev_a.json excerpt,
-decision_grid.json excerpt) are taken directly with tools/snapshot.mjs; the exact commands are in
-README.md. This script does not take them, so re-running it never silently refreshes a snapshot.
+  snapshots/ladder_rows.json   _LADDER_ROWS, SCENARIOS and the column letters, read out of
+                               finance/skyhook_finance.py with ast (never retyped), plus a sidecar.
+  snapshots/DECISION_LOG.md    docs/DECISION_LOG.md lines 45-57 (items 6-8) verbatim, every other
+                               line empty so file:line matches; plus a sidecar.
+  fixtures/shuffled_assumptions.xlsx           Assumptions rows 5 and 10 swapped, chart removed.
+  fixtures/recalculated_by_libreoffice.xlsx    chart removed, re-saved by soffice (when on PATH).
+  fixtures/pre_fix_7bb5b5f.xlsx                blob 46bc02e, from the checkout or a read-only
+                                               `gh api` GET; written only if the bytes hash to it.
+The three raw snapshots are taken with tools/snapshot.mjs (README "Data"), never by this script.
 """
 import ast
+import hashlib
 import io
 import json
 import os
@@ -56,6 +35,18 @@ FIXTURES = os.path.join(HERE, "fixtures")
 FINANCE_PY = "finance/skyhook_finance.py"
 DECISION_LOG = "docs/DECISION_LOG.md"
 DECISION_LOG_LINES = (45, 57)
+
+# The pre-fix workbook: GitHub's blob id for the path at 7bb5b5f (and at e0ff4d8, 800e58f).
+PRE_FIX_BLOB = "46bc02ed26367805f0e920b00a52de9098e42613"
+PRE_FIX_COMMIT = "7bb5b5f"
+PRE_FIX_PATH = "tools/financial/skyhook_financial_model.xlsx"
+GITHUB_REPO = "hudsonclavin-cloud/skyhook"
+CHART_PARTS = ("xl/media/", "xl/drawings/", "xl/worksheets/_rels/sheet5.xml.rels")
+
+
+def git_blob_id(data: bytes) -> str:
+    """The id git gives a blob: sha1 of 'blob <length>\\0' followed by the bytes."""
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
 
 
 def sidecar(repo, rel, dest, note):
@@ -124,18 +115,18 @@ def swap_rows(sheet_xml, a, b):
     return xml.replace(marker_a, rb).replace(marker_b, ra)
 
 
-def build_shuffled_fixture(src_xlsx, dest):
-    drop = ("xl/media/", "xl/drawings/", "xl/worksheets/_rels/sheet5.xml.rels")
+def without_chart(src_xlsx, dest, swap=None):
+    """The workbook without chart parts (rows swap=(a, b) exchanged); returns the byte count."""
     with zipfile.ZipFile(src_xlsx) as zin:
         names = zin.namelist()
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zout:
             for name in names:
-                if name.startswith(drop) or name == drop[2]:
+                if name.startswith(CHART_PARTS):
                     continue
                 data = zin.read(name)
-                if name == "xl/worksheets/sheet2.xml":
-                    data = swap_rows(data.decode("utf-8"), 5, 10).encode("utf-8")
+                if name == "xl/worksheets/sheet2.xml" and swap:
+                    data = swap_rows(data.decode("utf-8"), *swap).encode("utf-8")
                 elif name == "xl/worksheets/sheet5.xml":
                     data = re.sub(rb'<drawing [^>]*/>', b"", data)
                 elif name == "[Content_Types].xml":
@@ -150,8 +141,8 @@ def build_shuffled_fixture(src_xlsx, dest):
 
 
 def recalculate_with_libreoffice(src_xlsx, dest):
-    """Open and re-save the workbook with headless LibreOffice so every formula gets a cached value.
-    Returns the byte count, or None when soffice is not installed or the conversion fails."""
+    """Open and re-save the workbook (chart removed) with headless LibreOffice so every formula gets
+    a cached value. Returns the byte count, or None when soffice is not installed or it fails."""
     soffice = shutil.which("soffice") or shutil.which("libreoffice")
     if not soffice:
         return None
@@ -160,7 +151,7 @@ def recalculate_with_libreoffice(src_xlsx, dest):
         os.makedirs(src_dir)
         os.makedirs(out_dir)
         staged = os.path.join(src_dir, os.path.basename(src_xlsx))
-        shutil.copy(src_xlsx, staged)
+        without_chart(src_xlsx, staged)
         r = subprocess.run([soffice, "--headless", "--norestore", "--convert-to", "xlsx:Calc MS Excel 2007 XML",
                             "--outdir", out_dir, staged], capture_output=True, text=True, timeout=300,
                            env=dict(os.environ, HOME=tmp))
@@ -170,6 +161,29 @@ def recalculate_with_libreoffice(src_xlsx, dest):
             return None
         shutil.copy(produced, dest)
         return os.path.getsize(dest)
+
+
+def fetch_pre_fix(repo, dest):
+    """The pre-fix workbook from the checkout, else a read-only GitHub GET; written only if the
+    bytes hash to PRE_FIX_BLOB. Returns where it came from, or None."""
+    data, source = None, None
+    r = subprocess.run(["git", "-C", repo, "cat-file", "blob", PRE_FIX_BLOB], capture_output=True)
+    if r.returncode == 0:
+        data, source = r.stdout, f"git cat-file blob {PRE_FIX_BLOB[:7]} in {repo}"
+    elif shutil.which("gh"):
+        r = subprocess.run(["gh", "api", "-H", "Accept: application/vnd.github.raw",
+                            f"repos/{GITHUB_REPO}/contents/{PRE_FIX_PATH}?ref={PRE_FIX_COMMIT}"],
+                           capture_output=True, timeout=120)
+        if r.returncode == 0:
+            data, source = r.stdout, f"gh api repos/{GITHUB_REPO}/contents/{PRE_FIX_PATH}?ref={PRE_FIX_COMMIT}"
+    if data is None:
+        return None
+    if git_blob_id(data) != PRE_FIX_BLOB:
+        sys.stderr.write(f"pre-fix workbook from {source} hashes to {git_blob_id(data)}, not {PRE_FIX_BLOB}; not written\n")
+        return None
+    with open(dest, "wb") as fh:
+        fh.write(data)
+    return source
 
 
 def main(argv):
@@ -197,15 +211,16 @@ def main(argv):
     with open(dest, "w", encoding="utf-8") as fh:
         fh.write(excerpt(log_text, *DECISION_LOG_LINES))
     sidecar(repo, DECISION_LOG, dest,
-            "derived by build_data.py: lines %d-%d (item 6, the workbook ladder conflation and its fix, with the "
-            "'post-fix workbook results') copied verbatim, every other line left empty so line numbers match the source"
+            "derived by build_data.py: lines %d-%d (items 6-8: the workbook ladder fix and its 'post-fix workbook "
+            "results' at :47, item 7's '$2,500/kg (workbook Assumptions B5)' at :51, item 8's conservative "
+            "NPV@10%% at :57) copied verbatim, every other line left empty so line numbers match the source"
             % DECISION_LOG_LINES)
 
     src_xlsx = os.path.join(SNAPS, "skyhook_financial_model.xlsx")
     if not os.path.exists(src_xlsx):
         sys.stderr.write("take snapshots/skyhook_financial_model.xlsx with tools/snapshot.mjs first (see README)\n")
         return 2
-    n = build_shuffled_fixture(src_xlsx, os.path.join(FIXTURES, "shuffled_assumptions.xlsx"))
+    n = without_chart(src_xlsx, os.path.join(FIXTURES, "shuffled_assumptions.xlsx"), swap=(5, 10))
     print(f"fixture  fixtures/shuffled_assumptions.xlsx  ({n} bytes; Assumptions rows 5 and 10 swapped, chart removed)")
     lo = os.path.join(FIXTURES, "recalculated_by_libreoffice.xlsx")
     n = recalculate_with_libreoffice(src_xlsx, lo)
@@ -213,8 +228,16 @@ def main(argv):
         print("fixture  fixtures/recalculated_by_libreoffice.xlsx  not rewritten (soffice not available); "
               + ("the committed copy stands" if os.path.exists(lo) else "MISSING"))
     else:
-        print(f"fixture  fixtures/recalculated_by_libreoffice.xlsx  ({n} bytes; re-saved by headless LibreOffice, "
-              "every formula now carries a cached result)")
+        print(f"fixture  fixtures/recalculated_by_libreoffice.xlsx  ({n} bytes; chart removed, re-saved by headless "
+              "LibreOffice, every formula now carries a cached result)")
+    pre = os.path.join(FIXTURES, f"pre_fix_{PRE_FIX_COMMIT}.xlsx")
+    source = fetch_pre_fix(repo, pre)
+    if source is None:
+        print(f"fixture  fixtures/pre_fix_{PRE_FIX_COMMIT}.xlsx  not rewritten (blob {PRE_FIX_BLOB[:7]} not in the "
+              "checkout and gh unavailable); " + ("the committed copy stands" if os.path.exists(pre) else "MISSING"))
+    else:
+        print(f"fixture  fixtures/pre_fix_{PRE_FIX_COMMIT}.xlsx  ({os.path.getsize(pre)} bytes, blob {PRE_FIX_BLOB[:7]}, "
+              f"from {source})")
     return 0
 
 

@@ -2,28 +2,21 @@
 """
 ladder_export.py — read the Skyhook financial workbook's input ladder with the Python standard
 library only (zipfile + xml.etree), write it as provenance-carrying JSON, and report what the
-committed .xlsx does and does not store.
+committed .xlsx does and does not store. `--help` lists the options.
 
-    python3 ladder_export.py [WORKBOOK.xlsx] [--rows-map ladder_rows.json] [--out ladder.json]
-                             [--js page-data.js] [--provenance sidecar.json] [--format text|json]
+An .xlsx is a zip of XML parts: the tool reads the workbook part and its relationships, styles.xml
+(cell colours), sharedStrings.xml when present, docProps and every worksheet, and records each
+cell's reference, type, formula, cached value and colour.
 
-An .xlsx file is a zip of XML parts. The tool reads xl/workbook.xml (sheet names), the workbook
-relationships (which part is which sheet), xl/styles.xml (fonts and fills, so a cell's colour can
-be read), xl/sharedStrings.xml when present, docProps (which program wrote the file) and every
-worksheet part. For every cell it records the reference, the type, the formula if any, the cached
-value if any, and the font/fill colour of its style.
+The ladder (fourteen rows x three scenario columns on the Assumptions sheet) is keyed by the row
+map finance/skyhook_finance.py uses (_LADDER_ROWS, SCENARIOS, the column letters), snapshotted by
+build_data.py as ladder_rows.json. A row whose column-A label does not say what its key means
+(LABEL_GUARD) is refused, exit 1. An input it cannot read (not a zip, a damaged member, malformed
+XML, a cell outside the numeric grammar) or an output it cannot write is exit 2. Any other
+exception in main() is a bug in this tool, exit 3 with its traceback, so exit 1 is only a refusal.
 
-The ladder is the block the workbook's own README sheet calls "blue = change me": fourteen rows x
-three scenario columns on the Assumptions sheet. Rows are named by the row map that
-finance/skyhook_finance.py uses (_LADDER_ROWS, SCENARIOS, the column letters), read out of that
-module by build_data.py and snapshotted as ladder_rows.json. Before trusting a row number the tool
-checks that the label in column A says what the key means (LABEL_GUARD below); a sheet whose rows
-have moved is refused with the row, the label found and the label expected, exit 1.
-
-Confidence labels follow the Skyhook convention. [Certain] marks what is read directly from the
-file's bytes; the drift guard's fragments and the slugging of design-point labels are this tool's
-own choices, marked where they appear. The tool computes no economics and never writes the
-workbook.
+[Certain] marks what is read from the file's bytes; the guard fragments and design-point slugs are
+this tool's choices. It computes no economics and never writes the workbook.
 """
 from __future__ import annotations
 
@@ -31,13 +24,16 @@ import argparse
 import hashlib
 import io
 import json
+import math
 import os
 import re
 import sys
+import traceback
 import zipfile
+import zlib
 import xml.etree.ElementTree as ET
 
-__version__ = "0.1.0"
+__version__ = "0.3.0"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_WORKBOOK = os.path.join(HERE, "snapshots", "skyhook_financial_model.xlsx")
@@ -46,18 +42,14 @@ DEFAULT_ROWS_MAP = os.path.join(HERE, "snapshots", "ladder_rows.json")
 NS_MAIN = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 NS_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
-# The workbook README sheet (cell A4) states the colour legend: "BLUE = hardcoded inputs · BLACK =
-# formulas · GREEN = cross-sheet links · YELLOW fill = key assumption needing attention". The tool
-# reads font and fill colours as ARGB from styles.xml and compares the RGB part. [Certain as a read
-# of the legend; the legend is the workbook author's convention]
+# The README sheet's legend (A4): BLUE = hardcoded inputs, GREEN = cross-sheet links, YELLOW fill =
+# key assumption needing attention. Compared with the RGB part of styles.xml's ARGB. [Certain]
 BLUE_RGB = "0000FF"
 GREEN_RGB = "008000"
 YELLOW_RGB = "FFFF00"
 
-# Drift guard [this tool's choice]: a fragment that must appear, case-insensitively, in the
-# column-A label of the row the row map assigns to each ladder key. Written by reading the
-# Assumptions sheet at Skyhook 34935cb; if the sheet is re-laid-out the extractor refuses rather
-# than returning the wrong row's numbers under the right name.
+# Drift guard [this tool's choice, read off the sheet at 34935cb]: a fragment that must appear,
+# in any case, in the column-A label of each key's row, so a re-laid-out sheet is refused.
 LABEL_GUARD = {
     "strength_retention": "strength retention",
     "ascent_losses_ms": "ascent losses",
@@ -75,8 +67,8 @@ LABEL_GUARD = {
     "program_fleet_capex_M": "fleet capex",
 }
 
-# Section headers in column A that bracket the shared design point and the physical constants
-# [this tool's choice, read from the sheet]: the first word of each header is matched.
+# Column-A section headers that open the design-point and constants blocks [this tool's choice]:
+# a label that starts with one, in any case, opens or closes a block.
 DESIGN_POINT_HEADER = "SHARED DESIGN POINT"
 CONSTANTS_HEADER = "PHYSICAL CONSTANTS"
 LADDER_HEADER = "LADDER ASSUMPTIONS"
@@ -85,7 +77,8 @@ HEADER_ROW_FIRST_CELL = "Parameter"
 
 class WorkbookError(Exception):
     """The file cannot be read as a spreadsheetml package at all (not a zip, no workbook part,
-    a missing sheet part, malformed cell). Exit 2: there is nothing to refuse, only nothing to read."""
+    a missing sheet part, a member that fails to inflate or its CRC-32, malformed XML or cell).
+    Exit 2: there is nothing to refuse, only nothing to read."""
 
 
 class LadderError(Exception):
@@ -116,14 +109,41 @@ def _text(el) -> str:
     return "".join(t for t in el.itertext()) if el is not None else ""
 
 
-_REF = re.compile(r"^([A-Z]+)(\d+)$")
+_REF = re.compile(r"([A-Z]+)([0-9]+)")
+
+# One grammar for a number in <v>, shared with bluecells.js [this tool's choice]: an optional sign,
+# ASCII digits with an optional fraction (or a bare fraction), an optional exponent, and the result
+# must be finite. float() alone would also take 'NaN', 'inf', '2_500' and non-ASCII digits, and
+# JavaScript's Number() would take '0x9C4'; no spreadsheet writes any of them.
+_NUMBER = re.compile(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?")
+# An index (shared string, style, font, fill): ASCII digits only, so '-1' or '16.0' is not silently
+# read as the last entry or as 16.
+_INDEX = re.compile(r"[0-9]+")
+_XML_SPACE = " \t\r\n"
 
 
 def split_ref(ref: str) -> tuple[str, int]:
-    m = _REF.match(ref)
+    m = _REF.fullmatch(ref)
     if not m:
         raise ValueError(f"not a cell reference: {ref!r}")
     return m.group(1), int(m.group(2))
+
+
+def parse_number(text: str, ref: str) -> float:
+    """A <v> under a numeric cell, by the shared grammar; anything else is a WorkbookError."""
+    value = float(text) if _NUMBER.fullmatch(text) else math.nan
+    if not math.isfinite(value):
+        raise WorkbookError(f"{ref} is typed numeric but holds {text!r}")
+    return value
+
+
+def parse_index(text: str | None, default: int | None, what: str) -> int | None:
+    """A non-negative integer attribute (style, font or fill index); ValueError otherwise."""
+    if text is None:
+        return default
+    if not _INDEX.fullmatch(text):
+        raise ValueError(f"{what} {text!r} is not a non-negative integer")
+    return int(text)
 
 
 def col_index(letters: str) -> int:
@@ -210,7 +230,8 @@ def parse_styles(data: bytes) -> dict:
     xfs = []
     xfs_el = _child(root, "cellXfs")
     for xf in (xfs_el if xfs_el is not None else []):
-        xfs.append({"fontId": int(xf.get("fontId", 0)), "fillId": int(xf.get("fillId", 0))})
+        xfs.append({"fontId": parse_index(xf.get("fontId"), 0, "cellXfs fontId"),
+                    "fillId": parse_index(xf.get("fillId"), 0, "cellXfs fillId")})
     return {"fonts": fonts, "fills": fills, "xfs": xfs}
 
 
@@ -227,12 +248,8 @@ def style_colours(styles: dict, s: int | None) -> tuple[str | None, str | None]:
 
 
 def parse_sheet(data: bytes, shared_strings: list[str] | None, styles: dict | None) -> list[dict]:
-    """Every <c> on a worksheet part as a dict:
-       ref, col, row, t (the type attribute), s (style index), formula (str or None),
-       cached (text of a non-empty <v> under a formula, else None), kind, value, raw,
-       font_rgb, fill_rgb.
-    kind is one of formula / number / string / bool / error / empty. [Certain as a read of the XML]
-    """
+    """Every <c> on a worksheet part as a dict (ref, col, row, t, s, formula, cached, kind, value,
+    raw, font_rgb, fill_rgb); kind is formula / number / string / bool / error / empty. [Certain]"""
     root = ET.fromstring(data)
     cells = []
     sheet_data = _child(root, "sheetData")
@@ -249,11 +266,14 @@ def parse_sheet(data: bytes, shared_strings: list[str] | None, styles: dict | No
                 continue
             col, row = split_ref(ref)
             t = c.get("t", "n")
-            s = int(c.get("s")) if c.get("s") is not None else None
+            try:
+                s = parse_index(c.get("s"), None, "style index")
+            except ValueError:
+                raise WorkbookError(f"{ref} has style index {c.get('s')!r}, not a non-negative integer") from None
             f_el = _child(c, "f")
             v_el = _child(c, "v")
             is_el = _child(c, "is")
-            v_text = (v_el.text or "").strip() if v_el is not None else None
+            v_text = (v_el.text or "").strip(_XML_SPACE) if v_el is not None else None
             if v_text == "":
                 v_text = None
             cell = {"ref": ref, "col": col, "row": row, "t": t, "s": s, "formula": None,
@@ -264,8 +284,8 @@ def parse_sheet(data: bytes, shared_strings: list[str] | None, styles: dict | No
                 cell["cached"] = v_text
                 cell["raw"] = v_text
             elif t == "s":
-                idx = int(v_text) if v_text is not None else None
-                if shared_strings is None or idx is None or idx >= len(shared_strings):
+                idx = int(v_text) if v_text is not None and _INDEX.fullmatch(v_text) else v_text
+                if shared_strings is None or not isinstance(idx, int) or idx >= len(shared_strings):
                     raise WorkbookError(f"{ref} is a shared string (t=\"s\") but the index {idx!r} is not in "
                                         f"xl/sharedStrings.xml; the part is missing or shorter than expected")
                 cell.update(kind="string", value=shared_strings[idx], raw=v_text)
@@ -281,10 +301,7 @@ def parse_sheet(data: bytes, shared_strings: list[str] | None, styles: dict | No
                 if v_text is None:
                     cell["kind"] = "empty"
                 else:
-                    try:
-                        cell.update(kind="number", value=float(v_text), raw=v_text)
-                    except ValueError:
-                        raise WorkbookError(f"{ref} is typed numeric but holds {v_text!r}")
+                    cell.update(kind="number", value=parse_number(v_text, ref), raw=v_text)
             cell["font_rgb"], cell["fill_rgb"] = style_colours(styles, s) if styles else (None, None)
             cells.append(cell)
     return cells
@@ -292,53 +309,83 @@ def parse_sheet(data: bytes, shared_strings: list[str] | None, styles: dict | No
 
 # ── the workbook as a whole ─────────────────────────────────────────────────
 
+# What zipfile raises for a member whose bytes are damaged while the central directory is intact:
+# BadZipFile (CRC-32 mismatch, bad local header), zlib.error (corrupt deflate stream), EOFError
+# (truncated data), RuntimeError (encrypted), NotImplementedError (unsupported compression), and
+# ValueError/OSError for malformed headers. Every one is "cannot read the file", exit 2.
+_MEMBER_ERRORS = (zipfile.BadZipFile, zlib.error, EOFError, RuntimeError, NotImplementedError, ValueError, OSError)
+
+
+def _read_member(zf: zipfile.ZipFile, name: str) -> bytes:
+    try:
+        return zf.read(name)
+    except _MEMBER_ERRORS as e:
+        raise WorkbookError(f"member {name} could not be read: {e}") from e
+
+
+def _parse_part(name: str, fn, *args):
+    """Run a part parser; malformed XML or a malformed value in the part is a WorkbookError."""
+    try:
+        return fn(*args)
+    except ET.ParseError as e:
+        raise WorkbookError(f"{name} is not well-formed XML: {e}") from e
+    except ValueError as e:
+        raise WorkbookError(f"{name}: {e}") from e
+
+
 def read_workbook(path_or_bytes, name: str | None = None) -> dict:
     """Open an .xlsx (path or bytes) and parse every part this tool uses."""
     if isinstance(path_or_bytes, (bytes, bytearray)):
         data = bytes(path_or_bytes)
         file_name = name or "<bytes>"
     else:
-        with open(path_or_bytes, "rb") as fh:
-            data = fh.read()
         file_name = name or os.path.basename(str(path_or_bytes))
+        try:
+            with open(path_or_bytes, "rb") as fh:
+                data = fh.read()
+        except OSError as e:
+            raise WorkbookError(f"{file_name} cannot be opened ({e})") from e
     try:
         zf = zipfile.ZipFile(io.BytesIO(data))
-    except zipfile.BadZipFile as e:
-        raise WorkbookError(f"{file_name} is not a zip archive, so not an .xlsx ({e})")
+    except _MEMBER_ERRORS as e:
+        raise WorkbookError(f"{file_name} is not a zip archive, so not an .xlsx ({e})") from e
     names = set(zf.namelist())
     if "xl/workbook.xml" not in names:
         raise WorkbookError(f"{file_name} has no xl/workbook.xml; not a spreadsheetml package")
 
-    wb = parse_workbook_xml(zf.read("xl/workbook.xml"))
-    rels = parse_rels(zf.read("xl/_rels/workbook.xml.rels")) if "xl/_rels/workbook.xml.rels" in names else {}
-    shared = parse_shared_strings(zf.read("xl/sharedStrings.xml")) if "xl/sharedStrings.xml" in names else None
-    styles = parse_styles(zf.read("xl/styles.xml")) if "xl/styles.xml" in names else None
+    def part(n, fn):
+        return _parse_part(n, fn, _read_member(zf, n))
+
+    wb = part("xl/workbook.xml", parse_workbook_xml)
+    rels = part("xl/_rels/workbook.xml.rels", parse_rels) if "xl/_rels/workbook.xml.rels" in names else {}
+    shared = part("xl/sharedStrings.xml", parse_shared_strings) if "xl/sharedStrings.xml" in names else None
+    styles = part("xl/styles.xml", parse_styles) if "xl/styles.xml" in names else None
 
     app = {}
     if "docProps/app.xml" in names:
-        root = ET.fromstring(zf.read("docProps/app.xml"))
+        root = part("docProps/app.xml", ET.fromstring)
         for tag in ("Application", "AppVersion"):
             found = _findall(root, tag)
             app[tag] = found[0].text if found else None
     core = {}
     if "docProps/core.xml" in names:
-        root = ET.fromstring(zf.read("docProps/core.xml"))
+        root = part("docProps/core.xml", ET.fromstring)
         for tag in ("creator", "created", "modified"):
             found = _findall(root, tag)
             core[tag] = found[0].text if found else None
 
     sheets = []
     for s in wb["sheets"]:
-        part = rels.get(s["rId"])
-        if part is None or part not in names:
+        target = rels.get(s["rId"])
+        if target is None or target not in names:
             raise WorkbookError(f"sheet {s['name']!r} points at relationship {s['rId']!r} whose part is missing")
-        cells = parse_sheet(zf.read(part), shared, styles)
-        sheets.append({"name": s["name"], "part": part, "state": s["state"], "cells": cells})
+        cells = _parse_part(target, parse_sheet, _read_member(zf, target), shared, styles)
+        sheets.append({"name": s["name"], "part": target, "state": s["state"], "cells": cells})
 
     media = []
     for n in sorted(names):
         if n.startswith("xl/media/"):
-            blob = zf.read(n)
+            blob = _read_member(zf, n)
             media.append({"member": n, "bytes": len(blob), "md5": md5_hex(blob)})
 
     return {
@@ -409,6 +456,23 @@ def _grid(sheet: dict) -> dict[tuple[str, int], dict]:
 def _string_at(grid, col, row) -> str | None:
     c = grid.get((col, row))
     return c["value"] if c and c["kind"] == "string" else None
+
+
+def validate_rows_map(m) -> dict:
+    """The row map's shape (what build_data.py writes): rows {key: row number}, scenarios [names],
+    columns {name: letter} covering every scenario, optional sheet. Raises ValueError otherwise."""
+    ok = (isinstance(m, dict) and isinstance(m.get("rows"), dict) and m["rows"]
+          and all(isinstance(k, str) and isinstance(v, int) for k, v in m["rows"].items())
+          and isinstance(m.get("scenarios"), list) and m["scenarios"]
+          and all(isinstance(n, str) for n in m["scenarios"])
+          and isinstance(m.get("columns"), dict)
+          and all(isinstance(m["columns"].get(n), str) and re.fullmatch(r"[A-Z]+", m["columns"][n])
+                  for n in m["scenarios"])
+          and isinstance(m.get("sheet", "Assumptions"), str))
+    if not ok:
+        raise ValueError("the row map must hold rows {key: row}, scenarios [names] and columns {name: letter} "
+                         "for every scenario (see snapshots/ladder_rows.json)")
+    return m
 
 
 def extract_ladder(workbook: dict, rows_map: dict) -> dict:
@@ -541,6 +605,28 @@ def legend(workbook: dict) -> str | None:
 
 # ── putting it together ─────────────────────────────────────────────────────
 
+def _or_absent(v) -> str:
+    """A metadata value as printed in the report: the value, or 'absent' when the file has none."""
+    return "absent" if v is None else str(v)
+
+
+def finding_sentence(workbook: dict, tot: dict) -> str:
+    """What the file stores, in one sentence [Certain as a statement about the parsed cells]."""
+    cached = tot["formula_cells_with_cached_value"]
+    if cached == 0:
+        return (f"This workbook holds {tot['formula_cells']} formula cells and 0 cached results: every "
+                f"<v> under a formula is empty. The file carries inputs ({tot['literal_numbers']} literal "
+                f"numbers, {tot['blue_cells']} blue input cells) and formulas, not results. Any number quoted "
+                f"as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated "
+                f"on open (calcPr fullCalcOnLoad={_or_absent((workbook['calc_pr'] or {}).get('fullCalcOnLoad'))}) "
+                f"and was not saved back, or by finance/skyhook_finance.py.")
+    if cached == tot["formula_cells"]:
+        return (f"This workbook holds {tot['formula_cells']} formula cells, all {cached} with a cached result "
+                f"stored in the file.")
+    return (f"This workbook holds {tot['formula_cells']} formula cells, {cached} of them with a cached result "
+            f"stored in the file; the other {tot['formula_cells'] - cached} store none.")
+
+
 def analyze(workbook: dict, rows_map: dict, provenance: dict | None = None) -> dict:
     per_sheet = {s["name"]: census(s) for s in workbook["sheets"]}
     tot = totals(per_sheet)
@@ -548,16 +634,22 @@ def analyze(workbook: dict, rows_map: dict, provenance: dict | None = None) -> d
     design = extract_block(workbook, ladder["sheet"], DESIGN_POINT_HEADER, (CONSTANTS_HEADER, LADDER_HEADER))
     consts = extract_block(workbook, ladder["sheet"], CONSTANTS_HEADER, (DESIGN_POINT_HEADER, LADDER_HEADER))
 
+    # Guards are enforced by refusal: extract_ladder raised LadderError if either failed, so when a
+    # result exists they held. They are listed, not counted as checks that passed.
+    n_rows, n_cols = len(ladder["rows"]), len(ladder["columns"])
+    guards = [
+        {"name": "ladder-rows", "detail": f"{n_rows} rows from {rows_map.get('source')} found where the map says, "
+                                          f"labels match LABEL_GUARD"},
+        {"name": "ladder-literals", "detail": f"all {n_rows * n_cols} ladder cells hold literal numbers (none is a "
+                                              f"formula, none is empty)"},
+    ]
+
+    # Checks are reported, not enforced: a restyled sheet still carries the right numbers.
     checks = []
 
     def check(name, ok, detail):
         checks.append({"name": name, "ok": bool(ok), "detail": detail})
 
-    n_rows, n_cols = len(ladder["rows"]), len(ladder["columns"])
-    check("ladder-rows", n_rows == len(rows_map["rows"]),
-          f"{n_rows} of {len(rows_map['rows'])} rows from {rows_map.get('source')} found where the map says, "
-          f"labels match LABEL_GUARD")
-    check("ladder-literals", True, f"all {n_rows * n_cols} ladder cells hold literal numbers (none is a formula)")
     not_blue = [k for k, r in ladder["rows"].items() if not r["blue"]]
     check("ladder-blue", not not_blue,
           f"all {n_rows * n_cols} ladder cells use the blue input font" if not not_blue
@@ -574,20 +666,8 @@ def analyze(workbook: dict, rows_map: dict, provenance: dict | None = None) -> d
           f"{len(design['entries'])} shared design-point rows under {DESIGN_POINT_HEADER!r}; "
           f"{len(consts['entries'])} physical constants under {CONSTANTS_HEADER!r}")
 
-    cached = tot["formula_cells_with_cached_value"]
-    if cached == 0:
-        finding = (f"The committed workbook holds {tot['formula_cells']} formula cells and 0 cached results: every "
-                   f"<v> under a formula is empty. The file carries inputs ({tot['literal_numbers']} literal "
-                   f"numbers, {tot['blue_cells']} blue input cells) and formulas, not results. Any number quoted "
-                   f"as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated "
-                   f"on open (calcPr fullCalcOnLoad={ (workbook['calc_pr'] or {}).get('fullCalcOnLoad') }) "
-                   f"and was not saved back, or by finance/skyhook_finance.py.")
-    else:
-        finding = (f"The workbook holds {tot['formula_cells']} formula cells, {cached} of them with a cached result "
-                   f"stored in the file; the rest store none.")
-
     return {
-        "schema": "blue-cells/ladder/1",
+        "schema": "blue-cells/ladder/2",
         "tool": f"ladder_export.py {__version__}",
         "workbook": {k: workbook[k] for k in ("file", "bytes", "sha256", "md5", "members", "application",
                                                "app_version", "creator", "created", "modified", "calc_pr",
@@ -597,7 +677,8 @@ def analyze(workbook: dict, rows_map: dict, provenance: dict | None = None) -> d
         "design_point": design,
         "constants": consts,
         "census": {"sheets": per_sheet, "totals": tot},
-        "finding": finding,
+        "finding": finding_sentence(workbook, tot),
+        "guards": guards,
         "checks": checks,
         "provenance": provenance,
     }
@@ -610,21 +691,23 @@ def _pad(s, n, right=False):
     return s.rjust(n) if right else s.ljust(n)
 
 
-def render_report(result: dict) -> str:
-    wb = result["workbook"]
-    L = result["ladder"]
-    cols = list(L["columns"])
+def _header_lines(wb: dict, prov: dict | None) -> list[str]:
     lines = []
     lines.append(f"Blue Cells {__version__} — the Skyhook financial workbook read with zipfile + xml only")
     lines.append(f"Workbook  {wb['file']}  {wb['bytes']:,} bytes, {wb['members']} zip members")
     lines.append(f"  sha256  {wb['sha256']}")
-    lines.append(f"  md5     {wb['md5']}  (binary, byte-for-byte; the hash finance/decision_grid.json carries as workbook_md5)")
-    calc = wb.get("calc_pr") or {}
-    lines.append(f"  written by {wb.get('application') or '?'} ({wb.get('creator') or '?'}), created {wb.get('created') or '?'}, "
-                 f"modified {wb.get('modified') or '?'}")
-    lines.append(f"  calcPr fullCalcOnLoad={calc.get('fullCalcOnLoad', '?')} calcId={calc.get('calcId', '?')}; "
+    lines.append(f"  md5     {wb['md5']}  (binary, byte-for-byte: how export_grid.provenance_md5 hashes the .xlsx "
+                 f"for decision_grid.json's workbook_md5)")
+    # application is docProps/app.xml's Application; creator is docProps/core.xml's dc:creator, which
+    # a program that re-saves a file usually keeps (LibreOffice keeps openpyxl's).
+    lines.append(f"  written by {_or_absent(wb.get('application'))}; dc:creator {_or_absent(wb.get('creator'))}; "
+                 f"created {_or_absent(wb.get('created'))}, modified {_or_absent(wb.get('modified'))}")
+    calc = wb.get("calc_pr")
+    calc_text = ("calcPr absent" if calc is None else
+                 f"calcPr fullCalcOnLoad={_or_absent(calc.get('fullCalcOnLoad'))} calcId={_or_absent(calc.get('calcId'))}")
+    lines.append(f"  {calc_text}; "
                  f"shared strings: {'none (every string is inline)' if wb.get('shared_strings') is None else wb['shared_strings']}")
-    prov = result.get("provenance") or {}
+    prov = prov or {}
     if prov:
         lines.append(f"  provenance  {prov.get('repo')} {prov.get('path')} @ {str(prov.get('commit') or '')[:7]} "
                      f"({prov.get('commitDate')}); last changed {prov.get('pathLastChanged')}")
@@ -632,6 +715,35 @@ def render_report(result: dict) -> str:
     if wb.get("legend"):
         lines.append(f"Legend    {wb['legend']}")
     lines.append("")
+    return lines
+
+
+def _census_lines(cs: dict, tot: dict, media: list) -> list[str]:
+    lines = ["Formula census (what the file stores)"]
+    hdr = ("sheet", "cells", "formulas", "cached", "numbers", "strings", "blue", "green", "yellow")
+    widths = (22, 7, 10, 8, 9, 9, 6, 7, 8)
+    lines.append("  " + "".join(_pad(h, w, right=(i > 0)) for i, (h, w) in enumerate(zip(hdr, widths))))
+    for name, c in cs.items():
+        row = (name, c["cells"], c["formula_cells"], c["formula_cells_with_cached_value"], c["literal_numbers"],
+               c["strings"], c["blue_cells"], c["green_cells"], len(c["yellow_fill_cells"]))
+        lines.append("  " + "".join(_pad(v, w, right=(i > 0)) for i, (v, w) in enumerate(zip(row, widths))))
+    row = ("TOTAL", tot["cells"], tot["formula_cells"], tot["formula_cells_with_cached_value"], tot["literal_numbers"],
+           tot["strings"], tot["blue_cells"], tot["green_cells"], tot["yellow_fill_cells"])
+    lines.append("  " + "".join(_pad(v, w, right=(i > 0)) for i, (v, w) in enumerate(zip(row, widths))))
+    yellow = [f"{n}!{r}" for n, c in cs.items() for r in c["yellow_fill_cells"]]
+    if yellow:
+        lines.append(f"  yellow fill (key assumption needing attention): {', '.join(yellow)}")
+    for m in media or []:
+        lines.append(f"  media: {m['member']} {m['bytes']:,} bytes md5 {m['md5']}")
+    lines.append("")
+    return lines
+
+
+def render_report(result: dict) -> str:
+    wb = result["workbook"]
+    L = result["ladder"]
+    cols = list(L["columns"])
+    lines = _header_lines(wb, result.get("provenance"))
     n = len(L["rows"])
     lines.append(f"Ladder    {L['sheet']}!{L['columns'][cols[0]]}{min(r['row'] for r in L['rows'].values())}:"
                  f"{L['columns'][cols[-1]]}{max(r['row'] for r in L['rows'].values())}  "
@@ -658,44 +770,47 @@ def render_report(result: dict) -> str:
             lines.append("  " + _pad(k, w) + _pad(v["raw"], 10, right=True) + "  " + _pad(v["cell"], 5) + "  " + v["label"]
                          + (f"  ({v['note']})" if v.get("note") else ""))
         lines.append("")
-    cs = result["census"]["sheets"]
-    tot = result["census"]["totals"]
-    lines.append("Formula census (what the file stores)")
-    hdr = ("sheet", "cells", "formulas", "cached", "numbers", "strings", "blue", "green", "yellow")
-    widths = (22, 7, 10, 8, 9, 9, 6, 7, 8)
-    lines.append("  " + "".join(_pad(h, w, right=(i > 0)) for i, (h, w) in enumerate(zip(hdr, widths))))
-    for name, c in cs.items():
-        row = (name, c["cells"], c["formula_cells"], c["formula_cells_with_cached_value"], c["literal_numbers"],
-               c["strings"], c["blue_cells"], c["green_cells"], len(c["yellow_fill_cells"]))
-        lines.append("  " + "".join(_pad(v, w, right=(i > 0)) for i, (v, w) in enumerate(zip(row, widths))))
-    row = ("TOTAL", tot["cells"], tot["formula_cells"], tot["formula_cells_with_cached_value"], tot["literal_numbers"],
-           tot["strings"], tot["blue_cells"], tot["green_cells"], tot["yellow_fill_cells"])
-    lines.append("  " + "".join(_pad(v, w, right=(i > 0)) for i, (v, w) in enumerate(zip(row, widths))))
-    yellow = [f"{n}!{r}" for n, c in cs.items() for r in c["yellow_fill_cells"]]
-    if yellow:
-        lines.append(f"  yellow fill (key assumption needing attention): {', '.join(yellow)}")
-    if wb.get("media"):
-        for m in wb["media"]:
-            lines.append(f"  media: {m['member']} {m['bytes']:,} bytes md5 {m['md5']}")
-    lines.append("")
+    lines += _census_lines(result["census"]["sheets"], result["census"]["totals"], wb.get("media"))
     lines.append("Finding")
     lines.append("  " + result["finding"])
     lines.append("")
+    lines.append("Guards    held (enforced by refusal: a miss refuses the whole file, exit 1, so they cannot fail here)")
+    for g in result["guards"]:
+        lines.append(f"  held {g['name']}: {g['detail']}")
     passed = sum(1 for c in result["checks"] if c["ok"])
-    lines.append(f"Checks    {passed} of {len(result['checks'])} passed")
+    lines.append(f"Checks    {passed} of {len(result['checks'])} passed (reported, not enforced)")
     for c in result["checks"]:
         lines.append(f"  {'ok  ' if c['ok'] else 'FAIL'} {c['name']}: {c['detail']}")
     return "\n".join(lines) + "\n"
 
 
+def census_report(workbook: dict, provenance: dict | None = None) -> str:
+    """--census: the file-level part of the report (who wrote it, the per-sheet census, the finding)
+    for any workbook, without extracting the ladder, so it also works on a file the row map refuses."""
+    per_sheet = {s["name"]: census(s) for s in workbook["sheets"]}
+    tot = totals(per_sheet)
+    wb = {k: workbook[k] for k in ("file", "bytes", "sha256", "md5", "members", "application", "creator", "created",
+                                   "modified", "calc_pr", "shared_strings", "media")}
+    wb["sheets"] = [s["name"] for s in workbook["sheets"]]
+    wb["legend"] = legend(workbook)
+    lines = _header_lines(wb, provenance)
+    lines += _census_lines(per_sheet, tot, wb["media"])
+    lines.append("Finding")
+    lines.append("  " + finding_sentence(workbook, tot))
+    return "\n".join(lines) + "\n"
+
+
 def to_json(result: dict) -> str:
-    return json.dumps(result, indent=1, ensure_ascii=False) + "\n"
+    # allow_nan=False: a bare NaN or Infinity is not JSON. The numeric grammar keeps them out of the
+    # cells, so reaching this ValueError would be a bug (exit 3), never a file written with NaN in it.
+    return json.dumps(result, indent=1, ensure_ascii=False, allow_nan=False) + "\n"
 
 
 def to_js(result: dict, var: str = "BLUE_CELLS_DATA") -> str:
-    return (f"// Written by ladder_export.py --js; the same JSON as ladder.json, as a classic script so the\n"
-            f"// page works from file://. Do not edit by hand.\n"
-            f"window.{var} = {json.dumps(result, indent=1, ensure_ascii=False)};\n")
+    """The same JSON as ladder.json, compact, as a classic script so the page works from file://."""
+    return (f"// Written by ladder_export.py --js; the same JSON as ladder.json (compact), as a classic script\n"
+            f"// so the page works from file://. Do not edit by hand.\n"
+            f"window.{var} = {json.dumps(result, ensure_ascii=False, separators=(',', ':'), allow_nan=False)};\n")
 
 
 # ── command line ─────────────────────────────────────────────────────────────
@@ -706,7 +821,10 @@ def build_parser() -> argparse.ArgumentParser:
         description="Read the Skyhook financial workbook's input ladder with the standard library only, "
                     "write it as JSON with the workbook's hashes, and report what the file stores.",
         epilog="Exit 0: ladder extracted. Exit 1: refused (the sheet does not hold what the row map says; "
-               "the message names the row, the label found and the label expected). Exit 2: usage or unreadable file.")
+               "the message names the row, the label found and the label expected). Exit 2: usage, an input it "
+               "cannot read (not a zip, a corrupt member, malformed XML, a cell outside the numeric grammar, a "
+               "malformed row map or sidecar) or an output it cannot write (--out, --js, standard output). "
+               "Exit 3: an internal error in this tool (printed with its traceback), never a refusal.")
     p.add_argument("workbook", nargs="?", default=DEFAULT_WORKBOOK,
                    help=f"path to the .xlsx (default: the snapshot beside this script)")
     p.add_argument("--rows-map", default=DEFAULT_ROWS_MAP,
@@ -716,30 +834,71 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--js", metavar="FILE", help="also write the JSON as window.BLUE_CELLS_DATA for the page")
     p.add_argument("--provenance", metavar="FILE", help="a snapshot.mjs sidecar to embed in the output")
     p.add_argument("--format", choices=("text", "json"), default="text", help="what to print (default text)")
+    p.add_argument("--census", action="store_true",
+                   help="print only who wrote the file, the per-sheet formula census and the finding; no ladder, "
+                        "so it also reads a workbook the row map would refuse")
     p.add_argument("--quiet", action="store_true", help="print nothing on success")
     p.add_argument("--version", action="version", version=f"ladder_export.py {__version__}")
     return p
 
 
-def main(argv=None) -> int:
-    args = build_parser().parse_args(argv)
+class OutputError(Exception):
+    """An output the tool was asked to write cannot be written (exit 2): str(err) is the whole line."""
+
+
+def _write_file(path: str, text: str) -> None:
+    try:
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(text)
+    except OSError as e:
+        raise OutputError(f"cannot write {path} — {e}") from e
+
+
+def _write_stdout(text: str) -> None:
+    try:
+        sys.stdout.write(text)
+        sys.stdout.flush()
+    except OSError as e:
+        # The reader went away (a closed pipe) or the stream failed. Point the descriptor at
+        # /dev/null so the interpreter's own flush at exit does not raise again.
+        try:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+        except (OSError, ValueError, AttributeError):
+            pass
+        raise OutputError(f"cannot write standard output — {e}") from e
+
+
+def _run(args) -> int:
+    """Everything main() does after parsing; every outcome that is not a bug returns its exit code."""
     if not os.path.isfile(args.workbook):
         sys.stderr.write(f"ladder_export.py: no such workbook: {args.workbook}\n")
         return 2
     if not os.path.isfile(args.rows_map):
         sys.stderr.write(f"ladder_export.py: no such rows map: {args.rows_map}\n")
         return 2
-    with open(args.rows_map, encoding="utf-8") as fh:
-        rows_map = json.load(fh)
-    provenance = None
-    if args.provenance:
-        if not os.path.isfile(args.provenance):
-            sys.stderr.write(f"ladder_export.py: no such provenance sidecar: {args.provenance}\n")
-            return 2
-        with open(args.provenance, encoding="utf-8") as fh:
-            provenance = json.load(fh)
+    if args.provenance and not os.path.isfile(args.provenance):
+        sys.stderr.write(f"ladder_export.py: no such provenance sidecar: {args.provenance}\n")
+        return 2
+    try:
+        with open(args.rows_map, encoding="utf-8") as fh:
+            rows_map = validate_rows_map(json.load(fh))
+        provenance = None
+        if args.provenance:
+            with open(args.provenance, encoding="utf-8") as fh:
+                provenance = json.load(fh)
+            if not isinstance(provenance, dict):
+                raise ValueError(f"the provenance sidecar must be a JSON object (a snapshot.mjs sidecar), "
+                                 f"not {type(provenance).__name__}")
+    except (OSError, ValueError) as e:
+        sys.stderr.write(f"ladder_export.py: cannot read a JSON input — {e}\n")
+        return 2
     try:
         wb = read_workbook(args.workbook)
+        if args.census:
+            if not args.quiet:
+                _write_stdout(census_report(wb, provenance))
+            return 0
         result = analyze(wb, rows_map, provenance)
     except LadderError as e:
         sys.stderr.write(f"ladder_export.py: REFUSED — {e}\n")
@@ -747,25 +906,36 @@ def main(argv=None) -> int:
     except WorkbookError as e:
         sys.stderr.write(f"ladder_export.py: cannot read the workbook — {e}\n")
         return 2
-    except ET.ParseError as e:
-        sys.stderr.write(f"ladder_export.py: a worksheet part is not well-formed XML: {e}\n")
+    except OutputError as e:
+        sys.stderr.write(f"ladder_export.py: {e}\n")
         return 2
-    if args.out:
-        with open(args.out, "w", encoding="utf-8") as fh:
-            fh.write(to_json(result))
-    if args.js:
-        with open(args.js, "w", encoding="utf-8") as fh:
-            fh.write(to_js(result))
-    if not args.quiet:
-        if args.format == "json":
-            sys.stdout.write(to_json(result))
-        else:
-            sys.stdout.write(render_report(result))
-            if args.out:
-                sys.stdout.write(f"Wrote {args.out}\n")
-            if args.js:
-                sys.stdout.write(f"Wrote {args.js}\n")
+    try:
+        if args.out:
+            _write_file(args.out, to_json(result))
+        if args.js:
+            _write_file(args.js, to_js(result))
+        if not args.quiet:
+            if args.format == "json":
+                _write_stdout(to_json(result))
+            else:
+                _write_stdout(render_report(result)
+                              + (f"Wrote {args.out}\n" if args.out else "")
+                              + (f"Wrote {args.js}\n" if args.js else ""))
+    except OutputError as e:
+        sys.stderr.write(f"ladder_export.py: {e}\n")
+        return 2
     return 0
+
+
+def main(argv=None) -> int:
+    args = build_parser().parse_args(argv)  # a usage error exits 2 inside argparse
+    try:
+        return _run(args)
+    except Exception:  # noqa: BLE001 — anything else is a bug here, and must not look like a refusal
+        traceback.print_exc()
+        sys.stderr.write("ladder_export.py: internal error (a bug in this tool, not a refusal and not a verdict "
+                         "on the file)\n")
+        return 3
 
 
 if __name__ == "__main__":

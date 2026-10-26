@@ -8,10 +8,10 @@
   "readBlob": "3fa20f91d426a7e9a3b62877105256d690e9f86d",
   "sourceSha256": "a0e774f4b29bc9824b34b622093011042b12274632012a61b02ea9a3f5d41b73",
   "sourceBytes": 65603,
-  "copiedAt": "2026-10-26T10:18:02.269Z",
+  "copiedAt": "2026-10-26T16:07:16.127Z",
   "mode": "derived",
   "note": "derived by ladder_export.py: the Assumptions ladder (B3:D16), shared design point (B19:B28) and constants (B32:B33) read as literals, plus the per-sheet formula/cached-value census and the workbook's sha256/md5; no timestamp of its own",
   "readMatchesCommitted": true,
-  "writtenSha256": "127cc66cab4e8d3907d036c95da35b126295ffdb57e52d02984be9da4ef6270b",
-  "writtenBytes": 15134
+  "writtenSha256": "fea2a1910a61019b9dd76691f675d2f8ab7b2bde7f7bc8ee761b4b2efcacf19c",
+  "writtenBytes": 15120
 }

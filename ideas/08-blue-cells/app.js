@@ -18,6 +18,8 @@
     sheet: D.ladder.sheet,
   };
   const yellowOn = (sheetName) => new Set(((D.census.sheets[sheetName] || {}).yellow_fill_cells) || []);
+  // Long snake_case keys may break after an underscore at phone width, never inside a word.
+  const keyHtml = (k) => esc(k).replace(/_/g, '_<wbr>');
 
   function renderMeta() {
     const w = D.workbook;
@@ -39,9 +41,12 @@
     $('#finding').textContent = D.finding;
     const w = D.workbook;
     const calc = w.calc_pr || {};
+    const absent = (v) => (v == null ? 'absent' : v);
     const media = (w.media || []).map((m) => `${m.member} (${fmt(m.bytes)} bytes, md5 ${m.md5})`).join(', ');
-    $('#written-by').innerHTML = `Written by <b>${esc(w.application || '?')}</b> (creator ${esc(w.creator || '?')}), created ${esc(w.created || '?')}, modified ${esc(w.modified || '?')}; `
-      + `<code>calcPr fullCalcOnLoad="${esc(calc.fullCalcOnLoad ?? '?')}"</code> tells a spreadsheet program to recompute everything on open; `
+    $('#written-by').innerHTML = `Written by <b>${esc(absent(w.application))}</b> (docProps/core.xml <code>dc:creator</code> ${esc(absent(w.creator))}), created ${esc(absent(w.created))}, modified ${esc(absent(w.modified))}; `
+      + (calc.fullCalcOnLoad === '1'
+        ? '<code>calcPr fullCalcOnLoad="1"</code> tells a spreadsheet program to recompute everything on open; '
+        : `<code>calcPr fullCalcOnLoad</code> is ${esc(absent(calc.fullCalcOnLoad))}; `)
       + `${w.shared_strings == null ? 'no shared-strings part (every string is inline)' : `${w.shared_strings} shared strings`}; `
       + `sheets: ${w.sheets.map(esc).join(', ')}. `
       + (media ? `The one embedded image, ${esc(media)}, is the only computed output inside the file: a picture of the cash-flow chart, not values (the README records which committed PNG it equals).` : 'No embedded media.')
@@ -61,9 +66,9 @@
       const cells = COLS.map((c) => {
         const ref = r.cells[c];
         const cls = ['num', r.blue ? 'blue' : '', yellow.has(ref) ? 'yellow' : ''].filter(Boolean).join(' ');
-        return `<td class="${cls}" data-cell="${esc(ref)}" title="${esc(ref)}">${esc(r.raw[c])}</td>`;
+        return `<td class="${cls}" data-cell="${esc(ref)}" data-label="${esc(c)}" title="${esc(ref)}">${esc(r.raw[c])}</td>`;
       }).join('');
-      return `<tr data-key="${esc(key)}"><td class="key">${esc(key)}</td>${cells}<td>${esc(r.cells[COLS[0]])}:${esc(r.cells[COLS[COLS.length - 1]])}</td><td class="label">${esc(r.label)}</td></tr>`;
+      return `<tr data-key="${esc(key)}"><td class="key">${keyHtml(key)}</td>${cells}<td class="cells">${esc(r.cells[COLS[0]])}:${esc(r.cells[COLS[COLS.length - 1]])}</td><td class="label">${esc(r.label)}</td></tr>`;
     }).join('');
     $('#notes').innerHTML = Object.entries(L.rows).map(([key, r]) => `<li><code>${esc(key)}</code>${r.note ? esc(r.note) : '<i>no note</i>'}</li>`).join('');
   }
@@ -73,21 +78,23 @@
     const blocks = [D.design_point, D.constants];
     tbody.innerHTML = blocks.map((b) => {
       const entries = Object.entries(b.entries);
-      if (!entries.length) return `<tr><td colspan="5">none found under <code>${esc(b.header)}</code></td></tr>`;
-      const head = `<tr><th colspan="5" class="label">${esc(b.header)} (${esc(b.sheet)}!${esc(entries[0][1].cell)}:${esc(entries[entries.length - 1][1].cell)})</th></tr>`;
-      return head + entries.map(([k, v]) => `<tr><td class="key">${esc(k)}</td><td class="num ${v.blue ? 'blue' : ''}">${esc(v.raw)}</td><td>${esc(v.cell)}</td><td class="label">${esc(v.label)}</td><td class="label">${esc(v.note || '')}</td></tr>`).join('');
+      if (!entries.length) return `<tr><td colspan="5" class="full">none found under <code>${esc(b.header)}</code></td></tr>`;
+      const head = `<tr class="block"><th colspan="5" class="label">${esc(b.header)} (${esc(b.sheet)}!${esc(entries[0][1].cell)}:${esc(entries[entries.length - 1][1].cell)})</th></tr>`;
+      return head + entries.map(([k, v]) => `<tr><td class="key">${keyHtml(k)}</td><td class="num ${v.blue ? 'blue' : ''}" data-label="value">${esc(v.raw)}</td><td class="cells" data-label="cell">${esc(v.cell)}</td><td class="label">${esc(v.label)}</td><td class="label note">${esc(v.note || '')}</td></tr>`).join('');
     }).join('');
   }
 
   function renderCensus() {
     const cs = D.census.sheets;
     const t = D.census.totals;
-    const row = (name, c, cls) => `<tr class="${cls || ''}"><td>${esc(name)}</td><td class="num">${c.cells}</td><td class="num">${c.formula_cells}</td><td class="num">${c.formula_cells_with_cached_value}</td><td class="num">${c.literal_numbers}</td><td class="num">${c.strings}</td><td class="num">${c.blue_cells}</td><td class="num">${c.green_cells}</td><td class="num">${Array.isArray(c.yellow_fill_cells) ? c.yellow_fill_cells.length : c.yellow_fill_cells}</td></tr>`;
+    const num = (label, n) => `<td class="num" data-label="${label}">${n}</td>`;
+    const row = (name, c, cls) => `<tr class="${cls || ''}"><td class="sheet">${esc(name)}</td>${num('cells', c.cells)}${num('formulas', c.formula_cells)}${num('cached', c.formula_cells_with_cached_value)}${num('numbers', c.literal_numbers)}${num('strings', c.strings)}${num('blue', c.blue_cells)}${num('green', c.green_cells)}${num('yellow', Array.isArray(c.yellow_fill_cells) ? c.yellow_fill_cells.length : c.yellow_fill_cells)}</tr>`;
     $('#census tbody').innerHTML = Object.entries(cs).map(([n, c]) => row(n, c)).join('') + row('TOTAL', t, 'total');
     const yellow = Object.entries(cs).flatMap(([n, c]) => c.yellow_fill_cells.map((r) => `${n}!${r}`));
     $('#census-notes').innerHTML = `"cached" counts formula cells whose <code>&lt;v&gt;</code> is non-empty: in this file every one of the ${fmt(t.formula_cells)} formula cells has an empty <code>&lt;v/&gt;</code>. `
       + `Yellow-filled cells (the sheet's "key assumption needing attention"): ${yellow.map((y) => `<code>${esc(y)}</code>`).join(', ') || 'none'}. `
       + `The ${t.green_cells} green cells are the Cash Flow sheet's <code>INDEX(...)</code> links into Design Calcs and Assumptions.`;
+    $('#guards').innerHTML = D.guards.map((g) => `<li class="held"><b>${esc(g.name)}</b>: ${esc(g.detail)}</li>`).join('');
     $('#checks').innerHTML = D.checks.map((c) => `<li class="${c.ok ? '' : 'bad'}"><b>${esc(c.name)}</b>: ${esc(c.detail)}</li>`).join('');
   }
 
@@ -111,10 +118,22 @@
   $('#copy-report').addEventListener('click', () => copyText(BC.renderReport(D), 'the text report'));
 
   // ── check your own copy ─────────────────────────────────────────────────────
+  // Read the inflated stream chunk by chunk, so a corrupt member surfaces the stream's own error
+  // (which bluecells.js wraps with the member's name) rather than a fetch-style "Failed to fetch".
   async function inflateRaw(u8) {
-    const ds = new DecompressionStream('deflate-raw');
-    const buf = await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();
-    return new Uint8Array(buf);
+    const reader = new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+    const chunks = [];
+    let n = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      n += value.length;
+    }
+    const out = new Uint8Array(n);
+    let o = 0;
+    for (const c of chunks) { out.set(c, o); o += c.length; }
+    return out;
   }
 
   function compare(saved, own) {
@@ -155,7 +174,7 @@
       if (e instanceof BC.LadderError) {
         verdict('refuse', 'Refused: the workbook does not hold the ladder where the row map says', `<pre>${esc(e.message)}</pre><p>No ladder is returned for this file; the message above says what was found, what was expected and what would help.</p>`);
       } else {
-        verdict('refuse', 'Cannot read this file as a workbook', `<pre>${esc(e.message || String(e))}</pre><p>What would help: an .xlsx (a zip with <code>xl/workbook.xml</code>), not a .xls, .csv or .ods.</p>`);
+        verdict('refuse', 'Cannot read this file as a workbook', `<pre>${esc(e.message || String(e))}</pre><p>What would help: an intact .xlsx (a zip with <code>xl/workbook.xml</code> whose members inflate and pass their CRC-32), not a .xls, .csv or .ods; if the message names a member, the file is damaged: copy it again from the repository.</p>`);
       }
       return;
     }
@@ -167,7 +186,7 @@
       parts.push(`<p>Byte-identical to the snapshot taken from Skyhook @ <code>${esc(String((D.provenance || {}).commit || '').slice(0, 7))}</code>: same md5, so the same ${fmt(own.census.totals.formula_cells)} formulas and the same ${Object.keys(own.ladder.rows).length * COLS.length} ladder cells.</p>`);
     } else {
       if (cmp.ladder.length) {
-        parts.push(`<p><b>${cmp.ladder.length}</b> ladder cell${cmp.ladder.length === 1 ? '' : 's'} differ from the snapshot:</p><ul>`
+        parts.push(`<p><b>${cmp.ladder.length}</b> ladder cell${cmp.ladder.length === 1 ? ' differs' : 's differ'} from the snapshot:</p><ul>`
           + cmp.ladder.map((d) => `<li><code>${esc(d.key)}</code> ${esc(d.scn)} (${esc(d.cell)}): snapshot ${esc(d.saved)} → yours <b>${esc(d.own)}</b></li>`).join('') + '</ul>');
       } else {
         parts.push(`<p>All ${Object.keys(own.ladder.rows).length * COLS.length} ladder cells equal the snapshot's, although the file's bytes differ.</p>`);

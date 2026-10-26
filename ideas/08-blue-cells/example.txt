@@ -1,9 +1,9 @@
 $ python3 ideas/08-blue-cells/ladder_export.py /home/user/skyhook/tools/financial/skyhook_financial_model.xlsx --provenance ideas/08-blue-cells/snapshots/skyhook_financial_model.xlsx.provenance.json
-Blue Cells 0.1.0 — the Skyhook financial workbook read with zipfile + xml only
+Blue Cells 0.3.0 — the Skyhook financial workbook read with zipfile + xml only
 Workbook  skyhook_financial_model.xlsx  65,603 bytes, 17 zip members
   sha256  a0e774f4b29bc9824b34b622093011042b12274632012a61b02ea9a3f5d41b73
-  md5     5ccdee4d43e91f8dd98884678c8e99bb  (binary, byte-for-byte; the hash finance/decision_grid.json carries as workbook_md5)
-  written by Microsoft Excel Compatible / Openpyxl 3.1.5 (openpyxl), created 2026-06-11T20:46:26Z, modified 2026-07-02T21:38:34Z
+  md5     5ccdee4d43e91f8dd98884678c8e99bb  (binary, byte-for-byte: how export_grid.provenance_md5 hashes the .xlsx for decision_grid.json's workbook_md5)
+  written by Microsoft Excel Compatible / Openpyxl 3.1.5; dc:creator openpyxl; created 2026-06-11T20:46:26Z, modified 2026-07-02T21:38:34Z
   calcPr fullCalcOnLoad=1 calcId=124519; shared strings: none (every string is inline)
   provenance  https://github.com/hudsonclavin-cloud/skyhook tools/financial/skyhook_financial_model.xlsx @ 34935cb (2026-09-10T23:52:55-04:00); last changed 5719c0e 2026-07-02T17:39:34-04:00
 Sheets    README | Assumptions | Design Calcs | Phase Budgets | Cash Flow & Payback
@@ -54,11 +54,12 @@ Formula census (what the file stores)
   media: xl/media/image1.png 53,976 bytes md5 11384969e42362346381174c57ddc7ae
 
 Finding
-  The committed workbook holds 146 formula cells and 0 cached results: every <v> under a formula is empty. The file carries inputs (81 literal numbers, 63 blue input cells) and formulas, not results. Any number quoted as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated on open (calcPr fullCalcOnLoad=1) and was not saved back, or by finance/skyhook_finance.py.
+  This workbook holds 146 formula cells and 0 cached results: every <v> under a formula is empty. The file carries inputs (81 literal numbers, 63 blue input cells) and formulas, not results. Any number quoted as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated on open (calcPr fullCalcOnLoad=1) and was not saved back, or by finance/skyhook_finance.py.
 
-Checks    6 of 6 passed
-  ok   ladder-rows: 14 of 14 rows from finance/skyhook_finance.py found where the map says, labels match LABEL_GUARD
-  ok   ladder-literals: all 42 ladder cells hold literal numbers (none is a formula)
+Guards    held (enforced by refusal: a miss refuses the whole file, exit 1, so they cannot fail here)
+  held ladder-rows: 14 rows from finance/skyhook_finance.py found where the map says, labels match LABEL_GUARD
+  held ladder-literals: all 42 ladder cells hold literal numbers (none is a formula, none is empty)
+Checks    4 of 4 passed (reported, not enforced)
   ok   ladder-blue: all 42 ladder cells use the blue input font
   ok   no-blue-formula: none of the 63 blue cells holds a formula
   ok   green-are-links: all 5 green cells are formulas that reference another sheet
@@ -72,13 +73,43 @@ ladder_export.py: REFUSED — the Assumptions sheet does not hold the ladder whe
   What would help: re-read the sheet and update _LADDER_ROWS in finance/skyhook_finance.py (and this tool's LABEL_GUARD) together, then re-run.
 (exit 1)
 
+$ python3 ideas/08-blue-cells/ladder_export.py ideas/08-blue-cells/fixtures/pre_fix_7bb5b5f.xlsx
+ladder_export.py: REFUSED — the Assumptions sheet does not hold the ladder where the row map says:
+  - ladder row 3 (strength_retention): column A reads 'Fiber strength derate (joints/weave/aging)', expected a label containing 'strength retention'
+  What would help: re-read the sheet and update _LADDER_ROWS in finance/skyhook_finance.py (and this tool's LABEL_GUARD) together, then re-run.
+(exit 1; the pre-fix workbook, blob 46bc02e at 7bb5b5f: row 3 was labelled a derate)
+
+$ python3 ideas/08-blue-cells/ladder_export.py --census ideas/08-blue-cells/fixtures/pre_fix_7bb5b5f.xlsx
+Blue Cells 0.3.0 — the Skyhook financial workbook read with zipfile + xml only
+Workbook  pre_fix_7bb5b5f.xlsx  20,983 bytes, 19 zip members
+  sha256  05c5d0cf3ce5ecdd8d17fddac5f2268cb3ad612d9cefdb70d3a578cbcb852a28
+  md5     99a65f70f08c158c32c507f59363af23  (binary, byte-for-byte: how export_grid.provenance_md5 hashes the .xlsx for decision_grid.json's workbook_md5)
+  written by LibreOffice/24.2.7.2$Linux_X86_64 LibreOffice_project/420$Build-2; dc:creator openpyxl; created 2026-06-11T20:46:26Z, modified 2026-06-11T20:47:33Z
+  calcPr fullCalcOnLoad=absent calcId=absent; shared strings: 147
+Sheets    README | Assumptions | Design Calcs | Phase Budgets | Cash Flow & Payback
+Legend    Color code: BLUE = hardcoded inputs · BLACK = formulas · GREEN = cross-sheet links · YELLOW fill = key assumption needing attention.
+
+Formula census (what the file stores)
+  sheet                   cells  formulas  cached  numbers  strings  blue  green  yellow
+  README                      6         0       0        0        6     0      0       0
+  Assumptions               106         0       0       54       52    54      0       3
+  Design Calcs              121        69      69        0       48     0      0       0
+  Phase Budgets              24         2       2        8       14     8      0       0
+  Cash Flow & Payback       115        63      63       19       33     1      5       1
+  TOTAL                     372       134     134       81      153    63      5       4
+  yellow fill (key assumption needing attention): Assumptions!B8, Assumptions!C8, Assumptions!D8, Cash Flow & Payback!B2
+
+Finding
+  This workbook holds 134 formula cells, all 134 with a cached result stored in the file.
+(exit 0; --census reads a file the row map refuses: before the fix it stored 134 LibreOffice results)
+
 $ python3 ideas/08-blue-cells/ladder_export.py ideas/08-blue-cells/fixtures/recalculated_by_libreoffice.xlsx
-Blue Cells 0.1.0 — the Skyhook financial workbook read with zipfile + xml only
-Workbook  recalculated_by_libreoffice.xlsx  69,458 bytes, 19 zip members
-  sha256  653836ad31fe4b15c6e7d750cdc26eb982b664af608265f9e0613dc011ff35ad
-  md5     d0f317e2dba3845097ef81ec4332f657  (binary, byte-for-byte; the hash finance/decision_grid.json carries as workbook_md5)
-  written by LibreOffice/24.2.7.2$Linux_X86_64 LibreOffice_project/420$Build-2 (openpyxl), created 2026-06-11T20:46:26Z, modified 2026-07-02T21:38:34Z
-  calcPr fullCalcOnLoad=? calcId=?; shared strings: 158
+Blue Cells 0.3.0 — the Skyhook financial workbook read with zipfile + xml only
+Workbook  recalculated_by_libreoffice.xlsx  18,214 bytes, 15 zip members
+  sha256  5a6420e78501db4d0389233b9d3489943c1896c54e4bb1a58a422f54c3638480
+  md5     cb9adc3faceb611f8fc7bdd40d0855f7  (binary, byte-for-byte: how export_grid.provenance_md5 hashes the .xlsx for decision_grid.json's workbook_md5)
+  written by LibreOffice/24.2.7.2$Linux_X86_64 LibreOffice_project/420$Build-2; dc:creator openpyxl; created 2026-06-11T20:46:26Z, modified 2026-07-02T21:38:34Z
+  calcPr fullCalcOnLoad=absent calcId=absent; shared strings: 158
 Formula census (what the file stores)
   sheet                   cells  formulas  cached  numbers  strings  blue  green  yellow
   README                      6         0       0        0        6     0      0       0
@@ -88,18 +119,17 @@ Formula census (what the file stores)
   Cash Flow & Payback       116        63      63       19       34     1      5       1
   TOTAL                     395       146     146       81      164    63      5       4
   yellow fill (key assumption needing attention): Assumptions!B8, Assumptions!C8, Assumptions!D8, Cash Flow & Payback!B2
-  media: xl/media/image1.png 53,976 bytes md5 11384969e42362346381174c57ddc7ae
 
 Finding
-  The workbook holds 146 formula cells, 146 of them with a cached result stored in the file; the rest store none.
+  This workbook holds 146 formula cells, all 146 with a cached result stored in the file.
 
-  … (the ladder, design point and checks are identical to the first run: the inputs did not change, only the stored results did)
+  … (sheets, ladder, design point, guards and checks as in the first run: same inputs, only the stored results differ)
 (exit 0)
 
-$ python3 ideas/08-blue-cells/ladder_export.py --format json --provenance ideas/08-blue-cells/snapshots/skyhook_financial_model.xlsx.provenance.json | head -40
+$ python3 ideas/08-blue-cells/ladder_export.py --format json --provenance ideas/08-blue-cells/snapshots/skyhook_financial_model.xlsx.provenance.json | head -23
 {
- "schema": "blue-cells/ladder/1",
- "tool": "ladder_export.py 0.1.0",
+ "schema": "blue-cells/ladder/2",
+ "tool": "ladder_export.py 0.3.0",
  "workbook": {
   "file": "skyhook_financial_model.xlsx",
   "bytes": 65603,
@@ -120,22 +150,9 @@ $ python3 ideas/08-blue-cells/ladder_export.py --format json --provenance ideas/
    "iterateDelta": "0.0001"
   },
   "shared_strings": null,
-  "media": [
-   {
-    "member": "xl/media/image1.png",
-    "bytes": 53976,
-    "md5": "11384969e42362346381174c57ddc7ae"
-   }
-  ],
-  "sheets": [
-   "README",
-   "Assumptions",
-   "Design Calcs",
-   "Phase Budgets",
-   "Cash Flow & Payback"
-  ],
-  "legend": "Color code: BLUE = hardcoded inputs · BLACK = formulas · GREEN = cross-sheet links · YELLOW fill = key assumption needing attention."
- },
- "ladder": {
   …
-(exit 0; the whole file is snapshots/ladder.json, 14 ladder rows, 10 design-point rows, 2 constants, the census and the checks)
+(exit 0; the full output is snapshots/ladder.json, byte for byte)
+
+$ python3 ideas/08-blue-cells/ladder_export.py --out /nonexistent_dir/ladder.json
+ladder_export.py: cannot write /nonexistent_dir/ladder.json — [Errno 2] No such file or directory: '/nonexistent_dir/ladder.json'
+(exit 2: an output it cannot write; exit 1 means only a refusal)

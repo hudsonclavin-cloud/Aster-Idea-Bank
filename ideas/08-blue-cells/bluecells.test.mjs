@@ -1,11 +1,8 @@
-// Tests for bluecells.js, the browser/Node twin of ladder_export.py. Node built-ins only.
+// Tests for bluecells.js, the browser/Node twin of ladder_export.py (Node built-ins only).
 // From the bank root:  node --test ideas/08-blue-cells/bluecells.test.mjs
-//
-// Pinned outside this folder's code: the workbook md5 to finance/decision_grid.json's workbook_md5
-// (snapshots/decision_grid.json) and the sha256/bytes to the snapshot's provenance sidecar; MD5 to
-// the RFC 1321 test vectors and to Node's crypto; CRC-32 to the standard check value for
-// "123456789". Pinned to the Python implementation: the whole JSON artefact (snapshots/ladder.json),
-// the text report (example.txt) and the refusal message, so the two readers cannot drift apart.
+// Pinned outside this code: md5 to decision_grid.json's workbook_md5, sha256 to the sidecar, MD5 to
+// RFC 1321 and Node's crypto, CRC-32 to 0xCBF43926. Pinned to the Python twin: ladder.json and the
+// example.txt report and refusal messages, so the two readers cannot drift apart.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -162,6 +159,57 @@ test('a stored (method 0) zip is read, and a corrupted member fails its CRC chec
   assert.deepEqual(commented.map((e) => [e.name, e.size]), [['a.txt', 5]]);
 });
 
+// The snapshot with sheet2.xml damaged while the central directory stays intact: one byte inverted
+// 50 bytes into its deflate data, or its CRC-32 changed in the local and central headers.
+function corruptSheet2() {
+  const entry = BC.readZip(XLSX).find((e) => e.name === 'xl/worksheets/sheet2.xml');
+  const start = entry.data.byteOffset - XLSX.byteOffset;
+  const flipped = new Uint8Array(XLSX);
+  flipped[start + 50] ^= 0xff;
+  const bad = new Uint8Array(XLSX);
+  const dv = new DataView(bad.buffer);
+  const eocd = bad.length - 22;
+  let p = dv.getUint32(eocd + 16, true);
+  while (dv.getUint32(p, true) === 0x02014b50) {
+    const n = dv.getUint16(p + 28, true), x = dv.getUint16(p + 30, true), c = dv.getUint16(p + 32, true);
+    if (Buffer.from(bad.subarray(p + 46, p + 46 + n)).toString() === 'xl/worksheets/sheet2.xml') {
+      bad[p + 16] ^= 0x01;
+      bad[dv.getUint32(p + 42, true) + 14] ^= 0x01;
+    }
+    p += 46 + n + x + c;
+  }
+  return { flipped, bad };
+}
+
+test('a corrupt member or a truncated archive is a WorkbookError naming what failed, never a raw inflate error', async () => {
+  const { flipped, bad } = corruptSheet2();
+  await assert.rejects(BC.readWorkbook(flipped, inflateRaw, 'flipped.xlsx'),
+    (e) => e instanceof BC.WorkbookError && /^member xl\/worksheets\/sheet2\.xml could not be read: its deflate data is corrupt \(/.test(e.message));
+  await assert.rejects(BC.readWorkbook(bad, inflateRaw, 'badcrc.xlsx'),
+    (e) => e instanceof BC.WorkbookError && e.message === 'member xl/worksheets/sheet2.xml failed its CRC-32 check');
+  assert.throws(() => BC.readZip(XLSX.subarray(0, 40000)), BC.WorkbookError);
+  // An end-of-central-directory record that points past the end of the file.
+  const lying = new Uint8Array(XLSX);
+  new DataView(lying.buffer).setUint32(lying.length - 22 + 16, lying.length + 1000, true);
+  assert.throws(() => BC.readZip(lying), (e) => e instanceof BC.WorkbookError && /truncated or damaged/.test(e.message));
+});
+
+test('any relationships prefix, prefixed elements and single-quoted attributes (the same XML as the Python test)', async () => {
+  const wbxml = "<x:workbook xmlns:x='http://schemas.openxmlformats.org/spreadsheetml/2006/main' "
+    + "xmlns:rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships'>"
+    + "<x:sheets><x:sheet name='Only' sheetId='1' rel:id='rId7'></x:sheet></x:sheets></x:workbook>";
+  const rels = "<Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'>"
+    + "<Relationship Id='rId7' Type='x' Target='/xl/worksheets/one.xml'/></Relationships>";
+  const sheet = "<x:worksheet xmlns:x='http://schemas.openxmlformats.org/spreadsheetml/2006/main'><x:sheetData>"
+    + "<x:row r='1'><x:c r='A1' t='inlineStr'><x:is><x:t>hi</x:t></x:is></x:c><x:c r='B1'><x:v>7</x:v></x:c>"
+    + '</x:row></x:sheetData></x:worksheet>';
+  const wb = await BC.readWorkbook(storedZip([['xl/workbook.xml', wbxml], ['xl/_rels/workbook.xml.rels', rels], ['xl/worksheets/one.xml', sheet]]), inflateRaw, 'prefixed.xlsx');
+  assert.deepEqual(wb.sheets.map((x) => [x.name, x.part]), [['Only', 'xl/worksheets/one.xml']]);
+  assert.deepEqual(wb.sheets[0].cells.map((c) => [c.ref, c.kind, c.value]), [['A1', 'string', 'hi'], ['B1', 'number', 7]]);
+  // A sheet whose relationship attribute is in no namespace is not silently given one.
+  assert.equal(BC.parseWorkbookXml('<workbook xmlns:r="urn:other"><sheets><sheet name="S" r:id="rId1"/></sheets></workbook>').sheets[0].rId, null);
+});
+
 test('cell kinds, entities, empty <v/>, inline runs, cached values', () => {
   const NS = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"';
   const xml = `<worksheet ${NS}><sheetData><row r="1">`
@@ -232,7 +280,11 @@ test('the census is what the Python tests pin: 81/63/2 formula cells, none cache
   assert.equal(RESULT.census.totals.blue_cells, 63);
   assert.equal(RESULT.census.totals.blue_literal_numbers, 62);
   assert.match(RESULT.finding, /146 formula cells and 0 cached results/);
-  assert.ok(RESULT.checks.every((c) => c.ok));
+  assert.deepEqual(RESULT.checks.map((c) => [c.name, c.ok]), [['ladder-blue', true], ['no-blue-formula', true], ['green-are-links', true], ['design-point', true]]);
+  assert.deepEqual(RESULT.guards.map((g) => g.name), ['ladder-rows', 'ladder-literals']);
+  const t = (f, c) => ({ formula_cells: f, formula_cells_with_cached_value: c, literal_numbers: 1, blue_cells: 1 });
+  assert.match(BC.findingSentence(WB, t(5, 5)), /5 formula cells, all 5 with a cached result stored in the file\.$/);
+  assert.match(BC.findingSentence(WB, t(5, 2)), /5 formula cells, 2 of them with a cached result stored in the file; the other 3 store none\.$/);
   for (const s of WB.sheets) for (const c of s.cells) if (c.kind === 'formula') assert.equal(c.cached, null, `${s.name}!${c.ref}`);
 });
 
@@ -266,6 +318,25 @@ test('a formula, an empty cell, a renamed header or a missing sheet in the ladde
   assert.notEqual(r.workbook.md5, RESULT.workbook.md5);
 });
 
+test('the pre-fix workbook (LibreOffice-written, blob 46bc02e): 134 of 134 cached, refused on row 3 with the CLI\'s exact message', async () => {
+  const pre = new Uint8Array(read(path.join(here, 'fixtures', 'pre_fix_7bb5b5f.xlsx')));
+  const blob = crypto.createHash('sha1').update(Buffer.concat([Buffer.from(`blob ${pre.length}\0`), Buffer.from(pre)])).digest('hex');
+  assert.equal(blob, '46bc02ed26367805f0e920b00a52de9098e42613');
+  const wb = await BC.readWorkbook(pre, inflateRaw, 'pre_fix_7bb5b5f.xlsx');
+  assert.match(wb.application, /^LibreOffice\/24\.2\.7\.2/);
+  const per = Object.fromEntries(wb.sheets.map((x) => [x.name, BC.census(x)]));
+  const t = BC.totals(per);
+  assert.deepEqual([t.formula_cells, t.formula_cells_with_cached_value], [134, 134]);
+  assert.equal(per['Design Calcs'].formula_cells, 69);
+  let err;
+  try { BC.analyze(wb, ROWS); } catch (e) { err = e; }
+  assert.ok(err instanceof BC.LadderError);
+  const block = EXAMPLE.split('\n\n$ ')[2];
+  assert.ok(block.startsWith('python3 ideas/08-blue-cells/ladder_export.py ideas/08-blue-cells/fixtures/pre_fix_7bb5b5f.xlsx\n'));
+  const stderr = block.split('\n').slice(1).join('\n').split('\n(exit 1')[0];
+  assert.equal(`ladder_export.py: REFUSED — ${err.message}`, stderr);
+});
+
 test('a copy re-saved by LibreOffice: shared strings, 146 cached results, the same ladder, "beyond Y15" as a string result', async () => {
   const lo = new Uint8Array(read(path.join(here, 'fixtures', 'recalculated_by_libreoffice.xlsx')));
   const wb = await BC.readWorkbook(lo, inflateRaw, 'recalculated_by_libreoffice.xlsx');
@@ -274,7 +345,7 @@ test('a copy re-saved by LibreOffice: shared strings, 146 cached results, the sa
   assert.equal(wb.shared_strings, 158);
   assert.equal(r.census.totals.formula_cells, 146);
   assert.equal(r.census.totals.formula_cells_with_cached_value, 146);
-  assert.match(r.finding, /146 of them with a cached result/);
+  assert.match(r.finding, /146 formula cells, all 146 with a cached result/);
   assert.ok(r.checks.every((c) => c.ok));
   assert.notEqual(r.workbook.md5, RESULT.workbook.md5);
   for (const [k, row] of Object.entries(RESULT.ladder.rows)) assert.deepEqual(r.ladder.rows[k].values, row.values, k);
@@ -286,6 +357,84 @@ test('a copy re-saved by LibreOffice: shared strings, 146 cached results, the sa
   assert.ok(Math.abs(2 * Number(grid['Design Calcs!B11'].cached) - revA.conservative_30pct_derate) < 0.005, 'LibreOffice evaluates row 11 to the published 121.83');
   assert.ok(Math.abs(Number(grid['Design Calcs!B12'].cached) - revA.conservative_30pct_fiber_mass_t) < 0.05);
   assert.ok(Number(grid['Design Calcs!B31'].cached) > 1, 'the ERF audit block fails under spreadsheet precedence (README finding)');
+});
+
+// fixtures/malformed_cases.json, shared with test_ladder_export.py: the same bytes get the same verdict.
+const CASES = readJson(path.join(here, 'fixtures', 'malformed_cases.json'));
+async function buildCase(c) {
+  const base = new Uint8Array(read(path.join(here, CASES.bases[c.base || 'snapshot'])));
+  const member = c.member || 'xl/worksheets/sheet2.xml';
+  const members = [];
+  let hit = false;
+  for (const e of BC.readZip(base)) {
+    let data = Buffer.from(await BC.inflateEntry(e, inflateRaw));
+    if (e.name === member) {
+      hit = true;
+      if (c.replace) {
+        const [oldS, newS] = c.replace.map((x) => Buffer.from(x, 'utf8'));
+        const i = data.indexOf(oldS);
+        assert.ok(i >= 0, `${c.name}: ${c.replace[0]} is not in ${e.name}`);
+        data = Buffer.concat([data.subarray(0, i), newS, data.subarray(i + oldS.length)]);
+      } else if (c.truncate) {
+        data = data.subarray(0, data.length - c.truncate);
+      } else {
+        const [after, byte] = c.insert_byte;
+        const a = Buffer.from(after, 'utf8');
+        const i = data.indexOf(a) + a.length;
+        data = Buffer.concat([data.subarray(0, i), Buffer.from([byte]), data.subarray(i)]);
+      }
+    }
+    members.push([e.name, data]);
+  }
+  assert.ok(hit, `${c.name}: no member ${member}`);
+  return storedZip(members);
+}
+
+test('crafted damage gets the verdict and message the Python reader gives (fixtures/malformed_cases.json)', async () => {
+  assert.ok(CASES.cases.length >= 20);
+  for (const c of CASES.cases) {
+    let kind, got;
+    try {
+      got = BC.analyze(await BC.readWorkbook(await buildCase(c), inflateRaw, 'case.xlsx'), ROWS);
+      kind = 'ok';
+    } catch (e) {
+      if (e instanceof BC.WorkbookError) kind = 'unreadable';
+      else if (e instanceof BC.LadderError) kind = 'refused';
+      else throw e;
+      got = e.message;
+    }
+    assert.equal(kind, c.expect, `${c.name}: ${typeof got === 'string' ? got : 'read without complaint'}`);
+    if (kind === 'ok') {
+      const [key, scn, want] = c.value;
+      assert.equal(got.ladder.rows[key].values[scn], want, c.name);
+      assert.deepEqual(got.checks.filter((x) => !x.ok).map((x) => x.name), c.failedCheck ? [c.failedCheck] : [], c.name);
+      assert.doesNotThrow(() => JSON.parse(JSON.stringify(got)));
+    } else {
+      assert.ok(got.includes(c.message), `${c.name}: ${got}`);
+    }
+  }
+});
+
+test('the XML check passes every part of the three workbooks and names what is wrong with a damaged one', async () => {
+  for (const f of ['snapshots/skyhook_financial_model.xlsx', 'fixtures/recalculated_by_libreoffice.xlsx', 'fixtures/pre_fix_7bb5b5f.xlsx']) {
+    for (const e of BC.readZip(new Uint8Array(read(path.join(here, f))))) {
+      if (!e.name.endsWith('.xml') && !e.name.endsWith('.rels')) continue;
+      assert.equal(BC.xmlProblem(Buffer.from(await BC.inflateEntry(e, inflateRaw)).toString('utf8')), null, `${f} ${e.name}`);
+    }
+  }
+  assert.equal(BC.xmlProblem('<?xml version="1.0"?><a x="1 > 0"><b/><!-- c --><![CDATA[<d>]]></a>\n'), null);
+  assert.match(BC.xmlProblem('<a><b></a>'), /<\/a> closes <b>/);
+  assert.match(BC.xmlProblem('<a></a><a/>'), /more than one root/);
+  assert.match(BC.xmlProblem('<a><b x=1/></a>'), /unmatched '<'/);
+  assert.match(BC.xmlProblem('<a>x & y</a>'), /bare '&'/);
+  assert.match(BC.xmlProblem('<a><b>'), /<b> is never closed/);
+  assert.match(BC.xmlProblem('<a>'), /never closed/);
+  assert.match(BC.xmlProblem('<a/>junk'), /text outside the root/);
+  assert.match(BC.xmlProblem(''), /no root element/);
+  assert.equal(BC.parseNumber('-0.5E+2', 'X1'), -50);
+  for (const bad of ['NaN', 'Infinity', '-Infinity', '1e999', '0x10', '0b1', '1_0', '1,5', '.', '+', '1e', '\u0661']) {
+    assert.throws(() => BC.parseNumber(bad, 'X1'), (e) => e instanceof BC.WorkbookError && e.message === `X1 is typed numeric but holds ${BC.repr(bad)}`, bad);
+  }
 });
 
 test('analyze is pure: same output twice, input bytes untouched, no clock', () => {

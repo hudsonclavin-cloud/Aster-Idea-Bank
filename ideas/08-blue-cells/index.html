@@ -29,7 +29,7 @@
     <h2 id="h-ladder">The ladder</h2>
     <p class="lead" id="ladder-lead"></p>
     <div class="tablewrap">
-      <table id="ladder">
+      <table id="ladder" class="stack">
         <thead><tr><th>key</th><th class="num">Conservative</th><th class="num">Baseline</th><th class="num">Optimistic</th><th>cells</th><th>label in column A</th></tr></thead>
         <tbody></tbody>
       </table>
@@ -51,7 +51,7 @@
     <h2 id="h-design">Shared design point and constants</h2>
     <p class="lead">The single-column blocks below the ladder on the same sheet, keyed by a slug of their label. Every value is a blue literal; the Design Calcs formulas read them by cell.</p>
     <div class="tablewrap">
-      <table id="design">
+      <table id="design" class="stack">
         <thead><tr><th>key</th><th class="num">value</th><th>cell</th><th>label</th><th>note</th></tr></thead>
         <tbody></tbody>
       </table>
@@ -62,13 +62,16 @@
     <h2 id="h-census">Formula census</h2>
     <p class="lead">Per worksheet part: how many cells, how many hold a formula (<code>&lt;f&gt;</code>), how many of those also hold a cached result (a non-empty <code>&lt;v&gt;</code>), how many are literal numbers, and how many carry the blue input or green cross-sheet font.</p>
     <div class="tablewrap">
-      <table id="census">
+      <table id="census" class="stack">
         <thead><tr><th>sheet</th><th class="num">cells</th><th class="num">formulas</th><th class="num">cached</th><th class="num">numbers</th><th class="num">strings</th><th class="num">blue</th><th class="num">green</th><th class="num">yellow</th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
     <p class="small" id="census-notes"></p>
-    <h3>Checks the reader makes before trusting the ladder</h3>
+    <h3>Guards: enforced by refusal</h3>
+    <p class="small">If either fails, the file is refused and no ladder is returned, so on a page that shows a ladder they held.</p>
+    <ul class="checks" id="guards"></ul>
+    <h3>Checks: reported, not enforced</h3>
     <ul class="checks" id="checks"></ul>
   </section>
 

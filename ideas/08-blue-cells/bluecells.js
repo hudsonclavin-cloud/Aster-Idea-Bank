@@ -1,22 +1,18 @@
-// bluecells.js — the browser/Node twin of ladder_export.py. Reads an .xlsx as a zip of XML parts,
-// extracts the Skyhook financial workbook's input ladder keyed by finance/skyhook_finance.py's row
-// map, counts formula cells against cached results, and renders the same text report. Pure: no DOM,
-// no network. Loads as a classic script (window.BlueCells) and via require() for the Node tests.
-//
-// The zip reader handles stored (method 0) and deflated (method 8) members and checks each member's
-// CRC-32; inflation itself is injected (zlib.inflateRawSync in Node, DecompressionStream in the
-// browser) so this file has no dependency. Every function mirrors the Python module of the same
-// name; bluecells.test.mjs checks that the two agree on the snapshot workbook.
+// bluecells.js — the browser/Node twin of ladder_export.py: reads an .xlsx as a zip of XML parts,
+// extracts the ladder by finance/skyhook_finance.py's row map, takes the census and renders the same
+// report. Pure (no DOM, no network); a classic script (window.BlueCells) and a require() module.
+// Stored and deflated members, CRC-32 checked; the inflater is injected (zlib in Node,
+// DecompressionStream in the browser). Functions mirror the Python ones of the same name, and
+// bluecells.test.mjs holds the two to the same output on the snapshot and the crafted cases.
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.BlueCells = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const VERSION = '0.1.0';
+  const VERSION = '0.3.0';
 
-  // The workbook README sheet's legend (cell A4): BLUE = hardcoded inputs, BLACK = formulas,
-  // GREEN = cross-sheet links, YELLOW fill = key assumption needing attention. RGB part of ARGB.
+  // The README sheet's legend (A4): BLUE inputs, GREEN cross-sheet links, YELLOW fill key assumptions.
   const BLUE_RGB = '0000FF';
   const GREEN_RGB = '008000';
   const YELLOW_RGB = 'FFFF00';
@@ -61,7 +57,7 @@
     return String(v);
   }
 
-  // ── bytes ──────────────────────────────────────────────────────────────────
+  // ── bytes ──
 
   const CRC_TABLE = (() => {
     const t = new Uint32Array(256);
@@ -132,13 +128,28 @@
   function utf8(bytes) {
     return new TextDecoder('utf-8').decode(bytes);
   }
+  // XML parts decode strictly: bytes that are not UTF-8 make the part unreadable, as in ElementTree.
+  let utf8Strict = null;
+  function utf8Xml(bytes) {
+    utf8Strict = utf8Strict || new TextDecoder('utf-8', { fatal: true });
+    return utf8Strict.decode(bytes);
+  }
 
-  // ── zip ────────────────────────────────────────────────────────────────────
+  // ── zip ──
 
-  // Central-directory walk. Returns [{name, method, crc32, compressedSize, size, data}] where data is
-  // the raw (still compressed) member bytes. ZIP64 archives are refused.
+  // Central-directory walk: [{name, method, crc32, compressedSize, size, data (still compressed)}].
+  // ZIP64 is refused; a header pointing past the end is a WorkbookError, not a RangeError.
   function readZip(bytes) {
     if (!(bytes instanceof Uint8Array)) bytes = new Uint8Array(bytes);
+    try {
+      return walkZip(bytes);
+    } catch (e) {
+      if (e instanceof RangeError) throw new WorkbookError(`the zip structure is truncated or damaged (${e.message})`);
+      throw e;
+    }
+  }
+
+  function walkZip(bytes) {
     const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     let eocd = -1;
     for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 22 - 65535); i--) {
@@ -176,7 +187,13 @@
     if (entry.method === 0) out = entry.data;
     else if (entry.method === 8) {
       if (typeof inflateRaw !== 'function') throw new WorkbookError(`member ${entry.name} is deflated and no inflateRaw was given`);
-      out = await inflateRaw(entry.data);
+      // A damaged deflate stream makes the host's inflater throw (Node: "invalid bit length repeat";
+      // a browser's DecompressionStream: a TypeError). Name the member and say what it means.
+      try {
+        out = await inflateRaw(entry.data);
+      } catch (e) {
+        throw new WorkbookError(`member ${entry.name} could not be read: its deflate data is corrupt (${(e && e.message) || e})`);
+      }
       if (!(out instanceof Uint8Array)) out = new Uint8Array(out);
     } else throw new WorkbookError(`member ${entry.name} uses compression method ${entry.method}; only stored and deflate are read`);
     if (out.length !== entry.size) throw new WorkbookError(`member ${entry.name} inflated to ${out.length} bytes, expected ${entry.size}`);
@@ -184,7 +201,7 @@
     return out;
   }
 
-  // ── xml ────────────────────────────────────────────────────────────────────
+  // ── xml ──
 
   function decodeEntities(s) {
     if (s == null) return '';
@@ -201,29 +218,92 @@
     });
   }
 
+  // Well-formedness, so damage ElementTree refuses is refused here too rather than read around by the
+  // regexes: tags nest and close, one root, no stray '<' or '&', quoted attributes, no control
+  // characters but tab, CR, LF. Expat checks more. Returns null, or the reason.
+  const TOKEN = /<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>|<\?[\s\S]*?\?>|<!DOCTYPE[^>]*>|<\/([^\s<>\/=!?"']+)\s*>|<([^\s<>\/=!?"']+)((?:\s+[^\s<>\/=!?"']+\s*=\s*(?:"[^"<]*"|'[^'<]*'))*)\s*(\/?)>/g;
+  const BAD_AMP = /&(?!(?:lt|gt|amp|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);)/;
+  const BAD_CHAR = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/;
+  function xmlProblem(xml) {
+    const c = BAD_CHAR.exec(xml);
+    if (c) return `a control character U+${c[0].charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')} at offset ${c.index}`;
+    const stack = [];
+    let last = 0, roots = 0, m;
+    TOKEN.lastIndex = 0;
+    while ((m = TOKEN.exec(xml))) {
+      const text = xml.slice(last, m.index);
+      if (text.includes('<')) return `an unmatched '<' at offset ${last + text.indexOf('<')}`;
+      if (BAD_AMP.test(text)) return `a bare '&' at offset ${last + text.search(BAD_AMP)}`;
+      if (!stack.length && text.trim()) return `text outside the root element at offset ${last}`;
+      last = TOKEN.lastIndex;
+      if (m[1]) {
+        const open = stack.pop();
+        if (open !== m[1]) return open ? `</${m[1]}> closes <${open}>` : `</${m[1]}> closes nothing`;
+      } else if (m[2]) {
+        if (!stack.length && ++roots > 1) return 'more than one root element';
+        if (BAD_AMP.test(m[3])) return `a bare '&' in an attribute of <${m[2]}>`;
+        if (!m[4]) stack.push(m[2]);
+      } else if (m[0].startsWith('<![CDATA[') && !stack.length) {
+        return 'CDATA outside the root element';
+      }
+    }
+    const tail = xml.slice(last);
+    if (tail.includes('<')) return `an unmatched '<' at offset ${last + tail.indexOf('<')} (the part may end early)`;
+    if (tail.trim()) return `text outside the root element at offset ${last}`;
+    if (stack.length) return `<${stack[stack.length - 1]}> is never closed (the part ends early)`;
+    if (!roots) return 'no root element';
+    return null;
+  }
+
+  // Attributes with double or single quotes (XML allows both).
   function attrs(s) {
     const out = {};
-    const re = /([\w:.-]+)\s*=\s*"([^"]*)"/g;
+    const re = /([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
     let m;
-    while ((m = re.exec(s || ''))) out[m[1]] = decodeEntities(m[2]);
+    while ((m = re.exec(s || ''))) out[m[1]] = decodeEntities(m[2] != null ? m[2] : m[3]);
     return out;
   }
 
+  // Element names lose their prefix (<x:c> -> <c>), like ElementTree's local names. Safe once the
+  // part is well-formed: '<' + name only starts a tag; '<!' and '<?' are left alone.
+  function stripPrefixes(xml) {
+    return xml.replace(/<(\/?)[A-Za-z_][\w.-]*:(?=[A-Za-z_])/g, '<$1');
+  }
+
+  const NS_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+  // A <sheet>'s relationship id is the attribute whose namespace is NS_REL, whatever prefix the file
+  // binds to it (r:id in openpyxl and Excel output, any other prefix is just as valid).
+  function relId(sheetAttrs, rootAttrs) {
+    const bound = { ...rootAttrs, ...sheetAttrs };
+    for (const [k, v] of Object.entries(bound)) {
+      if (k.startsWith('xmlns:') && v === NS_REL) {
+        const id = sheetAttrs[`${k.slice(6)}:id`];
+        if (id != null) return id;
+      }
+    }
+    return null;
+  }
+
   function parseWorkbookXml(xml) {
+    xml = stripPrefixes(xml);
+    const root = /<workbook\b([^>]*)>/.exec(xml);
+    const rootAttrs = root ? attrs(root[1]) : {};
     const sheets = [];
-    const re = /<sheet\b([^>]*?)\/>/g;
+    const re = /<sheet\b([^>]*?)\/?>/g;
     let m;
     while ((m = re.exec(xml))) {
       const a = attrs(m[1]);
-      sheets.push({ name: a.name, sheetId: a.sheetId, rId: a['r:id'], state: a.state || 'visible' });
+      sheets.push({ name: a.name, sheetId: a.sheetId, rId: relId(a, rootAttrs), state: a.state || 'visible' });
     }
-    const calc = /<calcPr\b([^>]*?)\/>/.exec(xml);
+    const calc = /<calcPr\b([^>]*?)\/?>/.exec(xml);
     return { sheets, calcPr: calc ? attrs(calc[1]) : null };
   }
 
   function parseRels(xml) {
+    xml = stripPrefixes(xml);
     const out = {};
-    const re = /<Relationship\b([^>]*?)\/>/g;
+    const re = /<Relationship\b([^>]*?)\/?>/g;
     let m;
     while ((m = re.exec(xml))) {
       const a = attrs(m[1]);
@@ -244,6 +324,7 @@
   }
 
   function parseSharedStrings(xml) {
+    xml = stripPrefixes(xml);
     const out = [];
     const re = /<si\b[^>]*?(?:\/>|>([\s\S]*?)<\/si>)/g;
     let m;
@@ -251,7 +332,27 @@
     return out;
   }
 
+  // The numeric grammar shared with ladder_export.py: sign, ASCII digits, fraction, exponent, finite.
+  // Number() alone would take '0x9C4' and 'Infinity'; Python's float() 'NaN', '2_500', non-ASCII digits.
+  const NUMBER = /^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$/;
+  // An index (shared string, style, font, fill): ASCII digits only.
+  const INDEX = /^[0-9]+$/;
+  const xmlTrim = (s) => s.replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, '');
+
+  function parseNumber(text, ref) {
+    const value = NUMBER.test(text) ? Number(text) : NaN;
+    if (!Number.isFinite(value)) throw new WorkbookError(`${ref} is typed numeric but holds ${repr(text)}`);
+    return value;
+  }
+
+  function parseIndex(text, dflt, what) {
+    if (text == null) return dflt;
+    if (!INDEX.test(text)) throw new WorkbookError(`${what} ${repr(text)} is not a non-negative integer`);
+    return Number(text);
+  }
+
   function parseStyles(xml) {
+    xml = stripPrefixes(xml);
     const fonts = [];
     const fontsBlock = /<fonts\b[^>]*>([\s\S]*?)<\/fonts>/.exec(xml);
     if (fontsBlock) {
@@ -284,7 +385,7 @@
       let m;
       while ((m = re.exec(xfsBlock[1]))) {
         const a = attrs(m[1]);
-        xfs.push({ fontId: Number(a.fontId || 0), fillId: Number(a.fillId || 0) });
+        xfs.push({ fontId: parseIndex(a.fontId, 0, 'xl/styles.xml: cellXfs fontId'), fillId: parseIndex(a.fillId, 0, 'xl/styles.xml: cellXfs fillId') });
       }
     }
     return { fonts, fills, xfs };
@@ -307,6 +408,7 @@
   }
 
   function parseSheet(xml, sharedStrings, styles) {
+    xml = stripPrefixes(xml);
     const cells = [];
     const sd = /<sheetData\b[^>]*?(?:\/>|>([\s\S]*?)<\/sheetData>)/.exec(xml);
     if (!sd || !sd[1]) return cells;
@@ -319,11 +421,12 @@
       if (!ref) continue;
       const [col, row] = splitRef(ref);
       const t = a.t || 'n';
+      if (a.s != null && !INDEX.test(a.s)) throw new WorkbookError(`${ref} has style index ${repr(a.s)}, not a non-negative integer`);
       const s = a.s != null ? Number(a.s) : null;
       const f = /<f\b([^>]*?)(?:\/>|>([\s\S]*?)<\/f>)/.exec(inner);
       const v = /<v\b[^>]*?(?:\/>|>([\s\S]*?)<\/v>)/.exec(inner);
       const is = /<is\b[^>]*>([\s\S]*?)<\/is>/.exec(inner);
-      let vText = v ? decodeEntities(v[1] || '').trim() : null;
+      let vText = v ? xmlTrim(decodeEntities(v[1] || '')) : null;
       if (vText === '') vText = null;
       const cell = { ref, col, row, t, s, formula: null, cached: null, kind: 'empty', value: null, raw: null };
       if (f) {
@@ -332,8 +435,8 @@
         cell.cached = vText;
         cell.raw = vText;
       } else if (t === 's') {
-        const idx = vText != null ? Number(vText) : null;
-        if (!sharedStrings || idx == null || idx >= sharedStrings.length) {
+        const idx = vText != null && INDEX.test(vText) ? Number(vText) : vText;
+        if (!sharedStrings || typeof idx !== 'number' || idx >= sharedStrings.length) {
           throw new WorkbookError(`${ref} is a shared string (t="s") but the index ${repr(idx)} is not in xl/sharedStrings.xml; the part is missing or shorter than expected`);
         }
         Object.assign(cell, { kind: 'string', value: sharedStrings[idx], raw: vText });
@@ -349,9 +452,7 @@
       } else if (vText == null) {
         cell.kind = 'empty';
       } else {
-        const num = Number(vText);
-        if (!Number.isFinite(num)) throw new WorkbookError(`${ref} is typed numeric but holds ${repr(vText)}`);
-        Object.assign(cell, { kind: 'number', value: num, raw: vText });
+        Object.assign(cell, { kind: 'number', value: parseNumber(vText, ref), raw: vText });
       }
       [cell.font_rgb, cell.fill_rgb] = styles ? styleColours(styles, s) : [null, null];
       cells.push(cell);
@@ -359,14 +460,25 @@
     return cells;
   }
 
-  // ── the workbook ───────────────────────────────────────────────────────────
+  // ── the workbook ──
 
   async function readWorkbook(bytes, inflateRaw, name) {
     if (!(bytes instanceof Uint8Array)) bytes = new Uint8Array(bytes);
     const entries = readZip(bytes);
     const byName = new Map(entries.map((e) => [e.name, e]));
     if (!byName.has('xl/workbook.xml')) throw new WorkbookError(`${name || '<bytes>'} has no xl/workbook.xml; not a spreadsheetml package`);
-    const part = async (n) => utf8(await inflateEntry(byName.get(n), inflateRaw));
+    const part = async (n) => {
+      const raw = await inflateEntry(byName.get(n), inflateRaw);
+      let xml;
+      try {
+        xml = utf8Xml(raw);
+      } catch (e) {
+        throw new WorkbookError(`${n} is not well-formed XML: it is not valid UTF-8`);
+      }
+      const why = xmlProblem(xml);
+      if (why) throw new WorkbookError(`${n} is not well-formed XML: ${why}`);
+      return xml;
+    };
 
     const wb = parseWorkbookXml(await part('xl/workbook.xml'));
     const rels = byName.has('xl/_rels/workbook.xml.rels') ? parseRels(await part('xl/_rels/workbook.xml.rels')) : {};
@@ -575,6 +687,19 @@
     return null;
   }
 
+  // A metadata value as the report prints it: the value, or 'absent' when the file has none.
+  const orAbsent = (v) => (v == null ? 'absent' : String(v));
+
+  function findingSentence(workbook, tot) {
+    const cached = tot.formula_cells_with_cached_value;
+    const fcl = orAbsent(workbook.calc_pr ? workbook.calc_pr.fullCalcOnLoad : null);
+    return cached === 0
+      ? `This workbook holds ${tot.formula_cells} formula cells and 0 cached results: every <v> under a formula is empty. The file carries inputs (${tot.literal_numbers} literal numbers, ${tot.blue_cells} blue input cells) and formulas, not results. Any number quoted as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated on open (calcPr fullCalcOnLoad=${fcl}) and was not saved back, or by finance/skyhook_finance.py.`
+      : cached === tot.formula_cells
+        ? `This workbook holds ${tot.formula_cells} formula cells, all ${cached} with a cached result stored in the file.`
+        : `This workbook holds ${tot.formula_cells} formula cells, ${cached} of them with a cached result stored in the file; the other ${tot.formula_cells - cached} store none.`;
+  }
+
   function analyze(workbook, rowsMap, provenance) {
     const perSheet = {};
     for (const s of workbook.sheets) perSheet[s.name] = census(s);
@@ -583,12 +708,15 @@
     const design = extractBlock(workbook, ladder.sheet, DESIGN_POINT_HEADER, [CONSTANTS_HEADER, LADDER_HEADER]);
     const consts = extractBlock(workbook, ladder.sheet, CONSTANTS_HEADER, [DESIGN_POINT_HEADER, LADDER_HEADER]);
 
+    // Guards are enforced by refusal (extractLadder threw if either failed); listed, not counted.
+    const nRows = Object.keys(ladder.rows).length, nCols = Object.keys(ladder.columns).length;
+    const guards = [
+      { name: 'ladder-rows', detail: `${nRows} rows from ${rowsMap.source} found where the map says, labels match LABEL_GUARD` },
+      { name: 'ladder-literals', detail: `all ${nRows * nCols} ladder cells hold literal numbers (none is a formula, none is empty)` },
+    ];
+    // Checks are reported, not enforced: a restyled sheet still carries the right numbers.
     const checks = [];
     const check = (name, ok, detail) => checks.push({ name, ok: !!ok, detail });
-    const nRows = Object.keys(ladder.rows).length, nCols = Object.keys(ladder.columns).length;
-    const nMap = Object.keys(rowsMap.rows).length;
-    check('ladder-rows', nRows === nMap, `${nRows} of ${nMap} rows from ${rowsMap.source} found where the map says, labels match LABEL_GUARD`);
-    check('ladder-literals', true, `all ${nRows * nCols} ladder cells hold literal numbers (none is a formula)`);
     const notBlue = Object.entries(ladder.rows).filter(([, r]) => !r.blue).map(([k]) => k);
     check('ladder-blue', notBlue.length === 0, notBlue.length === 0
       ? `all ${nRows * nCols} ladder cells use the blue input font`
@@ -602,15 +730,9 @@
     const nDesign = Object.keys(design.entries).length, nConst = Object.keys(consts.entries).length;
     check('design-point', nDesign > 0, `${nDesign} shared design-point rows under ${repr(DESIGN_POINT_HEADER)}; ${nConst} physical constants under ${repr(CONSTANTS_HEADER)}`);
 
-    const cached = tot.formula_cells_with_cached_value;
-    const fcl = workbook.calc_pr && workbook.calc_pr.fullCalcOnLoad != null ? workbook.calc_pr.fullCalcOnLoad : 'None';
-    const finding = cached === 0
-      ? `The committed workbook holds ${tot.formula_cells} formula cells and 0 cached results: every <v> under a formula is empty. The file carries inputs (${tot.literal_numbers} literal numbers, ${tot.blue_cells} blue input cells) and formulas, not results. Any number quoted as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated on open (calcPr fullCalcOnLoad=${fcl}) and was not saved back, or by finance/skyhook_finance.py.`
-      : `The workbook holds ${tot.formula_cells} formula cells, ${cached} of them with a cached result stored in the file; the rest store none.`;
-
     const w = workbook;
     return {
-      schema: 'blue-cells/ladder/1',
+      schema: 'blue-cells/ladder/2',
       tool: `ladder_export.py ${VERSION}`,
       workbook: {
         file: w.file, bytes: w.bytes, sha256: w.sha256, md5: w.md5, members: w.members,
@@ -622,13 +744,14 @@
       design_point: design,
       constants: consts,
       census: { sheets: perSheet, totals: tot },
-      finding,
+      finding: findingSentence(workbook, tot),
+      guards,
       checks,
       provenance: provenance || null,
     };
   }
 
-  // ── text report, byte-for-byte the Python one ──────────────────────────────
+  // ── text report, byte-for-byte the Python one ──
 
   const pad = (s, n, right) => (right ? String(s).padStart(n) : String(s).padEnd(n));
   const comma = (n) => Number(n).toLocaleString('en-US');
@@ -641,10 +764,12 @@
     lines.push(`Blue Cells ${VERSION} — the Skyhook financial workbook read with zipfile + xml only`);
     lines.push(`Workbook  ${wb.file}  ${comma(wb.bytes)} bytes, ${wb.members} zip members`);
     lines.push(`  sha256  ${wb.sha256}`);
-    lines.push(`  md5     ${wb.md5}  (binary, byte-for-byte; the hash finance/decision_grid.json carries as workbook_md5)`);
-    const calc = wb.calc_pr || {};
-    lines.push(`  written by ${wb.application || '?'} (${wb.creator || '?'}), created ${wb.created || '?'}, modified ${wb.modified || '?'}`);
-    lines.push(`  calcPr fullCalcOnLoad=${calc.fullCalcOnLoad ?? '?'} calcId=${calc.calcId ?? '?'}; shared strings: ${wb.shared_strings == null ? 'none (every string is inline)' : wb.shared_strings}`);
+    lines.push(`  md5     ${wb.md5}  (binary, byte-for-byte: how export_grid.provenance_md5 hashes the .xlsx for decision_grid.json's workbook_md5)`);
+    // application is docProps/app.xml's Application; creator is docProps/core.xml's dc:creator.
+    lines.push(`  written by ${orAbsent(wb.application)}; dc:creator ${orAbsent(wb.creator)}; created ${orAbsent(wb.created)}, modified ${orAbsent(wb.modified)}`);
+    const calc = wb.calc_pr;
+    const calcText = calc == null ? 'calcPr absent' : `calcPr fullCalcOnLoad=${orAbsent(calc.fullCalcOnLoad)} calcId=${orAbsent(calc.calcId)}`;
+    lines.push(`  ${calcText}; shared strings: ${wb.shared_strings == null ? 'none (every string is inline)' : wb.shared_strings}`);
     const prov = result.provenance || {};
     if (Object.keys(prov).length) {
       lines.push(`  provenance  ${prov.repo} ${prov.path} @ ${String(prov.commit || '').slice(0, 7)} (${prov.commitDate}); last changed ${prov.pathLastChanged}`);
@@ -698,16 +823,18 @@
     lines.push('Finding');
     lines.push('  ' + result.finding);
     lines.push('');
+    lines.push('Guards    held (enforced by refusal: a miss refuses the whole file, exit 1, so they cannot fail here)');
+    for (const g of result.guards) lines.push(`  held ${g.name}: ${g.detail}`);
     const passed = result.checks.filter((c) => c.ok).length;
-    lines.push(`Checks    ${passed} of ${result.checks.length} passed`);
+    lines.push(`Checks    ${passed} of ${result.checks.length} passed (reported, not enforced)`);
     for (const c of result.checks) lines.push(`  ${c.ok ? 'ok  ' : 'FAIL'} ${c.name}: ${c.detail}`);
     return lines.join('\n') + '\n';
   }
 
   return {
     VERSION, BLUE_RGB, GREEN_RGB, YELLOW_RGB, LABEL_GUARD, WorkbookError, LadderError, repr,
-    crc32, md5, sha256Hex, readZip, inflateEntry, decodeEntities, attrs, parseWorkbookXml, parseRels,
+    crc32, md5, sha256Hex, readZip, inflateEntry, decodeEntities, xmlProblem, parseNumber, attrs, stripPrefixes, parseWorkbookXml, parseRels,
     parseSharedStrings, parseStyles, styleColours, parseSheet, readWorkbook, census, totals, extractLadder,
-    extractBlock, slug, legend, analyze, renderReport,
+    extractBlock, slug, legend, findingSentence, analyze, renderReport,
   };
 });

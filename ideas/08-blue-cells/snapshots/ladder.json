@@ -1,6 +1,6 @@
 {
- "schema": "blue-cells/ladder/1",
- "tool": "ladder_export.py 0.1.0",
+ "schema": "blue-cells/ladder/2",
+ "tool": "ladder_export.py 0.3.0",
  "workbook": {
   "file": "skyhook_financial_model.xlsx",
   "bytes": 65603,
@@ -593,18 +593,18 @@
    "yellow_fill_cells": 4
   }
  },
- "finding": "The committed workbook holds 146 formula cells and 0 cached results: every <v> under a formula is empty. The file carries inputs (81 literal numbers, 63 blue input cells) and formulas, not results. Any number quoted as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated on open (calcPr fullCalcOnLoad=1) and was not saved back, or by finance/skyhook_finance.py.",
- "checks": [
+ "finding": "This workbook holds 146 formula cells and 0 cached results: every <v> under a formula is empty. The file carries inputs (81 literal numbers, 63 blue input cells) and formulas, not results. Any number quoted as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated on open (calcPr fullCalcOnLoad=1) and was not saved back, or by finance/skyhook_finance.py.",
+ "guards": [
   {
    "name": "ladder-rows",
-   "ok": true,
-   "detail": "14 of 14 rows from finance/skyhook_finance.py found where the map says, labels match LABEL_GUARD"
+   "detail": "14 rows from finance/skyhook_finance.py found where the map says, labels match LABEL_GUARD"
   },
   {
    "name": "ladder-literals",
-   "ok": true,
-   "detail": "all 42 ladder cells hold literal numbers (none is a formula)"
-  },
+   "detail": "all 42 ladder cells hold literal numbers (none is a formula, none is empty)"
+  }
+ ],
+ "checks": [
   {
    "name": "ladder-blue",
    "ok": true,
