@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/porkchop/launch-vehicles.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "c60595b 2026-10-14T15:09:03-04:00",
+  "committedBlob": "9e13ca60626fd3feb0d813bf56aaf71b481b2b4f",
+  "readBlob": "9e13ca60626fd3feb0d813bf56aaf71b481b2b4f",
+  "sourceSha256": "4cb2e7fb6a92a4eb4eb0258efe81daa24d38086e41d0848881b6665b6ad64ee2",
+  "sourceBytes": 12005,
+  "copiedAt": "2026-10-26T10:42:09.255Z",
+  "mode": "copy",
+  "note": "Aster constants read by regex (build-data.mjs tsNumber/tsSite); the module is copied whole so the reader can see the code the constants come from",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4cb2e7fb6a92a4eb4eb0258efe81daa24d38086e41d0848881b6665b6ad64ee2",
+  "writtenBytes": 12005
+}

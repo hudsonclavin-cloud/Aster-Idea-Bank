@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/core/lambert/feasibility.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "3bcc5d3d0e5e5010213ba417b4b217ebfecdaf25",
+  "readBlob": "3bcc5d3d0e5e5010213ba417b4b217ebfecdaf25",
+  "sourceSha256": "a0a246b8cad42d9ea55337b8dea4b50264a326bcc581432af9258725cde705d4",
+  "sourceBytes": 3827,
+  "copiedAt": "2026-10-26T10:42:09.351Z",
+  "mode": "copy",
+  "note": "Aster constants read by regex (build-data.mjs tsNumber/tsSite); the module is copied whole so the reader can see the code the constants come from",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a0a246b8cad42d9ea55337b8dea4b50264a326bcc581432af9258725cde705d4",
+  "writtenBytes": 3827
+}

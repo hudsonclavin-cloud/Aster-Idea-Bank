@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/lambert-screen-cache.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "readBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "sourceSha256": "bd27b9bd882a65343399f772e37218b5fb05644bea5a822aafcb65e81e750206",
+  "sourceBytes": 34499477,
+  "copiedAt": "2026-10-26T10:42:10.394Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the 128 cache rows whose designation matches a NHATS min_dv_traj record, keeping designation, status, minC3, minC3Date, minC3TofDays, bestWindows[0].vInfArr, isCoOrbital, plus the cache metadata",
+  "readMatchesCommitted": true,
+  "writtenSha256": "8b0ea71683f66c3b93c4fd10da80f71780e6c63d40f165e2635f8ed2cb6b0f95",
+  "writtenBytes": 24419
+}

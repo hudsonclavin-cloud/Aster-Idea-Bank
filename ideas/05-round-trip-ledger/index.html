@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round-Trip Ledger</title>
+<meta name="description" content="Aster's ΔV stack assumes the burn home equals the arrival speed out. The NHATS round trips already in Aster's test fixtures say how far that is from true, body by body.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Round-Trip Ledger</h1>
+    <p class="tagline">Aster's sample-return ΔV stack books the departure burn at the asteroid as equal to the arrival v∞ (the symmetric-return assumption, <code>src/v2/porkchop/delta-v.ts:32-34,45</code>). Aster's own test fixtures hold JPL NHATS min-ΔV round trips that carry both numbers. This page puts the two ledgers side by side.</p>
+    <p class="prov" id="prov">Loading the snapshot…</p>
+  </header>
+
+  <section class="card" aria-labelledby="h-assume">
+    <h2 id="h-assume">The assumption against the data</h2>
+    <p class="note">NHATS gives, for each body's minimum-ΔV round trip, the relative speed at the asteroid on arrival (<code>vrel_arr_neo</code>) and on departure (<code>vrel_dep_neo</code>). Aster assumes their ratio is 1.</p>
+    <div class="tiles" id="tiles" aria-label="Summary of the departure to arrival ratio"></div>
+    <div class="chart" id="ratio-chart">
+      <div id="ratio-hist"></div>
+      <div class="tip" id="tip" role="status" aria-live="polite" hidden></div>
+    </div>
+    <p class="note small" id="ratio-note"></p>
+    <details id="ratio-table-details">
+      <summary>Every body as a table (sorted by ratio)</summary>
+      <div class="scroll">
+        <table id="ratio-table">
+          <thead><tr><th>Body</th><th class="v">C3</th><th class="v">v∞ arr</th><th class="v">v∞ dep</th><th class="v">ratio</th><th class="v">mass ×</th><th class="v">v∞⊕</th><th class="v">dec_dep</th><th>launch</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="h-body">
+    <h2 id="h-body">One body, two ledgers</h2>
+    <div class="controls">
+      <label for="body">Body</label>
+      <select id="body" aria-describedby="body-note"></select>
+      <span class="seg" role="radiogroup" aria-label="Mission mode" id="modes">
+        <label class="on"><input type="radio" name="mode" value="sample-return" checked><span>Sample return</span></label>
+        <label><input type="radio" name="mode" value="one-way"><span>One-way</span></label>
+      </span>
+      <span class="seg" role="radiogroup" aria-label="Departure line" id="deps">
+        <label class="on"><input type="radio" name="dep" value="symmetric" checked><span>Departure = arrival v∞ (Aster)</span></label>
+        <label><input type="radio" name="dep" value="nhats"><span>Departure = NHATS vrel_dep_neo</span></label>
+      </span>
+    </div>
+    <p class="note small" id="body-note"></p>
+    <div class="refused" id="refusal" hidden></div>
+    <div id="ledger">
+      <div class="two">
+        <div>
+          <h3 id="stack-title">Aster-style stack</h3>
+          <div class="bar" id="stack-bar" aria-hidden="true"></div>
+          <table aria-labelledby="stack-title"><tbody id="stack-rows"></tbody></table>
+          <p class="delta" id="stack-delta"></p>
+        </div>
+        <div>
+          <h3 id="nhats-title">NHATS min_dv_traj record</h3>
+          <table aria-labelledby="nhats-title"><tbody id="nhats-rows"></tbody></table>
+          <p class="delta" id="nhats-delta"></p>
+        </div>
+      </div>
+      <h3>Consequences</h3>
+      <dl class="kv" id="cons"></dl>
+      <h3>In Aster today</h3>
+      <dl class="kv" id="aster-today"></dl>
+      <div class="refused" id="return-leg"></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-arr">
+    <h2 id="h-arr">Earth arrival, every body</h2>
+    <p class="note" id="arr-note"></p>
+    <div class="controls">
+      <span class="seg" role="radiogroup" aria-label="Entry altitude convention" id="alts"></span>
+    </div>
+    <div class="chart" id="vinf-chart"><div id="vinf-hist"></div></div>
+    <p class="note small" id="arr-foot"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-dec">
+    <h2 id="h-dec">Declinations against Aster's launch bands</h2>
+    <p class="note" id="dec-note"></p>
+    <div class="controls">
+      <span class="seg" role="radiogroup" aria-label="Which declination" id="decwhich">
+        <label class="on"><input type="radio" name="decwhich" value="dep" checked><span>Departure (dec_dep)</span></label>
+        <label><input type="radio" name="decwhich" value="arr"><span>Earth arrival (dec_arr)</span></label>
+      </span>
+      <span class="seg" role="radiogroup" aria-label="Launch site" id="sites"></span>
+    </div>
+    <div class="chart" id="dec-chart"><div id="dec-hist"></div></div>
+    <div class="legend" id="dec-legend"></div>
+    <p class="note small" id="dec-foot"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-inj">
+    <h2 id="h-inj">Is the injection model right?</h2>
+    <dl class="kv" id="inj"></dl>
+    <p class="note small" id="inj-foot"></p>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+<script src="nhats-data.js"></script>
+<script src="ledger.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
