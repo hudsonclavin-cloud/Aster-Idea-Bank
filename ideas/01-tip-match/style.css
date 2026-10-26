@@ -121,6 +121,7 @@ button:hover { background: var(--surface-2); }
 .key.cislunar { background: var(--tier-cislunar); }
 .key.phase3 { background: var(--tier-phase3); }
 .key.payload { background: var(--payload); }
+.key.rug { background: var(--ink-2); width: 2px; height: 10px; border-radius: 0; }
 .note { font-size: 0.86rem; color: var(--ink-2); flex-basis: 100%; }
 
 /* ---------------------------------------------------------------- verdict */
@@ -164,6 +165,7 @@ svg.chart .trim { stroke: var(--ink-2); stroke-width: 1.5; }
 svg.chart .trim-label { fill: var(--ink); font-weight: 650; font-family: var(--mono); font-variant-numeric: tabular-nums; }
 svg.chart .direct { fill: var(--ink-2); font-size: 11.5px; }
 svg.chart .star { fill: var(--ink); font-size: 11px; }
+svg.chart .rug line { stroke: var(--ink-2); stroke-width: 1; opacity: 0.6; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.86rem; color: var(--ink-2); margin-top: 6px; }
 .tip {
   position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--axis);
@@ -183,12 +185,14 @@ th { color: var(--ink-2); font-weight: 600; font-size: 0.84rem; }
 td.v { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 td.t { color: var(--ink-2); font-size: 0.84rem; }
 .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cell-k { display: none; }
 @media (max-width: 720px) {
   /* each row becomes a small block: quantity, value, trace; nothing scrolls sideways */
-  #numbers thead { display: none; }
-  #numbers tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--hair); }
-  #numbers td { display: block; border: 0; padding: 1px 0; }
-  #numbers td.v { white-space: normal; font-weight: 650; }
+  table.stack thead { display: none; }
+  table.stack tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--hair); }
+  table.stack td { display: block; border: 0; padding: 1px 0; }
+  table.stack td.v { white-space: normal; font-weight: 650; }
+  table.stack .cell-k { display: inline; font-weight: 400; color: var(--ink-2); }
 }
 
 /* ---------------------------------------------------------------- conditions */
@@ -203,7 +207,7 @@ td.t { color: var(--ink-2); font-size: 0.84rem; }
 .bars svg { display: block; width: 100%; height: auto; }
 .bars text { fill: var(--ink-2); font-size: 12px; font-family: var(--sans); }
 .bars .bar.payload { fill: var(--payload); }
-.bars .bar.tip { fill: var(--muted); }
+.bars .bar.lowtip { fill: var(--muted); }
 .bars .val { fill: var(--ink); font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 650; }
 details summary { cursor: pointer; font-weight: 600; }
 pre {

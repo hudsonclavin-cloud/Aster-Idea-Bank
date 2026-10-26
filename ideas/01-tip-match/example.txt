@@ -1,54 +1,74 @@
 $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-10-26 --text
-Tip Match 0.1.0 — Phase 3 tier, v_tip 3.5 km/s (kinematics.phase3_growth_option.v_tip_kms), v∞ 3.610 km/s
+Tip Match 0.2.0 — Phase 3 tier, v_tip 3.5 km/s (kinematics.phase3_growth_option.v_tip_kms), v∞ 3.610 km/s
 Geometry: R_E 6371 km, r_com 6981 km, r_tip 7301 km, v_orb 7.5563 km/s
-Upper tip, top of swing: tip 11.0563 km/s vs payload 11.0554 km/s → trim Δv -0.0009 km/s (payload slower, prograde trim)
+Upper tip, top of swing: tip 11.0563 km/s vs payload 11.0554 km/s → trim Δv −0.88 m/s (payload slower, prograde trim)
 Tier release energy: C3 13.051 km²/s², hyperbolic; zero-trim v∞* 3.6127 km/s
 Zero-trim tip speed for this v∞: 3.499 km/s = 1.28 × V_c (guardrail 1.3×: inside)
 Lower tip: payload 11.520 km/s vs tip 4.056 km/s → not reachable (gap 7.464 km/s)
-Match (tolerance 1.0 m/s): ENERGY-MATCHED — energy-matched within 1 m/s (plane and phase not evaluated)
+Match (tolerance 1.0 m/s): ENERGY-MATCHED — energy-matched within 1 m/s: payload and tip differ by 0.88 m/s (plane and phase not evaluated)
   energy: computed
-  plane: REFUSED (insufficient_data) — The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum.
+  plane: REFUSED (insufficient_data) — The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum. With a declination δ alone (as NHATS gives), one necessary condition can be stated once rev_a.json names an inclination i: |δ| ≤ i.
   phase: REFUSED (insufficient_data) — A tether state vector and spin phase at an epoch, and the payload's perigee epoch from K1. Then phase margin is a two-body propagation and a comparison modulo the rotation period, and on the payload's side a matter of launch timing (Skyhook docs/project_instructions.md:122-124 budgets a 3–10 s window).
-Confidence assumed (weakest of measured, assumed, assumed, assumed, derived); canon params/rev_a.json @ 34935cb; as of 2026-10-26
+Accepted v∞: 0 to 72.76 km/s (a Sun-bound arrival). Confidence assumed (weakest of measured, assumed, assumed, assumed, measured, derived); canon params/rev_a.json @ 34935cb; as of 2026-10-26
 (exit 0)
 
 $ node ideas/01-tip-match/tip-match.mjs --vinf 0 --tier reference --as-of 2026-10-26 --text
-Tip Match 0.1.0 — Reference tier, v_tip 2.5 km/s (kinematics.v_tip_kms), v∞ 0.000 km/s
+Tip Match 0.2.0 — Reference tier, v_tip 2.5 km/s (kinematics.v_tip_kms), v∞ 0.000 km/s
 Geometry: R_E 6371 km, r_com 6981 km, r_tip 7301 km, v_orb 7.5563 km/s
-Upper tip, top of swing: tip 10.0563 km/s vs payload 10.4494 km/s → trim Δv 0.3931 km/s (payload faster, retrograde trim)
+Upper tip, top of swing: tip 10.0563 km/s vs payload 10.4494 km/s → trim Δv +393.1 m/s (payload faster, retrograde trim)
 Tier release energy: C3 -8.061 km²/s², bound, apogee 85222 km; zero-trim v∞* none (C3 < 0: every hyperbolic arrival overshoots this tip)
 Zero-trim tip speed for this v∞: 2.893 km/s = 1.06 × V_c (guardrail 1.3×: inside)
 Lower tip: payload 10.940 km/s vs tip 5.056 km/s → not reachable (gap 5.884 km/s)
-Match (tolerance 1.0 m/s): NOT MATCHED — not energy-matched: payload arrives 0.393 km/s faster than the tip
+Match (tolerance 1.0 m/s): NOT MATCHED — not energy-matched: payload arrives 393.1 m/s faster than the tip
   energy: computed
-  plane: REFUSED (insufficient_data) — The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum.
+  plane: REFUSED (insufficient_data) — The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum. With a declination δ alone (as NHATS gives), one necessary condition can be stated once rev_a.json names an inclination i: |δ| ≤ i.
   phase: REFUSED (insufficient_data) — A tether state vector and spin phase at an epoch, and the payload's perigee epoch from K1. Then phase margin is a two-body propagation and a comparison modulo the rotation period, and on the payload's side a matter of launch timing (Skyhook docs/project_instructions.md:122-124 budgets a 3–10 s window).
-Confidence assumed (weakest of measured, assumed, assumed, assumed, derived); canon params/rev_a.json @ 34935cb; as of 2026-10-26
+Accepted v∞: 0 to 72.76 km/s (a Sun-bound arrival). Confidence assumed (weakest of measured, assumed, assumed, assumed, measured, derived); canon params/rev_a.json @ 34935cb; as of 2026-10-26
 (exit 0)
 
 $ node ideas/01-tip-match/tip-match.mjs --vinf 0 --tier cislunar --as-of 2026-10-26 --text
-Tip Match 0.1.0 — Cislunar tier, v_tip 2.8 km/s (kinematics.cislunar_revenue_gated_option.v_tip_kms), v∞ 0.000 km/s
+Tip Match 0.2.0 — Cislunar tier, v_tip 2.8 km/s (kinematics.cislunar_revenue_gated_option.v_tip_kms), v∞ 0.000 km/s
 Geometry: R_E 6371 km, r_com 6981 km, r_tip 7301 km, v_orb 7.5563 km/s
-Upper tip, top of swing: tip 10.3563 km/s vs payload 10.4494 km/s → trim Δv 0.0931 km/s (payload faster, retrograde trim)
+Upper tip, top of swing: tip 10.3563 km/s vs payload 10.4494 km/s → trim Δv +93.1 m/s (payload faster, retrograde trim)
 Tier release energy: C3 -1.937 km²/s², bound, apogee 397819 km; zero-trim v∞* none (C3 < 0: every hyperbolic arrival overshoots this tip)
 Zero-trim tip speed for this v∞: 2.893 km/s = 1.06 × V_c (guardrail 1.3×: inside)
 Lower tip: payload 10.940 km/s vs tip 4.756 km/s → not reachable (gap 6.184 km/s)
-Match (tolerance 1.0 m/s): NOT MATCHED — not energy-matched: payload arrives 0.093 km/s faster than the tip
+Match (tolerance 1.0 m/s): NOT MATCHED — not energy-matched: payload arrives 93.1 m/s faster than the tip
   energy: computed
-  plane: REFUSED (insufficient_data) — The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum.
+  plane: REFUSED (insufficient_data) — The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum. With a declination δ alone (as NHATS gives), one necessary condition can be stated once rev_a.json names an inclination i: |δ| ≤ i.
   phase: REFUSED (insufficient_data) — A tether state vector and spin phase at an epoch, and the payload's perigee epoch from K1. Then phase margin is a two-body propagation and a comparison modulo the rotation period, and on the payload's side a matter of launch timing (Skyhook docs/project_instructions.md:122-124 budgets a 3–10 s window).
-Confidence assumed (weakest of measured, assumed, assumed, assumed, derived); canon params/rev_a.json @ 34935cb; as of 2026-10-26
+Accepted v∞: 0 to 72.76 km/s (a Sun-bound arrival). Confidence assumed (weakest of measured, assumed, assumed, assumed, measured, derived); canon params/rev_a.json @ 34935cb; as of 2026-10-26
 (exit 0)
 
 $ node ideas/01-tip-match/tip-match.mjs --vinf -1 --tier reference --as-of 2026-10-26 --text
-REFUSED (out_of_envelope): v∞ is a speed and cannot be negative (got -1 km/s).
-What would help: Enter v∞ ≥ 0 km/s (0 is a parabolic arrival, the slowest a body from beyond Earth's sphere of influence can arrive).
+REFUSED (out_of_envelope): v∞ is a speed and cannot be negative (got -1 km/s). A bound arrival (geocentric C3 < 0) is not a negative v∞, and it is outside this kernel's input domain.
+What would help: Enter v∞ ≥ 0 km/s (0 is a parabolic arrival, the slowest a body from beyond Earth's sphere of influence can arrive). For a payload falling back from a bound Earth orbit, the arrival is described by its C3 instead; on a tier's own release orbit it meets the reference and cislunar tips with zero trim.
+(exit 1)
+
+$ node ideas/01-tip-match/tip-match.mjs --vinf 1e155 --tier reference --as-of 2026-10-26 --text
+REFUSED (out_of_envelope): v∞ = 1e+155 km/s is above 72.76 km/s, the fastest a body bound to the Sun can meet Earth (solar escape speed 42.48 km/s plus Earth's 30.29 km/s, head-on, at Earth's perihelion). A payload returning from an asteroid is bound to the Sun.
+What would help: Enter 0 ≤ v∞ ≤ 72.76 km/s. Returns from near-Earth asteroids arrive at a few km/s (the JPL NHATS records in Aster's test fixtures imply 0.26–4.35 km/s at the 125 km reading).
 (exit 1)
 
 $ node ideas/01-tip-match/tip-match.mjs --source aster-cache --as-of 2026-10-26 --text
-REFUSED (not_found): Aster's Lambert screening cache holds c3, vInfDep and vInfArr per window (src/v2/boundary/lambert-screen-cache.ts:43-49). vInfDep is departure from Earth and vInfArr is arrival at the asteroid, both on the outbound leg. Neither is an Earth-arrival v∞ for a return leg, and presenting one as such would be a fabrication.
-What would help: K1, the return-leg porkchop (Aster strategy/IDEA_KERNELS_2026-09.md §3 item 2): the same Lambert grid with the endpoints swapped (body → Earth) yields Earth-arrival v∞ with provenance.
+REFUSED (not_found): Aster computes no Earth-arrival v∞. Its Lambert screening cache holds c3, vInfDep and vInfArr per window (src/v2/boundary/lambert-screen-cache.ts:43-49): vInfDep is departure from Earth and vInfArr is arrival at the asteroid, both on the outbound leg. Neither is an Earth-arrival v∞ for a return leg, and presenting one as such would be a fabrication.
+What would help: K1, the return-leg porkchop (Aster strategy/IDEA_KERNELS_2026-09.md §3 item 2): the same Lambert grid with the endpoints swapped (body → Earth) yields Earth-arrival v∞ with provenance. Until then the nearest real numbers are external: the JPL NHATS min-Δv round trips committed as Aster test fixtures (tests/fixtures/v2/nhats-validation-targets, oq7-nhats-coorbital) carry v_arr_earth, an Earth-entry speed that gives v∞ once its altitude is fixed (125 km or 200 km; ideas/05-round-trip-ledger documents the ambiguity). tip-match.nhats-arrivals reads them, labelled as JPL's numbers, not Aster's.
 (exit 1)
+
+$ node ideas/01-tip-match/tip-match.mjs --nhats --tier phase3 --as-of 2026-10-26 --text
+Tip Match 0.2.0 — JPL NHATS records in Aster's test fixtures (external data), Phase 3 tier
+Source: 128 bodies from 135 fixture files (5 API error records skipped; 2 bodies in both directories: 2000 SG344, 2001 GP2)
+Reading: v_arr_earth at 125 km (NHATS entry altitude, src/v2/research/slice-11-porkchop/perplexity-jpl-trajectory-browser-nhats.md:42); r = 6503.137 km, escape 11.0719 km/s
+Earth-arrival v∞: 128 converted, 0.262 km/s (2011 WE) to 4.345 km/s (2014 KF39), median 2.449 km/s
+Against the Phase 3 tip (v∞* 3.6127 km/s): 20 arrive faster, 108 slower, 0 within 1.0 m/s
+Closest to zero trim:
+  2021 AT2     v_arr_earth 11.650  v∞ 3.6243 km/s  trim +3.79 m/s ± 0.53 m/s (record rounding)
+  2023 UZ2     v_arr_earth 11.651  v∞ 3.6275 km/s  trim +4.85 m/s ± 0.53 m/s (record rounding)
+  2001 GP2     v_arr_earth 11.633  v∞ 3.5693 km/s  trim −14.1 m/s ± 0.53 m/s (record rounding)
+  2022 RS1     v_arr_earth 11.628  v∞ 3.5529 km/s  trim −19.4 m/s ± 0.53 m/s (record rounding)
+  2025 DB7     v_arr_earth 11.669  v∞ 3.6849 km/s  trim +23.8 m/s ± 0.53 m/s (record rounding)
+Confidence assumed (weakest of derived, measured, assumed, measured, assumed, assumed, derived); Aster @ 62ddb17; as of 2026-10-26
+(exit 0)
 
 $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-10-26
 {
@@ -57,7 +77,7 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
     "tool": "tip-match.energy",
     "as_of": "2026-10-26",
     "value": {
-      "kernel_version": "0.1.0",
+      "kernel_version": "0.2.0",
       "tier": {
         "key": "phase3",
         "label": "Phase 3",
@@ -79,6 +99,15 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
           "confidence": "assumed",
           "sourceIds": [
             "vinf-input"
+          ]
+        },
+        "vinf_domain_max_kms": {
+          "value": 72.76439034333566,
+          "units": "km/s",
+          "confidence": "derived",
+          "sourceIds": [
+            "aster-helio",
+            "two-body"
           ]
         }
       },
@@ -290,7 +319,7 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
           ]
         },
         "energy_matched": true,
-        "verdict": "energy-matched within 1 m/s (plane and phase not evaluated)"
+        "verdict": "energy-matched within 1 m/s: payload and tip differ by 0.88 m/s (plane and phase not evaluated)"
       },
       "conditions": [
         {
@@ -302,8 +331,8 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
           "status": "refused",
           "refusal": {
             "code": "insufficient_data",
-            "reason": "The energy condition says nothing about direction. Meeting the upper tip needs the arrival hyperbola's plane to contain the tether's velocity at the catch point: the asymptote's declination and right ascension against the tether orbit's inclination and node. The input here is a scalar v∞; the vector is not supplied, Aster's screening cache keeps only scalar vInfDep/vInfArr (src/v2/boundary/lambert-screen-cache.ts:43-49), and rev_a.json states no orbit plane for the tether.",
-            "what_would_help": "The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum."
+            "reason": "The energy condition says nothing about direction. Meeting the upper tip needs the arrival hyperbola's plane to contain the tether's velocity at the catch point: the asymptote's declination and right ascension against the tether orbit's inclination and node. The typed input is a scalar v∞; Aster's screening cache keeps only scalar vInfDep/vInfArr (src/v2/boundary/lambert-screen-cache.ts:43-49); the JPL NHATS records in Aster's test fixtures carry dec_arr, the asymptote's declination, but no right ascension, in a frame the checkout does not state; and rev_a.json states no orbit plane for the tether.",
+            "what_would_help": "The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum. With a declination δ alone (as NHATS gives), one necessary condition can be stated once rev_a.json names an inclination i: |δ| ≤ i."
           }
         },
         {
@@ -325,7 +354,7 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
         "path": "params/rev_a.json",
         "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
         "confidence": "measured",
-        "note": "orbital.mu_earth_m3s2 (3.986e14 m³/s²), a measured physical constant; snapshot sha256 d0828c1e1fae1521209cb4b81a2ebb2a25d79bf7702c04d10546e9d268db1fbd"
+        "note": "orbital.mu_earth_m3s2 (398600000000000 m³/s²), a measured physical constant; snapshot sha256 d0828c1e1fae1521209cb4b81a2ebb2a25d79bf7702c04d10546e9d268db1fbd"
       },
       {
         "id": "rev-a-design",
@@ -341,7 +370,7 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
         "name": "Earth-arrival v∞ typed by the user",
         "retrieved": "2026-10-26",
         "confidence": "assumed",
-        "note": "K1 (Aster return-leg porkchop) would supply this; it has not been built. Aster's screening cache carries no Earth-arrival v∞."
+        "note": "K1 (Aster return-leg porkchop) would supply this; it has not been built, and Aster computes no Earth-arrival v∞. Aster's test fixtures hold JPL NHATS Earth-entry speeds (external data; see tip-match.nhats-arrivals)."
       },
       {
         "id": "tolerance-input",
@@ -349,27 +378,36 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
         "name": "Grapple relative-velocity tolerance declared by the user",
         "retrieved": "2026-10-26",
         "confidence": "assumed",
-        "note": "Default 1 m/s is the \"~1 m/s at the moment of capture\" requirement in Skyhook docs/project_instructions.md:124 (a planning requirement for ascending payloads, not in rev_a.json)."
+        "note": "Default 1 m/s is the requirement in Skyhook docs/project_instructions.md:124 @ 34935cb (\"relative velocity within ~1 m/s at the moment of capture\"), written for ascending payloads; not in rev_a.json."
+      },
+      {
+        "id": "aster-helio",
+        "kind": "repo",
+        "path": "src/physics/constants/index.ts",
+        "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+        "confidence": "measured",
+        "note": "GM_sun, AU and Earth's a, e (Standish 1992 elements): measured constants, used only for the largest v∞ a Sun-bound arrival can have"
       },
       {
         "id": "two-body",
         "kind": "computation",
-        "method": "Earth-centred two-body vis-viva: v_payload = sqrt(v∞² + 2μ/r_tip) at the hyperbola's perigee; tip speed v_orb + v_tip with v_orb = sqrt(μ/r_com); trim = v_payload − v_tip_inertial; C3 = v_tip_inertial² − 2μ/r_tip; v∞* = sqrt(C3)",
+        "method": "Earth-centred two-body vis-viva: payload speed at the upper-tip radius sqrt(v∞² + 2μ/r_tip), the speed on the arrival hyperbola at r_tip whatever its perigee (the perigee speed only if perigee = r_tip); tip speed v_orb + v_tip with v_orb = sqrt(μ/r_com); trim = v_payload − v_tip_inertial; C3 = v_tip_inertial² − 2μ/r_tip; v∞* = sqrt(C3); for NHATS records v∞ = sqrt(v_arr_earth² − 2μ/(R_E + h_entry))",
         "code": {
           "path": "ideas/01-tip-match/tip-match.js",
-          "commit": "uncommitted idea-bank prototype (see README: Where it would land)"
+          "commit": "Aster-Idea-Bank: first committed in a35dec0; this revision is the next bank commit touching ideas/01-tip-match (git log -- ideas/01-tip-match)"
         },
         "confidence": "derived",
-        "note": "Kernel 0.1.0"
+        "note": "Kernel 0.2.0"
       }
     ],
     "assumptions": [
-      "Earth radius 6371 km is implied by rev_a.json's own r_tip = 7301 km note (kinematics._c3_note) and matches physics/skyhook_physics.py:40; orbital.com_radius_km (6988, implying 6378) is not used because it does not reproduce the file's C3 of −8.06 km²/s².",
+      "Earth radius 6371 km is implied by rev_a.json's own r_tip = 7301 km note (kinematics._c3_note) and matches physics/skyhook_physics.py:40; orbital.com_radius_km (6988, implying 6378) is not used because it does not reproduce the file's C3 of -8.06 km²/s².",
       "The tip's inertial speed is v_orb + v_tip with v_orb evaluated at the centre-of-mass radius, as Skyhook's apogee_from_release does; the tip itself is 320 km higher, where a free body would orbit slower, but the tip is not a free body.",
       "The payload is treated as a point mass that does not disturb the tether; catching tonnes at 10 km/s is a tether-dynamics question (Skyhook physics/tether_dynamics.py models only a lower-tip catch of an upbound payload).",
-      "\"Energy-matched\" means |trim Δv| is within the declared grapple tolerance. It is necessary, not sufficient: plane and phase are refused separately."
+      "\"Energy-matched\" means |trim Δv| is within the declared grapple tolerance. It is necessary, not sufficient: plane and phase are refused separately.",
+      "v∞ is the quantity handed across: Aster-side numbers (μ 398600.4418 km³/s², R_E 6378.137 km) and Skyhook-side numbers (μ 398600 km³/s², R_E 6371 km) each act on their own side of it; the two μ differ by 1.1 parts per million."
     ],
-    "validity_envelope": "Two-body, Earth-centred, instantaneous. The payload's speed at the upper-tip radius follows from v∞ alone (vis-viva), whatever its perigee; the trim reported is that scalar speed difference, which equals the vector mismatch only when the payload's velocity is parallel to the tip's, i.e. its perigee is at the upper-tip radius and it moves horizontally and prograde. A lower perigee adds a radial component, so the reported trim is a lower bound on the true velocity mismatch. Tether centre of mass on a circular orbit, rigid rotation, catch at the top of the swing. No J2, drag, lunar perturbation, gravity-gradient spin modulation, tether dynamics, grapple geometry or momentum-ledger effect. Energy condition only: plane and phase are not evaluated here."
+    "validity_envelope": "Two-body, Earth-centred, instantaneous. Accepted input: 0 ≤ v∞ ≤ 72.76 km/s, i.e. a hyperbolic or parabolic arrival by a body bound to the Sun (the upper end is solar escape speed plus Earth's speed, head-on, at Earth's perihelion). Bound arrivals (geocentric C3 < 0, e.g. a payload falling back from a high Earth orbit or from the Moon) are outside this input domain; on its own release orbit, read backwards, such a payload meets the reference and cislunar tips with zero trim. The payload's speed at the upper-tip radius follows from v∞ alone (vis-viva), whatever its perigee; the trim reported is that scalar speed difference, which equals the vector mismatch only when the payload's velocity is parallel to the tip's, i.e. its perigee is at the upper-tip radius and it moves horizontally and prograde. A lower perigee adds a radial component, so the reported trim is a lower bound on the true velocity mismatch. Tether centre of mass on a circular orbit, rigid rotation, catch at the top of the swing. No J2, drag, lunar perturbation, gravity-gradient spin modulation, tether dynamics, grapple geometry or momentum-ledger effect. Energy condition only: plane and phase are not evaluated here."
   },
   "plane": {
     "envelope_version": "1",
@@ -382,8 +420,8 @@ $ node ideas/01-tip-match/tip-match.mjs --vinf 3.61 --tier phase3 --as-of 2026-1
     "validity_envelope": "not evaluated: no v∞ vector and no tether orbit plane",
     "refusal": {
       "code": "insufficient_data",
-      "reason": "The energy condition says nothing about direction. Meeting the upper tip needs the arrival hyperbola's plane to contain the tether's velocity at the catch point: the asymptote's declination and right ascension against the tether orbit's inclination and node. The input here is a scalar v∞; the vector is not supplied, Aster's screening cache keeps only scalar vInfDep/vInfArr (src/v2/boundary/lambert-screen-cache.ts:43-49), and rev_a.json states no orbit plane for the tether.",
-      "what_would_help": "The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum."
+      "reason": "The energy condition says nothing about direction. Meeting the upper tip needs the arrival hyperbola's plane to contain the tether's velocity at the catch point: the asymptote's declination and right ascension against the tether orbit's inclination and node. The typed input is a scalar v∞; Aster's screening cache keeps only scalar vInfDep/vInfArr (src/v2/boundary/lambert-screen-cache.ts:43-49); the JPL NHATS records in Aster's test fixtures carry dec_arr, the asymptote's declination, but no right ascension, in a frame the checkout does not state; and rev_a.json states no orbit plane for the tether.",
+      "what_would_help": "The Earth-arrival v∞ vector from K1 in ICRF/equatorial with its frame established by measurement (Aster INV-021), plus the tether orbit's inclination and RAAN. Then the plane condition is one angle: between the arrival asymptote and the tether's orbital angular momentum. With a declination δ alone (as NHATS gives), one necessary condition can be stated once rev_a.json names an inclination i: |δ| ≤ i."
     }
   },
   "phase": {

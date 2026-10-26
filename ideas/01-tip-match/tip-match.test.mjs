@@ -1,7 +1,8 @@
 // Tests for Tip Match. From the bank root: node --test ideas/01-tip-match/tip-match.test.mjs
 // Node built-ins only. Pins: the rev_a.json snapshot's own stated numbers (C3, apogee, release
-// speed, v_orb, V_c, the 2.9 km/s escape threshold), skyhook_physics.py's R_EARTH_KM, independent
-// arithmetic written here without the kernel, closed forms, limits, and the CLI's saved output.
+// speed, v_orb, V_c, the 2.9 km/s escape threshold), skyhook_physics.py's R_EARTH_KM, Aster's
+// constants re-read from the .ts snapshot copies, independent arithmetic written here without the
+// kernel (including a JPL NHATS record), closed forms, limits, and the CLI's saved output.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -15,11 +16,15 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const TipMatch = require(path.join(here, 'tip-match.js'));
 const REV_A = require(path.join(here, 'snapshots', 'rev_a.data.js'));
+const ASTER = require(path.join(here, 'snapshots', 'aster.data.js'));
 const revA = JSON.parse(fs.readFileSync(path.join(here, 'snapshots', 'rev_a.json'), 'utf8'));
 const sidecar = JSON.parse(fs.readFileSync(path.join(here, 'snapshots', 'rev_a.json.provenance.json'), 'utf8'));
 const physicsPy = fs.readFileSync(path.join(here, 'snapshots', 'skyhook_physics.py'), 'utf8');
+const asterPhysTs = fs.readFileSync(path.join(here, 'snapshots', 'aster_physics_constants.ts'), 'utf8');
+const asterDvTs = fs.readFileSync(path.join(here, 'snapshots', 'aster_delta-v.ts'), 'utf8');
+const tsNum = (text, name) => Number(new RegExp(`export const ${name}\\s*=\\s*([0-9_.eE+-]+)`).exec(text)[1].replace(/_/g, ''));
 
-const K = TipMatch.create(REV_A.data, REV_A.provenance);
+const K = TipMatch.create(REV_A.data, REV_A.provenance, ASTER);
 const C = K.constants;
 const AS_OF = '2026-10-26';
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tol ${tol})`);
@@ -40,7 +45,9 @@ test('the data module is byte-for-byte the rev_a.json snapshot, and the sidecars
     const side = JSON.parse(fs.readFileSync(path.join(dir, `${f}.provenance.json`), 'utf8'));
     const sha = crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, f))).digest('hex');
     assert.equal(sha, side.writtenSha256, `${f} differs from what its sidecar recorded`);
-    assert.equal(side.repo, 'https://github.com/hudsonclavin-cloud/skyhook');
+    const repo = f.startsWith('aster') ? 'asteroid-mining-planner' : 'skyhook';
+    assert.equal(side.repo, `https://github.com/hudsonclavin-cloud/${repo}`, `${f} comes from ${repo}`);
+    assert.equal(side.readMatchesCommitted, true, `${f} was read from a clean checkout`);
   }
   const sha = crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, 'rev_a.json'))).digest('hex');
   assert.equal(sha, sidecar.sourceSha256, 'rev_a.json copy equals the source bytes');
@@ -64,21 +71,37 @@ test('constants: r_tip is read from the canon note, R_E follows, and matches sky
   near(C.v_c_kms, revA.materials.V_c_kms, 0.005, 'V_c = sqrt(2σ/ρ) reproduces materials.V_c_kms to its rounding');
 });
 
-test('finding F1 still holds in the snapshot: orbital.com_radius_km (6988) implies a 6378 km Earth and does not reproduce the file\'s C3; v_orb_kms 7.55 follows 6988, not 6981', () => {
+test('finding F1 still holds in the snapshot: orbital.com_radius_km (6988) implies a 6378 km Earth, which does not reproduce the file\'s C3 or apogee; v_orb_kms 7.55 follows 6988, not 6981', () => {
   assert.equal(C.com_radius_km_as_stated, 6988);
   assert.notEqual(C.com_radius_km_as_stated, C.r_com_km, 'the stated CoM radius disagrees with r_tip − half-length');
-  const vOrb6988 = Math.sqrt(C.mu_km3s2 / 6988);
-  const c3With6988 = (vOrb6988 + C.tiers.reference.v_tip_kms) ** 2 - (2 * C.mu_km3s2) / C.r_tip_km;
-  assert.ok(Math.abs(c3With6988 - revA.kinematics.c3_kms2) > 0.05, `C3 with r_com = 6988 is ${c3With6988.toFixed(3)}, not the file's ${revA.kinematics.c3_kms2}`);
-  assert.equal(round(vOrb6988, 2), revA.orbital.v_orb_kms, 'the file\'s v_orb_kms 7.55 is what 6988 km gives');
+  const mu = C.mu_km3s2;
+  const vTip = C.tiers.reference.v_tip_kms;
+  // (i) a consistent 6378 km Earth: r_com = 6988 and r_tip = 6988 + 320
+  const reCons = C.com_radius_km_as_stated - C.com_altitude_km;
+  const rTipCons = C.com_radius_km_as_stated + C.half_length_km;
+  const c3Cons = (Math.sqrt(mu / C.com_radius_km_as_stated) + vTip) ** 2 - (2 * mu) / rTipCons;
+  const apoCons = -mu / c3Cons * 2 - rTipCons - reCons;
+  assert.equal(reCons, 6378);
+  assert.equal(round(c3Cons, 2), -8.03, 'consistent 6378 km Earth gives C3 −8.03');
+  assert.notEqual(round(c3Cons, 2), revA.kinematics.c3_kms2, 'which is not the file\'s −8.06');
+  assert.equal(Math.round(apoCons), 85559, 'and an apogee of 85,559 km');
+  assert.notEqual(Math.round(apoCons), revA.kinematics.apogee_altitude_km, 'which is not the file\'s 85,222');
+  // (ii) the mixed recipe: the file's own v_orb basis (6988) with its own r_tip note (7301)
+  const c3Mixed = (Math.sqrt(mu / C.com_radius_km_as_stated) + vTip) ** 2 - (2 * mu) / C.r_tip_km;
+  const apoMixed = -mu / c3Mixed * 2 - C.r_tip_km - C.earth_radius_km;
+  assert.equal(round(c3Mixed, 3), -8.137, 'mixed radii give −8.137');
+  assert.equal(Math.round(apoMixed), 84297, 'and 84,297 km');
+  // only the 6371 km Earth reproduces the file
+  assert.equal(round(K.tierEnergy('reference').c3_kms2, 2), revA.kinematics.c3_kms2);
+  assert.equal(round(Math.sqrt(mu / C.com_radius_km_as_stated), 2), revA.orbital.v_orb_kms, 'the file\'s v_orb_kms 7.55 is what 6988 km gives');
   assert.equal(round(C.v_orb_kms, 2), 7.56, 'with the 6371 km Earth the kernel and physics module use, v_orb rounds to 7.56');
-  log(`F1: v_orb(6988) = ${vOrb6988.toFixed(4)}, v_orb(6981) = ${C.v_orb_kms.toFixed(4)}; C3 with 6988 = ${c3With6988.toFixed(3)}`);
+  log(`F1: consistent 6378 Earth C3 ${c3Cons.toFixed(4)}, apogee ${apoCons.toFixed(0)}; mixed C3 ${c3Mixed.toFixed(4)}, apogee ${apoMixed.toFixed(0)}`);
 });
 
 test('constants: a canon without the r_tip note, or missing a key, makes the kernel refuse rather than remember', () => {
   const noNote = JSON.parse(JSON.stringify(revA));
   noNote.kinematics._c3_note = 'nothing here';
-  const k1 = TipMatch.create(noNote, sidecar);
+  const k1 = TipMatch.create(noNote, sidecar, ASTER);
   assert.equal(k1.ok, false);
   assert.equal(k1.refusal.code, 'not_found');
   const e1 = k1.energy({ vinf_kms: 1, tier: 'reference', as_of: AS_OF });
@@ -86,9 +109,59 @@ test('constants: a canon without the r_tip note, or missing a key, makes the ker
   assert.equal(e1.refusal.code, 'not_found');
   const noMu = JSON.parse(JSON.stringify(revA));
   delete noMu.orbital.mu_earth_m3s2;
-  const k2 = TipMatch.create(noMu, sidecar);
+  const k2 = TipMatch.create(noMu, sidecar, ASTER);
   assert.equal(k2.ok, false);
   assert.match(k2.refusal.reason, /orbital\.mu_earth_m3s2/);
+  // without the Aster module the upper v∞ bound cannot be stated, so no v∞ is accepted
+  const k3 = TipMatch.create(revA, sidecar, null);
+  assert.equal(k3.ok, true);
+  assert.equal(k3.energy({ vinf_kms: 1, tier: 'reference', as_of: AS_OF }).refusal.code, 'not_found');
+  assert.equal(k3.nhats({ tier: 'reference', as_of: AS_OF }).refusal.code, 'not_found');
+  const noE = JSON.parse(JSON.stringify(ASTER));
+  delete noE.helio.earth_e;
+  assert.match(TipMatch.create(revA, sidecar, noE).energy({ vinf_kms: 1, tier: 'reference', as_of: AS_OF }).refusal.reason, /helio\.earth_e/);
+});
+
+test('Aster constants: the data module carries exactly what the .ts snapshot copies say, and the cited altitudes', () => {
+  assert.equal(ASTER.helio.gm_sun_m3s2, tsNum(asterPhysTs, 'GM_sun'));
+  assert.equal(ASTER.helio.au_m, tsNum(asterPhysTs, 'AU'));
+  const earth = /\/\/ Earth\s*\n\s*\[\s*([0-9.]+),\s*[-0-9.]+,\s*([0-9.]+),/.exec(asterPhysTs);
+  assert.equal(ASTER.helio.earth_a_au, Number(earth[1]));
+  assert.equal(ASTER.helio.earth_e, Number(earth[2]));
+  assert.equal(ASTER.porkchop.earth_mu_km3s2, tsNum(asterDvTs, 'EARTH_MU_KM3_PER_S2'));
+  assert.equal(ASTER.porkchop.leo_parking_radius_km, tsNum(asterDvTs, 'LEO_PARKING_RADIUS_KM'));
+  assert.equal(K.aster.porkchop.earth_radius_km, ASTER.porkchop.leo_parking_radius_km - ASTER.cited.leo_parking_altitude_km.value);
+  near(K.aster.porkchop.earth_radius_km, 6378.137, 1e-9, 'R_E behind Aster\'s 200 km parking radius is the WGS84 equatorial radius');
+  assert.equal(ASTER.cited.nhats_entry_altitude_km.value, 125);
+  assert.match(ASTER.cited.nhats_entry_altitude_km.quote, /125 km altitude/);
+  assert.equal(ASTER.cited.browser_reentry_altitude_km.value, 200);
+  assert.match(ASTER.cited.browser_reentry_altitude_km.quote, /200 km Earth inertial reentry/);
+  const side = JSON.parse(fs.readFileSync(path.join(here, 'snapshots', 'aster.data.js.provenance.json'), 'utf8'));
+  assert.equal(side.commit, ASTER.provenance.commit);
+  assert.equal(side.sourceFiles, ASTER.nhats.files_read);
+});
+
+test('the upper end of the v∞ domain: the fastest a Sun-bound body can meet Earth, by hand from Aster\'s constants', () => {
+  const gm = ASTER.helio.gm_sun_m3s2 / 1e9;
+  const a = (ASTER.helio.earth_a_au * ASTER.helio.au_m) / 1e3;
+  const rp = a * (1 - ASTER.helio.earth_e);
+  const bound = Math.sqrt((2 * gm) / rp) + Math.sqrt(gm * (2 / rp - 1 / a));
+  near(K.aster.helio.vinf_max_kms, bound, 1e-12, 'bound');
+  near(bound, 72.76, 0.005, 'about 72.8 km/s');
+  // circular Earth orbit at 1 AU gives (1 + √2)·v⊕, a little lower: perihelion is the worst case
+  const circ = (1 + Math.SQRT2) * Math.sqrt(gm / ((ASTER.helio.au_m) / 1e3));
+  assert.ok(circ < bound && bound - circ < 1, `circular ${circ} < perihelion ${bound}`);
+  const below = K.energy({ vinf_kms: bound - 1e-9, tier: 'reference', as_of: AS_OF });
+  assert.ok(below.value, 'just below the bound is accepted');
+  assert.deepEqual(TipMatch.validateEnvelope(below), []);
+  near(below.value.input.vinf_domain_max_kms.value, bound, 1e-12, 'the envelope states the bound');
+  assert.match(below.validity_envelope, /0 ≤ v∞ ≤ 72\.76 km\/s/);
+  for (const v of [bound + 1e-9, 300000, 1e154, 1e155, Number.MAX_VALUE]) {
+    const e = K.energy({ vinf_kms: v, tier: 'reference', as_of: AS_OF });
+    assert.equal(e.value, null, `${v} must not produce numbers`);
+    assert.equal(e.refusal.code, 'out_of_envelope', `${v}`);
+    assert.deepEqual(TipMatch.validateEnvelope(e), []);
+  }
 });
 
 // ------------------------------------------------------------------ reconciliation with the canon's stated numbers
@@ -190,6 +263,15 @@ test('closed form: at v∞* the Phase 3 trim is zero to round-off, and the match
   assert.equal(K.energy({ vinf_kms: star + 0.5, tier: 'phase3', tolerance_ms: 1e6, as_of: AS_OF }).value.match.energy_matched, true, 'a huge tolerance matches anything');
   assert.equal(K.energy({ vinf_kms: 3.61, tier: 'phase3', tolerance_ms: 1, as_of: AS_OF }).value.match.energy_matched, true, '3.61 km/s is within 1 m/s of v∞*');
   assert.equal(K.energy({ vinf_kms: 3.61, tier: 'phase3', tolerance_ms: 0.5, as_of: AS_OF }).value.match.energy_matched, false, 'but not within 0.5 m/s');
+  // the ±1 m/s window in v∞ is v∞* ± 3.06 m/s: 3.615 is inside (+0.76 m/s), 3.616 outside (+1.08 m/s)
+  const at3615 = K.energy({ vinf_kms: 3.615, tier: 'phase3', tolerance_ms: 1, as_of: AS_OF }).value;
+  const at3616 = K.energy({ vinf_kms: 3.616, tier: 'phase3', tolerance_ms: 1, as_of: AS_OF }).value;
+  assert.equal(at3615.match.energy_matched, true, '3.615 km/s is inside the 1 m/s window');
+  near(at3615.upper_tip.trim_dv_ms.value, 0.757, 0.001, 'trim at 3.615');
+  assert.equal(at3616.match.energy_matched, false, '3.616 km/s is outside it');
+  near(at3616.upper_tip.trim_dv_ms.value, 1.084, 0.001, 'trim at 3.616');
+  near(1 / slope, 3.06, 0.005, 'half-width of the window in v∞ per 1 m/s of trim, m/s');
+  near(K.energy({ vinf_kms: 3.61, tier: 'phase3', as_of: AS_OF }).value.upper_tip.trim_dv_ms.value, -0.877, 0.001, 'trim at 3.61');
   assert.equal(K.energy({ vinf_kms: 0, tier: 'reference', tolerance_ms: 1, as_of: AS_OF }).value.match.energy_matched, false);
   log(`slope at v∞*: ${slope.toFixed(4)} (1 m/s trim ↔ ${(1 / slope).toFixed(2)} m/s of v∞)`);
 });
@@ -241,7 +323,7 @@ test('zero-trim tip speed: the inverse of the energy condition, with the V_c rat
 test('Earth-radius sensitivity: moving R_E to 6378.137 km consistently shifts the reference C3 by ~0.03 km²/s², not the ~0.1 the proposal said', () => {
   const alt = JSON.parse(JSON.stringify(revA));
   alt.kinematics._c3_note = alt.kinematics._c3_note.replace('r_tip=7301 km', 'r_tip=7308.137 km');
-  const K2 = TipMatch.create(alt, sidecar);
+  const K2 = TipMatch.create(alt, sidecar, ASTER);
   assert.equal(K2.constants.earth_radius_km, 6378.137);
   const dC3 = K2.tierEnergy('reference').c3_kms2 - K.tierEnergy('reference').c3_kms2;
   const dTrim = K2.energy({ vinf_kms: 0, tier: 'reference', as_of: AS_OF }).value.upper_tip.trim_dv_ms.value - K.energy({ vinf_kms: 0, tier: 'reference', as_of: AS_OF }).value.upper_tip.trim_dv_ms.value;
@@ -251,6 +333,90 @@ test('Earth-radius sensitivity: moving R_E to 6378.137 km consistently shifts th
   const inconsistent = (C.v_orb_kms + 2.5) ** 2 - (2 * C.mu_km3s2) / 7308.137 - K.tierEnergy('reference').c3_kms2;
   assert.ok(inconsistent > 0.09 && inconsistent < 0.12, `inconsistent shift ${inconsistent}`);
   log(`ΔC3 consistent ${dC3.toFixed(4)}, inconsistent ${inconsistent.toFixed(4)}; Δtrim ${dTrim.toFixed(2)} m/s`);
+});
+
+test('the trim is printed so a near-miss never reads as zero: m/s with enough digits, km/s from 1 km/s up', () => {
+  assert.equal(TipMatch.formatSpeedDiff(0.103), '0.10 m/s');
+  assert.equal(TipMatch.formatSpeedDiff(-0.0004), '0.00040 m/s');
+  assert.equal(TipMatch.formatSpeedDiff(1.0836), '1.08 m/s');
+  assert.equal(TipMatch.formatSpeedDiff(393.116), '393.1 m/s');
+  assert.equal(TipMatch.formatSpeedDiff(12509.4), '12.509 km/s');
+  assert.equal(TipMatch.signedSpeedDiff(-606.9), '−606.9 m/s');
+  for (const ms of [1e-12, 3e-7, 0.004, 0.05, 0.4999, 0.9, 9.99, 99.9, 999.4]) {
+    assert.notEqual(Number(TipMatch.formatSpeedDiff(ms).replace(/[^0-9.e-]/g, '')), 0, `${ms} must not print as zero`);
+  }
+  // the state the review found: v∞* button (3.613) with a 0.05 m/s tolerance
+  const e = K.energy({ vinf_kms: 3.613, tier: 'phase3', tolerance_ms: 0.05, as_of: AS_OF }).value;
+  assert.equal(e.match.energy_matched, false);
+  assert.equal(e.match.verdict, 'not energy-matched: payload arrives 0.10 m/s faster than the tip');
+  assert.match(K.energy({ vinf_kms: 0, tier: 'reference', as_of: AS_OF }).value.match.verdict, /393\.1 m\/s faster/);
+});
+
+// ------------------------------------------------------------------ JPL NHATS records in Aster's fixtures
+test('NHATS: one record (Bennu) inverted by hand, with μ and R_E re-read from the Aster snapshot copy', () => {
+  const mu = tsNum(asterDvTs, 'EARTH_MU_KM3_PER_S2'); // 398,600.4418
+  const rEntry = tsNum(asterDvTs, 'LEO_PARKING_RADIUS_KM') - 200 + 125; // 6503.137 km
+  const bennu = ASTER.nhats.records.find((r) => r.des === '101955');
+  assert.equal(bennu.v_arr_earth, '11.832', 'the string the API returned');
+  assert.equal(bennu.dec_arr, '-37.492');
+  const vinf = Math.sqrt(11.832 ** 2 - (2 * mu) / rEntry); // √(139.996 − 122.588) = 4.172…
+  const vPay = Math.sqrt(vinf ** 2 + (2 * C.mu_km3s2) / C.r_tip_km);
+  const trimMs = (vPay - (C.v_orb_kms + 3.5)) * 1000;
+  const env = K.nhats({ tier: 'phase3', as_of: AS_OF });
+  const rec = env.value.records.find((r) => r.des === '101955');
+  near(rec.vinf_kms.value, vinf, 1e-12, 'Bennu v∞');
+  near(rec.trim_dv_ms.value, trimMs, 1e-9, 'Bennu trim vs Phase 3');
+  assert.equal(round(vinf, 3), 4.172);
+  assert.equal(round(env.value.reading.escape_speed_kms.value, 4), 11.0719, 'escape speed at 125 km');
+  log(`Bennu: v∞ ${vinf.toFixed(4)} km/s, trim vs Phase 3 ${trimMs.toFixed(1)} m/s`);
+});
+
+test('NHATS: the set as a whole: 128 bodies from 135 files, v∞ 0.262–4.345 km/s (median 2.449), and what it means for each tier', () => {
+  const env = K.nhats({ tier: 'phase3', as_of: AS_OF });
+  assert.deepEqual(TipMatch.validateEnvelope(env), []);
+  assert.equal(env.confidence, 'assumed', 'the entry-altitude reading is an assumption');
+  const v = env.value;
+  assert.equal(v.source.files_read, 135);
+  assert.equal(v.source.bodies, 128);
+  assert.equal(v.source.skipped_files, 5);
+  assert.deepEqual(v.source.duplicate_bodies, ['2000 SG344', '2001 GP2']);
+  assert.equal(v.summary.count, 128);
+  // the same figures sibling deposit ideas/05-round-trip-ledger publishes from the same fixtures
+  assert.equal(round(v.summary.vinf_min_kms.value, 3), 0.262);
+  assert.equal(v.summary.vinf_min_des, '2011 WE');
+  assert.equal(round(v.summary.vinf_max_kms.value, 3), 4.345);
+  assert.equal(v.summary.vinf_max_des, '2014 KF39');
+  assert.equal(round(v.summary.vinf_median_kms.value, 3), 2.449);
+  // Phase 3: v∞* 3.613 sits inside the spread
+  assert.equal(v.summary.payload_faster, 20);
+  assert.equal(v.summary.payload_slower, 108);
+  assert.equal(v.summary.energy_matched, 0, 'no record is within 1 m/s');
+  assert.equal(v.closest[0].des, '2021 AT2');
+  near(v.closest[0].trim_dv_ms.value, 3.79, 0.01, 'closest record trim');
+  // rounding: half a unit of the record's last digit carried through d(trim)/d(v_arr) = v_arr / v_pay
+  const c0 = v.closest[0];
+  near(c0.trim_rounding_ms.value, 0.5 * c0.v_arr_earth_kms.value / Math.sqrt(c0.vinf_kms.value ** 2 + (2 * C.mu_km3s2) / C.r_tip_km), 1e-9, 'rounding band');
+  const shifted = K.nhats({ tier: 'phase3', as_of: AS_OF }).value; // deterministic
+  assert.deepEqual(shifted.summary, v.summary);
+  // bound tiers: every record arrives faster, as the C3 < 0 argument says
+  for (const tier of ['reference', 'cislunar']) {
+    const s = K.nhats({ tier, as_of: AS_OF }).value.summary;
+    assert.equal(s.payload_faster, 128, tier);
+    assert.equal(s.payload_slower, 0, tier);
+  }
+  // the other reading: 200 km
+  const r200 = K.nhats({ tier: 'phase3', reading: 'reentry-200', as_of: AS_OF }).value;
+  assert.equal(round(r200.summary.vinf_min_kms.value, 3), 1.211);
+  assert.equal(round(r200.summary.vinf_max_kms.value, 3), 4.503);
+  assert.equal(r200.summary.payload_faster, 24);
+  // refusals
+  assert.equal(K.nhats({ tier: 'phase3', reading: 'toString', as_of: AS_OF }).refusal.code, 'not_found');
+  assert.equal(K.nhats({ tier: 'phase3', tolerance_ms: -1, as_of: AS_OF }).refusal.code, 'out_of_envelope');
+  const slow = JSON.parse(JSON.stringify(ASTER));
+  slow.nhats.records = [{ des: 'x', v_arr_earth: '10.000', dec_arr: '0' }];
+  const r = TipMatch.create(revA, sidecar, slow).nhats({ tier: 'phase3', as_of: AS_OF });
+  assert.equal(r.refusal.code, 'out_of_envelope', 'a record below escape speed is not converted');
+  log(`NHATS: ${v.summary.payload_faster} faster / ${v.summary.payload_slower} slower than Phase 3; closest ${v.closest[0].des} ${v.closest[0].trim_dv_ms.value.toFixed(2)} m/s`);
 });
 
 // ------------------------------------------------------------------ refusals
@@ -274,7 +440,17 @@ test('refusals: a missing, non-finite, non-numeric or negative v∞, a bad toler
   }
   const t = K.energy({ vinf_kms: 1, tier: 'mars', as_of: AS_OF });
   assert.equal(t.refusal.code, 'not_found');
-  for (const tol of [NaN, -1, Infinity, '1']) {
+  // tier names that are Object.prototype keys must not slip past the lookup
+  for (const tier of ['toString', 'constructor', '__proto__', 'hasOwnProperty', 'valueOf', undefined]) {
+    const e = K.energy({ vinf_kms: 1, tier, as_of: AS_OF });
+    assert.equal(e.value, null, `tier ${String(tier)}`);
+    assert.equal(e.refusal.code, 'not_found', `tier ${String(tier)}`);
+    assert.deepEqual(TipMatch.validateEnvelope(e), []);
+    assert.equal(K.tierEnergy(tier), null);
+    assert.equal(K.nhats({ tier, as_of: AS_OF }).refusal.code, 'not_found');
+  }
+  assert.equal(K.energy({ vinf_kms: '   ', tier: 'reference', as_of: AS_OF }).refusal.code, 'insufficient_data', 'whitespace is no v∞');
+  for (const tol of [NaN, -1, Infinity, '1', '']) {
     const e = K.energy({ vinf_kms: 1, tier: 'reference', tolerance_ms: tol, as_of: AS_OF });
     assert.equal(e.value, null);
     assert.equal(e.refusal.code, 'out_of_envelope');
@@ -316,8 +492,10 @@ test('envelope shape: version, tool, weakest-link confidence, provenance with th
       assert.ok(TipMatch.CONFIDENCES.includes(e.confidence));
       assert.equal(e.confidence, 'assumed', 'design parameters and a typed v∞ make the weakest link "assumed"');
       assert.equal(e.confidence, TipMatch.confidenceMin(e.provenance));
-      const repo = e.provenance.filter((p) => p.kind === 'repo');
-      assert.ok(repo.length >= 2 && repo.every((p) => p.commit === sidecar.commit && p.path === 'params/rev_a.json'));
+      const repo = e.provenance.filter((p) => p.kind === 'repo' && p.path === 'params/rev_a.json');
+      assert.ok(repo.length === 2 && repo.every((p) => p.commit === sidecar.commit));
+      const helio = e.provenance.find((p) => p.id === 'aster-helio');
+      assert.ok(helio && helio.commit === ASTER.provenance.commit && helio.path === 'src/physics/constants/index.ts', 'the v∞ bound cites Aster\'s constants at their commit');
       assert.ok(e.provenance.some((p) => p.kind === 'computation' && p.confidence === 'derived'));
       assert.ok(e.provenance.some((p) => p.kind === 'external' && p.id === 'vinf-input'));
       assert.ok(Array.isArray(e.assumptions) && e.assumptions.length >= 4);
@@ -359,13 +537,14 @@ test('the validator has teeth: it rejects an envelope with an unknown source id,
 // ------------------------------------------------------------------ the page does not retype constants
 test('index.html carries no tether constant as static text; the page fills them from the snapshot', () => {
   const html = fs.readFileSync(path.join(here, 'index.html'), 'utf8');
-  for (const needle of ['7301', '6371', '6981', '6988', '6661', '610 km', '320 km', '290 km', '2.5 km/s', '2.8 km/s', '3.5 km/s', '0.393', '3.613']) {
+  for (const needle of ['7301', '6371', '6981', '6988', '6661', '610 km', '320 km', '290 km', '2.5 km/s', '2.8 km/s', '3.5 km/s', '0.393', '3.613', '125 km', '72.7', 'value="1"']) {
     assert.equal(html.includes(needle), false, `index.html must not state "${needle}" statically`);
   }
   assert.match(html, /snapshots\/rev_a\.data\.js/);
   assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1">/);
+  assert.match(html, /snapshots\/aster\.data\.js/);
   const app = fs.readFileSync(path.join(here, 'app.js'), 'utf8');
-  for (const needle of ['7301', '6371', '6981', '2.5', '2.8', '3.5', '398600']) {
+  for (const needle of ['7301', '6371', '6981', '2.5', '2.8', '3.5', '398600', '6378', '72.7']) {
     assert.equal(new RegExp(`(^|[^\\w.])${needle.replace('.', '\\.')}([^\\w.]|$)`).test(app.replace(/\/\/.*$/gm, '')), false, `app.js must not carry the constant ${needle} in code`);
   }
 });
@@ -382,7 +561,7 @@ test('CLI: JSON envelopes for a valid question (exit 0), refusal for a bad v∞ 
   assert.equal(out.energy.value.match.energy_matched, true);
   near(out.energy.value.upper_tip.trim_dv_ms.value, -0.9, 0.1, 'CLI trim at 3.61 km/s is about −0.9 m/s');
   assert.equal(out.plane.refusal.code, 'insufficient_data');
-  assert.deepEqual(out.energy, K.energy({ vinf_kms: 3.61, tier: 'phase3', tolerance_ms: 1, as_of: AS_OF }), 'CLI and kernel agree exactly');
+  assert.deepEqual(out.energy, K.energy({ vinf_kms: 3.61, tier: 'phase3', as_of: AS_OF }), 'CLI and kernel agree exactly (the CLI takes the kernel\'s default tolerance)');
   const neg = runCli('--vinf', '-1', '--as-of', AS_OF);
   assert.equal(neg.status, 1);
   assert.equal(JSON.parse(neg.stdout).energy.refusal.code, 'out_of_envelope');
@@ -395,6 +574,30 @@ test('CLI: JSON envelopes for a valid question (exit 0), refusal for a bad v∞ 
   const none = runCli();
   assert.equal(none.status, 2);
   assert.match(none.stderr, /--vinf is required/);
+  // empty and non-decimal values are refused, never read as 0
+  for (const [args, code] of [
+    [['--vinf', ''], 'insufficient_data'],
+    [['--vinf', '  '], 'insufficient_data'],
+    [['--vinf', '0x10'], 'insufficient_data'],
+    [['--vinf', 'Infinity'], 'insufficient_data'],
+    [['--vinf', '1', '--tol', ''], 'out_of_envelope'],
+    [['--vinf', '1', '--tol', 'abc'], 'out_of_envelope'],
+    [['--vinf', '1e155'], 'out_of_envelope'],
+    [['--vinf', '1.7976931348623157e308'], 'out_of_envelope'],
+    [['--vinf', '300000'], 'out_of_envelope'],
+    [['--vinf', '1', '--tier', 'toString'], 'not_found'],
+    [['--vinf', '1', '--tier', '__proto__'], 'not_found'],
+    [['--vinf', '1', '--tier', 'constructor'], 'not_found'],
+  ]) {
+    const r = runCli(...args, '--as-of', AS_OF);
+    assert.equal(r.status, 1, `${JSON.stringify(args)}: ${r.stderr}`);
+    assert.equal(r.stderr, '', `${JSON.stringify(args)} prints no stack trace`);
+    assert.equal(JSON.parse(r.stdout).energy.refusal.code, code, JSON.stringify(args));
+  }
+  const nh = runCli('--nhats', '--tier', 'phase3', '--as-of', AS_OF);
+  assert.equal(nh.status, 0, nh.stderr);
+  assert.deepEqual(JSON.parse(nh.stdout).nhats, K.nhats({ tier: 'phase3', as_of: AS_OF }), 'CLI and kernel agree on the NHATS envelope');
+  assert.equal(runCli('--nhats', '--reading', 'nope').status, 1);
   const unknown = runCli('--vinf', '1', '--bogus');
   assert.equal(unknown.status, 2);
   const help = runCli('--help');
@@ -408,7 +611,9 @@ test('example.txt is the CLI\'s real output: regenerated here and compared byte 
     ['--vinf', '0', '--tier', 'reference', '--as-of', AS_OF, '--text'],
     ['--vinf', '0', '--tier', 'cislunar', '--as-of', AS_OF, '--text'],
     ['--vinf', '-1', '--tier', 'reference', '--as-of', AS_OF, '--text'],
+    ['--vinf', '1e155', '--tier', 'reference', '--as-of', AS_OF, '--text'],
     ['--source', 'aster-cache', '--as-of', AS_OF, '--text'],
+    ['--nhats', '--tier', 'phase3', '--as-of', AS_OF, '--text'],
     ['--vinf', '3.61', '--tier', 'phase3', '--as-of', AS_OF],
   ];
   let expected = '';

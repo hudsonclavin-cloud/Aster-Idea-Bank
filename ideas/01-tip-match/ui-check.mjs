@@ -13,7 +13,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const TipMatch = require(path.join(here, 'tip-match.js'));
 const REV_A = require(path.join(here, 'snapshots', 'rev_a.data.js'));
-const K = TipMatch.create(REV_A.data, REV_A.provenance);
+const ASTER = require(path.join(here, 'snapshots', 'aster.data.js'));
+const K = TipMatch.create(REV_A.data, REV_A.provenance, ASTER);
 const URL0 = pathToFileURL(path.join(here, 'index.html')).href;
 
 let pw;
@@ -69,6 +70,21 @@ async function pickTier(page, key) {
   await page.locator(`input[name="tier"][value="${key}"]`).check({ force: true });
   await page.waitForTimeout(50);
 }
+// the trim label must not touch any other chart label, and must stay inside the drawing
+async function trimLabelClear(page) {
+  return page.evaluate(() => {
+    const t = document.querySelector('#chart .trim-label');
+    if (!t) return { ok: false, why: 'no trim label' };
+    const a = t.getBBox();
+    const svg = document.getElementById('chart');
+    const W = svg.viewBox.baseVal.width;
+    const hit = Array.from(document.querySelectorAll('#chart text.star, #chart text.direct')).find((o) => {
+      const b = o.getBBox();
+      return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+    });
+    return { ok: !hit && a.x >= 0 && a.x + a.width <= W, why: hit ? `overlaps "${hit.textContent}"` : `x ${a.x.toFixed(0)}–${(a.x + a.width).toFixed(0)} of ${W}` };
+  });
+}
 async function rowValue(page, label) {
   const rows = page.locator('#numbers tbody tr');
   const n = await rows.count();
@@ -84,7 +100,7 @@ async function rowValue(page, label) {
   const { context, page, errors } = await open(DESK);
   const ref0 = K.energy({ vinf_kms: 0, tier: 'reference', tolerance_ms: 1 }).value;
   ok(/Not matched/.test(await text(page, '#headline')), 'opens on v∞ = 0, reference tier, not matched');
-  ok(Math.abs(num(await text(page, '#headline .num')) - Math.abs(ref0.upper_tip.trim_dv_kms.value)) < 0.0006, `headline trim is the kernel's 0.393 km/s (${await text(page, '#headline .num')})`);
+  ok(Math.abs(num(await text(page, '#headline .num')) - Math.abs(ref0.upper_tip.trim_dv_ms.value)) < 0.06 && /m\/s$/.test(await text(page, '#headline .num')), `headline trim is the kernel's 393.1 m/s (${await text(page, '#headline .num')})`);
   ok(/energy: not matched/.test(await text(page, '#chips')), 'energy chip reads not matched');
   ok(/plane: refused/.test(await text(page, '#chips')) && /phase: refused/.test(await text(page, '#chips')), 'plane and phase chips read refused');
   ok(/85,222 km/.test(await text(page, '#verdict-note')), `verdict note states the file's apogee (${await text(page, '#verdict-note')})`);
@@ -101,7 +117,12 @@ async function rowValue(page, label) {
   ok((await page.locator('#chart line.tier-line.selected.reference').count()) === 1, 'the reference line is the selected one');
   ok(/v∞\* = 3\.613/.test(await text(page, '#chart')), 'the chart labels the Phase 3 v∞* crossing');
   ok(/not reachable/.test(await text(page, '#lower-note')), 'the lower tip is reported not reachable');
-  ok(/10\.94 km\/s/.test(await text(page, '#lower-bars')), 'lower-tip bars show the 10.94 km/s parabolic speed');
+  ok(/10\.94 km\/s/.test(await text(page, '#lower-bars')) && /5\.06 km\/s/.test(await text(page, '#lower-bars')), 'lower-tip bars show 10.94 and 5.06 km/s');
+  const bars = await page.evaluate(() => Array.from(document.querySelectorAll('#lower-bars path')).map((p) => ({ cls: p.getAttribute('class'), display: getComputedStyle(p).display, w: p.getBoundingClientRect().width })));
+  ok(bars.length === 2 && bars.every((b) => b.display !== 'none' && b.w > 0), `both lower-tip bars are drawn (${JSON.stringify(bars)})`);
+  const pay = bars.find((b) => /payload/.test(b.cls));
+  const low = bars.find((b) => /lowtip/.test(b.cls));
+  ok(pay && low && Math.abs(low.w / pay.w - ref0.lower_tip.v_tip_inertial_kms.value / ref0.lower_tip.v_payload_kms.value) < 0.02, 'and their lengths are in the kernel\'s ratio');
   ok(/2\.893 km\/s/.test(await text(page, '#zero-trim')), 'zero-trim tip speed at v∞ = 0 is 2.893 km/s');
   ok((await page.locator('#conditions .cond.computed').count()) === 1 && (await page.locator('#conditions .cond.refused').count()) === 2, 'one computed and two refused condition cards');
   ok(/What would help/.test(await text(page, '#conditions')), 'refusals say what would help');
@@ -110,6 +131,15 @@ async function rowValue(page, label) {
   ok(env.energy.provenance[0].commit === REV_A.provenance.commit, 'envelope provenance carries the snapshot commit');
   ok(/34935cb/.test(await text(page, '#prov')), 'the provenance line names the commit');
   ok(/7301 km/.test(await text(page, '#tier-note')) && /2\.5 km\/s/.test(await text(page, '#tier-note')), 'the tier note is filled from the snapshot');
+  ok((await page.inputValue('#tol')) === String(TipMatch.DEFAULT_TOLERANCE_MS), 'the tolerance field takes the kernel\'s default');
+  ok(/0 to 72\.76 km\/s/.test(await text(page, '#vinf-range')), `the accepted v∞ range is stated (${await text(page, '#vinf-range')})`);
+  ok((await page.locator('#chart .rug line').count()) === 128, 'the chart carries one rug tick per NHATS body');
+  const nh = K.nhats({ tier: 'reference', tolerance_ms: 1 }).value;
+  const nhs = await text(page, '#nhats-summary');
+  ok(nhs.includes(nh.summary.vinf_min_kms.value.toFixed(3)) && nhs.includes(nh.summary.vinf_max_kms.value.toFixed(3)) && nhs.includes(nh.summary.vinf_median_kms.value.toFixed(3)), `NHATS card states the kernel's 0.262 / 4.345 / 2.449 (${nhs.slice(0, 60)}…)`);
+  ok(/all 128 arrive faster/.test(nhs), 'against the reference tier every NHATS return arrives faster');
+  ok((await page.locator('#nhats-closest tbody tr').count()) === 5, 'five closest bodies listed');
+  ok((await trimLabelClear(page)).ok, `desktop: the trim label touches no other label (${(await trimLabelClear(page)).why})`);
   ok(errors.length === 0, `no console errors or network requests on desktop: ${errors.join('; ')}`);
   await context.close();
 }
@@ -128,6 +158,8 @@ async function rowValue(page, label) {
   await page.fill('#tol', '0.05');
   await page.waitForTimeout(60);
   ok(/Not matched/.test(await text(page, '#headline')), 'tightening the tolerance to 0.05 m/s un-matches 3.613 (0.1 m/s off v∞*)');
+  const miss = await text(page, '#headline .num');
+  ok(num(miss) > 0 && /0\.10 m\/s/.test(miss), `the near-miss reads 0.10 m/s, never zero (${miss})`);
   await page.fill('#tol', '1');
   await page.waitForTimeout(60);
   // keyboard: arrow keys on the slider step v∞ by 0.001
@@ -137,7 +169,12 @@ async function rowValue(page, label) {
   await page.waitForTimeout(60);
   ok(Math.abs(Number(await page.inputValue('#vinf-num')) - 3.615) < 1e-9, `two ArrowRights move v∞ to 3.615 (${await page.inputValue('#vinf-num')})`);
   const p3 = K.energy({ vinf_kms: 3.615, tier: 'phase3', tolerance_ms: 1 }).value;
-  ok(/Not matched|Energy-matched/.test(await text(page, '#headline')), 'the headline re-renders on keyboard input');
+  ok(/Energy-matched/.test(await text(page, '#headline')) && /0\.76 m\/s/.test(await text(page, '#headline')), `3.615 km/s is inside the 1 m/s window, 0.76 m/s off (${await text(page, '#headline')})`);
+  await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(60);
+  ok(/Not matched/.test(await text(page, '#headline')) && /1\.08 m\/s/.test(await text(page, '#headline')), `3.616 km/s is outside it, 1.08 m/s off (${await text(page, '#headline')})`);
+  await page.keyboard.press('ArrowLeft');
+  await page.waitForTimeout(60);
   const trimRow = num(await rowValue(page, 'Trim Δv'));
   ok(Math.abs(trimRow - p3.upper_tip.trim_dv_kms.value) < 0.0001, `trim row ${trimRow} matches kernel ${p3.upper_tip.trim_dv_kms.value.toFixed(4)}`);
   // Tab reaches the tier radios and Arrow keys change tier
@@ -153,7 +190,9 @@ async function rowValue(page, label) {
   const { context, page, errors } = await open(DESK);
   await page.locator('input[name="src"][value="aster-cache"]').check({ force: true });
   await page.waitForTimeout(60);
-  ok(/Refused/.test(await text(page, '#headline')), 'choosing the Aster cache refuses');
+  ok(/Aster computes no Earth-arrival v∞; its screening cache holds outbound-leg quantities only/.test(await text(page, '#headline')), 'choosing the Aster cache refuses, in the corrected words');
+  ok(/NHATS/.test(await text(page, '#refusal-card')) && /05-round-trip-ledger/.test(await text(page, '#refusal-card')), 'the refusal names the NHATS fixtures and idea 05 as what would help');
+  ok(await page.locator('#nhats-card').isVisible(), 'the NHATS card stays visible, labelled external');
   ok(await page.locator('#refusal-card').isVisible(), 'a refusal card is shown');
   ok(/not_found/.test(await text(page, '#refusal-card')) && /vInfArr is arrival at the asteroid/.test(await text(page, '#refusal-card')), 'the card explains why the cache is not an Earth-arrival v∞');
   ok(await page.locator('#results').isHidden(), 'no numbers are shown while refused');
@@ -164,6 +203,39 @@ async function rowValue(page, label) {
   await page.waitForTimeout(60);
   ok(/Refused \(insufficient data\)/.test(await text(page, '#headline')), `an empty v∞ field is a refusal, not a number (${await text(page, '#headline')})`);
   ok(await page.locator('#results').isHidden(), 'and hides the numbers');
+  // the review's crash: 1e155 overflowed inside the kernel and left stale numbers on screen
+  await page.fill('#vinf-num', '20');
+  await page.waitForTimeout(60);
+  ok(/12\.509 km\/s faster/.test(await text(page, '#headline')), 'v∞ = 20 is computed');
+  ok(/off this axis/.test(await text(page, '#chart')), 'and marked off the chart\'s axis rather than drawn outside it');
+  for (const big of ['1e155', '300000', '72.8']) {
+    await page.fill('#vinf-num', big);
+    await page.waitForTimeout(60);
+    ok(/Refused \(out of envelope\)/.test(await text(page, '#headline')) && !/12\.509/.test(await text(page, '#headline')), `v∞ = ${big} is refused, no stale numbers (${await text(page, '#headline')})`);
+    ok(await page.locator('#results').isHidden(), `v∞ = ${big} hides the numbers`);
+    ok(/72\.76 km\/s/.test(await text(page, '#refusal-card')), `v∞ = ${big}: the refusal states the bound`);
+  }
+  await page.fill('#vinf-num', '72.7');
+  await page.waitForTimeout(60);
+  ok(/Not matched/.test(await text(page, '#headline')) && (await page.locator('#results').isVisible()), 'v∞ = 72.7 (inside the bound) is computed');
+  // anything the kernel throws inside a render becomes a refusal card, never stale numbers
+  await page.fill('#vinf-num', '2');
+  await page.waitForTimeout(60);
+  await page.evaluate(() => {
+    window.__fmt = TipMatch.formatSpeedDiff;
+    TipMatch.formatSpeedDiff = () => {
+      throw new Error('injected failure');
+    };
+  });
+  await page.fill('#vinf-num', '3');
+  await page.waitForTimeout(60);
+  ok(/could not be evaluated/.test(await text(page, '#headline')) && (await page.locator('#results').isHidden()) && /injected failure/.test(await text(page, '#refusal-card')), 'a throw during render shows a refusal card and hides the numbers');
+  await page.evaluate(() => {
+    TipMatch.formatSpeedDiff = window.__fmt;
+  });
+  await page.fill('#vinf-num', '2');
+  await page.waitForTimeout(60);
+  ok(await page.locator('#results').isVisible(), 'and the next good input renders again');
   await page.fill('#vinf-num', '2');
   await page.fill('#tol', '-3');
   await page.waitForTimeout(60);
@@ -171,6 +243,15 @@ async function rowValue(page, label) {
   await page.fill('#tol', '1');
   await page.waitForTimeout(60);
   ok(/Not matched/.test(await text(page, '#headline')), 'a valid tolerance brings the verdict back');
+  // the NHATS card follows the tier and the reading
+  await pickTier(page, 'phase3');
+  const p3 = K.nhats({ tier: 'phase3', tolerance_ms: 1 }).value;
+  ok(new RegExp(`${p3.summary.payload_faster} arrive faster and ${p3.summary.payload_slower} slower`).test(await text(page, '#nhats-summary')), `Phase 3: 20 faster, 108 slower (${await text(page, '#nhats-summary')})`);
+  ok((await text(page, '#nhats-closest')).includes(p3.closest[0].des), 'the closest body is listed first');
+  await page.locator('input[name="reading"][value="reentry-200"]').check({ force: true });
+  await page.waitForTimeout(60);
+  const r200 = K.nhats({ tier: 'phase3', tolerance_ms: 1, reading: 'reentry-200' }).value;
+  ok((await text(page, '#nhats-summary')).includes(r200.summary.vinf_min_kms.value.toFixed(3)), `the 200 km reading moves the set (${r200.summary.vinf_min_kms.value.toFixed(3)})`);
   ok(errors.length === 0, `no console errors through refusals: ${errors.join('; ')}`);
   await context.close();
 }
@@ -179,6 +260,10 @@ async function rowValue(page, label) {
 for (const [scheme] of [['light'], ['dark']]) {
   const { context, page, errors } = await open({ ...PHONE, colorScheme: scheme });
   ok(!(await overflow(page)), `${scheme}: no horizontal overflow at 390 px`);
+  const clear0 = await trimLabelClear(page);
+  ok(clear0.ok, `${scheme}: on first view the trim label touches no other label (${clear0.why})`);
+  const pb = await page.evaluate(() => Array.from(document.querySelectorAll('#lower-bars path')).map((p) => getComputedStyle(p).display !== 'none' && p.getBoundingClientRect().width > 0));
+  ok(pb.length === 2 && pb.every(Boolean), `${scheme}: both lower-tip bars are drawn on a phone`);
   await page.locator('#envelope-details summary').tap();
   await page.waitForTimeout(100);
   ok(!(await overflow(page)), `${scheme}: still no overflow with the envelope open`);
@@ -190,6 +275,8 @@ for (const [scheme] of [['light'], ['dark']]) {
   await page.locator('#set-star').tap();
   await page.waitForTimeout(80);
   ok(/Energy-matched/.test(await text(page, '#headline')), `${scheme}: tapping v∞* works by touch`);
+  const clearStar = await trimLabelClear(page);
+  ok(clearStar.ok, `${scheme}: at v∞* the trim label touches no other label (${clearStar.why})`);
   const chart = page.locator('#chart');
   await chart.scrollIntoViewIfNeeded();
   const box = await chart.boundingBox();

@@ -1,0 +1,15 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nhats-validation-targets + tests/fixtures/v2/oq7-nhats-coorbital",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedTree": "tests/fixtures/v2/nhats-validation-targets=f9b8499c69da422b587c9e2cca92221c8518dd6e tests/fixtures/v2/oq7-nhats-coorbital=3300f3673c56403f566590376a2523a9b6403807",
+  "sourceFiles": 135,
+  "copiedAt": "2026-10-26T15:15:11.170Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --aster: des, fullname and min_dv_traj.{v_arr_earth, dec_arr} of every NHATS fixture record (128 unique bodies from 135 files; 5 API error records listed, not kept; duplicates folded with their file names), plus GM_sun, AU and Earth's a, e parsed from snapshots/aster_physics_constants.ts and EARTH_MU_KM3_PER_S2, LEO_PARKING_RADIUS_KM from snapshots/aster_delta-v.ts, plus three cited altitudes whose quoted text the build re-checks. Sidecar written by build-data.mjs in tools/snapshot.mjs's schema (the tool has no multi-file mode).",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1e1195b974aedc172c8b895db9909893c988747a049d78d9d4b63e3cf9ac3d2d",
+  "writtenBytes": 35202
+}
