@@ -1,0 +1,193 @@
+EDGE OF THE GRID — where Aster's screening minima land on the departure × flight-time lattice
+================================================================================================
+cache   tests/fixtures/v2/lambert-screen-cache.json  sha256 bd27b9bd882a6534…  generatedAt 2026-05-30T04:43:31.918Z
+        solverCommit 8471659bb1c6  checkout HEAD 62ddb1713fea
+catalog tests/fixtures/v2/nea-catalog-slice9.json  sha256 f88028d283984229…  (equals the cache's catalogFixtureSha256)
+
+THE LATTICE (derived from metadata, nothing typed)
+  Departures from 2026-01-01 to 2040-12-27 every 7 days (783 columns; the metadata's window ends 2040-12-31, 4 days after the last lattice point), flight times from 182 to 1,802 days every 30 days (55 rows; the metadata's ceiling is 1,826 days): 43,065 cells per body.
+  every window on the lattice: 209,525 windows checked, 0 off-lattice; 783 distinct launch dates (every column is used), 44 distinct flight times
+  first/last departure seen 2026-01-01 / 2040-12-27; flight times seen 182–1802 days
+  totalSolves in metadata 1,804,638,825 = 43,065 cells × 41,905 bodies with windows = 1,804,638,825
+  bodies 41,906 (metadata.catalogSize 41,906): low_departure_c3 41,422, high_departure_c3 483, propagator_failed 1; co-orbital flag 130
+  no windows: asteroid-2015 D1 (propagator_failed) — excluded from every count below
+  cheapest window not first 0; minC3 summary mismatches 0; not ascending 0; bodies without exactly five 0
+
+MINIMA BY DEPARTURE YEAR (one per body; "all" counts every stored window)
+  year   cols   minima   per col   all windows
+  2026    53    4,268      80.5     18,913
+  2027    52    3,474      66.8     16,675
+  2028    52    3,188      61.3     15,849
+  2029    52    2,538      48.8     12,958
+  2030    52    2,369      45.6     12,259
+  2031    52    2,219      42.7     11,988
+  2032    53    2,533      47.8     13,150
+  2033    52    2,289      44.0     12,235
+  2034    52    2,415      46.4     12,689
+  2035    52    2,362      45.4     12,504
+  2036    52    2,508      48.2     12,852
+  2037    53    2,528      47.7     13,111
+  2038    52    2,857      54.9     14,244
+  2039    52    2,960      56.9     14,485
+  2040    52    3,397      65.3     15,613
+  interior baseline (columns outside 2026 and 2040): median 49.0 minima per column (mean 50.5, range 24–92); median interior year 2,528
+  first column 218 (4.4× the interior median), last column 165 (3.4×)
+  first year 1.66× and last year 1.34× a median interior year (per column)
+
+MINIMA ON THE EDGES (the body's cheapest stored window sits on the lattice boundary)
+  edge                  cell                      touched   share    likely clipped   undetermined   chains ≥3 (monotone)   inward slope km²/s²/step (median, n)
+  first departure date  column 0, 2026-01-01          218    0.5%              113            105     44 (44 monotone, 0 not)   0.386 (n=113, 0.008–9.183)
+  last departure date   column 782, 2040-12-27        165    0.4%               87             78     38 (38 monotone, 0 not)   0.519 (n=87, 0.003–8.298)
+  flight-time floor     row 0, 182 days             2,530    6.0%                1          2,529      0 (0 monotone, 0 not)   0.751 (n=1, 0.751–0.751)
+  flight-time ceiling   row 54, 1802 days              34    0.1%               28              6      9 (9 monotone, 0 not)   7.111 (n=28, 0.017–17.049)
+  any edge 2,936 of 41,905 bodies (7.0%); 11 touch two edges at once
+  "likely clipped" [Likely]: the next cell inward along the same row/column is among the five and costs more, so the sampled surface is still falling at the edge.
+  "undetermined" [Speculative]: the five stored windows record no slope at that edge (the other four lie in other basins); the cache cannot say.
+  interior alternative: 2,616 of 2,936 edge bodies also store a window in another basin on no edge, costing a median 0.623 km²/s² more (0.0002–32.53); 320 store none
+
+PORKCHOP VIEW TAIL (view's last departure 2040-01-01, from src/v2/app/porkchop/main.ts line 196; the cache's is 2040-12-27)
+  bodies whose cached minimum departs after 2040-01-01: 3,397 (8.1%); on it: 0; with any of five windows after it: 5,644
+
+BASINS the five windows span (rule: same basin within 2 columns and 1 row)
+  within 2 col / 1 row:  1:  3,848   2:  6,464   3: 10,155   4: 10,601   5: 10,837
+  within 4 col / 2 row:  1: 13,665   2: 14,492   3:  8,788   4:  3,921   5:  1,039
+  within 8 col / 2 row:  1: 17,780   2: 15,908   3:  5,970   4:  1,854   5:    393
+
+BY ORBIT CLASS (catalog orbitClass)
+  key                      n      edge    rate    floor   first   last   ceiling
+  APO                   23,757   1,285    5.4%   1,088     127     73         2
+  AMO                   14,516   1,388    9.6%   1,227      77     81         7
+  ATE                    3,387     209    6.2%     186      14     10         0
+  JFC                      165      10    6.1%       9       0      0         1
+  IEO                       38      20   52.6%      20       0      0         0
+  HTC                       36      24   66.7%       0       0      1        24
+  ETC                        6       0    0.0%       0       0      0         0
+
+BY ABSOLUTE MAGNITUDE H (catalog; 210 bodies carry none)
+  key                      n      edge    rate    floor   first   last   ceiling
+  H < 18                 1,088     175   16.1%     162       5      6         2
+  18 ≤ H < 22           10,429   1,304   12.5%   1,236      30     37         6
+  22 ≤ H < 25           14,896   1,041    7.0%     903      82     59         1
+  25 ≤ H < 28           13,137     354    2.7%     215      83     57         0
+  H ≥ 28                 2,146      28    1.3%       5      18      5         0
+  H missing                209      34   16.3%       9       0      1        25
+
+BY SYNODIC PERIOD WITH EARTH (from catalog a, AU 149597870.7 km from tools/build/precompute-lambert-screen.mjs line 81)
+  key                      n      edge    rate    floor   first   last   ceiling
+  S < 2 yr              23,507   1,664    7.1%   1,405     129    104        34
+  2 ≤ S < 5 yr          12,812     912    7.1%     815      51     49         0
+  5 ≤ S < 15 yr          3,883     210    5.4%     197       9      4         0
+  15 ≤ S < 50 yr         1,314     110    8.4%      84      19      7         0
+  S ≥ 50 yr                389      40   10.3%      29      10      1         0
+
+BY PHA FLAG
+  key                      n      edge    rate    floor   first   last   ceiling
+  PHA                    2,545      49    1.9%      31      10      7         2
+  not PHA               39,360   2,887    7.3%   2,499     208    158        32
+
+BY THE CACHE'S CO-ORBITAL FLAG
+  key                      n      edge    rate    floor   first   last   ceiling
+  co-orbital (cache flag)     130       6    4.6%       1       2      3         0
+  not co-orbital        41,775   2,930    7.0%   2,529     216    162        34
+
+SAMPLE BODIES (every number recomputable by hand from the five stored windows)
+  asteroid-433 (433 Eros (A898 PA)) — Eros: the hand-worked column, row and basin arithmetic in the tests
+      AMO H 10.39; min C3 1.6244 at col 336 row 3; basins 3; no edge
+      2032-06-10  TOF  272  C3    1.6244  col 336 row  3  basin 0
+      2032-06-03  TOF  272  C3    1.7831  col 335 row  3  basin 0
+      2039-05-26  TOF  302  C3    2.2732  col 699 row  4  basin 1
+      2039-05-19  TOF  302  C3    2.5789  col 698 row  4  basin 1
+      2032-07-08  TOF  242  C3    2.8094  col 340 row  2  basin 2
+  asteroid-99942 (99942 Apophis (2004 MN4)) — Apophis: the porkchop page's compare body
+      ATE H 19.09; min C3 0.0002 at col 141 row 1; basins 5; no edge
+      2028-09-14  TOF  212  C3    0.0002  col 141 row  1  basin 0
+      2028-06-15  TOF  302  C3    0.0144  col 128 row  4  basin 1
+      2028-08-17  TOF  242  C3    0.0206  col 137 row  2  basin 2
+      2028-05-18  TOF  332  C3    0.0238  col 124 row  5  basin 3
+      2028-07-13  TOF  272  C3    0.0660  col 132 row  3  basin 4
+  asteroid-2020 FK3 ((2020 FK3)) — the porkchop page's default body
+      APO H 25.3; min C3 0.5896 at col 79 row 3; basins 4; no edge
+      2027-07-08  TOF  272  C3    0.5896  col  79 row  3  basin 0
+      2035-07-05  TOF  272  C3    0.6596  col 496 row  3  basin 1
+      2027-08-05  TOF  242  C3    0.7296  col  83 row  2  basin 2
+      2035-08-02  TOF  242  C3    0.8911  col 500 row  2  basin 3
+      2035-08-09  TOF  242  C3    0.9138  col 501 row  2  basin 3
+  asteroid-2015 D1 — the one body with no stored windows (propagator_failed)
+      refused (insufficient_data): asteroid-2015 D1 has no stored windows (status propagator_failed)
+  asteroid-163693 (163693 Atira (2003 CP20)) — Atira: all five windows on the flight-time floor (Slice 17's F3 body)
+      IEO H 16.41; min C3 7.1914 at col 71 row 0; basins 3; flight-time floor → undetermined
+      2027-05-13  TOF  182  C3    7.1914  col  71 row  0  basin 0  edge: tofMin
+      2034-05-18  TOF  182  C3    7.3693  col 437 row  0  basin 1  edge: tofMin
+      2036-04-17  TOF  182  C3   11.1606  col 537 row  0  basin 2  edge: tofMin
+      2034-05-25  TOF  182  C3   11.4647  col 438 row  0  basin 1  edge: tofMin
+      2027-05-20  TOF  182  C3   12.1580  col  72 row  0  basin 0  edge: tofMin
+  asteroid-190166 (190166 (2005 UP156)) — first departure date, a chain of three rising inward: likely clipped
+      AMO H 17.26; min C3 7.5077 at col 0 row 5; basins 2; first departure date → likely_clipped (inward +0.386 km²/s², chain 3, monotone)
+      2026-01-01  TOF  332  C3    7.5077  col   0 row  5  basin 0  edge: first
+      2026-01-08  TOF  332  C3    7.8941  col   1 row  5  basin 0
+      2026-01-15  TOF  332  C3    8.6021  col   2 row  5  basin 0
+      2029-01-04  TOF  362  C3    8.9536  col 157 row  6  basin 1
+      2029-01-11  TOF  362  C3    8.9666  col 158 row  6  basin 1
+  asteroid-21088 (21088 Chelyabinsk (1992 BL2)) — first departure date, the other four windows elsewhere: undetermined
+      AMO H 14.34; min C3 5.2609 at col 0 row 3; basins 4; first departure date → undetermined
+      2026-01-01  TOF  272  C3    5.2609  col   0 row  3  basin 0  edge: first
+      2035-02-01  TOF  212  C3    6.8551  col 474 row  1  basin 1
+      2035-03-01  TOF  182  C3    8.2754  col 478 row  0  basin 2  edge: tofMin
+      2036-11-27  TOF  362  C3    8.7247  col 569 row  6  basin 3
+      2036-11-20  TOF  362  C3    9.1043  col 568 row  6  basin 3
+  asteroid-2368 (2368 Beltrovata (1977 RA)) — last departure date, neighbour stored: likely clipped
+      AMO H 15.18; min C3 5.4111 at col 782 row 2; basins 2; last departure date → likely_clipped (inward +0.847 km²/s², chain 2, monotone)
+      2040-12-27  TOF  242  C3    5.4111  col 782 row  2  basin 0  edge: last
+      2038-02-11  TOF  182  C3    6.2288  col 632 row  0  basin 1  edge: tofMin
+      2040-12-20  TOF  242  C3    6.2579  col 781 row  2  basin 0
+      2040-12-13  TOF  272  C3    6.3619  col 780 row  3  basin 0
+      2040-12-20  TOF  272  C3    6.7367  col 781 row  3  basin 0
+  asteroid-66063 (66063 (1998 RO1)) — last departure date, undetermined
+      ATE H 18.15; min C3 10.5110 at col 782 row 8; basins 3; last departure date → undetermined
+      2040-12-27  TOF  422  C3   10.5110  col 782 row  8  basin 0  edge: last
+      2039-12-15  TOF  452  C3   10.9237  col 728 row  9  basin 1
+      2038-12-16  TOF  452  C3   11.1854  col 676 row  9  basin 2
+      2040-01-05  TOF  422  C3   11.3009  col 731 row  8  basin 1
+      2039-12-29  TOF  422  C3   11.4833  col 730 row  8  basin 1
+  asteroid-2004 RZ164 ((2004 RZ164)) — last departure date, the steepest recorded inward slope
+      APO H 19; min C3 8.6987 at col 782 row 4; basins 3; last departure date → likely_clipped (inward +8.298 km²/s², chain 2, monotone)
+      2040-12-27  TOF  302  C3    8.6987  col 782 row  4  basin 0  edge: last
+      2028-01-13  TOF  542  C3   13.7760  col 106 row 12  basin 1
+      2028-01-20  TOF  542  C3   15.5420  col 107 row 12  basin 1
+      2040-12-20  TOF  302  C3   16.9970  col 781 row  4  basin 0
+      2037-01-15  TOF  242  C3   17.3607  col 576 row  2  basin 2
+  asteroid-2006 KD40 ((2006 KD40)) — touches two edges at once: first date and flight-time floor
+      APO H 18.57; min C3 5.7096 at col 0 row 0; basins 4; first departure date → undetermined; flight-time floor → undetermined
+      2026-01-01  TOF  182  C3    5.7096  col   0 row  0  basin 0  edge: first+tofMin
+      2028-08-17  TOF  272  C3    6.0693  col 137 row  3  basin 1
+      2028-08-24  TOF  272  C3    6.3782  col 138 row  3  basin 1
+      2028-09-21  TOF  242  C3    6.6985  col 142 row  2  basin 2
+      2028-07-20  TOF  302  C3    7.2162  col 133 row  4  basin 3
+  asteroid-1999 XS35 ((1999 XS35)) — flight-time ceiling
+      APO H 17.69; min C3 502.0835 at col 781 row 54; basins 3; flight-time ceiling → undetermined
+      2040-12-20  TOF 1802  C3  502.0835  col 781 row 54  basin 0  edge: tofMax
+      2040-12-27  TOF 1802  C3  503.6750  col 782 row 54  basin 0  edge: last+tofMax
+      2039-12-22  TOF 1802  C3  508.1366  col 729 row 54  basin 1  edge: tofMax
+      2038-12-23  TOF 1802  C3  514.4535  col 677 row 54  basin 2  edge: tofMax
+      2039-12-29  TOF 1802  C3  515.5865  col 730 row 54  basin 1  edge: tofMax
+  asteroid-2021 UO20 ((2021 UO20)) — the one floor body whose longer-flight neighbour is stored
+      AMO H 23.41; min C3 14.1124 at col 451 row 0; basins 1; flight-time floor → likely_clipped (inward +0.751 km²/s², chain 2, monotone)
+      2034-08-24  TOF  182  C3   14.1124  col 451 row  0  basin 0  edge: tofMin
+      2034-08-17  TOF  212  C3   14.1314  col 450 row  1  basin 0
+      2034-08-31  TOF  182  C3   14.1807  col 452 row  0  basin 0  edge: tofMin
+      2034-08-24  TOF  212  C3   14.8637  col 451 row  1  basin 0
+      2034-08-17  TOF  182  C3   15.0544  col 450 row  0  basin 0  edge: tofMin
+  asteroid-2059 (2059 Baboquivari (1963 UA)) — all five windows in one basin
+      AMO H 15.98; min C3 4.7205 at col 528 row 5; basins 1; no edge
+      2036-02-14  TOF  332  C3    4.7205  col 528 row  5  basin 0
+      2036-02-07  TOF  332  C3    5.1871  col 527 row  5  basin 0
+      2036-02-21  TOF  332  C3    5.4450  col 529 row  5  basin 0
+      2036-01-31  TOF  332  C3    6.9126  col 526 row  5  basin 0
+      2036-02-28  TOF  332  C3    7.4940  col 530 row  5  basin 0
+  asteroid-1566 (1566 Icarus (1949 MA)) — Icarus: five windows, five basins
+      APO H 16.53; min C3 0.8178 at col 409 row 2; basins 5; no edge
+      2033-11-03  TOF  242  C3    0.8178  col 409 row  2  basin 0
+      2033-09-01  TOF  302  C3    0.9239  col 400 row  4  basin 1
+      2033-12-08  TOF  212  C3    1.0663  col 414 row  1  basin 2
+      2034-01-05  TOF  182  C3    1.4297  col 418 row  0  basin 3  edge: tofMin
+      2033-09-29  TOF  272  C3    1.4892  col 404 row  3  basin 4

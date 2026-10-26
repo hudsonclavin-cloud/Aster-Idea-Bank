@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge of the Grid</title>
+<meta name="description" content="Where Aster's screening minima land on the departure × flight-time lattice, how many sit on its edges, which edge binds, and how many cached minima the porkchop view cannot show.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#edges">Skip to the edge table</a>
+<header class="top">
+  <div class="wrap">
+    <h1>Edge of the Grid</h1>
+    <p class="sub" id="lede">Loading the census…</p>
+    <p class="grid-sentence" id="gridSentence"></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card refusal" id="noData" hidden aria-live="polite">
+    <h2>Refused</h2>
+    <p class="code"><span class="tag warn">refusal</span> <code id="noDataCode"></code></p>
+    <p id="noDataReason"></p>
+    <p><strong>What would help:</strong> <span id="noDataHelp"></span></p>
+  </section>
+
+  <section class="tiles" id="tiles" aria-label="Headline counts"></section>
+
+  <section class="card" aria-labelledby="heat-h">
+    <h2 id="heat-h">Where the cheapest windows land</h2>
+    <p class="hint" id="heatHint"></p>
+    <div class="controls-row" role="radiogroup" aria-label="What to count">
+      <label><input type="radio" name="heatMode" value="minima" checked> one per body: its cheapest stored window</label>
+      <label><input type="radio" name="heatMode" value="allWindows"> all five stored windows per body</label>
+    </div>
+    <div id="heat" class="chart" tabindex="0" role="img" aria-describedby="heatHint"></div>
+    <div class="tooltip" id="heatTip" hidden></div>
+    <div class="legend" id="heatLegend"></div>
+    <details>
+      <summary>Table view (year × flight time)</summary>
+      <div class="tablewrap"><table id="heatTable"></table></div>
+    </details>
+  </section>
+
+  <section class="card" aria-labelledby="cols-h">
+    <h2 id="cols-h">Cheapest windows per departure date</h2>
+    <p class="hint" id="colsHint"></p>
+    <div id="cols" class="chart" tabindex="0" role="img" aria-describedby="colsHint"></div>
+    <div class="tooltip" id="colsTip" hidden></div>
+    <div class="legend" id="colsLegend"></div>
+    <details>
+      <summary>Table view: the first and last ten departure dates</summary>
+      <div class="tablewrap"><table id="colsTable"></table></div>
+    </details>
+  </section>
+
+  <section class="card" id="edges" aria-labelledby="edges-h">
+    <h2 id="edges-h">Minima on the edges</h2>
+    <p class="hint" id="edgesHint"></p>
+    <div class="tablewrap"><table id="edgeTable"></table></div>
+    <p class="hint" id="verdictHint"></p>
+    <p class="hint" id="altHint"></p>
+  </section>
+
+  <section class="card" aria-labelledby="tail-h">
+    <h2 id="tail-h">The porkchop view's tail</h2>
+    <div class="tiles" id="tailTiles" style="margin-top:6px"></div>
+    <p class="hint" id="tailHint"></p>
+  </section>
+
+  <section class="card" aria-labelledby="who-h">
+    <h2 id="who-h">Who sits on the edge</h2>
+    <div class="controls-row">
+      <label for="tablePick">Group by</label>
+      <select id="tablePick"></select>
+    </div>
+    <div class="tablewrap"><table id="whoTable"></table></div>
+    <p class="hint" id="whoHint"></p>
+  </section>
+
+  <section class="card" aria-labelledby="basins-h">
+    <h2 id="basins-h">How many basins the five windows span</h2>
+    <p class="hint" id="basinsHint"></p>
+    <div id="basins" class="chart" role="img" aria-describedby="basinsHint"></div>
+    <div class="tablewrap"><table id="basinsTable"></table></div>
+  </section>
+
+  <section class="card" aria-labelledby="inspect-h">
+    <h2 id="inspect-h">Check one body by hand</h2>
+    <div class="controls-row">
+      <label for="bodyPick">Body</label>
+      <select id="bodyPick"></select>
+    </div>
+    <div id="inspectHead" class="inspect-head"></div>
+    <div id="inspectRefusal" class="refusals" hidden></div>
+    <div id="mini" class="chart mini" role="img" aria-label="The body's five stored windows on the lattice"></div>
+    <div class="tooltip" id="miniTip" hidden></div>
+    <div class="tablewrap"><table id="inspectTable"></table></div>
+    <p class="hint" id="inspectHint"></p>
+  </section>
+
+  <section class="card" aria-labelledby="cannot-h">
+    <h2 id="cannot-h">What this census cannot say</h2>
+    <div class="refusals" id="cannot"></div>
+  </section>
+
+  <footer class="prov" id="prov"></footer>
+</main>
+
+<script src="grid-census.js"></script>
+<script src="snapshots/edge-census.data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/lambert-screen-cache.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "readBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "sourceSha256": "bd27b9bd882a65343399f772e37218b5fb05644bea5a822aafcb65e81e750206",
+  "sourceBytes": 34499477,
+  "copiedAt": "2026-10-26T10:36:54.472Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: snapshots/metadata.json and snapshots/edge-census.json with their sidecars wrapped as a classic script (window.EDGE_CENSUS / module.exports) so index.html can read them from file://; deep equality to the two JSON files is tested",
+  "readMatchesCommitted": true,
+  "writtenSha256": "816a6074776fdade7744ac4d175bff30f62a1ef81ab927abb25c7afaa4cef23c",
+  "writtenBytes": 91008
+}
