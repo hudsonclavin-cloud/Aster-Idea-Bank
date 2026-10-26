@@ -6,8 +6,7 @@
   const $ = (id) => document.getElementById(id);
   const SVG_NS = 'http://www.w3.org/2000/svg';
 
-  // The dataviz sequential blue ramp (steps 100..700); dark mode stops at 600 so the darkest
-  // step stays legible on the dark surface. These are palette hexes, not data.
+  // The dataviz sequential blue ramp (steps 100..700; dark mode stops at 600). Palette, not data.
   const RAMP_LIGHT = ['#cde2fb', '#b7d3f6', '#9ec5f4', '#86b6ef', '#6da7ec', '#5598e7', '#3987e5', '#2a78d6', '#256abf', '#1c5cab', '#184f95', '#104281', '#0d366b'];
   const RAMP_DARK = RAMP_LIGHT.slice(0, 11);
   const SERIES_VARS = ['--s1', '--s2', '--s3']; // ladder columns, fixed order, never re-assigned on filter
@@ -17,11 +16,11 @@
 
   const state = {
     grid: null, idx: null, revA: window.REV_A, ladder: window.LADDER,
-    tier: M.REFERENCE_TIER, column: null, launch: NaN, leg: NaN, source: 'snapshot', fileName: '',
+    tier: M.REFERENCE_TIER, column: null, launch: NaN, leg: NaN, legIsDefault: false, source: 'snapshot', fileName: '',
     snapshotRevAMd5: window.DECISION_GRID && window.DECISION_GRID.rev_a_md5,
   };
 
-  // ------------------------------------------------------------------ small DOM helpers
+  // -- small DOM helpers
   function el(tag, attrs, ...kids) {
     const n = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs || {})) {
@@ -50,7 +49,7 @@
   const legAxis = () => state.grid.axes[M.LEG];
   const columnColor = (col) => cssVar(SERIES_VARS[Math.max(0, state.idx.columns.indexOf(col)) % SERIES_VARS.length]);
 
-  // ------------------------------------------------------------------ provenance strip
+  // -- provenance strip
   function renderProvenance() {
     const g = state.grid;
     const p = $('prov');
@@ -73,7 +72,7 @@
     item(['b', String(g.points.length)], ' points, ', ['b', String(state.idx.launchAxis.length)], ' launch nodes');
   }
 
-  // ------------------------------------------------------------------ controls
+  // -- controls
   function buildControls() {
     const tiers = $('tiers');
     tiers.textContent = '';
@@ -81,9 +80,10 @@
       const info = M.tierInfo(state.revA, t);
       const b = el('button', { type: 'button', 'data-tier': t, 'aria-pressed': String(t === state.tier) });
       if (M.isRefused(info)) {
-        b.append(document.createTextNode(t), el('small', { text: 'no tip speed in the rev_a.json excerpt' }));
+        b.append(document.createTextNode(t), el('small', { text: 'no tip speed in the rev_a.json excerpt: refused' }));
       } else {
-        b.append(document.createTextNode(`${info.name} · ${info.v_tip_kms} km/s`), el('small', { text: `${t} · ${info.confidence}` }));
+        b.append(document.createTextNode(`${info.name} · ${info.v_tip_kms} km/s`), el('small', { text: `${t} · ${info.standing}` }));
+        b.title = `tip speed and standing from ${info.standingSource}`;
       }
       b.addEventListener('click', () => { state.tier = t; syncPressed(tiers, 'data-tier', t); renderStatic(); render(); });
       tiers.append(b);
@@ -93,7 +93,7 @@
     for (const c of state.idx.columns) {
       const info = M.columnInfo(state.ladder, c);
       const b = el('button', { type: 'button', 'data-column': c, 'aria-pressed': String(c === state.column) });
-      b.append(document.createTextNode(M.isRefused(info) ? c : info.label), el('small', { text: M.isRefused(info) ? 'no retention row in the ladder excerpt' : `fibre strength retention ${info.retention}` }));
+      b.append(document.createTextNode(M.isRefused(info) ? c : info.label), el('small', { text: M.isRefused(info) ? 'no retention row in the ladder excerpt: refused' : info.summary }));
       b.addEventListener('click', () => { state.column = c; syncPressed(cols, 'data-column', c); renderStatic(); render(); });
       cols.append(b);
     }
@@ -123,13 +123,14 @@
   const valueToPos = (axis, v) => Math.round(Math.min(1, Math.max(0, M.axisFrac(axis, Math.min(axis.max, Math.max(axis.min, v))))) * 1000);
   function setLaunch(v, from) {
     state.launch = v;
-    if (from !== 'range') $('launch-range').value = valueToPos(launchAxis(), v);
+    if (from !== 'range' && Number.isFinite(v)) $('launch-range').value = valueToPos(launchAxis(), v);
     if (from !== 'num') $('launch-num').value = Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '';
     render();
   }
-  function setLeg(v, from) {
+  function setLeg(v, from, isDefault) {
     state.leg = v;
-    if (from !== 'range') $('leg-range').value = valueToPos(legAxis(), v);
+    state.legIsDefault = !!isDefault;
+    if (from !== 'range' && Number.isFinite(v)) $('leg-range').value = valueToPos(legAxis(), v);
     if (from !== 'num') $('leg-num').value = Number.isFinite(v) ? String(Math.round(v * 100) / 100) : '';
     render();
   }
@@ -143,9 +144,18 @@
     };
     onNum('launch-num', setLaunch);
     onNum('leg-num', setLeg);
+    // A range input jumps on touchdown; if the gesture becomes a scroll (pointercancel), undo it.
+    const guard = (id, get, set) => {
+      let saved = null;
+      $(id).addEventListener('pointerdown', (e) => { saved = e.pointerType === 'touch' ? { v: get(), isDefault: state.legIsDefault } : null; });
+      $(id).addEventListener('pointercancel', () => { if (saved) { const s = saved; saved = null; set(s.v, undefined, s.isDefault); } });
+      $(id).addEventListener('pointerup', () => { saved = null; });
+    };
+    guard('launch-range', () => state.launch, setLaunch);
+    guard('leg-range', () => state.leg, setLeg);
   }
 
-  // ------------------------------------------------------------------ the reading
+  // -- the reading
   function deriveText(node, r, fieldLabel) {
     if (r.kind === 'node') {
       setRich(node, ['Exactly the grid node at ', ['b', M.money(r.launch, 2)], '/kg; nothing interpolated.']);
@@ -166,18 +176,34 @@
     $('panes').hidden = true;
     $('stepped').hidden = true;
   }
+  // The partial-tier caveat, inside the reading above every number, refused or not.
+  function renderPartialFlag() {
+    const text = M.partialTierFor(state.grid, state.tier);
+    const flag = $('partial-flag');
+    if (!text) { flag.hidden = true; return; }
+    const sum = M.partialTierSummary(text);
+    $('partial-first').textContent = sum.first;
+    $('partial-last').textContent = sum.last;
+    $('partial-last').hidden = !sum.last;
+    $('partial-tier-text').textContent = text;
+    flag.hidden = false;
+  }
+  function legNoteText() {
+    return state.legIsDefault ? `Default ${M.money(state.leg, 2)} = the log midpoint of the grid's leg display axis, not an estimate; set your own leg quote.` : '';
+  }
   function render() {
     const sel = { tier: state.tier, column: state.column, launch: state.launch, leg: state.leg };
     const rd = M.reading(state.grid, state.revA, state.ladder, sel);
     syncChips();
+    renderPartialFlag();
     const lnote = $('launch-note');
     const legNote = $('leg-note');
     if (M.isRefused(rd)) {
       showRefusal(rd);
-      lnote.textContent = rd.code === 'outside_axis' ? rd.reason : '';
+      lnote.textContent = rd.code === 'outside_axis' || rd.code === 'no_input' ? rd.reason : '';
       lnote.className = 'note bad';
-      legNote.textContent = '';
-      $('partial-tier').hidden = state.tier === M.REFERENCE_TIER;
+      legNote.textContent = legNoteText();
+      legNote.className = 'note';
       drawPlane(null);
       drawCharts(null);
       return;
@@ -187,27 +213,27 @@
     $('stepped').hidden = false;
     lnote.className = 'note';
     lnote.textContent = rd.stepped.exact ? `On the ${M.money(rd.stepped.launch, 2)} grid node.` : `Between grid nodes; the nearest is ${M.money(rd.stepped.launch, 2)}.`;
-    // cost side
+    // delivered cost (straight-line, mature capacity)
     $('delivered').textContent = M.money(rd.delivered.value, 2);
-    $('tag-cost').textContent = rd.delivered.kind === 'node' ? 'exact node' : 'interpolated';
-    $('tag-cost').className = 'tag' + (rd.delivered.kind === 'node' ? ' node' : '');
+    $('tag-delivered').textContent = rd.delivered.kind === 'node' ? 'exact node' : 'interpolated';
+    $('tag-delivered').className = 'tag' + (rd.delivered.kind === 'node' ? ' node' : '');
     deriveText($('delivered-derive'), rd.delivered, 'delivered_total_per_kg');
     $('leg-shown').textContent = Number.isFinite(state.leg) ? M.money(state.leg, 2) : '—';
     if (M.isRefused(rd.plusLeg)) {
-      $('plusleg').textContent = 'refused';
+      $('plusleg').textContent = rd.plusLeg.code === 'no_input' ? 'no leg entered' : 'refused';
       $('plusleg-derive').textContent = rd.plusLeg.reason + '. ' + (rd.plusLeg.what_would_help ? 'What would help: ' + rd.plusLeg.what_would_help : '');
       legNote.textContent = rd.plusLeg.reason;
       legNote.className = 'note bad';
     } else {
       $('plusleg').textContent = M.money(rd.plusLeg.value, 2);
       setRich($('plusleg-derive'), [['b', rd.plusLeg.expression], ' (composition_rules). leg_cost_per_kg is ', rd.plusLeg.source]);
-      legNote.textContent = '';
+      legNote.textContent = legNoteText();
       legNote.className = 'note';
     }
-    // price side
+    // Y15 breakeven price (ramped, discounted)
     $('breakeven').textContent = M.money(rd.breakeven.value, 2);
-    $('tag-price').textContent = rd.breakeven.kind === 'node' ? 'exact node' : 'interpolated';
-    $('tag-price').className = 'tag' + (rd.breakeven.kind === 'node' ? ' node' : '');
+    $('tag-breakeven').textContent = rd.breakeven.kind === 'node' ? 'exact node' : 'interpolated';
+    $('tag-breakeven').className = 'tag' + (rd.breakeven.kind === 'node' ? ' node' : '');
     deriveText($('breakeven-derive'), rd.breakeven, 'breakeven_price_per_kg');
     if (rd.customerPrice) {
       setRich($('customer-price'), ['A price, so it may sit beside the workbook\'s customer-price assumption for this column: ', ['b', M.money(rd.customerPrice.value, 0)], `/kg (Assumptions row ${rd.customerPrice.row}${rd.customerPrice.note ? ', "' + rd.customerPrice.note + '"' : ''}).`]);
@@ -219,26 +245,32 @@
     const st = rd.stepped;
     setRich($('stepped-where'), st.exact
       ? ['You are on the ', ['b', M.money(st.launch, 2)], ' node, so these are that node\'s values.']
-      : ['Nearest node: ', ['b', M.money(st.launch, 2)], ' (you are at ', ['b', M.money(state.launch, 2)], '; nearest in log distance, an exact midpoint goes to the lower node). These values are that node\'s, not blended.']);
+      : ['Nearest node: ', ['b', M.money(st.launch, 2)], ' (you are at ', ['b', M.money(state.launch, 2)], '; nearest in log distance, an exact midpoint goes to the lower node). NPV and capex are that node\'s, not blended; payback is the bracket when the two nodes around you disagree.']);
     const pb = $('payback');
     pb.textContent = '';
     pb.append(document.createTextNode(st.payback.text));
-    if (st.payback.value === null) pb.append(el('small', { text: st.payback.note }));
+    if (st.payback.bracketed) pb.append(el('small', { text: st.payback.detail }));
+    if (st.payback.text.includes('not reached')) pb.append(el('small', { text: st.payback.note }));
     $('npv').textContent = M.moneyM(st.npv_10pct_M);
-    const mr = $('massratio');
-    mr.textContent = '';
-    mr.append(document.createTextNode(`${M.fmt(st.mass_ratio_x, 2)}×`), el('small', { text: 'integrated two-arm; launch-invariant within a tier and column' }));
-    $('fibre').textContent = `${M.fmt(st.fiber_mass_t, 1)} t`;
+    renderTether($('massratio'), st.tether.ratio, (v) => `${M.fmt(v, 2)}×`, 'Integrated two-arm; launch-invariant within a tier and column');
+    renderTether($('fibre'), st.tether.fibre, (v) => `${M.fmt(v, 1)} t`, 'At the 5,000 kg payload');
     $('capex').textContent = M.moneyM(st.total_capex_M);
     $('syscapex').textContent = M.moneyM(st.system_capex_M);
-    renderNodeTable(st.node, rd.caveats);
-    // caveats that depend on the tier
-    $('partial-tier').hidden = !rd.caveats.partialTier;
-    $('partial-tier-text').textContent = rd.caveats.partialTier || '';
+    renderNodeTable(st.node, rd.caveats, st.tether);
     drawPlane(rd);
     drawCharts(rd);
   }
-  function renderNodeTable(node, caveats) {
+  // A tether figure only as the params/rev_a.json value (Rule 1), else the refusal.
+  function renderTether(node, t, show, sub) {
+    node.textContent = '';
+    node.classList.toggle('withheld', M.isRefused(t));
+    if (M.isRefused(t)) {
+      node.append(document.createTextNode('not shown'), el('small', { text: t.reason + '.' }));
+      return;
+    }
+    node.append(document.createTextNode(show(t.value)), el('small', { text: `params/rev_a.json ${t.key}; the grid's ${M.fmt(t.grid, 4)} agrees to the canon's printed precision. ${sub}.` }));
+  }
+  function renderNodeTable(node, caveats, tether) {
     const tb = $('node-table').querySelector('tbody');
     tb.textContent = '';
     for (const [k, v] of Object.entries(node)) {
@@ -246,14 +278,16 @@
       const key = el('td', { class: 'key', text: k });
       if (k === 'ops_wear_insurance_per_kg') key.append(el('sup', { text: '†' }));
       if (k === 'amortized_capex_per_kg') key.append(el('sup', { text: '‡' }));
+      if ((k === 'mass_ratio_x' || k === 'fiber_mass_t') && tether.status !== 'canon') key.append(el('sup', { text: '§' }));
       const val = el('td', { class: typeof v === 'number' ? 'num' : '', text: v === null ? 'null' : typeof v === 'number' ? M.fmt(v, Number.isInteger(v) ? 0 : 4) : String(v) });
       tr.append(key, val);
       tb.append(tr);
     }
-    $('node-foot').textContent = `† ${caveats.insurance.split('.')[0]}. The full insurance_status text is under Caveats. ‡ capex spread straight-line over ${caveats.amortYears} years of mature upmass (amort_years_convention), undiscounted, no revenue ramp.`;
+    const canonNote = tether.status === 'canon' ? '' : ' § finance-model output with no matching params/rev_a.json rung for this tier and derate: not Rule 1 canon, shown here only because this table is the grid record verbatim.';
+    $('node-foot').textContent = `† ${caveats.insurance.split('.')[0]}. The full insurance_status text is under Caveats. ‡ capex spread straight-line over ${caveats.amortYears} years of mature upmass (amort_years_convention), undiscounted, no revenue ramp.${canonNote}`;
   }
 
-  // ------------------------------------------------------------------ static caveats
+  // -- static caveats
   function renderCaveats() {
     const g = state.grid;
     $('insurance-text').textContent = g.insurance_status;
@@ -269,7 +303,7 @@
     for (const n of g.notes) ol.append(el('li', { text: n }));
   }
 
-  // ------------------------------------------------------------------ the plane (canvas)
+  // -- the plane (canvas)
   const plane = { canvas: null, ctx: null, geom: null, heat: null, heatKey: '' };
   function planeGeometry() {
     const c = plane.canvas;
@@ -387,8 +421,7 @@
     ctx.rotate(-Math.PI / 2);
     ctx.fillText('construction launch $/kg →', 0, 0);
     ctx.restore();
-    // iso-cost lines of delivered + leg, sampled along the launch axis (they are near-vertical:
-    // delivered moves by hundreds of $/kg across the whole axis while the leg spans 300..15,000)
+    // iso-cost lines of delivered + leg, sampled along the launch axis (near-vertical)
     ctx.strokeStyle = cssVar('--ink');
     ctx.globalAlpha = 0.55;
     ctx.lineWidth = 1;
@@ -432,7 +465,7 @@
       ctx.strokeStyle = cssVar('--ink');
       ctx.lineWidth = 1.2;
       ctx.beginPath(); ctx.moveTo(x, g.mt); ctx.lineTo(x, g.mt + g.ph); ctx.moveTo(g.ml, y); ctx.lineTo(g.ml + g.pw, y); ctx.stroke();
-      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
       ctx.fillStyle = cssVar('--card'); ctx.fill();
       ctx.lineWidth = 2; ctx.stroke();
       if (!M.isRefused(rd.plusLeg)) {
@@ -450,25 +483,50 @@
     ramp.append(document.createTextNode(M.money(range.min, 0)), el('span', { class: 'ramp' }), document.createTextNode(`${M.money(range.max, 0)}/kg delivered + leg, log colour scale fixed across all tiers`));
     lg.append(ramp, el('span', {}, el('span', { class: 'sw', style: `background:${cssVar('--ink')};opacity:.55` }), document.createTextNode('iso-cost lines')), el('span', {}, el('span', { class: 'sw', style: `background:${cssVar('--faint')}` }), document.createTextNode('launch anchors (rev_a.json, workbook)')), el('span', {}, el('span', { class: 'sw', style: `background:${cssVar('--ink')}` }), document.createTextNode('crosshair = your two numbers')));
   }
+  const HANDLE_R = 28; // px: how close to the crosshair a touch must start to drag it
+  const TAP_SLOP = 10; // px: a touch that moves further than this is not a tap
   function wireCanvas() {
     const c = plane.canvas;
-    let down = false;
-    const place = (e) => {
-      const r = c.getBoundingClientRect();
+    let drag = null;
+    const pos = (e) => { const r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    const nearHandle = (p) => {
       const g = plane.geom;
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
-      const leg = Math.round(g.legAt(x) * 100) / 100;
-      const L = Math.round(g.launchAt(y) * 100) / 100;
-      state.leg = leg; state.launch = L;
+      if (!g || !M.onAxis(legAxis(), state.leg) || !M.onAxis(launchAxis(), state.launch)) return false;
+      return Math.hypot(p.x - g.x(state.leg), p.y - g.y(state.launch)) <= HANDLE_R;
+    };
+    const place = (p) => {
+      const g = plane.geom;
+      const leg = Math.round(g.legAt(p.x) * 100) / 100;
+      const L = Math.round(g.launchAt(p.y) * 100) / 100;
+      state.leg = leg; state.launch = L; state.legIsDefault = false;
       $('leg-range').value = valueToPos(legAxis(), leg); $('leg-num').value = String(leg);
       $('launch-range').value = valueToPos(launchAxis(), L); $('launch-num').value = String(L);
       render();
     };
-    c.addEventListener('pointerdown', (e) => { down = true; c.setPointerCapture(e.pointerId); place(e); e.preventDefault(); });
-    c.addEventListener('pointermove', (e) => { if (down) place(e); });
-    c.addEventListener('pointerup', () => { down = false; });
-    c.addEventListener('pointercancel', () => { down = false; });
+    // A touch that starts on the handle owns the gesture: cancel the page scroll for it alone.
+    c.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      const r = c.getBoundingClientRect();
+      if (nearHandle({ x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top })) e.preventDefault();
+    }, { passive: false });
+    c.addEventListener('pointerdown', (e) => {
+      const p = pos(e);
+      if (e.pointerType === 'touch' && !nearHandle(p)) { drag = { id: e.pointerId, handle: false, start: p }; return; }
+      drag = { id: e.pointerId, handle: true, start: p, touch: e.pointerType === 'touch' };
+      c.setPointerCapture(e.pointerId);
+      if (e.pointerType !== 'touch') place(p);
+      e.preventDefault();
+    });
+    c.addEventListener('pointermove', (e) => { if (drag && drag.handle && drag.id === e.pointerId) place(pos(e)); });
+    c.addEventListener('pointerup', (e) => {
+      // a touch that did not move is a tap and places; a scroll ends in pointercancel instead
+      if (drag && (!drag.handle || drag.touch) && drag.id === e.pointerId) {
+        const p = pos(e);
+        if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) <= TAP_SLOP) place(p);
+      }
+      drag = null;
+    });
+    c.addEventListener('pointercancel', () => { drag = null; });
     c.addEventListener('keydown', (e) => {
       const stepL = (axis, v, d) => Math.round(M.axisValue(axis, Math.min(1, Math.max(0, M.axisFrac(axis, Math.min(axis.max, Math.max(axis.min, v))) + d))) * 100) / 100;
       if (e.key === 'ArrowLeft') setLeg(stepL(legAxis(), state.leg, -0.01));
@@ -480,7 +538,7 @@
     });
   }
 
-  // ------------------------------------------------------------------ the two SVG charts
+  // -- the two SVG charts
   function niceCeil(v) {
     const p = Math.pow(10, Math.floor(Math.log10(v)));
     for (const m of [1, 2, 2.5, 4, 5, 10]) if (m * p >= v) return m * p;
@@ -569,7 +627,9 @@
       const y = pbv === null ? yNone : fp.y(pbv);
       psvg.append(svgEl('circle', { cx: x, cy: y, r: 5, fill: columnColor(state.column), stroke: cssVar('--card'), 'stroke-width': 2 }));
       const right = x > fp.ml + fp.pw * 0.65;
-      psvg.append(svgEl('text', { x: right ? x - 9 : x + 9, y: y - 8, 'text-anchor': right ? 'end' : 'start', class: 'ink halo' }, `${rd.stepped.payback.text} at the ${M.money(rd.stepped.launch, 0)} node`));
+      const pt = rd.stepped.payback;
+      const where = pt.bracketed ? `between the ${M.money(pt.lo.launch, 0)} and ${M.money(pt.hi.launch, 0)} nodes` : `at the ${M.money(rd.stepped.launch, 0)} node`;
+      psvg.append(svgEl('text', { x: right ? x - 9 : x + 9, y: y - 8, 'text-anchor': right ? 'end' : 'start', class: 'ink halo' }, `${pt.text} ${where}`));
     }
   }
   function wireChartHover() {
@@ -599,10 +659,12 @@
       tip.style.top = `${e.clientY - r.top - 36}px`;
     });
     svg.addEventListener('pointerleave', () => { tip.hidden = true; });
-    svg.addEventListener('pointerdown', (e) => { setLaunch(Math.round(at(e) * 100) / 100); });
+    svg.addEventListener('pointercancel', () => { tip.hidden = true; });
+    // 'click', not 'pointerdown': a tap is a click, a scroll that starts here is not.
+    svg.addEventListener('click', (e) => { setLaunch(Math.round(at(e) * 100) / 100); });
   }
 
-  // ------------------------------------------------------------------ a newer grid from a file
+  // -- a newer grid from a file
   function wireFile() {
     $('grid-file').addEventListener('change', async (e) => {
       const file = e.target.files && e.target.files[0];
@@ -636,10 +698,32 @@
     });
   }
 
-  // ------------------------------------------------------------------ boot
+  // A column is the whole workbook ladder column: say so under the control, and list its rows.
+  function renderLevers() {
+    const box = $('column-levers');
+    box.textContent = '';
+    const lv = M.columnLevers(state.ladder, state.column);
+    if (M.isRefused(lv)) { box.textContent = lv.reason; return; }
+    box.append(el('span', { text: `"${state.column}" is the workbook's whole ${state.column} column, not only its derate: ${lv.nDiffer} of the ${lv.nRows} ${lv.sheet} rows differ between the columns, so a payback or NPV difference between columns is not a difference in derate alone.` }));
+    const det = el('details');
+    det.append(el('summary', { text: `This column's ${lv.nRows} rows (${lv.sheet} ${lv.range})` }));
+    const ul = el('ul');
+    for (const r of lv.rows) {
+      const li = el('li', { class: r.differs ? '' : 'same' });
+      li.append(document.createTextNode(`row ${r.row} · ${r.parameter}: `), el('b', { text: String(r.value) }));
+      if (!r.differs) li.append(document.createTextNode(' (same in every column)'));
+      if (r.row === state.ladder.keys.construction_launch_per_kg) li.append(document.createTextNode(' (replaced on this page by the launch you choose)'));
+      ul.append(li);
+    }
+    det.append(ul);
+    box.append(det);
+  }
+
+  // -- boot
   function renderStatic() {
     renderProvenance();
     renderCaveats();
+    renderLevers();
   }
   function renderAll() {
     renderStatic();
@@ -647,7 +731,7 @@
       const anchor = state.revA && state.revA.economics && state.revA.economics.launch_price_anchor_dedicated_kgs;
       setLaunch(M.onAxis(launchAxis(), anchor) ? anchor : launchAxis().min);
     } else setLaunch(state.launch);
-    if (!Number.isFinite(state.leg)) setLeg(Math.round(M.axisValue(legAxis(), 0.5) * 100) / 100); else setLeg(state.leg);
+    if (!Number.isFinite(state.leg)) setLeg(Math.round(M.axisValue(legAxis(), 0.5) * 100) / 100, undefined, true); else setLeg(state.leg, undefined, state.legIsDefault);
   }
   function fatal(reasons) {
     const box = $('refusal');

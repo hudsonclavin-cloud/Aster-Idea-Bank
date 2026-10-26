@@ -14,7 +14,7 @@
 <header class="top wrap">
   <p class="eyebrow">Skyhook · a reader of <code>finance/decision_grid.json</code></p>
   <h1>Where it lands</h1>
-  <p class="sub">Pick a tier and a ladder column, then place the two numbers the program is still waiting on from the outside world: construction-launch $/kg and the rocket-leg $/kg. The page reads what the committed decision grid says there. It owns no cost model. It interpolates the two fields the grid says it may, adds the leg the one way the grid publishes, steps everything else to the nearest grid node, and refuses what the grid does not cover.</p>
+  <p class="sub">Pick a tier and a ladder column, then place the two numbers the program is still waiting on from the outside world: construction-launch $/kg and the rocket-leg $/kg. The page reads what the committed decision grid says there. It owns no cost model. It interpolates the two fields the grid says it may, adds the leg the one way the grid publishes, steps the rest to grid nodes, shows tether figures only as <code>params/rev_a.json</code> publishes them, and refuses what the grid or the canon does not cover.</p>
   <div id="prov" class="prov" aria-label="Provenance of the data on this page"></div>
 </header>
 
@@ -27,10 +27,11 @@
         <div class="seg" role="group" aria-labelledby="l-tiers" id="tiers"></div>
       </div>
       <div class="segwrap">
-        <span class="seglabel" id="l-columns">Ladder column <span class="unit">workbook Assumptions, derate = 1 − retention</span></span>
+        <span class="seglabel" id="l-columns">Ladder column <span class="unit">a whole workbook Assumptions column; derate = 1 − retention</span></span>
         <div class="seg" role="group" aria-labelledby="l-columns" id="columns"></div>
       </div>
     </div>
+    <div id="column-levers" class="note levers"></div>
 
     <div class="slider">
       <label for="launch-range">Construction launch <span class="unit">$/kg · the grid's model dimension, log axis</span></label>
@@ -54,10 +55,19 @@
 
   <section id="reading" class="reading" aria-live="polite" aria-labelledby="h-reading">
     <h2 id="h-reading" class="visually-hidden">The reading</h2>
+    <aside class="card partialflag" id="partial-flag" role="note" aria-label="Partial-tier caveat, verbatim from the grid" hidden>
+      <span class="wicon" aria-hidden="true">!</span>
+      <div>
+        <p class="pfirst" id="partial-first"></p>
+        <p class="plast" id="partial-last"></p>
+        <details id="partial-details"><summary>The whole caveat, verbatim <span class="small">(<code>partial_tier_caveat</code>; attached because this is not the reference tier)</span></summary><p id="partial-tier-text"></p></details>
+      </div>
+    </aside>
     <div id="refusal" class="card refusal" role="status" hidden></div>
     <div id="panes">
-      <article class="card pane" id="pane-cost" aria-labelledby="h-cost">
-        <h2 id="h-cost">Cost side <span class="tag" id="tag-cost">interpolated</span></h2>
+      <article class="card pane" id="pane-delivered" aria-labelledby="h-delivered">
+        <h2 id="h-delivered">Delivered cost <span class="tag" id="tag-delivered">interpolated</span></h2>
+        <p class="kind">straight-line capex amortisation at mature capacity</p>
         <div class="hero"><span class="herov" id="delivered"></span><span class="herou">/kg delivered</span></div>
         <p class="derive" id="delivered-derive"></p>
         <div class="compose">
@@ -72,8 +82,9 @@
         <div><b>Not comparable across the panes</b> <span class="small">(verbatim, <code>comparability_warning</code>)</span><p id="comparability-text"></p></div>
       </aside>
 
-      <article class="card pane" id="pane-price" aria-labelledby="h-price">
-        <h2 id="h-price">Price side <span class="tag" id="tag-price">interpolated</span></h2>
+      <article class="card pane" id="pane-breakeven" aria-labelledby="h-breakeven">
+        <h2 id="h-breakeven">Y15 breakeven price <span class="tag" id="tag-breakeven">interpolated</span></h2>
+        <p class="kind">from ramped, discounted cash flows</p>
         <div class="hero"><span class="herov" id="breakeven"></span><span class="herou">/kg customer price for payback by year 15</span></div>
         <p class="derive" id="breakeven-derive"></p>
         <p class="derive" id="customer-price"></p>
@@ -81,13 +92,13 @@
     </div>
 
     <article class="card" id="stepped" aria-labelledby="h-stepped">
-      <h2 id="h-stepped">Stepped to the nearest node, never interpolated <span class="tag step">stepped</span></h2>
+      <h2 id="h-stepped">Stepped to grid nodes, never interpolated <span class="tag step">stepped</span></h2>
       <p class="derive" id="stepped-where"></p>
       <dl class="facts">
         <div><dt>Payback</dt><dd id="payback"></dd></div>
         <div><dt>NPV @ 10%</dt><dd id="npv"></dd></div>
-        <div><dt>Mass ratio</dt><dd id="massratio"></dd></div>
-        <div><dt>Fibre mass</dt><dd id="fibre"></dd></div>
+        <div><dt>Mass ratio <span class="unit">params/rev_a.json only</span></dt><dd id="massratio"></dd></div>
+        <div><dt>Fibre mass <span class="unit">params/rev_a.json only</span></dt><dd id="fibre"></dd></div>
         <div><dt>Total capex</dt><dd id="capex"></dd></div>
         <div><dt>System capex</dt><dd id="syscapex"></dd></div>
       </dl>
@@ -101,7 +112,7 @@
 
   <section class="card" id="plane-card" aria-labelledby="h-plane">
     <h2 id="h-plane">The plane</h2>
-    <p class="hint">Rocket leg across, construction launch up, both on the grid's log axes. Colour is the one leg-dependent quantity the grid publishes, <code>delivered + leg</code>; the lines are its iso-costs. Drag the crosshair, or use the sliders. Nothing here is a margin: the lane multipliers are listed below as text and are never applied.</p>
+    <p class="hint">Rocket leg across, construction launch up, both on the grid's log axes. Colour is the one leg-dependent quantity the grid publishes, <code>delivered + leg</code>; the lines are its iso-costs. Drag the crosshair or tap a point (on a touch screen a drag must start on the crosshair's ring, so a swipe elsewhere just scrolls the page), or use the sliders and arrow keys. Nothing here is a margin: the lane multipliers are listed below as text and are never applied.</p>
     <div class="planewrap"><canvas id="plane" tabindex="0" role="img" aria-label="Heatmap of delivered plus leg cost over rocket-leg and construction-launch price; arrow keys move the crosshair"></canvas></div>
     <div class="legend" id="plane-legend"></div>
   </section>
@@ -118,10 +129,7 @@
 
   <section class="card" id="caveats" aria-labelledby="h-caveats">
     <h2 id="h-caveats">Caveats the grid carries, attached here</h2>
-    <div class="caveat partial" id="partial-tier" hidden>
-      <b>Partial-tier caveat <span class="small">(verbatim, <code>partial_tier_caveat</code>; shown because this is not the reference tier)</span></b>
-      <p id="partial-tier-text"></p>
-    </div>
+    <p class="caveat" id="partial-pointer"><b>Partial-tier caveat</b> <span class="small">(<code>partial_tier_caveat</code>)</span> — attached to the reading itself, above the numbers, whenever the tier is not the reference.</p>
     <details class="caveat" id="insurance">
       <summary><b>Insurance is not separately modelled</b> <span class="small">(verbatim, <code>insurance_status</code>; attached to the ops + wear + insurance line)</span></summary>
       <p id="insurance-text"></p>
@@ -145,7 +153,7 @@
 </main>
 
 <footer class="wrap foot">
-  <p>An Aster Idea Bank prototype. Every number on this page is read from the snapshot named in the header, interpolated by the grid's declared method, or added by the grid's published rule. Where the data runs out the page says so. Skyhook's Rule 1 canon, VM verification and pytest suite have not been applied to this page.</p>
+  <p>An Aster Idea Bank prototype. Every number on this page is read from one of its three snapshots (the decision grid, the <code>params/rev_a.json</code> excerpt, the workbook ladder), interpolated by the grid's declared method, or added by the grid's published rule. Where the data runs out the page says so. Skyhook's Rule 1 canon, VM verification and pytest suite have not been applied to this page.</p>
 </footer>
 
 <script src="snapshots/decision_grid.js"></script>

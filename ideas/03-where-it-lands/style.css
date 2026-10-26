@@ -97,7 +97,7 @@ p { margin: 0 0 0.7rem; }
 .slider { margin-top: 16px; }
 .slider label { display: block; font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; }
 .sliderrow { display: flex; align-items: center; gap: 12px; }
-.sliderrow input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); height: 28px; margin: 0; }
+.sliderrow input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); height: 28px; margin: 0; touch-action: pan-y pinch-zoom; }
 .numwrap { display: inline-flex; align-items: baseline; gap: 2px; font-family: var(--mono); font-size: 0.95rem; white-space: nowrap; }
 .numwrap input { width: 6.2em; font: inherit; font-family: var(--mono); padding: 5px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); -moz-appearance: textfield; }
 .numwrap input::-webkit-outer-spin-button, .numwrap input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -129,6 +129,19 @@ p { margin: 0 0 0.7rem; }
 .warning { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-soft); border: 1px solid var(--warn); border-radius: var(--radius); padding: 12px 14px; font-size: 0.86rem; margin: 0; }
 .warning p { margin: 4px 0 0; color: var(--muted); }
 .wicon { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: var(--warn); color: #0b0b0b; font-weight: 800; display: grid; place-items: center; font-size: 0.9rem; }
+.partialflag { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-soft); border-color: var(--warn); font-size: 0.9rem; }
+.partialflag p { margin: 0 0 6px; }
+.partialflag .pfirst { font-weight: 600; }
+.partialflag .plast { color: var(--ink); }
+.partialflag details { color: var(--muted); }
+.partialflag details p { margin: 6px 0 0; }
+.kind { color: var(--muted); font-size: 0.84rem; margin: -4px 0 2px; }
+.levers { margin-top: 10px; }
+.levers details { margin-top: 4px; }
+.levers ul { margin: 6px 0 0; padding-left: 1.2em; }
+.levers li { margin: 1px 0; }
+.levers li b { color: var(--ink); font-family: var(--mono); font-weight: 600; }
+.levers li.same { opacity: 0.7; }
 .refusal { border-color: var(--refuse); background: var(--refuse-soft); }
 .refusal b { color: var(--refuse); }
 .refusal p { margin: 4px 0 0; }
@@ -150,9 +163,11 @@ td sup { color: var(--warn); font-weight: 700; }
 /* plane and charts */
 .hint { color: var(--muted); font-size: 0.9rem; }
 .planewrap { width: 100%; }
-#plane { display: block; width: 100%; height: auto; touch-action: none; border-radius: 8px; cursor: crosshair; }
+/* pan-y: a vertical swipe that starts on the plane scrolls the page; only a drag that starts on
+   the crosshair handle (app.js cancels the scroll for that one touch) or a tap moves the numbers */
+#plane { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; border-radius: 8px; cursor: crosshair; }
 .chartwrap { position: relative; width: 100%; }
-.chartwrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chartwrap svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y pinch-zoom; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 0.84rem; margin-top: 8px; align-items: center; }
 .legend .sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
 .legend .ramp { display: inline-block; width: 120px; height: 10px; border-radius: 5px; vertical-align: middle; margin: 0 6px; background: linear-gradient(90deg, var(--seq-lo), var(--seq-mid), var(--seq-hi)); }
@@ -173,7 +188,6 @@ svg .halo { stroke: var(--card); stroke-width: 3px; paint-order: stroke; }
 .caveat { border-top: 1px solid var(--line); padding: 10px 0; font-size: 0.9rem; }
 .caveat:first-of-type { border-top: 0; }
 .caveat p, .caveat li { color: var(--muted); }
-.caveat.partial { background: var(--warn-soft); border: 1px solid var(--warn); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
 .caveat ul, .caveat ol { margin: 6px 0 0; padding-left: 1.2em; }
 .caveat li { margin: 2px 0; }
 .caveat li b { color: var(--ink); font-family: var(--mono); font-weight: 600; }
