@@ -19,7 +19,7 @@ const require = createRequire(import.meta.url);
 const S = require(path.join(here, 'snapshots', 'partforge.js'));
 const L = require(path.join(here, 'stack.js'));
 const E = require(path.join(here, 'examples.js'));
-const { extractFitBlock, parseTemplate, STOCK_KEYS } = await import(path.join(here, 'build-data.mjs'));
+const { extractFitBlock, extractDbData, parseTemplate, STOCK_KEYS } = await import(path.join(here, 'build-data.mjs'));
 const ctx = L.create(S, { tables: 'snapshots', commit: S.provenance.commit, verbatim: `${S.verbatim.firstLine}-${S.verbatim.lastLine}` });
 const examples = E.build(S);
 const REPO = '/home/user/Partforge';
@@ -203,7 +203,7 @@ test('hand-worked ISO 286 closed forms recomputed from each step mean agree with
 // ---------------------------------------------------------------------------------------------
 test('two ±0.05 contributors: worst case ±0.10, RSS 0.0707 (29 % narrower, N=2 has no basis) — the evaluation\'s figure (:668)', () => {
   const r = run('two-plus-minus');
-  assert.equal(r.verdict, 'PASS');
+  assert.equal(r.verdict, 'CLEARS');
   near(r.worst.min, -0.1, 1e-12); near(r.worst.max, 0.1, 1e-12); near(r.worst.nominal, 0, 1e-12);
   near(r.rss.half, 0.05 * Math.SQRT2, 1e-12);
   near(r.rss.half, 0.070711, 1e-6);
@@ -215,6 +215,7 @@ test('two ±0.05 contributors: worst case ±0.10, RSS 0.0707 (29 % narrower, N=2
   assert.ok(t.includes('29% narrower'), t);
   assert.ok(t.includes('no statistical basis below N=4'));
   assert.ok(t.includes('information only'));
+  assert.ok(r.flags.some((f) => /the RSS band starts 0\.029 above the worst-case minimum of the same 2 contributors/.test(f)), 'false comfort 0.1 - 0.0707');
 });
 
 test('RSS is centred on the mid-limit means, not the nominal: H7/g6 offset is 0.0465 mm at Ø150 and 0.0295 at Ø50', () => {
@@ -241,7 +242,7 @@ test('a dir = -1 contributor with asymmetric limits: min and max are taken from 
   near(r.rss.centre, 10.45 - 10.1, 1e-12, 'centre is the sum of signed mids, 0.35, not the nominal 0.5');
 });
 
-test('bulkhead in coupler, declarations supplied: -0.030 / 0.170 worst case, FAIL on the anodise; bare it passes', () => {
+test('bulkhead in coupler, declarations supplied: -0.030 / 0.170 worst case, FAIL on the anodise; bare it clears at 20 C', () => {
   const r = run('bulkhead-declared');
   assert.equal(r.verdict, 'FAIL');
   near(r.worst.min, 146.27 - 146.25 - 0.05, 1e-9);
@@ -257,8 +258,23 @@ test('bulkhead in coupler, declarations supplied: -0.030 / 0.170 worst case, FAI
   assert.ok(r.flags.some((f) => /tool default/.test(f)), 'the template\'s bulkhead OD is tol_src default');
   near(r.margins.to_min, -0.03, 1e-9);
   const bare = L.stackUp(ctx, { ...E.byId(examples, 'bulkhead-declared').stack, contributors: E.byId(examples, 'bulkhead-declared').stack.contributors.filter((c) => c.kind !== 'coating') });
-  assert.equal(bare.verdict, 'PASS');
+  assert.equal(bare.verdict, 'CLEARS', 'a screening verdict, never PASS');
   near(bare.worst.min, 0.02, 1e-9);
+  assert.ok(bare.verdict_reasons.some((x) => /screening only, not a pass/.test(x)));
+  assert.ok(bare.verdict_reasons.some((x) => /rests on 1 tool default \(bulkhead OD/.test(x)), 'the CLEARS names the tool default it rests on (evaluation :752)');
+});
+
+test('the bare bulkhead clears only for a coupler hoop CTE of 16.8-25.9 um/m/K: the window the example states, through the shipped dbFitThermal()', () => {
+  const ex = E.byId(examples, 'bulkhead-declared');
+  const bareWith = (alpha) => L.stackUp(ctx, { ...ex.stack, contributors: [...ex.stack.contributors.filter((c) => c.kind !== 'coating'),
+    { kind: 'thermal', name: 't', D_mm: 146.2, hole_mat: 'Fiberglass-laminate', shaft_mat: '6061-T6', dT_K: [-60, 20], hoop_cte: { hole: { cte_um_m_K: alpha, src: 'test' } } }] });
+  // Closed form: 0.020 + (a - 23.6)e-6 x 146.2 x dT >= 0 at dT = +20 and at dT = -60.
+  const lo = 23.6 - 0.02 / (146.2e-6 * 20), hi = 23.6 + 0.02 / (146.2e-6 * 60);
+  near(lo, 16.76005, 1e-5); near(hi, 25.87998, 1e-5);
+  for (const [a, min] of [[10, -0.0198], [14, -0.0081], [22, 0.0153], [30, -0.0361]]) near(bareWith(a).worst.min, min, 1e-4, `hoop CTE ${a}`);
+  assert.equal(bareWith(16.7).verdict, 'FAIL'); assert.equal(bareWith(16.8).verdict, 'CLEARS');
+  assert.equal(bareWith(25.8).verdict, 'CLEARS'); assert.equal(bareWith(25.9).verdict, 'FAIL');
+  assert.ok(ex.why.includes('between 16.8 and 25.9 um/m/K') && /clears only at 20 C/.test(ex.why) && ex.why.includes('minimum is 0.020 mm'), ex.why);
 });
 
 test('6061 plug in a 304 bore, H7/g6 at 101.6: the hot pad closes the fit\'s 0.012 minimum, worst case -0.0008, FAIL', () => {
@@ -277,6 +293,28 @@ test('6061 plug in a 304 bore, H7/g6 at 101.6: the hot pad closes the fit\'s 0.0
   assert.equal(r.rss.n, 1, 'the thermal term is not in the RSS');
   near(r.thermal.low, th.low, 1e-12); near(r.thermal.high, th.high, 1e-12);
   assert.ok(th.flags.some((f) => /deterministic, not a tolerance/.test(f)));
+  // N=1: the RSS band is the fit's own band, so there is no narrowing and no false comfort; the 0.0128 between the RSS
+  // low and the worst-case minimum is the thermal shift, which the envelope puts back like for like.
+  near(r.rss.low, r.rss.mfg_worst.min, 1e-12); near(r.rss.width_ratio, 1, 1e-12);
+  assert.ok(!r.flags.some((f) => /false comfort/.test(f)), r.flags.join(' | '));
+  near(r.rss.envelope.low, r.worst.min, 1e-12); near(r.rss.envelope.high, r.worst.max, 1e-12);
+  assert.ok(/plus the thermal shift at both ends, to set beside the worst case: -0\.001 \.\. 0\.107/.test(L.ledgerText(r)));
+});
+
+test('false comfort compares RSS with the worst case of the same contributors; the thermal shift is never counted as narrowing', () => {
+  const two = [
+    { kind: 'declared', name: 'a', nominal_mm: 1, tol_mm: 0.05, tol_src: 'user', tol_ref: 't', dir: 1 },
+    { kind: 'declared', name: 'b', nominal_mm: 0, tol_mm: 0.05, tol_src: 'user', tol_ref: 't', dir: 1 },
+  ];
+  const th = { kind: 'thermal', name: 't', D_mm: 101.6, hole_mat: '304', shaft_mat: '6061-T6', dT_K: [-60, 20] };
+  const a = stack(two, { min_mm: 0 }), b = stack([...two, th], { min_mm: 0 });
+  near(b.rss.low - b.rss.mfg_worst.min, 0.1 - 0.05 * Math.SQRT2, 1e-12, 'the same 0.029 with and without the thermal term');
+  near(b.worst.min - a.worst.min, -0.0128016, 1e-9, 'the thermal term moves the worst case');
+  near(b.rss.envelope.low, b.rss.low - 0.0128016, 1e-9); near(b.rss.envelope.high, b.rss.high + 0.0384048, 1e-9);
+  const fc = (r) => r.flags.find((f) => /false comfort/.test(f));
+  assert.equal(fc(a), fc(b), 'identical note: 0.029, not 0.029 + 0.013');
+  // every thermal-only stack: no note at all
+  for (const id of ['plug-in-steel-bore', 'motor-tube-in-ring']) assert.ok(!run(id).flags.some((f) => /false comfort/.test(f)), id);
 });
 
 test('bar as pin: fits.json H7 hole over the as-supplied bar_6061_i_0.250 row, asymmetric, FAIL both ways', () => {
@@ -295,9 +333,9 @@ test('bar as pin: fits.json H7 hole over the as-supplied bar_6061_i_0.250 row, a
   assert.ok(bar.flags.some((f) => /every diameter, face and bore that matters gets machined/.test(f)));
 });
 
-test('motor tube in a centring ring, H8/f7 at 54: PASS, like-for-like thermal exactly zero, RSS at N=1', () => {
+test('motor tube in a centring ring, H8/f7 at 54: CLEARS, like-for-like thermal exactly zero, RSS at N=1', () => {
   const r = run('motor-tube-in-ring');
-  assert.equal(r.verdict, 'PASS');
+  assert.equal(r.verdict, 'CLEARS');
   near(r.worst.min, 0.030, 1e-9); near(r.worst.max, 0.106, 1e-9);
   assert.equal(r.contributors[0].detail.it_hole_um, 46); assert.equal(r.contributors[0].detail.it_shaft_um, 30); assert.equal(r.contributors[0].detail.dev_um, -30);
   assert.equal(r.rss.n, 1); assert.equal(r.rss.basis_ok, false);
@@ -374,23 +412,45 @@ test('iso (single feature) refusals and limits', () => {
   assert.equal(iso({ size_mm: 50, feature: 'hole', letter: 'H', grade: 7.5 }).refused.code, 'invalid_input');
 });
 
-test('thermal refusals: every laminate key as hole or shaft, until a hoop CTE with a source is supplied', () => {
-  assert.deepEqual(L.LAMINATE_KEYS, ['G10-FR4', 'CF-laminate', 'Fiberglass-laminate', 'Phenolic']);
-  for (const key of L.LAMINATE_KEYS) {
-    const row = S.materialsThermal.rows.find((r) => r.key === key);
-    assert.ok(/IN-PLANE|ALONG THE FIBRES|Hoop and axial α differ|Never machine a fit/.test(row.note), `${key}'s note says the value is not a hoop value for fits: ${row.note}`);
-    const asHole = one({ kind: 'thermal', name: 't', D_mm: 100, hole_mat: key, shaft_mat: '6061-T6', dT_K: [-60, 20] });
-    assert.equal(asHole.refused.code, 'laminate_hoop_cte', `${key} as hole`);
-    assert.ok(asHole.refused.reason.includes(row.note.slice(0, 20)), 'the refusal quotes the row note');
-    const asShaft = one({ kind: 'thermal', name: 't', D_mm: 100, hole_mat: '6061-T6', shaft_mat: key, dT_K: [-60, 20] });
-    assert.equal(asShaft.refused.code, 'laminate_hoop_cte', `${key} as shaft`);
-  }
+test('thermal refusals: every placeholder CTE (laminates, polymers, graphite) as hole or shaft, until a hoop CTE with a source is supplied', () => {
+  const rows = S.materialsThermal.rows;
+  // What the table itself says: LIMITS (1) calls the laminate and polymer values placeholders, verbatim.
+  assert.ok(S.materialsThermal.notes.includes(L.LIMITS_1), 'LIMITS (1) is quoted verbatim');
   assert.ok(/For laminates this is the in-plane or along-fibre value/.test(S.materialsThermal.columns.cte_um_m_K));
+  // The accepted rows are exactly the eleven PartForge's own tests/flight-db.test.mjs:143 treats as metals ...
+  const METALS = /6061|7075|2024|304|316|4130|Ti-6Al|brass|copper|Inconel|17-4/;
+  const accepted = rows.filter((r) => !L.PLACEHOLDER_CTE_KEYS.includes(r.key)).map((r) => r.key);
+  assert.deepEqual(accepted, rows.filter((r) => METALS.test(r.key)).map((r) => r.key));
+  assert.equal(accepted.length, 11);
+  assert.equal(L.PLACEHOLDER_CTE_KEYS.length, 10);
+  for (const k of L.PLACEHOLDER_CTE_KEYS) assert.ok(rows.some((r) => r.key === k), `${k} is a row`);
+  // ... and every row :146 says "depends on layup or print direction" is refused, Nylon and Ultem included.
+  for (const r of rows.filter((x) => /CF-|G10|Fiberglass|Phenolic|Nylon|Ultem/.test(x.key))) assert.ok(L.PLACEHOLDER_CTE_KEYS.includes(r.key), r.key);
+  // Each refused row's own note names a direction (laminates, printed parts, graphite) or the row is a polymer under LIMITS (1).
+  for (const [key, group] of Object.entries(L.PLACEHOLDER_CTE)) {
+    const row = rows.find((r) => r.key === key);
+    if (group === 'laminate') assert.ok(/IN-PLANE|ALONG THE FIBRES|Hoop and axial α differ|Never machine a fit/.test(row.note), `${key}: ${row.note}`);
+    if (group === 'print') assert.ok(/print/.test(row.note), `${key}: ${row.note}`);
+    if (group === 'grain') assert.ok(/grain direction/.test(row.note), `${key}: ${row.note}`);
+    if (group === 'polymer') assert.ok(['PEEK', 'PA12-SLS', 'Delrin-POM'].includes(key));
+    assert.equal(row.confidence, 'recall', `${key} is a recall row`);
+    for (const side of ['hole', 'shaft']) {
+      const c = { kind: 'thermal', name: 't', D_mm: 100, hole_mat: side === 'hole' ? key : '6061-T6', shaft_mat: side === 'shaft' ? key : '6061-T6', dT_K: [-60, 20] };
+      const r = one(c);
+      assert.equal(r.refused && r.refused.code, 'cte_placeholder', `${key} as ${side}`);
+      if (row.note) assert.ok(r.refused.reason.includes(row.note), 'the refusal quotes the row note');
+      if (group !== 'grain') assert.ok(r.refused.reason.includes(L.LIMITS_1), 'and LIMITS (1)');
+      assert.ok(new RegExp(`hoop_cte\\.${side}`).test(r.refused.what_would_help));
+    }
+  }
   const ov = one({ kind: 'thermal', name: 't', D_mm: 146.2, hole_mat: 'Fiberglass-laminate', shaft_mat: '6061-T6', dT_K: [-60, 20], hoop_cte: { hole: { cte_um_m_K: 22, src: 'test data sheet' } } });
   assert.equal(ov.refused, null);
   assert.equal(ov.confidence, 'user');
   near(ov.detail.at_low, (22 - 23.6) * 1e-6 * 146.2 * -60, 1e-12, 'the shipped formula runs on the user value');
   assert.ok(ov.flags.some((f) => /hole hoop CTE supplied by the user \(22 um\/m\/K\): test data sheet/.test(f)));
+  assert.ok(/Fiberglass-laminate \(overridden by the user hoop CTE\), 6061-T6 \[likely\]/.test(ov.provenance.text), ov.provenance.text);
+  const nylon = one({ kind: 'thermal', name: 't', D_mm: 20, hole_mat: 'CF-Nylon', shaft_mat: '6061-T6', dT_K: [-60, 20], hoop_cte: { hole: { cte_um_m_K: 30, src: 'measured across the beads' } } });
+  assert.equal(nylon.refused, null, 'the override lifts a printed row too');
   assert.equal(one({ kind: 'thermal', name: 't', D_mm: 146.2, hole_mat: 'Fiberglass-laminate', shaft_mat: '6061-T6', dT_K: [-60, 20], hoop_cte: { hole: { cte_um_m_K: 22 } } }).refused.code, 'invalid_input', 'no src, no override');
   assert.equal(one({ kind: 'thermal', name: 't', D_mm: 100, hole_mat: 'unobtainium', shaft_mat: '6061-T6', dT_K: -60 }).refused.code, 'unknown_material');
   assert.ok(one({ kind: 'thermal', name: 't', D_mm: 100, hole_mat: 'unobtainium', shaft_mat: '6061-T6', dT_K: -60 }).refused.what_would_help.includes('Ti-6Al-4V'));
@@ -404,6 +464,46 @@ test('thermal refusals: every laminate key as hole or shaft, until a hoop CTE wi
   assert.equal(brass.confidence, 'recall');
   assert.ok(brass.flags.some((f) => /recall row\(s\): C360-brass/.test(f)));
   assert.equal(one({ kind: 'thermal', name: 't', D_mm: 20, hole_mat: '304', shaft_mat: '6061-T6', dT_K: [-60, 20], dir: 2 }).refused.code, 'invalid_input');
+});
+
+test('a hoop CTE override on one side does not hide a recall row on the other: the weaker side decides the confidence', () => {
+  const ov = { hole: { cte_um_m_K: 20, src: 'data sheet X' } };
+  const onBrass = one({ kind: 'thermal', name: 't', D_mm: 50, hole_mat: 'G10-FR4', shaft_mat: 'C360-brass', dT_K: [-60, 20], hoop_cte: ov });
+  assert.equal(onBrass.confidence, 'recall');
+  assert.ok(onBrass.flags.some((f) => /recall row\(s\): C360-brass - not cited/.test(f)), onBrass.flags.join(' | '));
+  const r = stack([{ kind: 'declared', name: 'gap', nominal_mm: 0.2, tol_mm: 0.01, tol_src: 'user', tol_ref: 'm', dir: 1 },
+    { kind: 'thermal', name: 'G10 on brass', D_mm: 50, hole_mat: 'G10-FR4', shaft_mat: 'C360-brass', dT_K: [-60, 20], hoop_cte: ov }], { min_mm: 0 });
+  assert.ok(r.flags.some((f) => /1 contributor rests on recall rows \(G10 on brass\)/.test(f)), 'counted in the global recall note');
+  assert.ok(r.verdict_reasons.some((x) => /rests on 1 recall row/.test(x)));
+  const on6061 = one({ kind: 'thermal', name: 't', D_mm: 50, hole_mat: 'G10-FR4', shaft_mat: '6061-T6', dT_K: [-60, 20], hoop_cte: ov });
+  assert.equal(on6061.confidence, 'user', 'a likely row and a user value print as user');
+});
+
+test('no ISO fit class on a composite or phenolic tube: fits.json LIMITS (5) and the doctrine (index.html:1454), whatever the CTE', () => {
+  assert.deepEqual(L.COMPOSITE_TUBE_KEYS, ['G10-FR4', 'CF-laminate', 'Fiberglass-laminate', 'Phenolic']);
+  assert.ok(/THESE ARE FOR MACHINED METAL\. A composite or phenolic tube is not round, not constant, and not to an IT grade/.test(S.fits.notes));
+  const g10 = E.byId(examples, 'plug-in-g10-coupler').stack;
+  assert.deepEqual(run('plug-in-g10-coupler').refusals.map((x) => x.code), ['fit_on_composite', 'cte_placeholder']);
+  const withHoop = JSON.parse(JSON.stringify(g10));
+  withHoop.contributors[1].hoop_cte = { hole: { cte_um_m_K: 14, src: 'ILLUSTRATIVE' } };
+  const r1 = L.stackUp(ctx, withHoop);
+  assert.deepEqual(r1.refusals.map((x) => x.code), ['fit_on_composite'], 'the hoop CTE lifts the thermal refusal, not the fit one');
+  assert.ok(/do not use a fit class at all/.test(r1.refusals[0].reason) && /three clockings/.test(r1.refusals[0].what_would_help));
+  assert.equal(r1.contributors[1].refused, null);
+  // The honest form: the coupler bore measured, the metal plug an ISO g6 shaft. It evaluates.
+  const measured = { ...withHoop, contributors: [
+    { kind: 'declared', name: 'G10 coupler ID, measured', nominal_mm: 101.7, tol_mm: 0.04, tol_src: 'user', tol_ref: 'three clockings', dir: 1 },
+    { kind: 'iso', name: 'plug g6', size_mm: 101.6, feature: 'shaft', letter: 'g', grade: 6, dir: -1 },
+    withHoop.contributors[1]] };
+  const r2 = L.stackUp(ctx, measured);
+  assert.equal(r2.refusals.length, 0, JSON.stringify(r2.refusals));
+  assert.ok(r2.evaluable && ['CLEARS', 'FAIL'].includes(r2.verdict));
+  // A composite shaft refuses an iso shaft and a fit, not an iso hole; a non-composite pair refuses nothing.
+  const sh = (c) => stack([c, { kind: 'thermal', name: 't', D_mm: 50, hole_mat: '6061-T6', shaft_mat: 'Phenolic', dT_K: [-60, 20], hoop_cte: { shaft: { cte_um_m_K: 30, src: 's' } } }], { min_mm: 0 });
+  assert.equal(sh({ kind: 'iso', name: 'h', size_mm: 50, feature: 'shaft', letter: 'g', grade: 6, dir: -1 }).refusals[0].code, 'fit_on_composite');
+  assert.equal(sh({ kind: 'fit', name: 'f', size_mm: 50, hole: ['H', 7], shaft: ['g', 6] }).refusals[0].code, 'fit_on_composite');
+  assert.equal(sh({ kind: 'iso', name: 'h', size_mm: 50, feature: 'hole', letter: 'H', grade: 7, dir: 1 }).refusals.length, 0);
+  assert.equal(stack([{ kind: 'fit', name: 'f', size_mm: 101.6, hole: ['H', 7], shaft: ['g', 6] }, { kind: 'thermal', name: 't', D_mm: 101.6, hole_mat: '304', shaft_mat: '6061-T6', dT_K: [-60, 20] }], { min_mm: 0 }).refusals.length, 0);
 });
 
 test('stock refusals: recall rows claimed as source, unknown rows, wrong surfaces; limits read as the table gives them', () => {
@@ -438,6 +538,37 @@ test('stock refusals: recall rows claimed as source, unknown rows, wrong surface
   const ext = st({ key: 'tube_6061_i_6.000x0.125_ext', surface: 'id' });
   assert.equal(ext.confidence, 'recall'); near(ext.low, 144.525, 1e-9); near(ext.high, 147.575, 1e-9);
   assert.equal(run('stock-recall-as-source').verdict, 'REFUSED');
+  // The row-level half of the guard: a row whose own confidence is recall stays uncitable even when its tolerance
+  // column says likely (the doctrine at index.html:1454 never cites a recall line).
+  const tubeRow = S.stockExcerpt.rows.find((r) => r.key === 'tube_6061_i_6.000x0.125');
+  assert.deepEqual([tubeRow.confidence, tubeRow.tolerance_confidence], ['recall', 'likely']);
+  const rowOnly = st({ key: 'tube_6061_i_6.000x0.125', surface: 'id', tol_src: 'source', tol_ref: 'ASTM B210', dir: 1 });
+  assert.equal(rowOnly.refused && rowOnly.refused.code, 'recall_as_source');
+  assert.ok(/row confidence "recall"/.test(rowOnly.refused.reason));
+});
+
+test('stock over the app\'s embedded projection (no tolerance_confidence, id_nominal_mm, ovality, disputed detail): degrades with notes, never silently', () => {
+  // The four columns tools/db/embed.mjs:83 does not carry, and its disputed -> true (:84), applied to the excerpt.
+  const project = (r) => { const x = { ...r }; for (const k of ['tolerance_confidence', 'tolerance_note', 'id_nominal_mm', 'ovality_individual_dia_tol_mm']) delete x[k]; if (x.disputed) x.disputed = true; return x; };
+  S.useTables({ stock: { ...S.stockExcerpt, rows: S.stockExcerpt.rows.map(project) } });
+  try {
+    const st = (c) => one({ kind: 'stock', name: 's', dir: -1, ...c });
+    const id = st({ key: 'tube_6061_i_6.000x0.125', surface: 'id' });
+    assert.equal(id.refused, null);
+    near(id.low, 145.058, 1e-9); near(id.high, 147.042, 1e-9); near(id.nominal, 146.05, 1e-9);
+    assert.ok(id.flags.some((f) => /no id_nominal_mm: nominal ID taken as dim_mm - 2 x wall_mm = 146\.050/.test(f)));
+    assert.ok(id.flags.some((f) => /no ovality_individual_dia_tol_mm/.test(f)) && !id.flags.some((f) => /\+\/--/.test(f)), 'no "+/--" from a missing number');
+    assert.ok(id.flags.some((f) => /no tolerance_confidence .* the row confidence "recall" prints/.test(f)));
+    assert.equal(id.confidence, 'recall', 'falls back to the row confidence, which at 0974a62 is never stronger than the tolerance\'s');
+    const bar = st({ key: 'bar_6061_i_6.000', surface: 'od' });
+    assert.ok(bar.flags.some((f) => /disputed tolerance: this copy of the table keeps only the flag/.test(f)));
+    assert.equal(st({ key: 'bar_6061_i_6.000', surface: 'od', tol_src: 'source', tol_ref: 'ASTM B221' }).refused.code, 'recall_as_source');
+    assert.equal(st({ key: 'tube_6061_i_6.000x0.125', surface: 'id', tol_src: 'source', tol_ref: 'ASTM B210' }).refused.code, 'recall_as_source');
+    const r = run('bar-as-pin');
+    near(r.worst.min, -0.038, 1e-9); near(r.worst.max, 0.091, 1e-9); assert.equal(r.verdict, 'FAIL');
+  } finally {
+    S.useTables(null);
+  }
 });
 
 test('coating refusals: no value, zero, negative; ranges reorder; surfaces 1 or 2; closes the gap by default', () => {
@@ -486,6 +617,13 @@ test('declared refusals: no tolerance, ±0, negatives, bad dir; source without r
 
 test('stack-level refusals and the not-gated state; a refused stack prints no gap', () => {
   assert.equal(L.stackUp(ctx, null).verdict, 'REFUSED');
+  // A stack-level refusal is not counted as a contributor.
+  for (const [bad, word] of [[null, 'the stack is refused \\(invalid_input\\)'], [[], 'the stack is refused \\(invalid_input\\)'], [{ contributors: [] }, 'the stack is refused \\(no_contributors\\)'],
+    [{ contributors: [{ kind: 'declared', name: 'a', nominal_mm: 1, tol_mm: 0.1, tol_src: 'user', tol_ref: 't', dir: 1 }], require: { min_mm: 1, max_mm: 0 } }, 'the requirement is refused \\(invalid_input\\)']]) {
+    const r = L.stackUp(ctx, bad);
+    assert.ok(new RegExp(word).test(r.verdict_reasons[0]), r.verdict_reasons[0]);
+    assert.ok(!/could not be sourced/.test(r.verdict_reasons[0]), r.verdict_reasons[0]);
+  }
   assert.equal(stack([], { min_mm: 0 }).refusals[0].code, 'no_contributors');
   assert.equal(L.stackUp(ctx, { contributors: 'x' }).refusals[0].code, 'no_contributors');
   assert.equal(stack([{ kind: 'wedge', name: 'w', dir: 1 }], {}).refusals[0].code, 'unknown_kind');
@@ -500,14 +638,32 @@ test('stack-level refusals and the not-gated state; a refused stack prints no ga
   assert.ok(/NOT GATED/.test(L.ledgerText(ng)));
   const r = run('bulkhead-as-declared');
   assert.equal(r.verdict, 'REFUSED');
-  assert.deepEqual(r.refusals.map((x) => x.code), ['no_tolerance', 'coating_undeclared', 'laminate_hoop_cte']);
+  assert.deepEqual(r.refusals.map((x) => x.code), ['no_tolerance', 'coating_undeclared', 'cte_placeholder']);
   assert.equal(r.worst, null); assert.equal(r.rss, null); assert.equal(r.evaluable, false);
   const t = L.ledgerText(r);
   assert.ok(!/WORST CASE/.test(t) && !/^RSS {2,}/m.test(t) && !/^THERMAL/m.test(t) && /REFUSED/.test(t) && /what would help/.test(t), 'no partial numbers');
   assert.ok(/no gap is printed because a partial sum would be a placeholder number/.test(t));
   const c = run('coupler-as-declared');
   assert.deepEqual(c.refusals.map((x) => x.code), ['no_tolerance', 'coating_undeclared']);
-  assert.equal(run('plug-in-g10-coupler').refusals[0].code, 'laminate_hoop_cte');
+  assert.deepEqual(run('plug-in-g10-coupler').refusals.map((x) => x.code), ['fit_on_composite', 'cte_placeholder']);
+});
+
+test('non-finite arithmetic is refused, never gated: overflowing limits and overflowing sums', () => {
+  const big = { kind: 'declared', name: 'huge', nominal_mm: 1e308, tol_mm: 1e308, tol_src: 'user', tol_ref: 't', dir: 1 };
+  const a = stack([big, { ...big, name: 'huge 2' }], { min_mm: 0 });
+  assert.equal(a.verdict, 'REFUSED'); assert.equal(a.worst, null);
+  assert.ok(a.refusals.every((x) => x.code === 'invalid_input') && /not finite/.test(a.refusals[0].reason));
+  assert.deepEqual(a.refusals.map((x) => x.index), [0, 1], 'each overflowing contributor is refused by name, not only the sum');
+  const fin = { kind: 'declared', name: 'big', nominal_mm: 1e308, tol_mm: 1e307, tol_src: 'user', tol_ref: 't', dir: 1 };
+  const b = stack([fin, { ...fin, name: 'big 2' }], { min_mm: 0 });
+  assert.equal(b.verdict, 'REFUSED', 'each limit finite, the sum not');
+  assert.deepEqual(b.refusals.map((x) => [x.index, x.code]), [[-1, 'invalid_input']]);
+  assert.ok(/the stack is refused/.test(b.verdict_reasons[0]));
+  const t = L.ledgerText(b);
+  assert.ok(!/WORST CASE|NaN|Infinity/.test(t) && !/CLEARS|FAIL/.test(t.split('VERDICT')[1]), t);
+  const hot = stack([{ kind: 'thermal', name: 'x', D_mm: 1e300, hole_mat: '304', shaft_mat: '6061-T6', dT_K: [-1e300, 1e300] }], { min_mm: 0 });
+  assert.equal(hot.verdict, 'REFUSED'); assert.equal(hot.refusals[0].code, 'invalid_input'); assert.equal(hot.refusals[0].index, 0);
+  assert.equal(stack([big], { min_mm: Infinity }).refusals.some((x) => x.name === 'require'), true, 'an infinite requirement is not a number either');
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -542,7 +698,10 @@ test('ledger text carries the words the page and the CLI must say', () => {
     assert.ok(/verbatim from index\.html:4994-5024/.test(t));
     assert.ok(/Measurable on a mesh: none/.test(t));
     assert.ok(/RSS is information only/.test(t));
-    assert.ok(!/\bPASS\b/.test(t) || L.stackUp(ctx, ex.stack).verdict === 'PASS', `${ex.id} says PASS only when it passes`);
+    assert.ok(!/\bPASS\b/.test(t), `${ex.id} never says PASS`);
+    assert.ok(!/\bPASS\b/.test(ex.why + ex.title), `${ex.id}: nor does its menu text`);
+    const r = L.stackUp(ctx, ex.stack);
+    if (r.verdict === 'CLEARS') assert.ok(/VERDICT {6}CLEARS \(screening\) - .*screening only, not a pass/.test(t), t);
   }
   const t = L.ledgerText(run('plug-in-steel-bore'));
   assert.ok(/THERMAL      -0\.013 \.\. \+0\.038 over the declared dT range/.test(t), t);
@@ -550,9 +709,11 @@ test('ledger text carries the words the page and the CLI must say', () => {
   assert.ok(/VERDICT      FAIL - minimum gap -0\.001 is 0\.001 below/.test(t));
 });
 
-test('CLI: exit codes 0 PASS / 1 FAIL / 2 refused or not gated / 3 usage, --json, --list, --help', () => {
+test('CLI: exit codes 0 CLEARS / 1 FAIL / 2 refused or not gated / 3 usage, --json, --list, --help', () => {
   assert.equal(cli(['--help']).status, 0);
-  assert.ok(/exit codes: 0 PASS/.test(cli(['--help']).stdout));
+  assert.ok(/exit codes: 0 CLEARS/.test(cli(['--help']).stdout));
+  assert.ok(!/\bPASS\b/.test(cli(['--help']).stdout));
+  assert.equal(cli(['--example', 'two-plus-minus', '--embedded']).status, 3, '--embedded needs --repo');
   const list = cli(['--list']);
   assert.equal(list.status, 0);
   assert.equal(list.stdout.trim().split('\n').length, 9);
@@ -603,6 +764,44 @@ test('CLI --repo: live tables from the checkout give the same ledgers as the sna
   assert.equal(cli(['--example', 'two-plus-minus', '--repo', '/nonexistent']).status, 3);
 });
 
+test('the kernel over the app\'s own embedded tables (index.html DB-DATA block): same numbers, notes where columns are missing (skipped without the repo)', { skip: !repoPresent && 'no PartForge checkout' }, () => {
+  const html = fs.readFileSync(path.join(REPO, 'index.html'), 'utf8');
+  const { data } = extractDbData(html);
+  const full = JSON.parse(fs.readFileSync(path.join(REPO, 'data/tables/stock.json'), 'utf8'));
+  // The finding, pinned: the projection drops four columns the kernel prints and keeps disputed only as a flag.
+  assert.equal(data.stock.rows.length, 192);
+  for (const k of ['tolerance_confidence', 'tolerance_note', 'id_nominal_mm', 'ovality_individual_dia_tol_mm']) {
+    assert.equal(data.stock.rows.filter((r) => k in r).length, 0, `${k} absent from the embedded stock rows`);
+    assert.ok(full.rows.some((r) => r[k] != null), `${k} present in data/tables/stock.json`);
+  }
+  assert.equal(data.stock.rows.filter((r) => r.disputed === true).length, full.rows.filter((r) => Array.isArray(r.disputed) && r.disputed.length).length);
+  // The fallback the kernel uses for the missing nominal ID is exact on the full table, every tube and pipe row.
+  const tubes = full.rows.filter((r) => r.id_nominal_mm != null);
+  assert.equal(tubes.length, 113);
+  for (const r of tubes) near(r.dim_mm - 2 * r.wall_mm, r.id_nominal_mm, 1e-9, r.key);
+  // Row confidence is never stronger than the tolerance's, so falling back to it never promotes a recall tolerance.
+  assert.equal(full.rows.filter((r) => r.confidence !== 'recall' && r.tolerance_confidence === 'recall').length, 0);
+  // Every example, through the CLI over the embedded block, gives the same verdict, limits and refusal codes.
+  for (const ex of examples) {
+    const a = cli(['--example', ex.id, '--json', '--repo', REPO, '--embedded']);
+    const b = cli(['--example', ex.id, '--json']);
+    assert.equal(a.status, b.status, ex.id);
+    const ra = JSON.parse(a.stdout).result, rb = JSON.parse(b.stdout).result;
+    assert.ok(/embedded DB-DATA block, index\.html:\d+-\d+/.test(ra.meta.tables), ra.meta.tables);
+    assert.deepEqual([ra.verdict, ra.worst, ra.rss, ra.thermal, ra.refusals.map((x) => x.code)], [rb.verdict, rb.worst, rb.rss, rb.thermal, rb.refusals.map((x) => x.code)], ex.id);
+  }
+  // And a tube ID, which over the shipped projection used to be refused for want of id_nominal_mm.
+  S.useTables({ fits: data.fits, materials_thermal: data.materials_thermal, stock: data.stock });
+  try {
+    const id = one({ kind: 'stock', name: 's', key: 'tube_6061_i_6.000x0.125', surface: 'id', dir: 1 });
+    assert.equal(id.refused, null);
+    near(id.low, 145.058, 1e-9); near(id.high, 147.042, 1e-9); near(id.nominal, 146.05, 1e-9);
+    assert.equal(S.dbFit(50, 'H', 7, 'g', 6).confidence, 'likely', 'the shim spreads the hoisted shared fields back, as index.html:4992 does');
+  } finally {
+    S.useTables(null);
+  }
+});
+
 test('example.txt is a real record: every "$" command in it replays to the same text today', () => {
   const txt = fs.readFileSync(path.join(here, 'example.txt'), 'utf8');
   const blocks = txt.split(/^\$ /m).filter(Boolean);
@@ -621,13 +820,19 @@ test('example.txt is a real record: every "$" command in it replays to the same 
     replayed++;
   }
   assert.ok(replayed >= 6);
-  assert.ok(/VERDICT      FAIL - minimum gap -0\.030/.test(txt) && /REFUSED laminate_hoop_cte/.test(txt) && /29% narrower/.test(txt));
+  assert.ok(/VERDICT      FAIL - minimum gap -0\.030/.test(txt) && /REFUSED cte_placeholder/.test(txt) && /REFUSED fit_on_composite/.test(txt) && /29% narrower/.test(txt) && /--embedded/.test(txt));
+  assert.ok(!/\bPASS\b/.test(txt), 'the record never says PASS');
 });
 
 test('the README states the numbers the kernel computes', () => {
   const md = fs.readFileSync(path.join(here, 'README.md'), 'utf8');
-  for (const s of ['0.0707', '29 %', '0.078', '0.0465', '0.0295', '4994', '5024', '4997', '5018', '−0.030', '0.170', '−0.0008', '−0.038', '0.091', 'bar_6061_i_6.000_ext', '0.0585', 'N=4']) {
+  for (const s of ['0.0707', '29 %', '0.078', '0.0465', '0.0295', '4994', '5024', '4997', '5018', '−0.030', '0.170', '−0.0008', '−0.038', '0.091', 'bar_6061_i_6.000_ext', '0.0585', 'N=4',
+    '16.8 and 25.9', '16.76', '25.88', '−0.0198', '−0.0361', 'CLEARS', 'cte_placeholder', 'fit_on_composite', '`:666`', '`:5477`', '360,828', '9 of the 192', 'embed.mjs:83']) {
     assert.ok(md.includes(s), `README mentions ${s}`);
   }
+  for (const s of ['true of eleven rows', 'whole file, 356 KB', 'gives twice the allowed', ':5465` and `:5480']) assert.ok(!md.includes(s), `README no longer says ${s}`);
+  // The test and check counts the README states are the ones this file and ui-check.mjs have.
+  const nTests = (fs.readFileSync(path.join(here, 'stack.test.mjs'), 'utf8').match(/^test\(/gm) || []).length;
+  assert.ok(md.includes(`(${nTests} tests,`), `README states ${nTests} tests`);
   assert.ok(/\[(Certain|Likely|Speculative)\]/.test(md));
 });

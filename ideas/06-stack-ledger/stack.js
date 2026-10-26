@@ -10,7 +10,9 @@
      stock     an as-supplied surface of a stock.json row (bar OD, plate thickness, tube OD or ID)
      coating   a build-up per surface on one or two mating surfaces (closes a clearance)
      thermal   (α_hole − α_shaft)·D·ΔT over a declared ΔT range, via dbFitThermal(), both ends
-   Worst case gates:  G_min = Σ min(s·low, s·high),  G_max = Σ max(s·low, s·high).
+   Worst case gates:  G_min = Σ min(s·low, s·high),  G_max = Σ max(s·low, s·high). It gates as a screening row:
+   FAIL when the worst case leaves the requirement, CLEARS when it stays inside, never PASS, because nothing here
+   measures the gap (docs/roadmap-evaluation.md:666 at PartForge 0974a62).
    RSS is information only: half = √Σ((high−low)/2)² over the manufacturing contributors (not thermal, which is
    deterministic), centred on Σ s·mid, never on the nominal sum; printed with N and "no statistical basis
    below N=4". A contributor the tables cannot source is REFUSED with a code, a reason and what would help,
@@ -31,9 +33,20 @@
   var TOL_SRC = /^(source|user|default)$/;                              // PartForge parseFlight's TOL_SRC (index.html:4660)
   var FIT_LETTERS = 'defghkn';                                          // fits.json LIMITS (2): the closed-form letters
   var INTERFERENCE_LETTERS = 'prstu';                                   // fits.json LIMITS (2): need the delta rule, absent
-  // Rows of materials_thermal.json whose cte_um_m_K is, by the row's own note, an in-plane / along-fibre /
-  // not-for-fits value rather than the hoop value a bore's diametral change needs. A test checks the notes say so.
-  var LAMINATE_KEYS = ['G10-FR4', 'CF-laminate', 'Fiberglass-laminate', 'Phenolic'];
+  // Rows of materials_thermal.json whose cte_um_m_K is not a number to gate a fit on, by the table's own words:
+  // LIMITS (1) says that for "the laminates and polymers ... a single number is a placeholder", and the row
+  // notes name a direction for the laminates, the printed polymers and graphite. The group says which words apply.
+  // What is left are the eleven metals PartForge's own tests/flight-db.test.mjs:143 calls metals; a test checks it.
+  var PLACEHOLDER_CTE = {
+    'G10-FR4': 'laminate', 'CF-laminate': 'laminate', 'Fiberglass-laminate': 'laminate', 'Phenolic': 'laminate',
+    'Ultem-9085': 'print', 'CF-Nylon': 'print', 'PEEK': 'polymer', 'PA12-SLS': 'polymer', 'Delrin-POM': 'polymer',
+    'Graphite': 'grain',
+  };
+  var PLACEHOLDER_CTE_KEYS = Object.keys(PLACEHOLDER_CTE);
+  // The composite and phenolic tubes, for which PartForge's doctrine (index.html:1454) says "do not use a fit class
+  // at all" and fits.json LIMITS (5) says "THESE ARE FOR MACHINED METAL".
+  var COMPOSITE_TUBE_KEYS = ['G10-FR4', 'CF-laminate', 'Fiberglass-laminate', 'Phenolic'];
+  var LIMITS_1 = 'the laminates and polymers vary so much with layup, weave, resin, fill and print direction that a single number is a placeholder';
   var REF_TEMP_C = 20;                                                  // ISO 286 reference temperature for the limits
 
   function isNum(x) { return typeof x === 'number' && isFinite(x); }
@@ -184,19 +197,34 @@
     if (row.kind === 'bar' && surface === 'od') { low = row.dim_min_mm; high = row.dim_max_mm; nominal = row.dim_mm; what = 'bar diameter'; }
     else if (row.kind === 'plate' && surface === 'thickness') { low = row.dim_min_mm; high = row.dim_max_mm; nominal = row.dim_mm; what = 'plate thickness'; }
     else if ((row.kind === 'tube' || row.kind === 'pipe') && surface === 'od') { low = row.dim_min_mm; high = row.dim_max_mm; nominal = row.dim_mm; what = 'tube OD (mean diameter)'; }
-    else if ((row.kind === 'tube' || row.kind === 'pipe') && surface === 'id') { low = row.id_min_mm; high = row.id_max_mm; nominal = row.id_nominal_mm; what = 'tube ID (mean diameter, derived from OD and wall limits)'; }
+    else if ((row.kind === 'tube' || row.kind === 'pipe') && surface === 'id') {
+      low = row.id_min_mm; high = row.id_max_mm; what = 'tube ID (mean diameter, derived from OD and wall limits)';
+      nominal = row.id_nominal_mm;
+      // The app's embedded projection (tools/db/embed.mjs:83) has no id_nominal_mm; the nominal ID is then OD - 2 x wall,
+      // both of which it does carry. On the full table the two agree on every tube and pipe row (a test checks all of them).
+      if (!isNum(nominal) && isNum(row.dim_mm) && isNum(row.wall_mm)) {
+        nominal = row.dim_mm - 2 * row.wall_mm;
+        flags.push('this copy of the table has no id_nominal_mm: nominal ID taken as dim_mm - 2 x wall_mm = ' + f3(nominal));
+      }
+    }
     else return fail('stock_surface', name + ': a ' + row.kind + ' row has no surface ' + JSON.stringify(surface) + '. Bars have "od", plates "thickness", tubes and pipes "od" or "id".', 'name the as-supplied surface that is actually in the gap; a machined surface is a declared contributor with its own tolerance, not a stock one.');
     if (!isNum(low) || !isNum(high) || !isNum(nominal)) return fail('invalid_input', name + ': row ' + key + ' has no limits for ' + surface + '.', 'check the row.');
     var claim = str(c.tol_src);
+    var hasTolConf = row.tolerance_confidence != null;
     var tolConf = row.tolerance_confidence || row.confidence || 'recall';
     if (claim === 'source') {
-      if (tolConf === 'recall' || row.confidence === 'recall') return fail('recall_as_source', name + ': stock.json row ' + key + ' carries tolerance_confidence "' + tolConf + '" (row confidence "' + row.confidence + '"); a recall row cannot be presented as a cited source.', 'cite the mill certificate or the supplier\'s quoted tolerance for the delivered stock as a declared contributor with tol_src source and a tol_ref, or leave tol_src off and let the row\'s recall confidence print.');
+      if (tolConf === 'recall' || row.confidence === 'recall') return fail('recall_as_source', name + ': stock.json row ' + key + ' carries tolerance_confidence "' + (hasTolConf ? row.tolerance_confidence : 'absent') + '" (row confidence "' + row.confidence + '"); a recall row cannot be presented as a cited source.', 'cite the mill certificate or the supplier\'s quoted tolerance for the delivered stock as a declared contributor with tol_src source and a tol_ref, or leave tol_src off and let the row\'s recall confidence print.');
       if (!str(c.tol_ref)) { flags.push('tol_src "source" without a tol_ref is demoted: the row\'s own confidence prints'); claim = ''; }
     } else if (claim && claim !== 'user' && claim !== 'default') claim = '';
-    if (row.kind === 'tube' || row.kind === 'pipe') flags.push('mean-diameter band: any individual diameter may deviate up to +/-' + f3(row.ovality_individual_dia_tol_mm) + ' mm from nominal (ovality_individual_dia_tol_mm); measure the delivered tube at three clockings');
+    if (!hasTolConf) flags.push('this copy of the table has no tolerance_confidence (the app\'s embedded projection drops it): the row confidence "' + row.confidence + '" prints');
+    if (row.kind === 'tube' || row.kind === 'pipe') {
+      if (isNum(row.ovality_individual_dia_tol_mm)) flags.push('mean-diameter band: any individual diameter may deviate up to +/-' + f3(row.ovality_individual_dia_tol_mm) + ' mm from nominal (ovality_individual_dia_tol_mm); measure the delivered tube at three clockings');
+      else flags.push('mean-diameter band; this copy of the table has no ovality_individual_dia_tol_mm, so how far an individual diameter may stray is in data/tables/stock.json only; measure the delivered tube at three clockings');
+    }
     flags.push('stock.json notes (1): "Nothing in this table is a finished dimension: every diameter, face and bore that matters gets machined" - this contributor stands for a surface used as supplied');
-    if (tolConf === 'recall' || row.confidence === 'recall') flags.push('recall row: not cited (tolerance_confidence ' + tolConf + ', row confidence ' + row.confidence + ')');
-    if (row.disputed && row.disputed.length) flags.push('disputed tolerance: compiled ' + row.disputed[0].compiled + ' vs alternative ' + row.disputed[0].alternative + '; the wider band is stored');
+    if (tolConf === 'recall' || row.confidence === 'recall') flags.push('recall row: not cited (tolerance_confidence ' + (hasTolConf ? row.tolerance_confidence : 'absent') + ', row confidence ' + row.confidence + ')');
+    if (Array.isArray(row.disputed) && row.disputed.length) flags.push('disputed tolerance: compiled ' + row.disputed[0].compiled + ' vs alternative ' + row.disputed[0].alternative + '; the wider band is stored');
+    else if (row.disputed) flags.push('disputed tolerance: this copy of the table keeps only the flag; the competing values are in data/tables/stock.json');
     return { ok: true, low: low, high: high, nominal: nominal, confidence: tolConf,
       provenance: { kind: 'stock', table: 'stock.json', key: key, tol_src: claim || 'table', text: 'stock.json row ' + key + ' (' + row.material + ', ' + row.form + ', ' + row.tolerance_basis + ') [tolerance ' + tolConf + ', row ' + row.confidence + ']: ' + what + ' ' + f3(low) + '/' + f3(high) + (claim ? ', tol_src ' + claim + (str(c.tol_ref) ? ': "' + str(c.tol_ref).slice(0, 200) + '"' : '') : '') },
       detail: { key: key, kind: row.kind, form: row.form, material: row.material, surface: surface, tol_plus_mm: row.tol_plus_mm, tol_minus_mm: row.tol_minus_mm, tolerance_basis: row.tolerance_basis, tolerance_note: row.tolerance_note },
@@ -233,9 +261,14 @@
       var keys = (ctx.S.dbRows('materials_thermal') || []).map(function (r) { return r.key; });
       return fail('unknown_material', name + ': ' + JSON.stringify(key) + ' is not a materials_thermal.json key.', 'use one of: ' + keys.join(', ') + '.');
     }
-    if (LAMINATE_KEYS.indexOf(key) >= 0) {
-      return fail('laminate_hoop_cte', name + ': materials_thermal.json gives ' + key + ' cte_um_m_K = ' + row.cte_um_m_K + ' as a laminate value that is not the hoop value a bore\'s diametral change needs (row note: "' + (row.note || '') + '"; columns: "For laminates this is the in-plane or along-fibre value").',
-        'supply hoop_cte.' + side + ' = { cte_um_m_K, src } from the tube\'s data sheet or the club\'s own measurement (materials_thermal.json notes, LIMITS (4)); the shipped dbFitThermal() then runs on that value and the contributor prints as user-supplied.');
+    var group = PLACEHOLDER_CTE[key];
+    if (group) {
+      var why = group === 'laminate' ? 'for a laminate it is the in-plane or along-fibre value (columns: "For laminates this is the in-plane or along-fibre value"), while a diameter grows by the hoop value; and LIMITS (1): "' + LIMITS_1 + '"'
+        : group === 'print' ? 'a printed part\'s value differs with print direction, and which direction a diameter grows in depends on how the part was printed; and LIMITS (1): "' + LIMITS_1 + '"'
+        : group === 'grain' ? 'its value depends on grain direction and grade'
+        : 'LIMITS (1): "' + LIMITS_1 + '"';
+      return fail('cte_placeholder', name + ': materials_thermal.json gives ' + key + ' cte_um_m_K = ' + row.cte_um_m_K + ' [' + row.confidence + '], which the table itself does not offer as a number to gate a fit on: ' + why + '.' + (row.note ? ' Row note: "' + row.note + '".' : ' The row has no note.'),
+        'supply hoop_cte.' + side + ' = { cte_um_m_K, src }: the expansion in the direction the diameter grows, from the data sheet, the mill certificate or the club\'s own measurement (materials_thermal.json LIMITS (4)); the shipped dbFitThermal() then runs on that value and the contributor prints as user-supplied.');
     }
     return { ok: true, key: key, row: row, overridden: false, baseKey: key };
   }
@@ -259,16 +292,19 @@
     if (!a || !b) return fail('unknown_material', name + ': dbFitThermal() returned nothing.', 'check the material keys.');
     var dA = a.d_mm + 0, dB = b.d_mm + 0;        // + 0 turns the -0 a like-for-like pair yields into 0
     var low = Math.min(dA, dB), high = Math.max(dA, dB);
-    var conf = (hole.overridden || shaft.overridden) ? 'user' : a.confidence;
+    // The weaker side decides: a recall table row on one side stays recall even when the other side is a user value.
+    var recallRows = [hole, shaft].filter(function (s) { return !s.overridden && s.row.confidence === 'recall'; }).map(function (s) { return s.row.key; });
+    var conf = recallRows.length ? 'recall' : (hole.overridden || shaft.overridden) ? 'user' : a.confidence;
     var flags = [];
     var coeff = (hole.row.cte_um_m_K - shaft.row.cte_um_m_K);
     if (hole.baseKey === shaft.baseKey && !hole.overridden && !shaft.overridden) flags.push('same material both sides: temperature-neutral, the term is exactly zero (dbFitThermal)');
     if (hole.overridden) flags.push('hole hoop CTE supplied by the user (' + hole.row.cte_um_m_K + ' um/m/K): ' + str(ov.hole.src));
     if (shaft.overridden) flags.push('shaft hoop CTE supplied by the user (' + shaft.row.cte_um_m_K + ' um/m/K): ' + str(ov.shaft.src));
-    if (conf === 'recall') flags.push('recall row(s): ' + [hole.row, shaft.row].filter(function (r) { return r.confidence === 'recall'; }).map(function (r) { return r.key; }).join(', ') + ' - not cited');
+    if (recallRows.length) flags.push('recall row(s): ' + recallRows.join(', ') + ' - not cited');
     if (ends[0] > 0 || ends[1] < 0) flags.push('the range excludes dT = 0, so the ' + REF_TEMP_C + ' C assembly state is not in the envelope; include 0 if the joint is assembled at room temperature');
     flags.push('deterministic, not a tolerance: enters the worst case at both ends of the range and is kept out of the RSS');
-    var text = 'dbFitThermal(' + f3(c.D_mm) + ', ' + hole.key + ', ' + shaft.key + ', dT) = (alpha_hole ' + hole.row.cte_um_m_K + ' - alpha_shaft ' + shaft.row.cte_um_m_K + ') um/m/K x D x dT [' + conf + ']: ' + sgn(dA) + ' at ' + sgn(ends[0]).replace('.000', '') + ' K, ' + sgn(dB) + ' at ' + sgn(ends[1]).replace('.000', '') + ' K; materials_thermal.json rows ' + hole.baseKey + ' [' + hole.row.confidence + '], ' + shaft.baseKey + ' [' + shaft.row.confidence + ']';
+    var rowWord = function (s) { return s.baseKey + (s.overridden ? ' (overridden by the user hoop CTE)' : ' [' + s.row.confidence + ']'); };
+    var text = 'dbFitThermal(' + f3(c.D_mm) + ', ' + hole.key + ', ' + shaft.key + ', dT) = (alpha_hole ' + hole.row.cte_um_m_K + ' - alpha_shaft ' + shaft.row.cte_um_m_K + ') um/m/K x D x dT [' + conf + ']: ' + sgn(dA) + ' at ' + sgn(ends[0]).replace('.000', '') + ' K, ' + sgn(dB) + ' at ' + sgn(ends[1]).replace('.000', '') + ' K; materials_thermal.json rows ' + rowWord(hole) + ', ' + rowWord(shaft);
     return { ok: true, low: low, high: high, nominal: 0, confidence: conf,
       provenance: { kind: 'thermal', table: 'materials_thermal.json', text: text },
       detail: { D_mm: c.D_mm, dT_K: ends, hole_mat: hole.baseKey, shaft_mat: shaft.baseKey, cte_hole: hole.row.cte_um_m_K, cte_shaft: shaft.row.cte_um_m_K, coeff_um_per_K: coeff, at_low: dA, at_high: dB, hole_overridden: hole.overridden, shaft_overridden: shaft.overridden },
@@ -295,6 +331,7 @@
       case 'thermal': r = resolveThermal(ctx, c, name); break;
     }
     if (!r.ok) return { index: index, name: name, kind: kind, dir: dir, refused: r.refusal };
+    if (!isNum(r.low) || !isNum(r.high) || !isNum(r.nominal)) return { index: index, name: name, kind: kind, dir: dir, refused: refusal('invalid_input', name + ': its limits are not finite numbers (the arithmetic overflowed); nothing can be summed from them.', 'check the units: every length is in millimetres and every temperature change in kelvin.') };
     var a = dir * r.low, b = dir * r.high;
     var sLow = Math.min(a, b), sHigh = Math.max(a, b);
     return { index: index, name: name, kind: kind, dir: dir, nominal: r.nominal, low: r.low, high: r.high,
@@ -302,48 +339,96 @@
       confidence: r.confidence, provenance: r.provenance, detail: r.detail, flags: r.flags, refused: null, inRss: MFG_KINDS.indexOf(kind) >= 0 };
   }
 
+  /* fits.json LIMITS (5) and PartForge's doctrine (index.html:1454): no fit class on anything mating with a composite or
+     phenolic tube. A stack is one gap, so a thermal contributor that names such a tube as the hole (or the shaft) makes
+     every fit in the chain, and every ISO hole (or shaft) feature, a fit class on that tube. Refused whether or not the
+     thermal contributor itself resolved (a hoop CTE lifts the thermal refusal, not this one). */
+  function compositeFitRefusals(cs, contributors) {
+    var holeKey = null, shaftKey = null;
+    cs.forEach(function (c) {
+      if (!c || typeof c !== 'object' || str(c.kind) !== 'thermal') return;
+      if (COMPOSITE_TUBE_KEYS.indexOf(str(c.hole_mat)) >= 0) holeKey = holeKey || str(c.hole_mat);
+      if (COMPOSITE_TUBE_KEYS.indexOf(str(c.shaft_mat)) >= 0) shaftKey = shaftKey || str(c.shaft_mat);
+    });
+    if (!holeKey && !shaftKey) return;
+    contributors.forEach(function (c, i) {
+      if (c.refused) return;
+      var on = null;
+      if (c.kind === 'fit') on = holeKey ? ['hole', holeKey] : ['shaft', shaftKey];
+      else if (c.kind === 'iso' && c.detail && c.detail.feature === 'hole' && holeKey) on = ['hole', holeKey];
+      else if (c.kind === 'iso' && c.detail && c.detail.feature === 'shaft' && shaftKey) on = ['shaft', shaftKey];
+      if (!on) return;
+      contributors[i] = { index: c.index, name: c.name, kind: c.kind, dir: c.dir, refused: refusal('fit_on_composite',
+        c.name + ': this stack\'s thermal contributor names ' + on[1] + ' as the ' + on[0] + ', and an ISO 286 grade is not a limit for that part. fits.json LIMITS (5): "THESE ARE FOR MACHINED METAL. A composite or phenolic tube is not round, not constant, and not to an IT grade"; PartForge\'s doctrine (index.html:1454): "for anything mating with a composite or phenolic tube, do not use a fit class at all".',
+        'measure the ' + on[1] + ' part at three clockings and declare it as a declared contributor with tol_src user and the measurement as tol_ref; the metal half can stay an iso feature (' + (on[0] === 'hole' ? 'e.g. a g6 shaft' : 'e.g. an H7 hole') + ') or a declared dimension.') };
+    });
+  }
+
+  function refuseStack(out, code, reason, help) {
+    out.refusals.push({ index: -1, name: 'stack', code: code, reason: reason, what_would_help: help });
+  }
+
+  function refusedReasons(out) {
+    var nC = out.refusals.filter(function (r) { return r.index >= 0; }).length;
+    var parts = [];
+    if (nC) parts.push(nC + ' contributor' + (nC > 1 ? 's' : '') + ' could not be sourced');
+    out.refusals.filter(function (r) { return r.index < 0; }).forEach(function (r) { parts.push((r.name === 'require' ? 'the requirement' : 'the stack') + ' is refused (' + r.code + ')'); });
+    return parts.join('; ') + (nC ? '; no gap is printed because a partial sum would be a placeholder number' : '; no gap is printed');
+  }
+
   // ---- the stack ----------------------------------------------------------------------------------------
   function stackUp(ctx, stack) {
     var out = { version: VERSION, gap_name: '', units: 'mm', contributors: [], refusals: [], evaluable: false, worst: null, rss: null, thermal: null, require: null, verdict: 'REFUSED', verdict_reasons: [], flags: [], meta: ctx.meta,
       measurable_on_mesh: 'none: every contributor is declared or looked up, and the mating half is by definition not in any one file' };
-    if (!stack || typeof stack !== 'object' || Array.isArray(stack)) { out.refusals.push({ index: -1, name: 'stack', code: 'invalid_input', reason: 'the stack is not an object.', what_would_help: 'a JSON object with gap_name, contributors and require.' }); out.verdict_reasons.push('no stack'); return out; }
+    if (!stack || typeof stack !== 'object' || Array.isArray(stack)) { refuseStack(out, 'invalid_input', 'the stack is not an object.', 'a JSON object with gap_name, contributors and require.'); out.verdict_reasons.push(refusedReasons(out)); return out; }
     out.gap_name = str(stack.gap_name) || 'unnamed gap';
-    if (stack.units != null && str(stack.units) !== 'mm') { out.refusals.push({ index: -1, name: 'stack', code: 'invalid_input', reason: 'units must be mm (the tables are in mm).', what_would_help: 'convert before declaring.' }); }
+    if (stack.units != null && str(stack.units) !== 'mm') refuseStack(out, 'invalid_input', 'units must be mm (the tables are in mm).', 'convert before declaring.');
     var cs = Array.isArray(stack.contributors) ? stack.contributors : [];
-    if (!cs.length) out.refusals.push({ index: -1, name: 'stack', code: 'no_contributors', reason: 'a stack with no contributors has no gap to compute.', what_would_help: 'add at least one contributor; two make a gap.' });
-    for (var i = 0; i < cs.length; i++) {
-      var r = resolve(ctx, cs[i], i);
-      out.contributors.push(r);
-      if (r.refused) out.refusals.push({ index: i, name: r.name, kind: r.kind, code: r.refused.code, reason: r.refused.reason, what_would_help: r.refused.what_would_help });
-    }
+    if (!cs.length) refuseStack(out, 'no_contributors', 'a stack with no contributors has no gap to compute.', 'add at least one contributor; two make a gap.');
+    for (var i = 0; i < cs.length; i++) out.contributors.push(resolve(ctx, cs[i], i));
+    compositeFitRefusals(cs, out.contributors);
+    out.contributors.forEach(function (r, j) {
+      if (r.refused) out.refusals.push({ index: j, name: r.name, kind: r.kind, code: r.refused.code, reason: r.refused.reason, what_would_help: r.refused.what_would_help });
+    });
     // requirement
     var req = stack.require && typeof stack.require === 'object' ? stack.require : {};
     var rmin = req.min_mm == null ? null : req.min_mm, rmax = req.max_mm == null ? null : req.max_mm;
-    if ((rmin != null && !isNum(rmin)) || (rmax != null && !isNum(rmax))) out.refusals.push({ index: -1, name: 'require', code: 'invalid_input', reason: 'require.min_mm / require.max_mm must be numbers when given.', what_would_help: 'e.g. {"min_mm": 0.02, "max_mm": 0.30}.' });
+    if ((rmin != null && !isNum(rmin)) || (rmax != null && !isNum(rmax))) out.refusals.push({ index: -1, name: 'require', code: 'invalid_input', reason: 'require.min_mm / require.max_mm must be finite numbers when given.', what_would_help: 'e.g. {"min_mm": 0.02, "max_mm": 0.30}.' });
     else if (rmin != null && rmax != null && rmin > rmax) out.refusals.push({ index: -1, name: 'require', code: 'invalid_input', reason: 'require.min_mm is above require.max_mm.', what_would_help: 'swap them.' });
     out.require = { min_mm: isNum(rmin) ? rmin : null, max_mm: isNum(rmax) ? rmax : null };
 
-    if (out.refusals.length) {
+    if (!out.refusals.length) {
+      var gmin = 0, gmax = 0, gnom = 0, n = 0, sumSq = 0, centre = 0, mfgMin = 0, mfgMax = 0, tLow = 0, tHigh = 0, hasThermal = false;
+      for (var k = 0; k < out.contributors.length; k++) {
+        var c = out.contributors[k];
+        gmin += c.signed.low; gmax += c.signed.high; gnom += c.signed.nominal;
+        if (c.inRss) { n++; sumSq += c.signed.half * c.signed.half; centre += c.signed.mid; mfgMin += c.signed.low; mfgMax += c.signed.high; }
+        if (c.kind === 'thermal') { hasThermal = true; tLow += c.signed.low; tHigh += c.signed.high; }
+      }
+      var half = Math.sqrt(sumSq);
+      // Sums of finite numbers can still overflow; a verdict on Infinity or NaN would be a number nobody can trace.
+      if (![gmin, gmax, gnom, gmax - gmin, centre, half, mfgMin, mfgMax, mfgMax - mfgMin, tLow, tHigh].every(isNum)) {
+        refuseStack(out, 'invalid_input', 'the sums are not finite numbers (the arithmetic overflowed double precision); no limit, RSS or verdict can be printed.', 'check the units: every length is in millimetres and every temperature change in kelvin.');
+      } else {
+        out.evaluable = true;
+        out.worst = { min: gmin, max: gmax, nominal: gnom, width: gmax - gmin };
+        if (hasThermal) out.thermal = { low: tLow, high: tHigh, note: 'deterministic shift over the declared temperature range: in the worst case, not in the RSS' };
+        if (n > 0) {
+          var mfgWidth = mfgMax - mfgMin;
+          out.rss = { n: n, centre: centre, half: half, low: centre - half, high: centre + half, offset_from_nominal: centre - gnom, mfg_worst: { min: mfgMin, max: mfgMax }, mfg_worst_width: mfgWidth, width_ratio: mfgWidth > 0 ? (2 * half) / mfgWidth : 1, basis_ok: n >= RSS_MIN_N, min_n: RSS_MIN_N,
+            // The band to set beside the worst case: the RSS of the manufacturing contributors plus the deterministic thermal
+            // envelope at its two ends, exactly as the worst case adds it. Without thermal it is the RSS band itself.
+            envelope: { low: centre - half + tLow, high: centre + half + tHigh },
+            note: 'information only; worst case gates. Centred on the sum of the mid-limit means, not on the nominal. Assumes independent, centred, normal processes; ' + (n < RSS_MIN_N ? 'no statistical basis below N=' + RSS_MIN_N : 'N=' + n) + '.' };
+        }
+      }
+    }
+    if (!out.evaluable) {
       out.verdict = 'REFUSED';
-      out.verdict_reasons.push(out.refusals.length + ' contributor' + (out.refusals.length > 1 ? 's' : '') + ' could not be sourced; no gap is printed because a partial sum would be a placeholder number');
+      out.verdict_reasons = [refusedReasons(out)];
       out.flags = globalFlags(out);
       return out;
     }
-    out.evaluable = true;
-    var gmin = 0, gmax = 0, gnom = 0, n = 0, sumSq = 0, centre = 0, mfgWidth = 0, tLow = 0, tHigh = 0, hasThermal = false;
-    for (var k = 0; k < out.contributors.length; k++) {
-      var c = out.contributors[k];
-      gmin += c.signed.low; gmax += c.signed.high; gnom += c.signed.nominal;
-      if (c.inRss) { n++; sumSq += c.signed.half * c.signed.half; centre += c.signed.mid; mfgWidth += c.signed.high - c.signed.low; }
-      if (c.kind === 'thermal') { hasThermal = true; tLow += c.signed.low; tHigh += c.signed.high; }
-    }
-    out.worst = { min: gmin, max: gmax, nominal: gnom, width: gmax - gmin };
-    if (n > 0) {
-      var half = Math.sqrt(sumSq);
-      out.rss = { n: n, centre: centre, half: half, low: centre - half, high: centre + half, offset_from_nominal: centre - gnom, mfg_worst_width: mfgWidth, width_ratio: mfgWidth > 0 ? (2 * half) / mfgWidth : 1, basis_ok: n >= RSS_MIN_N, min_n: RSS_MIN_N,
-        note: 'information only; worst case gates. Centred on the sum of the mid-limit means, not on the nominal. Assumes independent, centred, normal processes; ' + (n < RSS_MIN_N ? 'no statistical basis below N=' + RSS_MIN_N : 'N=' + n) + '.' };
-    }
-    if (hasThermal) out.thermal = { low: tLow, high: tHigh, note: 'deterministic shift over the declared temperature range: in the worst case, not in the RSS' };
     if (out.require.min_mm == null && out.require.max_mm == null) {
       out.verdict = 'NO_REQUIREMENT';
       out.verdict_reasons.push('no require.min_mm or require.max_mm declared: the limits are printed, nothing is gated');
@@ -351,8 +436,18 @@
       var reasons = [];
       if (out.require.min_mm != null && gmin < out.require.min_mm) reasons.push('minimum gap ' + f3(gmin) + ' is ' + f3(out.require.min_mm - gmin) + ' below the required minimum ' + f3(out.require.min_mm));
       if (out.require.max_mm != null && gmax > out.require.max_mm) reasons.push('maximum gap ' + f3(gmax) + ' is ' + f3(gmax - out.require.max_mm) + ' above the required maximum ' + f3(out.require.max_mm));
-      out.verdict = reasons.length ? 'FAIL' : 'PASS';
-      out.verdict_reasons = reasons.length ? reasons : ['worst-case gap ' + f3(gmin) + ' to ' + f3(gmax) + ' lies inside the requirement'];
+      if (reasons.length) { out.verdict = 'FAIL'; out.verdict_reasons = reasons; }
+      else {
+        // Never PASS: roadmap-evaluation.md:666 asks for a screening-only stack row, because nothing can measure the gap
+        // (the mating half is not in the file); :752 keeps PASS for a joint whose two halves are both measured and cited.
+        out.verdict = 'CLEARS';
+        out.verdict_reasons = ['worst-case gap ' + f3(gmin) + ' to ' + f3(gmax) + ' lies inside the requirement',
+          'screening only, not a pass: every contributor is declared or looked up and nothing here measures the gap'];
+        var dflt = out.contributors.filter(function (x) { return x.confidence === 'default'; });
+        var rec = out.contributors.filter(function (x) { return x.confidence === 'recall'; });
+        if (dflt.length) out.verdict_reasons.push('it rests on ' + dflt.length + ' tool default' + (dflt.length > 1 ? 's' : '') + ' (' + dflt.map(function (x) { return x.name; }).join('; ') + ')');
+        if (rec.length) out.verdict_reasons.push('it rests on ' + rec.length + ' recall row' + (rec.length > 1 ? 's' : '') + ' (' + rec.map(function (x) { return x.name; }).join('; ') + ')');
+      }
       out.margins = { to_min: out.require.min_mm == null ? null : gmin - out.require.min_mm, to_max: out.require.max_mm == null ? null : out.require.max_mm - gmax };
     }
     out.flags = globalFlags(out);
@@ -367,7 +462,9 @@
     var dflt = ok.filter(function (c) { return c.confidence === 'default'; });
     if (dflt.length) flags.push(dflt.length + ' contributor' + (dflt.length > 1 ? 's are' : ' is') + ' a tool default (' + dflt.map(function (c) { return c.name; }).join('; ') + '): arithmetic, not evidence');
     if (out.rss && !out.rss.basis_ok) flags.push('RSS over N=' + out.rss.n + ' has no statistical basis (needs N>=' + RSS_MIN_N + ' independent, centred processes); it is printed as information and never gates');
-    if (out.rss && out.worst && out.rss.low > out.worst.min + 1e-12) flags.push('the RSS band starts ' + f3(out.rss.low - out.worst.min) + ' above the worst-case minimum: that is the false comfort RSS offers when a student biases every cut to the safe side');
+    // Like for like: the RSS band against the worst case of the SAME manufacturing contributors, so the deterministic
+    // thermal shift (in the worst case, kept out of the RSS) is not mistaken for statistical narrowing.
+    if (out.rss && out.rss.low - out.rss.mfg_worst.min >= 5e-4) flags.push('the RSS band starts ' + f3(out.rss.low - out.rss.mfg_worst.min) + ' above the worst-case minimum of the same ' + out.rss.n + ' contributors: that is the false comfort RSS offers when a student biases every cut to the safe side');
     if (out.refusals.length) flags.push('the stack is REFUSED; the resolved contributors are listed for diagnosis only');
     return flags;
   }
@@ -396,11 +493,12 @@
     } else {
       L.push('WORST CASE   min ' + f3(res.worst.min) + '   max ' + f3(res.worst.max) + '   (nominal sum ' + f3(res.worst.nominal) + '; width ' + f3(res.worst.width) + ')');
       L.push('REQUIREMENT  min ' + (res.require.min_mm == null ? '-' : f3(res.require.min_mm)) + '   max ' + (res.require.max_mm == null ? '-' : f3(res.require.max_mm)));
-      L.push('VERDICT      ' + (res.verdict === 'NO_REQUIREMENT' ? 'NOT GATED' : res.verdict) + ' - ' + res.verdict_reasons.join('; '));
+      L.push('VERDICT      ' + (res.verdict === 'NO_REQUIREMENT' ? 'NOT GATED' : res.verdict === 'CLEARS' ? 'CLEARS (screening)' : res.verdict) + ' - ' + res.verdict_reasons.join('; '));
       if (res.rss) {
         var r = res.rss;
         L.push('RSS          information only . N=' + r.n + ' manufacturing contributor' + (r.n > 1 ? 's' : '') + (r.basis_ok ? '' : ' . no statistical basis below N=' + r.min_n));
-        L.push('             centre ' + f3(r.centre) + ' (sum of mid-limit means; ' + (Math.abs(r.offset_from_nominal) < 5e-7 ? 'equal to' : sgn(r.offset_from_nominal) + ' from') + ' the nominal sum) +/- ' + f3(r.half) + '  ->  ' + f3(r.low) + ' .. ' + f3(r.high) + '   (' + pct(1 - r.width_ratio) + ' narrower than the worst-case band of the same contributors)');
+        L.push('             centre ' + f3(r.centre) + ' (sum of mid-limit means; ' + (Math.abs(r.offset_from_nominal) < 5e-7 ? 'equal to' : sgn(r.offset_from_nominal) + ' from') + ' the nominal sum) +/- ' + f3(r.half) + '  ->  ' + f3(r.low) + ' .. ' + f3(r.high) + '   (' + pct(1 - r.width_ratio) + ' narrower than the worst-case band of the same contributors, ' + f3(r.mfg_worst.min) + ' .. ' + f3(r.mfg_worst.max) + ')');
+        if (res.thermal) L.push('             plus the thermal shift at both ends, to set beside the worst case: ' + f3(r.envelope.low) + ' .. ' + f3(r.envelope.high));
       } else L.push('RSS          none: no manufacturing contributors');
       L.push('THERMAL      ' + (res.thermal ? sgn(res.thermal.low) + ' .. ' + sgn(res.thermal.high) + ' over the declared dT range (' + res.thermal.note + ')' : 'none declared'));
     }
@@ -418,6 +516,6 @@
     }
   }
 
-  return { VERSION: VERSION, KINDS: KINDS, MFG_KINDS: MFG_KINDS, RSS_MIN_N: RSS_MIN_N, LAMINATE_KEYS: LAMINATE_KEYS, FIT_LETTERS: FIT_LETTERS, INTERFERENCE_LETTERS: INTERFERENCE_LETTERS, REF_TEMP_C: REF_TEMP_C,
+  return { VERSION: VERSION, KINDS: KINDS, MFG_KINDS: MFG_KINDS, RSS_MIN_N: RSS_MIN_N, PLACEHOLDER_CTE: PLACEHOLDER_CTE, PLACEHOLDER_CTE_KEYS: PLACEHOLDER_CTE_KEYS, COMPOSITE_TUBE_KEYS: COMPOSITE_TUBE_KEYS, LIMITS_1: LIMITS_1, FIT_LETTERS: FIT_LETTERS, INTERFERENCE_LETTERS: INTERFERENCE_LETTERS, REF_TEMP_C: REF_TEMP_C,
     create: create, resolve: resolve, stackUp: stackUp, ledgerText: ledgerText, parseStack: parseStack, f3: f3, sgn: sgn };
 });

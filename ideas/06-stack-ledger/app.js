@@ -57,7 +57,7 @@
 
   // ---- render -----------------------------------------------------------------------------------
   var VERDICT = {
-    PASS: { word: 'PASS', cls: 'pass' },
+    CLEARS: { word: 'CLEARS', cls: 'clears' },
     FAIL: { word: 'FAIL', cls: 'fail' },
     REFUSED: { word: 'REFUSED', cls: 'refused' },
     NO_REQUIREMENT: { word: 'NOT GATED', cls: 'none' },
@@ -89,7 +89,7 @@
         var r = res.rss;
         clear(el.rssLine);
         el.rssLine.appendChild(mk('b', null, 'RSS, information only'));
-        el.rssLine.appendChild(document.createTextNode(' · N = ' + r.n + ' manufacturing contributor' + (r.n > 1 ? 's' : '') + (r.basis_ok ? '' : ' · no statistical basis below N=' + r.min_n) + '. Centre ' + f3(r.centre) + ' mm, the sum of the mid-limit means (' + (Math.abs(r.offset_from_nominal) < 5e-7 ? 'equal to' : sgn(r.offset_from_nominal) + ' from') + ' the nominal sum), ± ' + f3(r.half) + ' → ' + f3(r.low) + ' to ' + f3(r.high) + ' mm, ' + Math.round((1 - r.width_ratio) * 100) + '% narrower than the worst-case band of the same contributors. It assumes independent, centred, normal processes and never gates.'));
+        el.rssLine.appendChild(document.createTextNode(' · N = ' + r.n + ' manufacturing contributor' + (r.n > 1 ? 's' : '') + (r.basis_ok ? '' : ' · no statistical basis below N=' + r.min_n) + '. Centre ' + f3(r.centre) + ' mm, the sum of the mid-limit means (' + (Math.abs(r.offset_from_nominal) < 5e-7 ? 'equal to' : sgn(r.offset_from_nominal) + ' from') + ' the nominal sum), ± ' + f3(r.half) + ' → ' + f3(r.low) + ' to ' + f3(r.high) + ' mm, ' + Math.round((1 - r.width_ratio) * 100) + '% narrower than the worst-case band of the same contributors (' + f3(r.mfg_worst.min) + ' to ' + f3(r.mfg_worst.max) + ')' + (res.thermal ? '; with the thermal shift added at both ends, as the worst case adds it, ' + f3(r.envelope.low) + ' to ' + f3(r.envelope.high) + ' mm (the dashed bar)' : '') + '. It assumes independent, centred, normal processes and never gates.'));
       } else text(el.rssLine, 'RSS: no manufacturing contributors.');
       if (res.thermal) {
         clear(el.thermalLine);
@@ -97,7 +97,8 @@
         el.thermalLine.appendChild(document.createTextNode(' · ' + sgn(res.thermal.low) + ' to ' + sgn(res.thermal.high) + ' mm over the declared ΔT range, (α_hole − α_shaft)·D·ΔT through dbFitThermal(): deterministic, in the worst case at both ends, not in the RSS.'));
       } else text(el.thermalLine, 'Thermal: none declared.');
     } else {
-      el.figs.appendChild(fig('gap', '—', res.refusals.length + ' contributor' + (res.refusals.length > 1 ? 's' : '') + ' refused: no partial sum is printed'));
+      var nC = res.refusals.filter(function (r) { return r.index >= 0; }).length;
+      el.figs.appendChild(fig('gap', '—', nC ? nC + ' contributor' + (nC > 1 ? 's' : '') + ' refused: no partial sum is printed' : 'the stack itself is refused: nothing is summed'));
       el.lineWrap.hidden = true;
       text(el.rssLine, 'RSS: not computed for a refused stack.');
       text(el.thermalLine, '');
@@ -159,11 +160,13 @@
     svg.setAttribute('width', W);
     svg.setAttribute('height', H);
     var w = res.worst, rq = res.require, r = res.rss;
+    var env = r ? r.envelope : null;     // the RSS band plus the thermal envelope: the like-for-like bar beside the worst case
     var vals = [w.min, w.max, w.nominal, 0];
-    if (r) vals.push(r.low, r.high);
+    if (env) vals.push(env.low, env.high);
     if (rq.min_mm != null) vals.push(rq.min_mm);
     if (rq.max_mm != null) vals.push(rq.max_mm);
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    if (!isFinite(hi - lo)) { el.lineWrap.hidden = true; return; }   // a requirement window too wide to draw: the figures say it
     if (hi - lo < 1e-9) { lo -= 0.05; hi += 0.05; }
     var pad = (hi - lo) * 0.12;
     lo -= pad; hi += pad;
@@ -190,13 +193,13 @@
     svg.appendChild(svgEl('text', { class: 'lbl mono', x: x(w.min), y: yWorst - 10, 'text-anchor': x(w.min) < X0 + 40 ? 'start' : 'end' })).textContent = f3(w.min);
     svg.appendChild(svgEl('text', { class: 'lbl mono', x: x(w.max), y: yWorst - 10, 'text-anchor': x(w.max) > X1 - 40 ? 'end' : 'start' })).textContent = f3(w.max);
     // rss band
-    if (r) svg.appendChild(svgEl('line', { class: 'rssb', x1: x(r.low), y1: yRss, x2: Math.max(x(r.high), x(r.low) + 1), y2: yRss }));
+    if (env) svg.appendChild(svgEl('line', { class: 'rssb', x1: x(env.low), y1: yRss, x2: Math.max(x(env.high), x(env.low) + 1), y2: yRss }));
     // nominal
     var xn = x(w.nominal);
     svg.appendChild(svgEl('line', { class: 'nom', x1: xn, y1: yAxis - 8, x2: xn, y2: yAxis + 8 }));
     svg.appendChild(svgEl('text', { class: 'lbl', x: xn, y: yNomLbl, 'text-anchor': xn < X0 + 50 ? 'start' : xn > X1 - 50 ? 'end' : 'middle' })).textContent = 'nominal ' + f3(w.nominal);
     // key, on one line when there is room and two when there is not
-    var parts = ['thick: worst case (gates)', 'dashed: RSS (information)'];
+    var parts = ['thick: worst case (gates)', res.thermal ? 'dashed: RSS + thermal (information)' : 'dashed: RSS (information)'];
     if (rq.min_mm != null || rq.max_mm != null) parts.push('shaded: requirement');
     parts.push('mm');
     if (narrow) {

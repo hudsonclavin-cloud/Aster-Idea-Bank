@@ -105,13 +105,13 @@ textarea {
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 .verdict { border-width: 2px; }
-.verdict.pass { border-color: var(--pass); }
+.verdict.clears { border-color: var(--pass); }
 .verdict.fail { border-color: var(--fail); }
 .verdict.refused { border-color: var(--refused); }
 .verdict.none { border-color: var(--none); }
 .vh { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; font-size: 1.05rem; }
 .vword { font-size: 1.55rem; font-weight: 800; letter-spacing: 0.02em; padding: 2px 10px; border-radius: 8px; }
-.pass .vword { color: var(--pass); background: var(--pass-soft); }
+.clears .vword { color: var(--pass); background: var(--pass-soft); }
 .fail .vword { color: var(--fail); background: var(--fail-soft); }
 .refused .vword { color: var(--refused); background: var(--refused-soft); }
 .none .vword { color: var(--none); background: var(--none-soft); }

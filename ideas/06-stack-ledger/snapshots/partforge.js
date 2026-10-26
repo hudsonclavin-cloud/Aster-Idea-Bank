@@ -2013,15 +2013,20 @@ var provenance = {
 };
 
 /* ---- shim: what the verbatim functions below read their tables through -------------------------
-   In index.html, dbRows(k) returns a memoised copy of FLIGHT_DB_DATA[k].rows. Here the tables default
-   to this folder's snapshots; useTables() swaps in a live checkout's; withMaterials() lets the thermal
-   contributor append a user-supplied row (a laminate's hoop CTE with its source) for one call. */
+   In index.html, dbRows(k) returns a memoised copy of FLIGHT_DB_DATA[k].rows with the table's hoisted
+   'shared' fields spread back in (index.html:4992). FLIGHT_DB_DATA is the PROJECTION tools/db/embed.mjs
+   writes, not data/tables/*.json: its stock rows lack tolerance_confidence, tolerance_note, id_nominal_mm
+   and ovality_individual_dia_tol_mm, and carry disputed as true (embed.mjs:83-84). So this shim is NOT
+   equivalent to the shipped dbRows(): by default it serves this folder's snapshots of the full files;
+   useTables() swaps in a live checkout's files or, given the embedded literal, the projection itself
+   (rows expanded the same way as :4992); withMaterials() lets the thermal contributor append a
+   user-supplied row (a hoop CTE with its source) for one call. */
 var TABLES = { fits: fits, materials_thermal: materialsThermal, stock: stockExcerpt };
 var extraMaterials = null;
 function dbRows(k) {
   var t = TABLES[k];
   if (!t || !Array.isArray(t.rows)) return null;
-  var rows = t.rows.slice();
+  var rows = t.rows.map(function (r) { return t.shared ? Object.assign({}, t.shared, r) : Object.assign({}, r); });
   if (k === 'materials_thermal' && extraMaterials) rows = rows.concat(extraMaterials);
   return rows;
 }

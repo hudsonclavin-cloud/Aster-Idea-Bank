@@ -8,10 +8,10 @@
   "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
   "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
   "sourceBytes": 1240104,
-  "copiedAt": "2026-10-26T10:07:17.068Z",
+  "copiedAt": "2026-10-26T14:59:51.710Z",
   "mode": "derived",
-  "note": "derived by build-data.mjs: dbFit(), dbMaterialThermal() and dbFitThermal() copied VERBATIM from index.html by text marker (the dbFit header comment to the Selectors banner) with a dbRows() shim serving this folder's snapshots, plus the folder's fits.json, materials_thermal.json and stock_excerpt.json and the two templates' header comments, parameters and FLIGHT blocks, so the page runs from file:// with no fetch",
+  "note": "derived by build-data.mjs: dbFit(), dbMaterialThermal() and dbFitThermal() copied VERBATIM from index.html by text marker (the dbFit header comment to the Selectors banner) with a dbRows() shim serving this folder's snapshots of the full table files (not equivalent to the shipped dbRows(), which serves embed.mjs's projection; the shim says how), plus the folder's fits.json, materials_thermal.json and stock_excerpt.json and the two templates' header comments, parameters and FLIGHT blocks, so the page runs from file:// with no fetch",
   "readMatchesCommitted": true,
-  "writtenSha256": "9bd49a35f76abe4f9debb7967db212efea1435eed38052ac4020a33dd4a581a9",
-  "writtenBytes": 93516
+  "writtenSha256": "c7387fe3e0a251bef7a58a92de6b58cb36398ceab9e25fe6b85b5fb11926a7f2",
+  "writtenBytes": 94084
 }

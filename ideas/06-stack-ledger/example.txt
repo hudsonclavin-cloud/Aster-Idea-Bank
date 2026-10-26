@@ -28,8 +28,8 @@ CONTRIBUTORS (4)
        REFUSED coating_undeclared: finish per mfg.finish: "bare or type II clear anodize; seal land and groove 0.8 um Ra (32 uin) max with a circular lay": a coating with no declared build-up is not a dimension, and a coating that is named in prose (mfg.finish) but not sized changes a fit by an amount nobody has written down.
        what would help: declare per_side_mm as a value or a [min, max] range with a src; fits.json notes (6) gives Type II anodise as "roughly 0.005 to 0.025 mm per surface" (prose in the table notes, not a row, no confidence field: cite it as that) and says to mask the fit or size for the coating.
  #4  +  thermal   6061 bulkhead in the fibreglass coupler, pad to altitude
-       REFUSED laminate_hoop_cte: 6061 bulkhead in the fibreglass coupler, pad to altitude: materials_thermal.json gives Fiberglass-laminate cte_um_m_K = 22 as a laminate value that is not the hoop value a bore's diametral change needs (row note: "Filament-wound tube; varies with winding angle and resin. Hoop and axial α differ."; columns: "For laminates this is the in-plane or along-fibre value").
-       what would help: supply hoop_cte.hole = { cte_um_m_K, src } from the tube's data sheet or the club's own measurement (materials_thermal.json notes, LIMITS (4)); the shipped dbFitThermal() then runs on that value and the contributor prints as user-supplied.
+       REFUSED cte_placeholder: 6061 bulkhead in the fibreglass coupler, pad to altitude: materials_thermal.json gives Fiberglass-laminate cte_um_m_K = 22 [recall], which the table itself does not offer as a number to gate a fit on: for a laminate it is the in-plane or along-fibre value (columns: "For laminates this is the in-plane or along-fibre value"), while a diameter grows by the hoop value; and LIMITS (1): "the laminates and polymers vary so much with layup, weave, resin, fill and print direction that a single number is a placeholder". Row note: "Filament-wound tube; varies with winding angle and resin. Hoop and axial α differ.".
+       what would help: supply hoop_cte.hole = { cte_um_m_K, src }: the expansion in the direction the diameter grows, from the data sheet, the mill certificate or the club's own measurement (materials_thermal.json LIMITS (4)); the shipped dbFitThermal() then runs on that value and the contributor prints as user-supplied.
 
 VERDICT      REFUSED - 3 contributors could not be sourced; no gap is printed because a partial sum would be a placeholder number
 NOTES
@@ -61,12 +61,12 @@ WORST CASE   min -0.030   max 0.170   (nominal sum 0.100; width 0.200)
 REQUIREMENT  min 0.000   max -
 VERDICT      FAIL - minimum gap -0.030 is 0.030 below the required minimum 0.000
 RSS          information only . N=3 manufacturing contributors . no statistical basis below N=4
-             centre 0.070 (sum of mid-limit means; -0.030 from the nominal sum) +/- 0.062  ->  0.008 .. 0.132   (38% narrower than the worst-case band of the same contributors)
+             centre 0.070 (sum of mid-limit means; -0.030 from the nominal sum) +/- 0.062  ->  0.008 .. 0.132   (38% narrower than the worst-case band of the same contributors, -0.030 .. 0.170)
 THERMAL      none declared
 NOTES
  - 1 contributor is a tool default (bulkhead OD (FLIGHT critical "bulkhead OD")): arithmetic, not evidence
  - RSS over N=3 has no statistical basis (needs N>=4 independent, centred processes); it is printed as information and never gates
- - the RSS band starts 0.038 above the worst-case minimum: that is the false comfort RSS offers when a student biases every cut to the safe side
+ - the RSS band starts 0.038 above the worst-case minimum of the same 3 contributors: that is the false comfort RSS offers when a student biases every cut to the safe side
 Measurable on a mesh: none: every contributor is declared or looked up, and the mating half is by definition not in any one file.
 (exit 1)
 
@@ -90,13 +90,33 @@ WORST CASE   min -0.001   max 0.107   (nominal sum 0.000; width 0.108)
 REQUIREMENT  min 0.000   max -
 VERDICT      FAIL - minimum gap -0.001 is 0.001 below the required minimum 0.000
 RSS          information only . N=1 manufacturing contributor . no statistical basis below N=4
-             centre 0.041 (sum of mid-limit means; +0.041 from the nominal sum) +/- 0.029  ->  0.012 .. 0.069   (0% narrower than the worst-case band of the same contributors)
+             centre 0.041 (sum of mid-limit means; +0.041 from the nominal sum) +/- 0.029  ->  0.012 .. 0.069   (0% narrower than the worst-case band of the same contributors, 0.012 .. 0.069)
+             plus the thermal shift at both ends, to set beside the worst case: -0.001 .. 0.107
 THERMAL      -0.013 .. +0.038 over the declared dT range (deterministic shift over the declared temperature range: in the worst case, not in the RSS)
 NOTES
  - RSS over N=1 has no statistical basis (needs N>=4 independent, centred processes); it is printed as information and never gates
- - the RSS band starts 0.013 above the worst-case minimum: that is the false comfort RSS offers when a student biases every cut to the safe side
 Measurable on a mesh: none: every contributor is declared or looked up, and the mating half is by definition not in any one file.
 (exit 1)
+
+$ node ideas/06-stack-ledger/stack-ledger.mjs --example plug-in-g10-coupler
+source: example plug-in-g10-coupler: 6061 plug in a G10 coupler, H7/g6 at 101.6 mm (refused)
+STACK LEDGER  6061 plug in a G10-FR4 coupler (diametral)
+units mm . 1-D chain G = sum(dir x contributor) . worst case gates . RSS is information only
+tables: fits.json, materials_thermal.json, stock.json from PartForge @ 0974a62 (snapshots) . dbFit()/dbFitThermal() verbatim from index.html:4994-5024
+
+CONTRIBUTORS (2)
+ #1  +  fit       H7/g6 at 101.6 mm
+       REFUSED fit_on_composite: H7/g6 at 101.6 mm: this stack's thermal contributor names G10-FR4 as the hole, and an ISO 286 grade is not a limit for that part. fits.json LIMITS (5): "THESE ARE FOR MACHINED METAL. A composite or phenolic tube is not round, not constant, and not to an IT grade"; PartForge's doctrine (index.html:1454): "for anything mating with a composite or phenolic tube, do not use a fit class at all".
+       what would help: measure the G10-FR4 part at three clockings and declare it as a declared contributor with tol_src user and the measurement as tol_ref; the metal half can stay an iso feature (e.g. a g6 shaft) or a declared dimension.
+ #2  +  thermal   G10 coupler on a 6061 plug, -60 to +20 K
+       REFUSED cte_placeholder: G10 coupler on a 6061 plug, -60 to +20 K: materials_thermal.json gives G10-FR4 cte_um_m_K = 14 [recall], which the table itself does not offer as a number to gate a fit on: for a laminate it is the in-plane or along-fibre value (columns: "For laminates this is the in-plane or along-fibre value"), while a diameter grows by the hoop value; and LIMITS (1): "the laminates and polymers vary so much with layup, weave, resin, fill and print direction that a single number is a placeholder". Row note: "IN-PLANE only, and it varies with weave and resin. THROUGH-THICKNESS α is four to five times larger (roughly 60–70 µm/m·K) — the direction that matters for a bonded joint or a clamped stack. ν in-plane is 0.12–0.20 depending on source.".
+       what would help: supply hoop_cte.hole = { cte_um_m_K, src }: the expansion in the direction the diameter grows, from the data sheet, the mill certificate or the club's own measurement (materials_thermal.json LIMITS (4)); the shipped dbFitThermal() then runs on that value and the contributor prints as user-supplied.
+
+VERDICT      REFUSED - 2 contributors could not be sourced; no gap is printed because a partial sum would be a placeholder number
+NOTES
+ - the stack is REFUSED; the resolved contributors are listed for diagnosis only
+Measurable on a mesh: none: every contributor is declared or looked up, and the mating half is by definition not in any one file.
+(exit 2)
 
 $ node ideas/06-stack-ledger/stack-ledger.mjs --example bar-as-pin
 source: example bar-as-pin: 1/4 in cold-finished bar used as a pin, unmachined, in an H7 hole
@@ -123,11 +143,12 @@ WORST CASE   min -0.038   max 0.091   (nominal sum 0.000; width 0.129)
 REQUIREMENT  min 0.000   max 0.050
 VERDICT      FAIL - minimum gap -0.038 is 0.038 below the required minimum 0.000; maximum gap 0.091 is 0.041 above the required maximum 0.050
 RSS          information only . N=2 manufacturing contributors . no statistical basis below N=4
-             centre 0.027 (sum of mid-limit means; +0.027 from the nominal sum) +/- 0.057  ->  -0.031 .. 0.084   (11% narrower than the worst-case band of the same contributors)
+             centre 0.027 (sum of mid-limit means; +0.027 from the nominal sum) +/- 0.057  ->  -0.031 .. 0.084   (11% narrower than the worst-case band of the same contributors, -0.038 .. 0.091)
+             plus the thermal shift at both ends, to set beside the worst case: -0.031 .. 0.084
 THERMAL      +0.000 .. +0.000 over the declared dT range (deterministic shift over the declared temperature range: in the worst case, not in the RSS)
 NOTES
  - RSS over N=2 has no statistical basis (needs N>=4 independent, centred processes); it is printed as information and never gates
- - the RSS band starts 0.007 above the worst-case minimum: that is the false comfort RSS offers when a student biases every cut to the safe side
+ - the RSS band starts 0.007 above the worst-case minimum of the same 2 contributors: that is the false comfort RSS offers when a student biases every cut to the safe side
 Measurable on a mesh: none: every contributor is declared or looked up, and the mating half is by definition not in any one file.
 (exit 1)
 
@@ -147,13 +168,13 @@ CONTRIBUTORS (2)
 
 WORST CASE   min -0.100   max 0.100   (nominal sum 0.000; width 0.200)
 REQUIREMENT  min -0.200   max 0.200
-VERDICT      PASS - worst-case gap -0.100 to 0.100 lies inside the requirement
+VERDICT      CLEARS (screening) - worst-case gap -0.100 to 0.100 lies inside the requirement; screening only, not a pass: every contributor is declared or looked up and nothing here measures the gap
 RSS          information only . N=2 manufacturing contributors . no statistical basis below N=4
-             centre 0.000 (sum of mid-limit means; equal to the nominal sum) +/- 0.071  ->  -0.071 .. 0.071   (29% narrower than the worst-case band of the same contributors)
+             centre 0.000 (sum of mid-limit means; equal to the nominal sum) +/- 0.071  ->  -0.071 .. 0.071   (29% narrower than the worst-case band of the same contributors, -0.100 .. 0.100)
 THERMAL      none declared
 NOTES
  - RSS over N=2 has no statistical basis (needs N>=4 independent, centred processes); it is printed as information and never gates
- - the RSS band starts 0.029 above the worst-case minimum: that is the false comfort RSS offers when a student biases every cut to the safe side
+ - the RSS band starts 0.029 above the worst-case minimum of the same 2 contributors: that is the false comfort RSS offers when a student biases every cut to the safe side
 Measurable on a mesh: none: every contributor is declared or looked up, and the mating half is by definition not in any one file.
 (exit 0)
 
@@ -176,11 +197,47 @@ CONTRIBUTORS (2)
 
 WORST CASE   min 0.030   max 0.106   (nominal sum 0.000; width 0.076)
 REQUIREMENT  min 0.020   max 0.150
-VERDICT      PASS - worst-case gap 0.030 to 0.106 lies inside the requirement
+VERDICT      CLEARS (screening) - worst-case gap 0.030 to 0.106 lies inside the requirement; screening only, not a pass: every contributor is declared or looked up and nothing here measures the gap
 RSS          information only . N=1 manufacturing contributor . no statistical basis below N=4
-             centre 0.068 (sum of mid-limit means; +0.068 from the nominal sum) +/- 0.038  ->  0.030 .. 0.106   (0% narrower than the worst-case band of the same contributors)
+             centre 0.068 (sum of mid-limit means; +0.068 from the nominal sum) +/- 0.038  ->  0.030 .. 0.106   (0% narrower than the worst-case band of the same contributors, 0.030 .. 0.106)
+             plus the thermal shift at both ends, to set beside the worst case: 0.030 .. 0.106
 THERMAL      +0.000 .. +0.000 over the declared dT range (deterministic shift over the declared temperature range: in the worst case, not in the RSS)
 NOTES
  - RSS over N=1 has no statistical basis (needs N>=4 independent, centred processes); it is printed as information and never gates
 Measurable on a mesh: none: every contributor is declared or looked up, and the mating half is by definition not in any one file.
 (exit 0)
+
+$ node ideas/06-stack-ledger/stack-ledger.mjs --example bar-as-pin --repo /home/user/Partforge --embedded
+source: example bar-as-pin: 1/4 in cold-finished bar used as a pin, unmachined, in an H7 hole
+STACK LEDGER  as-supplied 1/4 in bar in a 6.35 H7 reamed hole (diametral)
+units mm . 1-D chain G = sum(dir x contributor) . worst case gates . RSS is information only
+tables: fits.json, materials_thermal.json, stock.json from PartForge @ 0974a62 (embedded DB-DATA block, index.html:4875-4893 of /home/user/Partforge) . dbFit()/dbFitThermal() verbatim from index.html:4994-5024
+
+CONTRIBUTORS (3)
+ #1  +  iso       hole H7 at 6.35 mm
+       limits 6.350 .. 6.365 (nominal 6.350)   signed +6.350 .. +6.365   mid +6.357   half-band 0.007   [likely]
+       from: fits.json row 6-10 mm via dbFit() [likely]: hole H7 at Ø6.350 = 6.350/6.365 (IT7 = 15 um)
+       note: ISO 286 limits are for machined metal (fits.json LIMITS (5)); a composite or phenolic tube is measured, not toleranced to an IT grade
+ #2  -  stock     bar_6061_i_0.250 as supplied
+       limits 6.274 .. 6.388 (nominal 6.350)   signed -6.388 .. -6.274   mid -6.331   half-band 0.057   [likely]
+       from: stock.json row bar_6061_i_0.250 (6061-T6, cold_finished, astm_b211) [tolerance likely, row likely]: bar diameter 6.274/6.388
+       note: this copy of the table has no tolerance_confidence (the app's embedded projection drops it): the row confidence "likely" prints
+       note: stock.json notes (1): "Nothing in this table is a finished dimension: every diameter, face and bore that matters gets machined" - this contributor stands for a surface used as supplied
+ #3  +  thermal   6061 on 6061
+       limits 0.000 .. 0.000 (nominal 0.000)   signed +0.000 .. +0.000   mid +0.000   half-band 0.000   [likely]
+       from: dbFitThermal(6.350, 6061-T6, 6061-T6, dT) = (alpha_hole 23.6 - alpha_shaft 23.6) um/m/K x D x dT [likely]: +0.000 at -60 K, +0.000 at +20 K; materials_thermal.json rows 6061-T6 [likely], 6061-T6 [likely]
+       note: same material both sides: temperature-neutral, the term is exactly zero (dbFitThermal)
+       note: deterministic, not a tolerance: enters the worst case at both ends of the range and is kept out of the RSS
+
+WORST CASE   min -0.038   max 0.091   (nominal sum 0.000; width 0.129)
+REQUIREMENT  min 0.000   max 0.050
+VERDICT      FAIL - minimum gap -0.038 is 0.038 below the required minimum 0.000; maximum gap 0.091 is 0.041 above the required maximum 0.050
+RSS          information only . N=2 manufacturing contributors . no statistical basis below N=4
+             centre 0.027 (sum of mid-limit means; +0.027 from the nominal sum) +/- 0.057  ->  -0.031 .. 0.084   (11% narrower than the worst-case band of the same contributors, -0.038 .. 0.091)
+             plus the thermal shift at both ends, to set beside the worst case: -0.031 .. 0.084
+THERMAL      +0.000 .. +0.000 over the declared dT range (deterministic shift over the declared temperature range: in the worst case, not in the RSS)
+NOTES
+ - RSS over N=2 has no statistical basis (needs N>=4 independent, centred processes); it is printed as information and never gates
+ - the RSS band starts 0.007 above the worst-case minimum of the same 2 contributors: that is the false comfort RSS offers when a student biases every cut to the safe side
+Measurable on a mesh: none: every contributor is declared or looked up, and the mating half is by definition not in any one file.
+(exit 1)

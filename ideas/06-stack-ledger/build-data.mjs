@@ -73,6 +73,24 @@ export function extractFitBlock(html) {
   return { text, firstLine: lineOf(html, start), lastLine: lineOf(html, end) };
 }
 
+/* The app's embedded copy of the tables: the FLIGHT_DB_DATA literal tools/db/embed.mjs writes between
+   the DB-DATA markers of index.html, one `"key": {json},` line per table. This is a PROJECTION, not the
+   files under data/tables/: for stock it keeps embed.mjs's 23-field list F (tools/db/embed.mjs:83) and
+   turns a disputed entry into `true` (:84), so tolerance_confidence, tolerance_note, id_nominal_mm and
+   ovality_individual_dia_tol_mm are absent. The tests and the CLI's --embedded run the kernel over it. */
+export function extractDbData(html) {
+  const a = html.indexOf('/* DB-DATA-BEGIN */'), b = html.indexOf('/* DB-DATA-END */');
+  if (a < 0 || b < 0 || b < a) throw new Error('DB-DATA markers not found in index.html');
+  const lines = html.slice(a, b).split('\n');
+  const data = {};
+  for (const l of lines) {
+    const m = /^ {2}("[^"]+"): (.*),$/.exec(l);
+    if (m) data[JSON.parse(m[1])] = JSON.parse(m[2]);
+  }
+  for (const k of ['fits', 'materials_thermal', 'stock']) if (!data[k] || !Array.isArray(data[k].rows)) throw new Error(`DB-DATA block has no ${k} table`);
+  return { data, firstLine: lineOf(html, a), lastLine: lineOf(html, b) };
+}
+
 /* Header comments (PART / KIND / MAKE / NOTE lines), parameters and the FLIGHT block of a template. */
 export function parseTemplate(scad, file) {
   const lines = scad.split('\n');
@@ -171,15 +189,20 @@ var templates = ${JSON.stringify(templates, null, 1)};
 var provenance = ${JSON.stringify(provenance, null, 1)};
 
 /* ---- shim: what the verbatim functions below read their tables through -------------------------
-   In index.html, dbRows(k) returns a memoised copy of FLIGHT_DB_DATA[k].rows. Here the tables default
-   to this folder's snapshots; useTables() swaps in a live checkout's; withMaterials() lets the thermal
-   contributor append a user-supplied row (a laminate's hoop CTE with its source) for one call. */
+   In index.html, dbRows(k) returns a memoised copy of FLIGHT_DB_DATA[k].rows with the table's hoisted
+   'shared' fields spread back in (index.html:4992). FLIGHT_DB_DATA is the PROJECTION tools/db/embed.mjs
+   writes, not data/tables/*.json: its stock rows lack tolerance_confidence, tolerance_note, id_nominal_mm
+   and ovality_individual_dia_tol_mm, and carry disputed as true (embed.mjs:83-84). So this shim is NOT
+   equivalent to the shipped dbRows(): by default it serves this folder's snapshots of the full files;
+   useTables() swaps in a live checkout's files or, given the embedded literal, the projection itself
+   (rows expanded the same way as :4992); withMaterials() lets the thermal contributor append a
+   user-supplied row (a hoop CTE with its source) for one call. */
 var TABLES = { fits: fits, materials_thermal: materialsThermal, stock: stockExcerpt };
 var extraMaterials = null;
 function dbRows(k) {
   var t = TABLES[k];
   if (!t || !Array.isArray(t.rows)) return null;
-  var rows = t.rows.slice();
+  var rows = t.rows.map(function (r) { return t.shared ? Object.assign({}, t.shared, r) : Object.assign({}, r); });
   if (k === 'materials_thermal' && extraMaterials) rows = rows.concat(extraMaterials);
   return rows;
 }

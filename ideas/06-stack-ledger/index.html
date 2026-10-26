@@ -13,7 +13,7 @@
 <header class="top">
   <div class="wrap">
     <h1>Stack Ledger</h1>
-    <p class="sub">A gap as a signed chain of contributors, added up the only way that gates: <strong>worst case</strong>. Each contributor is an ISO 286 fit from PartForge's <code>fits.json</code>, an as-supplied surface from <code>stock.json</code>, a differential expansion from <code>materials_thermal.json</code> through the shipped <code>dbFitThermal()</code>, a declared dimension with its <code>tol_src</code>, or a coating build-up. RSS is a footnote, centred on the mid-limit means, with its N. What the tables refuse, the page refuses, and prints no number in its place.</p>
+    <p class="sub">A gap as a signed chain of contributors, added up the only way that gates: <strong>worst case</strong>. Each contributor is an ISO 286 fit from PartForge's <code>fits.json</code>, an as-supplied surface from <code>stock.json</code>, a differential expansion from <code>materials_thermal.json</code> through the shipped <code>dbFitThermal()</code>, a declared dimension with its <code>tol_src</code>, or a coating build-up. RSS is a footnote, centred on the mid-limit means, with its N. What the tables refuse, the page refuses, and prints no number in its place. A stack can FAIL or CLEAR its requirement, never pass: nothing here measures the gap, so a clear is a screening verdict.</p>
   </div>
 </header>
 
@@ -64,7 +64,7 @@
     <p id="parseError" class="err" role="alert" hidden></p>
     <div class="row">
       <button type="button" id="compute" class="btn primary">Compute</button>
-      <span id="jsonHint" class="hint">Kinds: <code>declared</code> (nominal_mm, plus_mm/minus_mm or tol_mm, tol_src, tol_ref, dir), <code>fit</code> (size_mm, hole ["H",7], shaft ["g",6]), <code>iso</code> (size_mm, feature, letter, grade, dir), <code>stock</code> (key, surface od|id|thickness, dir), <code>coating</code> (per_side_mm or [min,max], surfaces, src), <code>thermal</code> (D_mm, hole_mat, shaft_mat, dT_K [low,high], hoop_cte). <code>dir</code> is +1 when the contributor opens the gap and −1 when it closes it. Units are mm.</span>
+      <span id="jsonHint" class="hint">Kinds: <code>declared</code> (nominal_mm, plus_mm/minus_mm or tol_mm, tol_src, tol_ref, dir), <code>fit</code> (size_mm, hole ["H",7], shaft ["g",6]), <code>iso</code> (size_mm, feature, letter, grade, dir), <code>stock</code> (key, surface od|id|thickness, dir), <code>coating</code> (per_side_mm or [min,max], surfaces, src), <code>thermal</code> (D_mm, hole_mat, shaft_mat, dT_K [low,high], hoop_cte where the table's CTE is a placeholder). <code>dir</code> is +1 when the contributor opens the gap and −1 when it closes it. Units are mm.</span>
     </div>
   </section>
 
@@ -81,7 +81,7 @@
   <footer class="prov">
     <h2>Where the numbers come from</h2>
     <ul id="prov"></ul>
-    <p class="small">Prototype for the <a href="README.md">Aster Idea Bank</a>. Every limit on this page is read from a PartForge table through PartForge's own <code>dbFit()</code> and <code>dbFitThermal()</code>, copied verbatim, or is a declaration whose provenance is printed beside it. The only numbers of this page's own are the N=4 line under which RSS is called baseless [Likely: a rule of thumb, not a theorem] and the illustrative tolerances the examples label as illustrative. It has not been through PartForge's geometry gate, data provenance pipeline or skeptic review; read the README for what it has not been through.</p>
+    <p class="small">Prototype for the <a href="README.md">Aster Idea Bank</a>. Every limit on this page is read from a PartForge table through PartForge's own <code>dbFit()</code> and <code>dbFitThermal()</code>, copied verbatim, or is a declaration whose provenance is printed beside it. The only numbers of this page's own are the N=4 line under which RSS is called baseless [Likely: a rule of thumb, not a theorem], the illustrative tolerances the examples label as illustrative, the examples' <code>require</code> windows, and their [−60, +20] K pad-to-altitude range (the 40 °C pad and −40 °C altitude of <code>materials_thermal.json</code>'s note, taken from the 20 °C reference). It has not been through PartForge's geometry gate, data provenance pipeline or skeptic review; read the README for what it has not been through.</p>
   </footer>
 </main>
 

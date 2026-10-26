@@ -31,6 +31,13 @@
     var cFinish = C.flight.mfg.finish;                                       // "bare or type II anodize; the OD is a sliding fit ..."
     var ANODISE = { per_side_mm: [0.005, 0.025], src: 'fits.json notes (6): "Anodise adds roughly 0.005 to 0.025 mm per surface on a Type II coating" (prose, no row)' };
     var FLIGHT_DT = [-60, 20];                                               // 40 C pad to -40 C altitude, relative to the 20 C reference; dbHints() uses -60 for the drop
+    var COUPLER_BAND = 0.03;                                                 // ILLUSTRATIVE measured band on the coupler ID, labelled so below
+    // The bare bulkhead's worst-case minimum at 20 C, and the window of coupler hoop CTE inside which it survives the
+    // pad-to-altitude range: (a_hoop - a_6061)·D·dT >= -bareMin at both ends of FLIGHT_DT, solved for a_hoop.
+    var bareMin = bCouplerID ? (bCouplerID.value - COUPLER_BAND) - (bOD.nominal_mm + bOD.tol_mm) : null;
+    var aShaft = (S.dbMaterialThermal(B.flight.material) || {}).cte_um_m_K;
+    var hoopLo = bareMin != null ? aShaft - bareMin / (bOD.nominal_mm * 1e-6 * FLIGHT_DT[1]) : null;
+    var hoopHi = bareMin != null ? aShaft + bareMin / (bOD.nominal_mm * 1e-6 * -FLIGHT_DT[0]) : null;
 
     var ex = [];
 
@@ -53,11 +60,11 @@
     ex.push({
       id: 'bulkhead-declared',
       title: 'Bulkhead in coupler, with the missing declarations supplied (illustrative)',
-      why: 'The same joint once the coupler ID carries a measured band (ILLUSTRATIVE +/-0.03, tol_src user: replace with your three-clocking measurement) and the anodise is sized from fits.json note (6). The thermal term is left out: the fibreglass hoop CTE is still unknown. Bare, the worst case clears; with Type II on the OD the worst case interferes, which is "what the 50 missed" item 7.',
+      why: 'The same joint once the coupler ID carries a measured band (ILLUSTRATIVE +/-' + COUPLER_BAND.toFixed(2) + ', tol_src user: replace with your three-clocking measurement) and the anodise is sized from fits.json note (6). With Type II on the OD the worst case interferes, which is "what the 50 missed" item 7. The thermal term is left out because the fibreglass hoop CTE is unknown, so the bare variant (delete the coating) clears only at 20 C: its minimum is ' + (bareMin != null ? bareMin.toFixed(3) : '?') + ' mm, and dbFitThermal() at this diameter over ' + FLIGHT_DT[0] + ' to +' + FLIGHT_DT[1] + ' K keeps it at or above zero only for a coupler hoop CTE between ' + (hoopLo != null ? hoopLo.toFixed(1) : '?') + ' and ' + (hoopHi != null ? hoopHi.toFixed(1) : '?') + ' um/m/K. Nobody has measured it; the evaluation puts laminate hoop CTE at 10 to 30.',
       stack: {
         gap_name: 'bulkhead OD inside the coupler ID (diametral), declarations supplied',
         contributors: [
-          { kind: 'declared', name: 'coupler ID, measured (ILLUSTRATIVE band)', nominal_mm: bCouplerID ? bCouplerID.value : null, plus_mm: 0.03, minus_mm: 0.03, tol_src: 'user', tol_ref: 'ILLUSTRATIVE +/-0.03 mm: replace with the delivered coupler measured at three clockings', dir: 1 },
+          { kind: 'declared', name: 'coupler ID, measured (ILLUSTRATIVE band)', nominal_mm: bCouplerID ? bCouplerID.value : null, plus_mm: COUPLER_BAND, minus_mm: COUPLER_BAND, tol_src: 'user', tol_ref: 'ILLUSTRATIVE +/-' + COUPLER_BAND.toFixed(2) + ' mm: replace with the delivered coupler measured at three clockings', dir: 1 },
           { kind: 'declared', name: 'bulkhead OD (FLIGHT critical "' + bOD.name + '")', nominal_mm: bOD.nominal_mm, tol_mm: bOD.tol_mm, tol_src: bOD.tol_src, dir: -1 },
           { kind: 'coating', name: 'Type II anodise on the bulkhead OD, both sides', per_side_mm: ANODISE.per_side_mm, surfaces: 2, src: ANODISE.src },
         ],
@@ -83,7 +90,7 @@
     ex.push({
       id: 'motor-tube-in-ring',
       title: 'Motor tube in a centring ring, H8/f7 at 54 mm, both 6061',
-      why: 'fits.json names H8/f7 "free running ... a motor tube in a centring ring". One fit contributor and a thermal term between the same alloy on both sides, which dbFitThermal() makes exactly zero. PASS against a 0.02-0.15 mm requirement; the RSS line has N=1 and says it has no basis.',
+      why: 'fits.json names H8/f7 "free running ... a motor tube in a centring ring". One fit contributor and a thermal term between the same alloy on both sides, which dbFitThermal() makes exactly zero. The worst case CLEARS a 0.02-0.15 mm requirement (a screening verdict, never a pass); the RSS line has N=1 and says it has no basis.',
       stack: {
         gap_name: '54 mm motor tube in a 6061 centring ring (diametral)',
         contributors: [
@@ -97,7 +104,7 @@
     ex.push({
       id: 'plug-in-steel-bore',
       title: '6061 plug in a 304 bore, H7/g6 at 101.6 mm, pad to altitude',
-      why: 'The fit the table\'s own worked example uses, at the 4 in tank bore PartForge\'s tests use, with the shipped dbFitThermal() between two "likely" rows. The hot pad (+20 K) closes the clearance by more than the fit\'s minimum, so the worst case interferes: FAIL against min 0.',
+      why: 'The fit the table\'s own worked example uses, at the 4 in tank bore PartForge\'s tests use, with the shipped dbFitThermal() between two "likely" rows. The hot pad (+20 K) closes the clearance by more than the fit\'s minimum, so the worst case interferes: FAIL against min 0. With one manufacturing contributor the RSS band is the fit\'s own band, and shifted by the thermal envelope it is the worst case again: no narrowing.',
       stack: {
         gap_name: '6061 plug in a 304 stainless bore (diametral)',
         contributors: [
@@ -111,7 +118,7 @@
     ex.push({
       id: 'plug-in-g10-coupler',
       title: '6061 plug in a G10 coupler, H7/g6 at 101.6 mm (refused)',
-      why: 'materials_thermal.json\'s own note says this pair gains "about 0.1 mm" of clearance from a 40 C pad to -40 C. But the G10 row\'s cte_um_m_K is IN-PLANE by its own note, and a bore grows by its hoop value, so the thermal contributor is REFUSED until a hoop CTE with a source is supplied (hoop_cte.hole).',
+      why: 'materials_thermal.json\'s own note says this pair gains "about 0.1 mm" of clearance from a 40 C pad to -40 C. Two refusals. The G10 row\'s cte_um_m_K is IN-PLANE by its own note, and a bore grows by its hoop value, so the thermal contributor is refused until a hoop CTE with a source is supplied (hoop_cte.hole). And an H7 bore in a G10 coupler is a fit class on a composite tube, which fits.json LIMITS (5) and PartForge\'s doctrine rule out whatever the CTE: a hoop CTE lifts the first refusal, not the second. Declare the coupler bore as a measurement instead.',
       stack: {
         gap_name: '6061 plug in a G10-FR4 coupler (diametral)',
         contributors: [
@@ -125,7 +132,7 @@
     ex.push({
       id: 'bar-as-pin',
       title: '1/4 in cold-finished bar used as a pin, unmachined, in an H7 hole',
-      why: 'An as-supplied stock surface in a fit: stock.json\'s bar_6061_i_0.250 row (+0.038/-0.076, asymmetric, "likely") against a 6.35 H7 hole from fits.json. The bar\'s plus side interferes and its minus side gives twice the allowed clearance: FAIL both ways, which is what stock.json notes (1) warn.',
+      why: 'An as-supplied stock surface in a fit: stock.json\'s bar_6061_i_0.250 row (+0.038/-0.076, asymmetric, "likely") against a 6.35 H7 hole from fits.json. The bar\'s plus side interferes and its minus side leaves up to 0.091 mm against the 0.050 allowed: FAIL both ways, which is what stock.json notes (1) warn.',
       stack: {
         gap_name: 'as-supplied 1/4 in bar in a 6.35 H7 reamed hole (diametral)',
         contributors: [
@@ -154,7 +161,7 @@
     ex.push({
       id: 'two-plus-minus',
       title: 'Two contributors of +/-0.05: the RSS false comfort',
-      why: 'The evaluation\'s own wrong-number example (docs/roadmap-evaluation.md:668): two +/-0.05 contributors give a 0.10 worst-case half-band but 0.071 by RSS, 29% narrower, and at N=2 the RSS number has no statistical basis. PASS against +/-0.2; the point is the footnote.',
+      why: 'The evaluation\'s own wrong-number example (docs/roadmap-evaluation.md:668): two +/-0.05 contributors give a 0.10 worst-case half-band but 0.071 by RSS, 29% narrower, and at N=2 the RSS number has no statistical basis. The worst case clears +/-0.2; the point is the footnote.',
       stack: {
         gap_name: 'two declared contributors of +/-0.05 (teaching example)',
         contributors: [
