@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T14:54:08.770Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: verbatim cuts of index.html — 780-872 (thread tables, parseThreadSize, tensileStressArea_mm2, ENGAGEMENT_RULE, threadCheck); 936-938 (the 6061-T6 entry of FLIGHT_MATERIALS (inside a wrapper object)); 1001-1035 (FLIGHT_PROCESSES (process capability table)); 4646-4859 (DECL block: parseFlight, provenanceSummary, partTier, tierEvidence, flightCounts, flightLint, flightContradictions); 4898-4899 (DB_MEMO, dbMemo); 4969-5012 (dbF, DB_CONF, dbConf, dbTag, dbRows, dbRowsBuild, dbFit); 5744 (matClass (a local of the loads evaluator)); 1493 (doctrine line \"Use standard sizes\" (string)); 1454 (doctrine sentences \"Carry the label into the NOTE … had been read.\" (string)) — inside a classic-script wrapper",
+  "readMatchesCommitted": true,
+  "writtenSha256": "494b9f40610f8e2b785625ed3ac7bedbef8038a49ac14e9dbd99acdee188ea87",
+  "writtenBytes": 35637
+}

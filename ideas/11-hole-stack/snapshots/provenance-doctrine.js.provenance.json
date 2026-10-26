@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/data/PROVENANCE.md",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "412cc31 2026-09-18T01:06:40+00:00",
+  "committedBlob": "503599be86e9ca42cfeb9b5ccb3c8745e3431f6c",
+  "readBlob": "503599be86e9ca42cfeb9b5ccb3c8745e3431f6c",
+  "sourceSha256": "c0ead4684134190c8a15e593fe9edcb61e13e1f5ec2d5f7eba7b6231a912fd62",
+  "sourceBytes": 55977,
+  "copiedAt": "2026-10-26T14:54:08.866Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: docs/data/PROVENANCE.md lines 23-40 (section 1) verbatim, one string per line, doctrine paragraph at line 37",
+  "readMatchesCommitted": true,
+  "writtenSha256": "52da3cb74441f913f139f8e1f8494fa629459b8db97d0d0888e7e9964444b583",
+  "writtenBytes": 4789
+}

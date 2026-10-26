@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/dryrun/endcap.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "a028c685180163e8ed2080ab2abf7fbe5f45d413",
+  "readBlob": "a028c685180163e8ed2080ab2abf7fbe5f45d413",
+  "sourceSha256": "048f3ace4090d6f1251593b77b38bfdfcd4b29c1ac3922438f76961d3c51b441",
+  "sourceBytes": 17360,
+  "copiedAt": "2026-10-26T14:54:09.067Z",
+  "mode": "copy",
+  "note": "the first dry run's end cap: its FLIGHT holes row declares the M8 clearance 9.000 ±0.100 citing ISO 273",
+  "readMatchesCommitted": true,
+  "writtenSha256": "048f3ace4090d6f1251593b77b38bfdfcd4b29c1ac3922438f76961d3c51b441",
+  "writtenBytes": 17360
+}

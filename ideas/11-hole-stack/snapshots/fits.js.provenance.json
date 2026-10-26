@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/fits.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "ad4d587 2026-09-18T01:59:04+00:00",
+  "committedBlob": "1390c474344b1a0c5024b534654cda6d73c2a8ee",
+  "readBlob": "1390c474344b1a0c5024b534654cda6d73c2a8ee",
+  "sourceSha256": "328508fa44c771b26a0dd578c366a3d5ea2197f8b9bc02021b6db38c38019639",
+  "sourceBytes": 17453,
+  "copiedAt": "2026-10-26T14:54:08.643Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the exact text of data/tables/fits.json (sha256 328508fa44c771b26a0dd578c366a3d5ea2197f8b9bc02021b6db38c38019639) inside a classic-script wrapper; nothing else changed",
+  "readMatchesCommitted": true,
+  "writtenSha256": "cdfd25846e1ac6bdad9c98ab7d4c67b2e8e975afe8d23168055009768874051a",
+  "writtenBytes": 19765
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/dryrun/retainer-fixed.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "8a17260 2026-09-17T16:48:28+00:00",
+  "committedBlob": "45a19ef7904caf1c360771f562f88e9329ea7774",
+  "readBlob": "45a19ef7904caf1c360771f562f88e9329ea7774",
+  "sourceSha256": "1bb73504c112d31ede47f8ad915fd18ccb29ad348f078ba3b8963c9a1f56e442",
+  "sourceBytes": 13264,
+  "copiedAt": "2026-10-26T14:54:08.960Z",
+  "mode": "copy",
+  "note": "the first dry run's retainer after its fix: its FLIGHT holes row declares the M6 clearance 6.600 ±0.100 citing ISO 273",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1bb73504c112d31ede47f8ad915fd18ccb29ad348f078ba3b8963c9a1f56e442",
+  "writtenBytes": 13264
+}

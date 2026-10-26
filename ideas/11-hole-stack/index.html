@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hole Stack</title>
+<meta name="description" content="A fifth selector for PartForge: clearance hole, counterbore, countersink, nut pocket and tapped hole for an ISO metric size, worked from fasteners_metric.json and fits.json with each field's own confidence carried into the OpenSCAD and the FLIGHT rows.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#result">Skip to the stack</a>
+<header class="top">
+  <div class="wrap">
+    <h1>Hole Stack</h1>
+    <p class="sub">A fifth selector for PartForge. Pick a metric size, a head and what holds the far end; the page works the whole hole out of PartForge's own <code>fasteners_metric.json</code> and <code>fits.json</code>: clearance hole with its ISO 286 band, counterbore or countersink, nut pocket, tapped hole. Every number keeps the table's confidence <em>for that field</em>. FLIGHT rows are cited only when every field behind them is <em>likely</em> or <em>certain</em> with a named standard; a <em>recall</em> number is shown, never cited; what the tables cannot answer is refused by name.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <form class="card controls" id="controls" aria-labelledby="controls-h" onsubmit="return false">
+    <h2 id="controls-h" class="visually-hidden">Inputs</h2>
+    <div class="grid">
+      <label class="field"><span>Size</span><select id="size" name="size"></select></label>
+      <label class="field"><span>Plate (mm)</span><input id="plate_t" name="plate_t" type="number" inputmode="decimal" min="0.1" max="500" step="0.5" value="12"></label>
+      <label class="field wide"><span>Process (sets the default tolerance)</span><select id="process" name="process"></select></label>
+    </div>
+    <fieldset class="seg" id="head-set"><legend>Head</legend>
+      <label><input type="radio" name="head" value="socket" checked><span>Socket (counterbore)</span></label>
+      <label><input type="radio" name="head" value="countersunk"><span>Countersunk</span></label>
+      <label><input type="radio" name="head" value="button"><span>Button</span></label>
+      <label><input type="radio" name="head" value="none"><span>None</span></label>
+    </fieldset>
+    <label class="check"><input type="checkbox" id="washer" name="washer"><span>ISO 7089 washer under the head</span></label>
+    <fieldset class="seg" id="series-set"><legend>ISO 273 clearance</legend>
+      <label><input type="radio" name="series" value="fine"><span>Fine (H12)</span></label>
+      <label><input type="radio" name="series" value="medium" checked><span>Medium (H13)</span></label>
+      <label><input type="radio" name="series" value="coarse"><span>Coarse (H14)</span></label>
+    </fieldset>
+    <fieldset class="seg" id="far-set"><legend>Far end</legend>
+      <label><input type="radio" name="far" value="through" checked><span>Through (nut outside)</span></label>
+      <label><input type="radio" name="far" value="nut"><span>Nut pocket</span></label>
+      <label><input type="radio" name="far" value="nyloc"><span>Nyloc pocket</span></label>
+      <label><input type="radio" name="far" value="tapped"><span>Tapped part</span></label>
+    </fieldset>
+    <div class="tapped" id="tapped-opts" hidden>
+      <div class="grid">
+        <label class="field"><span>Tapped part (mm)</span><input id="part_t" name="part_t" type="number" inputmode="decimal" min="0.1" max="500" step="0.5" value="16"></label>
+        <label class="field"><span>Hole</span><select id="tap_end" name="tap_end"><option value="through">Through</option><option value="blind">Blind</option></select></label>
+        <label class="field"><span>Tap drill</span><select id="drill" name="drill"><option value="standard">Standard (d − p)</option><option value="stainless">Stainless (d − 0.85p)</option></select></label>
+        <label class="field"><span>Model the hole at</span><select id="model_at" name="model_at"><option value="d1">D1 (the table)</option><option value="drill">Tap drill (flight doctrine)</option></select></label>
+      </div>
+    </div>
+    <details class="more"><summary>Curve tolerance</summary>
+      <label class="field narrow"><span><code>tess_tol</code> (mm)</span><input id="tess" name="tess" type="number" inputmode="decimal" min="0.001" max="0.1" step="0.001" value="0.01"></label>
+      <p class="hint">Written as the first OpenSCAD parameter and as the FLIGHT block's <code>tess_tol_mm</code>. 0.01 is what every PartForge flight template carries.</p>
+    </details>
+  </form>
+
+  <section class="card result" id="result" aria-live="polite" aria-labelledby="verdict-h">
+    <h2 id="verdict-h" class="verdict"><span id="vword">—</span> <span id="vsub" class="vsub"></span></h2>
+    <div class="figure" id="figure"></div>
+    <ul class="legend" aria-label="Colour key">
+      <li><span class="key src"></span>cited (tol_src source)</li>
+      <li><span class="key def"></span>tool default</li>
+      <li><span class="key rec"></span>recall data</li>
+      <li><span class="key ref"></span>refused</li>
+    </ul>
+  </section>
+
+  <section class="card" id="refusals" hidden aria-labelledby="refusals-h">
+    <h2 id="refusals-h">Refused</h2>
+    <ul id="refList" class="reflist"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="stack-h">
+    <h2 id="stack-h">The stack</h2>
+    <div id="stack"></div>
+  </section>
+
+  <section class="card" id="checks-card" hidden aria-labelledby="checks-h">
+    <h2 id="checks-h">What else the tables and PartForge say</h2>
+    <ul id="checks" class="checks"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="scad-h">
+    <div class="cardhead"><h2 id="scad-h">OpenSCAD</h2>
+      <div class="btns"><button type="button" class="btn" id="copyScad">Copy</button><button type="button" class="btn" id="dlScad">Download .scad</button></div></div>
+    <p class="hint">A cutter module to <code>difference()</code> from your plate, with <code>$fn=fn_tol(d)</code> on every round primitive and a comment on every dimension naming the table field, the standard and the field's confidence. Not compiled here: OpenSCAD is not available to this page.</p>
+    <pre id="scad" class="code" tabindex="0"></pre>
+  </section>
+
+  <section class="card" aria-labelledby="flight-h">
+    <div class="cardhead"><h2 id="flight-h">FLIGHT rows</h2>
+      <div class="btns"><button type="button" class="btn" id="copyFlight">Copy</button></div></div>
+    <p class="hint">Rows to merge into the part's own FLIGHT block. FLIGHT tolerances are symmetric (<code>d_mm ± tol_mm</code>), so an H band <em>+IT/0</em> is written as its centre ± IT/2, and a feature the table gives only a minimum for is written as that minimum + the process's default tolerance, centred, as <code>tol_src: "default"</code>.</p>
+    <pre id="flight" class="code" tabindex="0"></pre>
+    <p class="verify" id="verify"></p>
+  </section>
+
+  <section class="card" aria-labelledby="src-h">
+    <h2 id="src-h">Where every number comes from</h2>
+    <ul class="sources" id="sources"></ul>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>An Aster Idea Bank prototype for PartForge (idea 11). It has not been through PartForge's geometry gate, its data-provenance pipeline or a skeptic review, and its OpenSCAD has not been compiled. The tables are snapshots of PartForge at <span id="commit">—</span>; <code>build-data.mjs --check</code> says whether they are current.</p>
+</footer>
+
+<script src="snapshots/fasteners_metric.js"></script>
+<script src="snapshots/fits.js"></script>
+<script src="snapshots/partforge-code.js"></script>
+<script src="snapshots/provenance-doctrine.js"></script>
+<script src="holestack.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
