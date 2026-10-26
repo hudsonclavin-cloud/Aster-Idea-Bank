@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/runs/2026-10-06-gemini-flight-x5/ring1.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "98df2a2 2026-10-06T04:20:51+00:00",
+  "committedBlob": "706fe3484f067c7f01b63528675714696ae79e2b",
+  "readBlob": "706fe3484f067c7f01b63528675714696ae79e2b",
+  "sourceSha256": "7217f78e41855efce77e465eb1d06d98cee9080333bc8c36a0c11e72358f9f7e",
+  "sourceBytes": 4360,
+  "copiedAt": "2026-10-26T09:32:26.633Z",
+  "mode": "copy",
+  "note": "recorded gemini-3.6-flash flight-grade run of 2026-10-06; fixture for the n and force_N shadows",
+  "readMatchesCommitted": true,
+  "writtenSha256": "7217f78e41855efce77e465eb1d06d98cee9080333bc8c36a0c11e72358f9f7e",
+  "writtenBytes": 4360
+}

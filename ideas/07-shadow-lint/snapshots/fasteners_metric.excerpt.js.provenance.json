@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/fasteners_metric.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "3a34cdfacb72ffd6b6e9270c4c7ee695aa0a0fd9",
+  "readBlob": "3a34cdfacb72ffd6b6e9270c4c7ee695aa0a0fd9",
+  "sourceSha256": "26aa7dea26dc3037621054b510adc641442f99ddc7b98c2b330e01f243a24807",
+  "sourceBytes": 58241,
+  "copiedAt": "2026-10-26T09:58:50.003Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: all 12 rows, fields key,d_mm,pitch_mm,tap_drill_mm,tap_drill_stainless_mm,clearance_fine_mm,clearance_medium_mm,clearance_coarse_mm,confidence,source (+ field_confidence for those), table/license_note/columns kept; wrapped as a UMD module",
+  "readMatchesCommitted": true,
+  "writtenSha256": "b626f58182d4bc82c1d14baf6ead745ce316730ec7d677fea478385b776e74dc",
+  "writtenBytes": 7428
+}

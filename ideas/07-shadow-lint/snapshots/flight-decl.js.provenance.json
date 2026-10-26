@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T09:58:49.886Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: index.html lines 4651-4761 (FLIGHT_AXIS … provenanceSummary) and 4823-4825 (flightCounts), unedited, plus one module.exports line",
+  "readMatchesCommitted": true,
+  "writtenSha256": "7333500ea369521ad883425ae40245c7c6910e1b124dd89ded280b009267b394",
+  "writtenBytes": 9051
+}

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shadow Lint</title>
+<meta name="description" content="For every number a PartForge FLIGHT loads row feeds its check, say whether the declared geometry can see it; for two attempts, say what moved while the geometry did not.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1>Shadow Lint</h1>
+<p class="tag">For every number a FLIGHT loads row feeds its check: can the declared geometry see it? And when a retry moves a number the geometry did not, say so.</p>
+
+<section class="panel" aria-labelledby="h-fixture">
+  <h2 id="h-fixture">One file</h2>
+  <div class="controls">
+    <label><span>Fixture (PartForge checkout <span id="commit">…</span>)</span>
+      <select id="fixture" aria-label="fixture file"></select>
+    </label>
+  </div>
+  <div id="lint" aria-live="polite"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-pair">
+  <h2 id="h-pair">Two attempts</h2>
+  <div class="controls">
+    <label>Pair
+      <select id="pair" aria-label="attempt pair"></select>
+    </label>
+  </div>
+  <div id="diff" aria-live="polite"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-own">
+  <h2 id="h-own">Your own file</h2>
+  <p class="other">Paste a flight-grade <code>.scad</code> with a FLIGHT block. Add a second one to diff an attempt against its retry. Nothing leaves this page.</p>
+  <label for="own-a" class="sr">first file</label>
+  <textarea id="own-a" placeholder="// FLIGHT-BEGIN … // FLIGHT-END and the OpenSCAD code" spellcheck="false"></textarea>
+  <label for="own-b" class="sr">second file (optional)</label>
+  <textarea id="own-b" placeholder="optional: the retry of the file above" spellcheck="false" style="min-height:90px"></textarea>
+  <div class="controls">
+    <button id="run" type="button">Lint</button>
+    <button id="load-sample" type="button" class="secondary">Load the synthetic retry pair</button>
+  </div>
+  <div id="own" aria-live="polite"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-legend">
+  <h2 id="h-legend">What the classes mean</h2>
+  <div class="legend">
+    <span class="badge WITNESSED">WITNESSED</span><span>The value equals a declared dimension of compatible unit within that dimension's tolerance: a critical extent, a hole count whose row is a clearance size for the declared thread, a hole at the tap-drill or clearance diameter for that thread. PartForge's mesh CMM measures the declared dimension; this page measures no mesh.</span>
+    <span class="badge DERIVABLE">DERIVABLE</span><span>An arithmetic combination of declared rows: a bore over two (ri_mm), an OD-minus-bore wall over two (t_mm), a feature's from–to span (a through hole's span is the plate thickness; a tapped hole's span is the engagement).</span>
+    <span class="badge UNWITNESSED">UNWITNESSED</span><span>Nothing declared can see it: a force, a pressure, a speed, an altitude, a strength; or a length whose candidates all miss (the nearest is named). The tool cannot know such a number is wrong, only that nothing checks it.</span>
+    <span class="badge POLICY">POLICY</span><span><code>sf_min</code>: a declared acceptance threshold, not a physical quantity. A retry can lower it with no geometric consequence, which is why the differ watches it.</span>
+  </div>
+</section>
+
+<p class="foot" id="foot"></p>
+
+<script src="shadow.js"></script>
+<script src="findings.js"></script>
+<script src="snapshots/fasteners_metric.excerpt.js"></script>
+<script src="snapshots/fasteners_un.excerpt.js"></script>
+<script src="snapshots/motor_perf.excerpt.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

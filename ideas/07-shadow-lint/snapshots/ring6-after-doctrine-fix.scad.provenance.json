@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/runs/2026-10-06-gemini-flight-x5/ring6-after-doctrine-fix.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "3ee6b63 2026-10-06T04:25:19+00:00",
+  "committedBlob": "db390a48c7ba5dbf7dff54622867db97e8a49924",
+  "readBlob": "db390a48c7ba5dbf7dff54622867db97e8a49924",
+  "sourceSha256": "b38fb8df0c154c4b8a52b78500d314c136e1263fac9de66bee3b9f0521473075",
+  "sourceBytes": 4879,
+  "copiedAt": "2026-10-26T09:32:27.059Z",
+  "mode": "copy",
+  "note": "recorded gemini-3.6-flash flight-grade run of 2026-10-06; fixture for the n and force_N shadows",
+  "readMatchesCommitted": true,
+  "writtenSha256": "b38fb8df0c154c4b8a52b78500d314c136e1263fac9de66bee3b9f0521473075",
+  "writtenBytes": 4879
+}

@@ -1,0 +1,169 @@
+$ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/bulkhead.scad
+shadow lint — bulkhead.scad (6061-T6, cnc_lathe; declared 5 critical, 0 od, 2 bores, 4 holes, 0 revolve, 4 gauges, 2 loads)
+
+  bolt_shear "U-bolt recovery shock"  inputs_src default
+    input             value      class        witness
+    size              1/4-20     WITNESSED    holes "U-bolt 1/4-20" list × 2, Ø7 — a clearance for 1/4-20 (between major
+                                              6.35 and close 6.747 / normal 7.144 / loose 7.541) (fasteners_un likely);
+                                              also holes "all-thread rods 1/4 in" circle × 4, Ø6.6 — a clearance for
+                                              1/4-20 (between major 6.35 and close 6.747 / normal 7.144 / loose 7.541)
+                                              (fasteners_un likely)
+    n                 2          WITNESSED    holes "U-bolt 1/4-20" list × 2, Ø7 — a clearance for 1/4-20 (between major
+                                              6.35 and close 6.747 / normal 7.144 / loose 7.541) (fasteners_un likely)
+    force_N           5000       UNWITNESSED  a load: nothing in the geometry can see it
+    plate_t_mm        12.7       WITNESSED    critical "plate thickness" plate/z 12.70 ±0.05 (user); also holes
+                                              "all-thread rods 1/4 in" spans 0→12.7 = 12.70; also holes "U-bolt 1/4-20"
+                                              spans 0→12.7 = 12.70; also holes "e-match feed-through" spans 0→12.7 =
+                                              12.70
+    sf_min            2          POLICY       declared acceptance threshold (the doctrine default for bolt_shear is 2.0)
+    other keys: grade="A2-70"
+
+  thread "terminal block screws"  inputs_src default
+    input             value      class        witness
+    size              #8-32      WITNESSED    holes "terminal block #8-32 tap drill" list × 2, Ø3.45 — the 75% tap drill
+                                              3.454 for #8-32 (fasteners_un likely)
+    engagement_mm     10         DERIVABLE    holes "terminal block #8-32 tap drill" spans 2.7→12.7 = 10.00, Ø3.45 is
+                                              the 75% tap drill 3.454 for #8-32 (fasteners_un likely)
+    sf_min            2          POLICY       declared acceptance threshold
+    other keys: internal_material="6061-T6"
+
+  8 inputs: 4 witnessed, 1 derivable, 1 unwitnessed, 2 policy thresholds
+  invention surface: 1 input no declared geometry can see — U-bolt recovery shock.force_N
+  (witnessed = a DECLARED dimension matches; the mesh CMM measures that declaration, this tool does not)
+(exit 0)
+
+$ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/endcap.scad
+shadow lint — endcap.scad (6061-T6, cnc_lathe; declared 7 critical, 2 od, 3 bores, 1 holes, 0 revolve, 0 gauges, 4 loads)
+
+  hoop "shoulder wall at O-ring groove root"  inputs_src user
+    input             value      class        witness
+    P_MPa             6          UNWITNESSED  a pressure: nothing in the geometry can see it
+    ri_mm             47.98      DERIVABLE    bore "o-ring groove bottom diameter" Ø95.96/2 = 47.98
+    t_mm              2.77       DERIVABLE    wall (101.5 − 95.96)/2 = 2.77 from od "shoulder OD" and bore "o-ring
+                                              groove bottom diameter"
+    sf_min            2          POLICY       declared acceptance threshold (the doctrine default for hoop is 2.0)
+    other keys: note="ri = groove bottom radius = 95.96/2 = 47"
+
+  hoop "flange face plate at MEOP"  inputs_src user
+    input             value      class        witness
+    P_MPa             6          UNWITNESSED  a pressure: nothing in the geometry can see it
+    ri_mm             40         DERIVABLE    bore "lightening pocket bore" Ø80/2 = 40.00
+    t_mm              17.4       UNWITNESSED  no declared extent, wall or span within tolerance; nearest critical
+                                              "shoulder length" shoulder/z 20.00 ±0.05 (default) (Δ 2.60)
+    sf_min            2          POLICY       declared acceptance threshold (the doctrine default for hoop is 2.0)
+    other keys: note="face plate thickness = total_z - pocket_"
+
+  thread "M8 bolts into aluminium tank flange"  inputs_src user
+    input             value      class        witness
+    size              M8         UNWITNESSED  no hole or bore at a tap-drill diameter for M8 — the tapped part is
+                                              probably the mating part
+    engagement_mm     16         UNWITNESSED  no hole or bore span matches; nearest bores "npt port tap drill" spans
+                                              28.4→13.9 = 14.50 (Δ 1.50) — a thread engagement is usually in the mating
+                                              part
+    other keys: internal_material="6061-T6", note="16 mm engagement = 2x bolt diameter in t"
+
+  bolt_shear "M8 bolt pattern pressure retention"  inputs_src user
+    input             value      class        witness
+    size              M8         WITNESSED    holes "M8 bolt pattern clearance" circle × 8, Ø9 — the medium clearance 9
+                                              for M8 (fasteners_metric likely)
+    n                 8          WITNESSED    holes "M8 bolt pattern clearance" circle × 8, Ø9 — the medium clearance 9
+                                              for M8 (fasteners_metric likely)
+    force_N           48641      UNWITNESSED  a load: nothing in the geometry can see it
+    plate_t_mm        25.4       DERIVABLE    holes "M8 bolt pattern clearance" spans 0→25.4 = 25.40
+    sf_min            2          POLICY       declared acceptance threshold (the doctrine default for bolt_shear is 2.0)
+    other keys: note="force_N = P * pi * r^2 = 6.00e6 Pa * pi ", grade="8.8"
+
+  15 inputs: 2 witnessed, 4 derivable, 6 unwitnessed, 3 policy thresholds
+  invention surface: 6 inputs no declared geometry can see — shoulder wall at O-ring groove root.P_MPa, flange face plate at MEOP.P_MPa, flange face plate at MEOP.t_mm, M8 bolts into aluminium tank flange.size, M8 bolts into aluminium tank flange.engagement_mm, M8 bolt pattern pressure retention.force_N
+  (witnessed = a DECLARED dimension matches; the mesh CMM measures that declaration, this tool does not)
+(exit 0)
+
+$ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/coupler.scad
+shadow lint — coupler.scad (6061-T6, cnc_lathe; declared 1 critical, 1 od, 1 bores, 3 holes, 0 revolve, 1 gauges, 1 loads)
+
+  bolt_shear "3 nylon shear pins at separation"  inputs_src default
+    input             value      class        witness
+    size              #2-56      WITNESSED    holes "shear pin, aft, 0°" single × 1, Ø2.2 — a clearance for #2-56
+                                              (between major 2.184 and close 2.381 / normal 2.578 / loose 2.946)
+                                              (fasteners_un recall); also holes "shear pin, fwd, 0°" single × 1, Ø2.2 —
+                                              a clearance for #2-56 (between major 2.184 and close 2.381 / normal 2.578
+                                              / loose 2.946) (fasteners_un recall)
+    n                 3          UNWITNESSED  no hole row has 3 entries; the clearance-size rows for #2-56 have holes
+                                              "shear pin, aft, 0°" single × 1, Ø2.2; holes "shear pin, fwd, 0°" single ×
+                                              1, Ø2.2
+    force_N           150        UNWITNESSED  a load: nothing in the geometry can see it
+    bolt_sigma_y_MPa  60         UNWITNESSED  a material strength: nothing in the geometry can see it
+    plate_t_mm        3.2        DERIVABLE    wall (149.3 − 142.9)/2 = 3.20 from od "coupler OD" and bore "bore"; also
+                                              holes "shear pin, aft, 0°" spans 74.65→71.45 = 3.20; also holes "shear
+                                              pin, fwd, 0°" spans 74.65→71.45 = 3.20; also holes "rail button tap drill
+                                              #8-32" spans -74.65→-71.45 = 3.20
+    sf_min            1          POLICY       declared acceptance threshold (the doctrine default for bolt_shear is 2.0)
+
+  6 inputs: 1 witnessed, 1 derivable, 3 unwitnessed, 1 policy threshold
+  invention surface: 3 inputs no declared geometry can see — 3 nylon shear pins at separation.n, 3 nylon shear pins at separation.force_N, 3 nylon shear pins at separation.bolt_sigma_y_MPa
+  (witnessed = a DECLARED dimension matches; the mesh CMM measures that declaration, this tool does not)
+(exit 0)
+
+$ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/ring1.scad
+shadow lint — ring1.scad (6061-T6, cnc_mill; declared 2 critical, 1 od, 1 bores, 2 holes, 0 revolve, 0 gauges, 1 loads)
+
+  bolt_shear "thrust bolts"  inputs_src default
+    input             value      class        witness
+    size              M5         WITNESSED    holes "thrust bolts" circle × 8, Ø5.5 — the medium clearance 5.5 for M5
+                                              (fasteners_metric likely)
+    n                 8          WITNESSED    holes "thrust bolts" circle × 8, Ø5.5 — the medium clearance 5.5 for M5
+                                              (fasteners_metric likely)
+    force_N           3331       UNWITNESSED  a load: nothing in the geometry can see it; the evaluator holds it to the
+                                              certified peak of Loki L2050 (3331 N, certified, motor_perf likely) — a
+                                              data witness, not a geometric one; the declared value equals that peak
+    plate_t_mm        8          WITNESSED    critical "ring thickness" ring/z 8.00 ±0.05 (user); also od "ring OD"
+                                              spans 0→8 = 8.00; also bores "MMT bore" spans 8→0 = 8.00; also holes
+                                              "thrust bolts" spans 8→0 = 8.00; also holes "lightening holes" spans 8→0 =
+                                              8.00
+    sf_min            2          POLICY       declared acceptance threshold (the doctrine default for bolt_shear is 2.0)
+    other keys: grade="8.8", motor="Loki L2050"
+
+  5 inputs: 3 witnessed, 0 derivable, 1 unwitnessed, 1 policy threshold
+  invention surface: 1 input no declared geometry can see — thrust bolts.force_N
+  (witnessed = a DECLARED dimension matches; the mesh CMM measures that declaration, this tool does not)
+(exit 0)
+
+$ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/motor-retainer.scad ideas/07-shadow-lint/snapshots/motor-retainer.retry.scad
+attempt diff — motor-retainer.scad → motor-retainer.retry.scad
+  geometry (code outside comments, whitespace-normalised): IDENTICAL — only comments changed
+  contract floor (flightCounts): critical 1, od 1, bores 2, holes 1, revolve 0, gauges 0, loads 2  — held
+  loads inputs: 1 change
+    bolt_shear "thrust bolts" force_N: 20000 → 12000  [UNWITNESSED → UNWITNESSED]
+  declarations: unchanged
+
+  FINDINGS (1):
+    input_moved_geometry_unchanged: bolt_shear "thrust bolts": force_N 20000 → 12000 while the geometry is byte-identical — an
+      unwitnessed input changed and no mesh will notice (UNWITNESSED → UNWITNESSED)
+(exit 1)
+
+$ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/retainer.scad ideas/07-shadow-lint/snapshots/retainer-fixed.scad
+attempt diff — retainer.scad → retainer-fixed.scad
+  geometry (code outside comments, whitespace-normalised): changed: 1 line removed, 20 added
+  contract floor (flightCounts): critical 3, od 2→1, bores 2, holes 1, revolve 0, gauges 0→2, loads 2  — LOST: od
+  loads inputs: unchanged
+  declarations: 9 changes (information: the CMM re-measures these against the mesh)
+    critical "lip ledge depth" (entry): declared → removed
+    critical "lip ledge radial width" (entry): declared → removed
+    critical "retaining ring OD (= capture bore)" (entry): absent → added
+    critical "retaining ring height above the pocket" (entry): absent → added
+    od "retainer OD — full height" (entry): declared → removed
+    od "retainer OD — aft section" (entry): declared → removed
+    od "retainer OD" (entry): absent → added
+    bores "nozzle capture pocket bore" from_mm: 4 → 0
+    bores "nozzle capture pocket bore" to_mm: 0 → 4
+
+  FINDINGS (1):
+    floor_loss: declares fewer od entries than the previous version: 2 → 1 (PartForge's contract floor fails this
+      retry)
+(exit 1)
+
+$ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/av-sled.scad
+refused (insufficient_data): the declaration has no loads rows in av-sled.scad
+  what would help: there is nothing to lint: a loads row (hoop, flutter, thread or bolt_shear) is what carries the numbers this tool classifies
+(exit 2)
+

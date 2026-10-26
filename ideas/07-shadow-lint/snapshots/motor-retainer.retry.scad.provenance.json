@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/motor-retainer.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "20027a2 2026-09-15T17:01:56+00:00",
+  "committedBlob": "b455684cc54c31ed20c7f2d9d5fff8b9474b5c76",
+  "readBlob": "b455684cc54c31ed20c7f2d9d5fff8b9474b5c76",
+  "sourceSha256": "791fdac06696f12e98a6f39a62f36b1444e6a36e72e2d48c056b0964633866ae",
+  "sourceBytes": 4601,
+  "copiedAt": "2026-10-26T09:58:50.323Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the template with exactly one edit inside the FLIGHT block, \"force_N\":20000 -> \"force_N\":12000; code outside comments byte-identical (a synthetic retry that edits the number instead of the geometry)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4c287225625a4ce46fd054a3cdeff208b073d0feae27fbb9c6d2185415794697",
+  "writtenBytes": 4601
+}
