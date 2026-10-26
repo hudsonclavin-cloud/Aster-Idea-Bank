@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/fin.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "20027a2 2026-09-15T17:01:56+00:00",
+  "committedBlob": "ecce654d5559d0b7814dd6010df4e84b4be0a1f8",
+  "readBlob": "ecce654d5559d0b7814dd6010df4e84b4be0a1f8",
+  "sourceSha256": "569e2164007de3734035067be4b2df677cb8e9b3bf7531920fcef1709da3572d",
+  "sourceBytes": 10815,
+  "copiedAt": "2026-10-26T15:24:45.100Z",
+  "mode": "copy",
+  "note": "whole template, copied so the page can offer it as a declaration to inspect against; the FLIGHT block, PART line and mfg.inspect plan are read by PartForge's own parseFlight (snapshots/partforge-decl.js)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "569e2164007de3734035067be4b2df677cb8e9b3bf7531920fcef1709da3572d",
+  "writtenBytes": 10815
+}

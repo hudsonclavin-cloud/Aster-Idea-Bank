@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T15:26:59.632Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: index.html's DECL block (DECL-BEGIN..DECL-END, lines 4646-4859 at 0974a62, found by marker) copied VERBATIM so the ledger reads FLIGHT declarations with PartForge's own parseFlight(); plus headless/partforge.mjs lines 90-121 (round4, FEATURES, measurementRows) VERBATIM, and the seven tests/templates/*.scad as strings from this folder's own snapshots (sha256-checked against their sidecars); line ranges and sha256 of every piece are in the module's provenance object",
+  "readMatchesCommitted": true,
+  "writtenSha256": "79928f4221f85545c7c261c203c052386bcb152e4fe8f7403a9d18f1a25ec9ce",
+  "writtenBytes": 80590
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/centering-ring.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "20027a2 2026-09-15T17:01:56+00:00",
+  "committedBlob": "0fc05ea149ba32d784b66b39afc53d2cfd1a05c5",
+  "readBlob": "0fc05ea149ba32d784b66b39afc53d2cfd1a05c5",
+  "sourceSha256": "2dd9646994e561dd4a3ea5edba58b3d1428c197533bb821d379eb6c2525f32ef",
+  "sourceBytes": 5914,
+  "copiedAt": "2026-10-26T15:24:44.384Z",
+  "mode": "copy",
+  "note": "whole template, copied so the page can offer it as a declaration to inspect against; the FLIGHT block, PART line and mfg.inspect plan are read by PartForge's own parseFlight (snapshots/partforge-decl.js)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2dd9646994e561dd4a3ea5edba58b3d1428c197533bb821d379eb6c2525f32ef",
+  "writtenBytes": 5914
+}

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caliper Ledger</title>
+<meta name="description" content="Type the readings from the machined part against its PartForge FLIGHT declaration and get a verdict per feature, with the mesh kept in its own column and the record bound to the declaration by sha256.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#features">Skip to the features</a>
+<header class="top">
+  <div class="wrap">
+    <h1>Caliper Ledger</h1>
+    <p class="sub">Type what the <strong>machined part</strong> measures, feature by feature, against the FLIGHT declaration of the <code>.scad</code> it was cut from. A verdict is about the readings you typed, with the instrument you named. What PartForge measured on the mesh sits in its own column and is never evidence for the article.</p>
+    <p class="badge">Idea-bank prototype for PartForge · not a PartForge document · not a first-article inspection report</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" id="declCard" aria-labelledby="decl-h">
+    <h2 id="decl-h"><span class="step">1</span> The declaration</h2>
+    <div class="row">
+      <label for="tpl">Part</label>
+      <select id="tpl"></select>
+    </div>
+    <div id="pasteBox" class="paste" hidden>
+      <label for="paste">Paste the whole <code>.scad</code> (it must carry a FLIGHT block), or open the file</label>
+      <textarea id="paste" rows="6" spellcheck="false" autocomplete="off" placeholder="// PART: …&#10;// FLIGHT-BEGIN&#10;// { … }&#10;// FLIGHT-END"></textarea>
+      <div class="row wrap-row">
+        <input type="file" id="scadFile" accept=".scad,.txt,text/plain" aria-label="Open a .scad file">
+        <button type="button" id="usePaste" class="btn primary">Use this file</button>
+      </div>
+    </div>
+    <div id="declRefusal" class="refusal" role="alert" hidden></div>
+    <div id="declOut" hidden>
+      <p class="part" id="partName"></p>
+      <p class="hint" id="declLine"></p>
+      <details class="more" id="factsDetails">
+        <summary>Source, hash, counts and tolerance provenance</summary>
+        <dl class="facts" id="declFacts"></dl>
+      </details>
+      <details class="more">
+        <summary>The FLIGHT block this ledger is bound to</summary>
+        <p class="hint">Its sha256 is taken over exactly these lines, line endings normalised to LF. For a file with one block it is what <code>sed -n '/FLIGHT-BEGIN/,/FLIGHT-END/p' part.scad | sha256sum</code> prints. Any edit inside the block, even one digit, makes a different declaration; edits elsewhere in the file do not.</p>
+        <pre id="blockText" class="block"></pre>
+      </details>
+      <div id="planBox" hidden>
+        <h3>Inspection plan, as the declaration states it</h3>
+        <ul id="plan" class="plain"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="shelfCard" aria-labelledby="shelf-h">
+    <h2 id="shelf-h"><span class="step">2</span> Instruments</h2>
+    <p class="hint">Add each instrument once, with the resolution you read off it (the smallest step it shows) and, if you know it, its stated accuracy. A reading cannot be entered without one. The 10:1 check uses the larger of the two.</p>
+    <ul id="shelf" class="shelf"></ul>
+    <p id="shelfEmpty" class="empty">No instruments yet.</p>
+    <button type="button" id="addInst" class="btn">Add an instrument</button>
+  </section>
+
+  <section class="card" id="inspCard" aria-labelledby="insp-h">
+    <h2 id="insp-h"><span class="step">3</span> The article</h2>
+    <div class="meta">
+      <div class="field"><label for="operator">Measured by</label><input id="operator" autocomplete="name" placeholder="name"></div>
+      <div class="field"><label for="idate">Inspection date</label><input id="idate" type="date"></div>
+      <div class="field wide"><label for="remarks">Remarks <span class="opt">(optional: serial, setup, temperature)</span></label><input id="remarks" autocomplete="off"></div>
+    </div>
+    <p class="hint" id="dateHint"></p>
+    <div id="status" class="status none" role="status" aria-live="polite">
+      <div class="sword" id="sword">—</div>
+      <div class="sline" id="sline"></div>
+      <div class="bar" id="sbar" aria-hidden="true"></div>
+    </div>
+    <div class="row filter">
+      <label for="filter">Show</label>
+      <select id="filter">
+        <option value="all">every feature</option>
+        <option value="todo">not measured yet</option>
+        <option value="problems">OUT or undecided</option>
+      </select>
+      <button type="button" id="nextTodo" class="btn">Next to measure</button>
+    </div>
+    <ol id="features" class="features"></ol>
+    <div id="notAssessed" class="note"></div>
+  </section>
+
+  <section class="card" id="modelCard" aria-labelledby="model-h">
+    <h2 id="model-h"><span class="step">4</span> As modelled <span class="opt">(optional)</span></h2>
+    <p class="hint">Import the report PartForge writes for this part: <em>⋯ → Measurement report (.json)</em> in the app, or the JSON <code>node headless/cli.mjs check part.scad</code> prints. Its numbers fill the <em>as modelled</em> column only: they are the mesh, measured by ray casting, and say the model matches its own declaration. They never fill a reading. A report for another part, or for another revision of this one, is refused.</p>
+    <div class="row wrap-row">
+      <input type="file" id="reportFile" accept=".json,application/json" aria-label="Open a measurement report">
+    </div>
+    <label for="reportText" class="sr">Or paste the report JSON</label>
+    <textarea id="reportText" rows="3" spellcheck="false" placeholder="or paste the report JSON here"></textarea>
+    <div class="row wrap-row">
+      <button type="button" id="importReport" class="btn">Import report</button>
+      <button type="button" id="clearReport" class="btn quiet">Clear the model column</button>
+    </div>
+    <div id="reportOut" class="note" aria-live="polite"></div>
+  </section>
+
+  <section class="card" id="outCard" aria-labelledby="out-h">
+    <h2 id="out-h"><span class="step">5</span> The record</h2>
+    <p class="hint">The as-built JSON carries everything typed, every verdict and the FLIGHT block's sha256, so it cannot be mistaken for a ledger of another revision. The Markdown table keeps the interface control drawing's columns, with <em>Verified on the article</em> filled.</p>
+    <div class="row wrap-row">
+      <button type="button" id="dlJson" class="btn primary">Download as-built .json</button>
+      <button type="button" id="dlMd" class="btn">Download Markdown</button>
+      <button type="button" id="copyMd" class="btn">Copy Markdown</button>
+    </div>
+    <p id="outMsg" class="note" aria-live="polite"></p>
+    <details class="more" id="mdDetails">
+      <summary>Preview the Markdown</summary>
+      <pre id="mdPreview" class="block"></pre>
+    </details>
+    <div class="row wrap-row resume">
+      <label for="resumeFile">Resume from a record</label>
+      <input type="file" id="resumeFile" accept=".json,application/json">
+      <button type="button" id="startOver" class="btn quiet">Start over for this part</button>
+    </div>
+    <p class="hint">Readings are kept in this browser as you type, per declaration. Nothing is sent anywhere.</p>
+    <p class="refusal" id="storageNote" role="status"></p>
+  </section>
+
+  <section class="card about" aria-labelledby="about-h">
+    <h2 id="about-h">How the verdicts are made</h2>
+    <ul>
+      <li><strong>IN</strong>: every reading lies within nominal ± tolerance, limits included. Not the mean: an oval OD read 146.14 and 146.26 against 146.20 ± 0.05 has a perfect mean and is OUT. PartForge's own mesh check gates the same way, on the smallest and largest size it finds (<code>cmmVerdicts()</code>, index.html:3849). Compared with no allowance for the instrument.</li>
+      <li><strong>OUT</strong>: at least one reading is outside. One OUT makes the part NONCONFORMING however much is still unmeasured.</li>
+      <li><strong>UNDECIDED</strong>: GO/NO-GO members that cannot settle it, because one is missing or sits outside the band. A pin that enters proves the hole is at least its size; a ring that passes over proves the shaft is at most its size.</li>
+      <li><strong>NOT MEASURED</strong>: no entry, or an entry with something missing: no instrument, no resolution, a number that does not parse. No verdict is guessed.</li>
+      <li>Sizes are compared exactly, in decimal: 6.60 + 0.10 is 6.699999999999999 in floating point, and a 6.70 hole is inside a 6.60 ± 0.10 band. Inches convert at exactly 25.4 mm; inch limits are printed rounded inward.</li>
+      <li><strong>10:1</strong> is a shop rule of thumb, not a cited standard: an instrument whose resolution (or stated accuracy, if larger) is more than a tenth of the tolerance band is flagged. So is any reading within that figure of a limit, and any reading that is not a step of the stated resolution.</li>
+      <li>The declaration is read with PartForge's own <code>parseFlight()</code> (index.html:4672, copied verbatim at 0974a62), and a report through its own <code>measurementRows()</code> (headless/partforge.mjs:97). The page never relaxes or proposes a tolerance; a tolerance the tool proposed is labelled <em>tool default</em> wherever it appears.</li>
+    </ul>
+  </section>
+</main>
+<footer class="wrap foot">
+  <p>Aster Idea Bank no. 19 · for PartForge · templates from <code>tests/templates/</code> at PartForge 0974a62 · runs from the file, no network.</p>
+</footer>
+<script src="snapshots/partforge.js"></script>
+<script src="ledger.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

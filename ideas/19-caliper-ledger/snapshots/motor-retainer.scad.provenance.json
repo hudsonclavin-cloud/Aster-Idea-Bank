@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/motor-retainer.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "20027a2 2026-09-15T17:01:56+00:00",
+  "committedBlob": "b455684cc54c31ed20c7f2d9d5fff8b9474b5c76",
+  "readBlob": "b455684cc54c31ed20c7f2d9d5fff8b9474b5c76",
+  "sourceSha256": "791fdac06696f12e98a6f39a62f36b1444e6a36e72e2d48c056b0964633866ae",
+  "sourceBytes": 4601,
+  "copiedAt": "2026-10-26T15:24:44.552Z",
+  "mode": "copy",
+  "note": "whole template, copied so the page can offer it as a declaration to inspect against; the FLIGHT block, PART line and mfg.inspect plan are read by PartForge's own parseFlight (snapshots/partforge-decl.js)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "791fdac06696f12e98a6f39a62f36b1444e6a36e72e2d48c056b0964633866ae",
+  "writtenBytes": 4601
+}
