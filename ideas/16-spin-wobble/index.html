@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spin Wobble</title>
+<meta name="description" content="The gravity-gradient tip-speed modulation of Skyhook's spinning tether, in closed form from params/rev_a.json, checked against the program's own twin.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="wrap">
+  <p class="eyebrow">Skyhook · Rev A · a study for the dynamics record</p>
+  <h1>Spin Wobble</h1>
+  <p class="lede">A tether spinning in orbit does not keep a steady tip speed. The orbit's gravity gradient brakes the spin as the tether swings toward horizontal and hands the speed back as it comes vertical again. Skyhook's glossary records this as an observation from its lumped-mass model. Here it is in closed form, from <code>params/rev_a.json</code> alone, and held against the program's own twin.</p>
+</header>
+
+<main class="wrap" id="main">
+  <section id="refusal" class="refusal" role="alert" hidden>
+    <h2>Refused</h2>
+    <p class="r-code" id="r-code"></p>
+    <p id="r-reason"></p>
+    <p><strong>What would help:</strong> <span id="r-help"></span></p>
+  </section>
+
+  <section id="controls" class="controls" aria-label="Inputs">
+    <div class="ctl">
+      <span class="ctl-label" id="tier-label">Tier (from <code>rev_a.json</code>)</span>
+      <div class="seg" role="group" aria-labelledby="tier-label" id="tiers"></div>
+    </div>
+    <div class="ctl">
+      <label class="ctl-label" for="len">Half-length <output id="len-out" for="len"></output></label>
+      <input type="range" id="len" step="1">
+    </div>
+    <div class="ctl">
+      <label class="ctl-label" for="phase">Spin set at <output id="phase-out" for="phase"></output> from vertical</label>
+      <input type="range" id="phase" min="0" max="90" step="1" value="0">
+    </div>
+    <div class="ctl">
+      <span class="ctl-label" id="rad-label">Centre-of-mass radius</span>
+      <div class="seg" role="group" aria-labelledby="rad-label" id="radii"></div>
+    </div>
+    <div class="ctl ctl-reset"><button type="button" id="reset">Back to the canon</button></div>
+  </section>
+  <p class="state-note" id="state-note"></p>
+
+  <div id="results">
+    <section class="tiles" aria-label="Headline numbers">
+      <div class="tile"><p class="t-k">At the vertical (catch and release)</p><p class="t-v" id="t-vert"></p><p class="t-s" id="t-vert-s"></p></div>
+      <div class="tile"><p class="t-k">Slowest, tether horizontal</p><p class="t-v" id="t-horiz"></p><p class="t-s" id="t-horiz-s"></p></div>
+      <div class="tile"><p class="t-k">Rotation mean (time average)</p><p class="t-v" id="t-mean"></p><p class="t-s" id="t-mean-s"></p></div>
+      <div class="tile"><p class="t-k">Vertical to vertical</p><p class="t-v" id="t-half"></p><p class="t-s" id="t-half-s"></p></div>
+    </section>
+
+    <section class="card" aria-labelledby="ca-h">
+      <h2 id="ca-h">Tip speed through one turn</h2>
+      <p class="sub" id="ca-sub"></p>
+      <div class="legend" id="ca-legend"></div>
+      <div class="chart" id="chart-a"><svg role="img" tabindex="0" aria-label="Tip speed against tether angle; use the arrow keys to read values"></svg><div class="tip" hidden></div></div>
+      <p class="note" id="ca-note"></p>
+    </section>
+
+    <section class="card" aria-labelledby="cb-h">
+      <h2 id="cb-h">Against Skyhook's twin, over two turns</h2>
+      <p class="sub" id="cb-sub"></p>
+      <div id="cb-body">
+        <div class="legend" id="cb-legend"></div>
+        <div class="chart" id="chart-b"><svg role="img" tabindex="0" aria-label="Twin minus closed form against time; use the arrow keys to read values"></svg><div class="tip" hidden></div></div>
+        <dl class="facts" id="cb-facts"></dl>
+      </div>
+      <p class="note" id="cb-note"></p>
+    </section>
+
+    <section class="card" aria-labelledby="cc-h">
+      <h2 id="cc-h">The dip against half-length</h2>
+      <p class="sub" id="cc-sub"></p>
+      <div class="legend" id="cc-legend"></div>
+      <div class="chart" id="chart-c"><svg role="img" tabindex="0" aria-label="Peak-to-trough dip against half-length; use the arrow keys to read values"></svg><div class="tip" hidden></div></div>
+      <p class="note" id="cc-note"></p>
+    </section>
+
+    <section class="card" aria-labelledby="tt-h">
+      <h2 id="tt-h">The three tiers at these settings</h2>
+      <div class="scroll"><table class="data" id="tier-table"></table></div>
+      <p class="note" id="tt-note"></p>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="cl-h" id="claims-card">
+    <h2 id="cl-h">What the program says, checked</h2>
+    <p class="sub" id="cl-sub"></p>
+    <div id="claims"></div>
+  </section>
+
+  <section class="card" aria-labelledby="hw-h">
+    <h2 id="hw-h">How it is computed</h2>
+    <div class="prose">
+      <p>A rigid tether of any mass distribution along a straight line, spinning in the plane of a circular orbit, with <i>θ</i> its angle from the local vertical measured in the frame that turns with the orbit at <i>n</i> = √(μ/R³). The gravity-gradient torque gives the pitch equation <i>θ</i>″ = −3<i>n</i>² sin <i>θ</i> cos <i>θ</i>, so <i>θ</i>′² + 3<i>n</i>² sin²<i>θ</i> stays constant. The tip's speed relative to the centre of mass is <i>L</i>(<i>n</i> + <i>θ</i>′): the spin relative to the orbiting frame plus the frame's own turn. Spun up to tip speed <i>v</i>₀ at angle <i>θ</i>₀, <i>θ</i>′(<i>θ</i>₀) = <i>v</i>₀/<i>L</i> − <i>n</i>.</p>
+      <p>The tip is fastest at the vertical and slowest at the horizontal. The time between verticals is ∫dθ/θ′ over half a turn, a complete elliptic integral, and Gauss's arithmetic–geometric mean gives it exactly: the rotation-mean of <i>θ</i>′ is AGM(<i>θ</i>′<sub>max</sub>, <i>θ</i>′<sub>min</sub>). To first order in <i>n</i>/<i>ω</i> the dip is 1.5<i>n</i>²/(<i>ω</i>(<i>ω</i> − <i>n</i>)), not the 1.5<i>n</i>²/<i>ω</i>² the model's docstring states: the first integral holds for the spin relative to the orbiting frame, and the tip speed is measured in inertial space.</p>
+      <p>The page integrates the same equation step by step to reproduce the twin's golden-run window. The twin overlay is a recorded run of Skyhook's own port (<code>study.mjs</code> runs the byte-identical snapshot; the page only plots what it saved).</p>
+    </div>
+    <div class="scroll"><table class="data" id="prov-table"></table></div>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>Idea Bank prototype for Skyhook. Not through Skyhook's Rule 1 canon review, a verification memo, or its pytest suite. Every number on this page is computed in your browser from the snapshot files beside it, or read from the recorded twin run.</p>
+</footer>
+
+<script src="snapshots/canon.data.js"></script>
+<script src="snapshots/twin-overlay.js"></script>
+<script src="wobble.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "params/rev_a.json",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "7b64e55632e78eb1d2b059eb2230d0ef3056d1bc",
+  "readBlob": "7b64e55632e78eb1d2b059eb2230d0ef3056d1bc",
+  "sourceSha256": "d0828c1e1fae1521209cb4b81a2ebb2a25d79bf7702c04d10546e9d268db1fbd",
+  "sourceBytes": 7125,
+  "copiedAt": "2026-10-26T14:49:34.399Z",
+  "mode": "copy",
+  "note": "Whole file: the Rev A canon (Rule 1). Read for mu, CoM altitude, com_radius_km (the alternative radius convention), half-length, the three tier tip speeds and rotation_period_min; nothing retyped.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d0828c1e1fae1521209cb4b81a2ebb2a25d79bf7702c04d10546e9d268db1fbd",
+  "writtenBytes": 7125
+}

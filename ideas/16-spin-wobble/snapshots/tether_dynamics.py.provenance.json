@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "physics/tether_dynamics.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "809b931692ee6a7932a42c9d98eabbbc3496cf4c",
+  "readBlob": "809b931692ee6a7932a42c9d98eabbbc3496cf4c",
+  "sourceSha256": "154fd606da388814a7fc4815dae459ae65865201aefce2aab333c5188704eacb",
+  "sourceBytes": 16924,
+  "copiedAt": "2026-10-26T14:49:34.760Z",
+  "mode": "copy",
+  "note": "Whole file, read as text only (never executed): run_measuring docstring (lines 257-265) and catch_and_measure docstring (line 353) carry the modulation claims checked here.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "154fd606da388814a7fc4815dae459ae65865201aefce2aab333c5188704eacb",
+  "writtenBytes": 16924
+}

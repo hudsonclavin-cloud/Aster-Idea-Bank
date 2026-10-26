@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/twin/physics.js",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "bced1ba 2026-07-05T23:17:32-04:00",
+  "committedBlob": "776898b4efa2339bda25c15bc0f0e0034f678369",
+  "readBlob": "776898b4efa2339bda25c15bc0f0e0034f678369",
+  "sourceSha256": "a024004cbcf7c84d96b704a48cf7e025fd7760feb08d1c97cbec6d5f7e37e50f",
+  "sourceBytes": 13868,
+  "copiedAt": "2026-10-26T14:49:34.580Z",
+  "mode": "copy",
+  "note": "Whole file, byte-identical, renamed .js -> .mjs so Node imports it as the ES module it is without a package.json (tools/twin/package.json sets type=module there). The validated JS port of physics/tether_dynamics.py, used as-is as the lumped-mass oracle by study.mjs and the tests; never by the page.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a024004cbcf7c84d96b704a48cf7e025fd7760feb08d1c97cbec6d5f7e37e50f",
+  "writtenBytes": 13868
+}

@@ -1,0 +1,35 @@
+Spin Wobble study: the closed form against Skyhook's twin (tools/twin/physics.js @ 34935cb)
+
+Closed form, Rev A reference (v_tip 2500 m/s at the vertical, L 320 km, R 6981 km = R_E + altitude):
+  n = 1.082411e-3 rad/s, omega = 7.812500e-3 rad/s, n/omega = 0.13855, n^2/omega^2 = 1.920 %
+  tip speed: vertical 2500.00 m/s, horizontal 2414.75 m/s, dip 3.410 % (first order 3.342 %; the docstring's 1.5 n^2/omega^2 gives 2.879 %)
+  rotation mean (AGM) 2457.16 m/s = -1.714 % against the vertical value
+  vertical to vertical 476.27 s (no gradient 466.80 s); a tip returns to the bottom every 952.54 s; inertial period 2 pi L / v = 804.25 s
+
+1. Port gate (verify.mjs tolerances 0.1 % / 1 m / 1 %): PASS
+  max relative position error 1.57e-10; near-zero coordinates within 0.00e+0 m
+  mean tip speed 2462.640694 vs golden 2462.640694 m/s (relative 1.55e-10)
+
+2. Golden reconciliation, the closed form integrated over golden's 600 s window at its dt:
+  mean tip speed: closed form 2462.533, golden 2462.641 m/s, golden minus closed 0.108 m/s (0.0044 %)
+  mean centripetal: closed form v^2/L 18.95294, golden 18.95569 m/s^2
+  t = 60 s: twin 2486.112, closed form 2487.110, difference -0.999 m/s
+  t = 300 s: twin 2430.513, closed form 2427.950, difference 2.564 m/s
+  t = 600 s: twin 2458.171, closed form 2454.329, difference 3.843 m/s
+
+3. Overlay, 1920 s (just over two turns in the orbiting frame), sampled every 300 steps:
+  largest |twin - closed form| at the same chord angle 7.324 m/s = 8.59 % of the 85.25 m/s swing; mean residual 0.640 m/s
+  the chain bends by up to 0.283 deg (lower tip to upper tip, seen from the CoM)
+  vertical 1: twin t = 476.15 s, closed form 476.27 s; twin tip speed there 2498.705 m/s
+  vertical 2: twin t = 952.30 s, closed form 952.54 s; twin tip speed there 2499.854 m/s
+  vertical 3: twin t = 1428.45 s, closed form 1428.82 s; twin tip speed there 2499.876 m/s
+  vertical 4: twin t = 1904.63 s, closed form 1905.09 s; twin tip speed there 2501.197 m/s
+  lower-tip periapsis (twin.js's detector): twin t = 952.02 s, closed form 952.54 s
+  lower-tip periapsis (twin.js's detector): twin t = 1904.72 s, closed form 1905.09 s
+
+4. Rigid line body, the twin's own lump masses, exact point-mass gravity, orbit free (I/(M L^2) 0.1141):
+  largest |rigid body - closed form| over 1920 s: 0.0738 m/s; its 600 s mean 2462.493 m/s
+
+Sweeps (what the residual is not):
+  axial stiffness x50 (target strain 1e-4, dt 0.02 s): largest residual 7.468 m/s, bend 0.287 deg
+  33 nodes instead of 17 (dt halved): largest residual 6.727 m/s, bend 0.252 deg

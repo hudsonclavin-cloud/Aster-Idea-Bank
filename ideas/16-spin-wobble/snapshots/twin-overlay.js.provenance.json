@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/twin/physics.js",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "bced1ba 2026-07-05T23:17:32-04:00",
+  "committedBlob": "776898b4efa2339bda25c15bc0f0e0034f678369",
+  "readBlob": "776898b4efa2339bda25c15bc0f0e0034f678369",
+  "sourceSha256": "a024004cbcf7c84d96b704a48cf7e025fd7760feb08d1c97cbec6d5f7e37e50f",
+  "sourceBytes": 13868,
+  "copiedAt": "2026-10-26T14:54:30.625Z",
+  "mode": "derived",
+  "note": "derived by study.mjs --write: the output of running snapshots/twin-physics.mjs (this file, byte-identical) from the golden start with rev_a.json's parameters for 1920 s at golden.json's dt; node-0 tip speed relative to the CoM every 300 steps, the chord angle, vertical crossings, lower-tip periapsis times, the port-gate result and the rigid-body check. Regenerated and compared by wobble.test.mjs.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "91facaf1e2f87bbb55d9697c540565dd7405d2cce96f41d03be0a6ef44e8c5c6",
+  "writtenBytes": 12715
+}

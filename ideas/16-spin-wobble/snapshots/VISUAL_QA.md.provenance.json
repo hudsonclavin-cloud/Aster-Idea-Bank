@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/twin/VISUAL_QA.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "e879d41 2026-07-06T00:15:11-04:00",
+  "committedBlob": "9fa100891d7e583afc69e17b36c555283fcdda63",
+  "readBlob": "9fa100891d7e583afc69e17b36c555283fcdda63",
+  "sourceSha256": "7069c5888020fd57072b81b8b285374eb0f7333e67412c557cf572e27acb6b62",
+  "sourceBytes": 6153,
+  "copiedAt": "2026-10-26T14:49:34.867Z",
+  "mode": "copy",
+  "note": "Whole file: line 37-39 states the lower-tip periapsis recurrence period and the observed first-catch time checked here.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "7069c5888020fd57072b81b8b285374eb0f7333e67412c557cf572e27acb6b62",
+  "writtenBytes": 6153
+}
