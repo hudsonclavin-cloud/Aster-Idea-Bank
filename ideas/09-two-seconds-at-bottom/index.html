@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Seconds at the Bottom</title>
+<meta name="description" content="How long a passive vehicle at apex stays inside a Skyhook tether's capture envelope, computed from the tether's own kinematics, and what thrust and delta-v it takes to stretch that to the founding document's 3 to 10 seconds.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Two Seconds at the Bottom</h1>
+    <p class="tagline">At the bottom of its swing the lower tip of a rotating tether is being pulled up by the tether while a vehicle matched to it keeps falling. This page computes how long a passive vehicle at the apex of its arc stays inside the capture envelope, from Skyhook's Rev&nbsp;A constants alone, and prices the alternative: holding station with the tip for the founding document's 3 to 10 seconds.</p>
+  </header>
+
+  <section class="card controls" aria-label="Inputs">
+    <div class="row">
+      <span class="lbl" id="tier-lbl">Tether tier</span>
+      <div class="seg" role="radiogroup" aria-labelledby="tier-lbl" id="tiers"></div>
+      <span></span>
+      <p class="note" id="tier-note">Tip speeds read from the <code>params/rev_a.json</code> snapshot.</p>
+    </div>
+    <div class="row">
+      <label class="lbl" for="L">Half-length L</label>
+      <input id="L" type="range" min="50" max="700" step="10" value="50" aria-describedby="L-note">
+      <span class="nowrap"><input id="L-num" type="number" min="50" max="700" step="10" value="50" inputmode="numeric" aria-label="Half-length in km"><span class="unit">km</span> <button type="button" id="L-canon" class="small" title="Reset to the Rev A half-length">canon</button></span>
+      <p class="note" id="L-note">The centre of mass stays at the canon altitude; the tip altitude is the altitude minus L. Past the ground the page refuses.</p>
+    </div>
+    <div class="row">
+      <label class="lbl" for="env">Capture envelope ±</label>
+      <input id="env" type="range" min="1" max="50" step="1" value="10" aria-describedby="env-note">
+      <span class="nowrap"><input id="env-num" type="number" min="0.1" max="1000" step="1" value="10" inputmode="decimal" aria-label="Capture envelope half-width in metres"><span class="unit">m</span></span>
+      <p class="note" id="env-note">You declare this. The default ±10 m is the cone-and-latch envelope of the program site's §4.3 (<code>tools/sims/skyhook_program_site.html:470</code>) and the Monte Carlo tool's default (<code>:1330</code>); the founding document says "within meters" (<code>docs/project_instructions.md:124</code>). Not a Rev&nbsp;A canon value.</p>
+    </div>
+    <div class="row">
+      <label class="lbl" for="vtol">Velocity tolerance ±</label>
+      <input id="vtol" type="range" min="0.1" max="5" step="0.1" value="1" aria-describedby="vtol-note">
+      <span class="nowrap"><input id="vtol-num" type="number" min="0.01" max="100" step="0.1" value="1" inputmode="decimal" aria-label="Relative velocity tolerance in metres per second"><span class="unit">m/s</span></span>
+      <p class="note" id="vtol-note">The default ~1 m/s is the "relative velocity within ~1 m/s at the moment of capture" requirement at <code>docs/project_instructions.md:124</code>. A planning requirement, user-declared here.</p>
+    </div>
+    <div class="row">
+      <label class="lbl" for="hold">Held window T</label>
+      <input id="hold" type="range" min="1" max="20" step="0.5" value="10" aria-describedby="hold-note">
+      <span class="nowrap"><input id="hold-num" type="number" min="0.1" max="600" step="0.5" value="10" inputmode="decimal" aria-label="Held window duration in seconds"><span class="unit">s</span></span>
+      <p class="note" id="hold-note"><span class="marks"><button type="button" data-hold="3">§4.3 lower bound, 3 s</button><button type="button" data-hold="10">§4.3 upper bound, 10 s</button></span> How long the vehicle must stay matched to the tip for the grapple. The founding document asks for 3–10 seconds (<code>docs/project_instructions.md:124</code>).</p>
+    </div>
+  </section>
+
+  <section class="card verdict" id="verdict" aria-live="polite">
+    <p class="headline" id="headline">…</p>
+    <div class="chips" id="chips"></div>
+    <div class="chips" id="statuses"></div>
+  </section>
+
+  <section class="card refusal" id="refusal-card" hidden></section>
+
+  <div id="results">
+    <section class="card">
+      <h2>The bottom of the swing <span class="muted small">seen from the tether's centre of mass</span></h2>
+      <div class="chart-wrap">
+        <svg class="chart" id="sketch" viewBox="0 0 680 300" role="img" aria-labelledby="sketch-title sketch-desc">
+          <title id="sketch-title">The lower tip's circular arc at the bottom of the swing against the almost straight path of a ballistic vehicle matched to it, with the capture envelope drawn around the tip</title>
+          <desc id="sketch-desc">The tip rises away along its arc on both sides of the match point while the vehicle sags slightly; the vehicle leaves the envelope band about a second either side of the match.</desc>
+        </svg>
+      </div>
+      <div class="legend"><span><span class="key tether"></span>tether and tip path</span><span><span class="key band pos"></span>capture envelope around the tip</span><span><span class="key pos"></span>ballistic vehicle</span><span><span class="key hold"></span>held window ±T/2</span></div>
+      <p class="caption" id="sketch-cap"></p>
+    </section>
+
+    <section class="card">
+      <h2>Relative position and relative velocity <span class="muted small">tip minus vehicle, seconds from the match</span></h2>
+      <div class="chart-wrap">
+        <svg class="chart" id="timeline" viewBox="0 0 680 440" role="img" aria-labelledby="tl-title tl-desc" tabindex="0">
+          <title id="tl-title">Separation grows as a parabola and relative speed as a straight line from the match instant; the envelope and tolerance are bands near zero</title>
+          <desc id="tl-desc">Two panels sharing a time axis. Top: separation in metres with the capture envelope as a band. Bottom: relative speed in metres per second with the velocity tolerance as a band. The held window is shaded across both. Hover, tap, or focus and use the arrow keys to read values.</desc>
+        </svg>
+        <div class="tip" id="tl-tip" role="status" aria-hidden="true"></div>
+      </div>
+      <div class="legend"><span><span class="key pos"></span>separation</span><span><span class="key band pos"></span>capture envelope</span><span><span class="key vel"></span>relative speed</span><span><span class="key band vel"></span>velocity tolerance</span><span><span class="key hold"></span>held window ±T/2</span></div>
+      <p class="caption" id="tl-cap"></p>
+    </section>
+
+    <section class="card" id="req-card">
+      <h2>What the founding document asks for, priced</h2>
+      <p class="quote">"Rendezvous closing accuracy requirement: relative position within meters and relative velocity within ~1 m/s at the moment of capture, sustained through a window of <b>3–10 seconds</b>" — <code>docs/project_instructions.md:124</code> (§4.3). Section 5.2 (b) and (d): "the launch vehicle does all the matching" and "the capture envelope is engineered to be tens of meters wide with multi-second windows by shaping tip trajectory and using the smart grapple's own terminal maneuvering" (<code>:167</code>).</p>
+      <p>A window is not a property of the geometry. For a passive vehicle it is set by the relative acceleration above; to get the stated duration passively the envelope would have to be far wider than "meters" and the grapple would meet the vehicle at tens of metres per second. Otherwise something supplies <span class="mono" id="req-arel"></span> for the whole window: the vehicle's engine, the grapple's own thrusters, or a reel paying line out from the tip.</p>
+      <div class="req-grid" id="reqs"></div>
+      <p class="caption">The reel row is the same kinematics paid by a line from the tip instead of by the vehicle: a reel that lets the grapple follow a ballistic vehicle over a symmetric window of T must pay the line in and back out by the excursion shown and reach the peak line speed. Who pays is a design choice; the bill is a_rel × T.</p>
+    </section>
+
+    <section class="card">
+      <h2>The three tiers <span class="muted small">at the current half-length, envelope, tolerance and held window</span></h2>
+      <div class="table-scroll">
+        <table id="tiers-table">
+          <thead><tr><th>Tier</th><th class="num">v_tip km/s</th><th class="num">tip g (file)</th><th class="num">a_rel m/s²</th><th class="num">a_rel g</th><th class="num">±t env.</th><th class="num">±t vel.</th><th class="num">hold Δv</th><th class="num">ground km/s (file)</th><th class="num">air km/s</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="caption">"(file)" columns give the value stated in <code>params/rev_a.json</code> beside the recomputation; a dash means the file states none for that tier. Ground-track uses EQ-3a's surface co-rotation; airspeed uses co-rotation at the tip radius (see the convention note below).</p>
+    </section>
+
+    <section class="card">
+      <h2>Passive window against half-length <span class="muted small">at the selected tip speed, tip kept above the ground</span></h2>
+      <div class="chart-wrap">
+        <svg class="chart" id="curve" viewBox="0 0 680 320" role="img" aria-labelledby="cv-title cv-desc" tabindex="0">
+          <title id="cv-title">Total passive window inside the envelope and inside the velocity tolerance, against tether half-length</title>
+          <desc id="cv-desc">Both windows grow slowly with half-length and the envelope window never reaches the 3 second line before the tip reaches the ground; the velocity window stays near zero throughout.</desc>
+        </svg>
+        <div class="tip" id="cv-tip" role="status" aria-hidden="true"></div>
+      </div>
+      <div class="legend"><span><span class="key pos"></span>inside the envelope</span><span><span class="key vel"></span>inside the velocity tolerance</span></div>
+      <p class="caption" id="cv-cap"></p>
+    </section>
+
+    <section class="card">
+      <h2>The numbers <span class="muted small">and where each one comes from</span></h2>
+      <div class="table-scroll">
+        <table id="numbers">
+          <thead><tr><th>Quantity</th><th class="num">Value</th><th>Traces to</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="grid2">
+      <section class="card" id="convention">
+        <h2>Which Earth rotation?</h2>
+        <div id="convention-body"></div>
+      </section>
+      <section class="card" id="modulation">
+        <h2>What the rigid rotor ignores</h2>
+        <div id="modulation-body"></div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Scope</h2>
+      <ul class="tight small">
+        <li>A rigid rotor on a circular orbit, a point-mass Earth, and a vehicle exactly at the apex of its arc, matched to the tip at the match instant. Off-apex vehicles, climbing arcs and lateral offsets are out of scope: the page does not extrapolate to them.</li>
+        <li>No atmosphere. At the canon tip altitude drag over a few seconds is small but not zero; it is not computed. Below the altitude flagged above, the "ballistic vehicle" idealisation is wrong and the page says so.</li>
+        <li>No grapple reach, no latch mechanics, no reel dynamics, no tether elasticity, no damping. The dynamic load factor of a catch is a different question (<code>physics/tether_dynamics.py</code>).</li>
+        <li>The 3–10 s window, the ±10 m envelope and the ~1 m/s tolerance are quoted as the program's <em>requirements</em>, with their lines, never as results of this page.</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer id="prov"></footer>
+</div>
+<script src="snapshots/canon.data.js"></script>
+<script src="catchwindow.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

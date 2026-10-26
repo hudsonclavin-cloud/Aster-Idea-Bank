@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/twin/golden.json",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "bced1ba 2026-07-05T23:17:32-04:00",
+  "committedBlob": "a604389cfd0dbcdd10ac4e0cde5405f93cb5fac4",
+  "readBlob": "a604389cfd0dbcdd10ac4e0cde5405f93cb5fac4",
+  "sourceSha256": "4ab69420f535092b75a84d5b3ca9b2f6a462574b880efd854133da3672e4d29f",
+  "sourceBytes": 8562,
+  "copiedAt": "2026-10-26T10:37:24.401Z",
+  "mode": "copy",
+  "note": "Whole file: the lumped-mass twin's golden run. Its t=0 state puts the lower tip at r=6661 km moving 5056.311 m/s (rigid rotation, tether vertical), and its 600 s mean tip speed 2462.64 m/s is the gravity-gradient modulation the rigid-rotor model ignores; both are reconciliation pins.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4ab69420f535092b75a84d5b3ca9b2f6a462574b880efd854133da3672e4d29f",
+  "writtenBytes": 8562
+}
