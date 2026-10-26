@@ -1,0 +1,68 @@
+{
+ "materials": {
+  "primary_fiber": "Zylon PBO",
+  "tensile_strength_GPa": 5.8,
+  "density_kgm3": 1560,
+  "specific_strength_MJkg": 3.72,
+  "V_c_kms": 2.73,
+  "_Vc_note": "sqrt(2*sigma/rho); Certain",
+  "safety_factor": 2.5,
+  "derate_fraction": 0.3,
+  "_derate_note": "30% strength reduction for seams/joints/degradation is the conservative Rev A planning case; 0% and 15% are documented as optimistic/baseline sensitivity cases. [Likely]",
+  "construction_baseline": "Spectra/UHMWPE core + Zylon outer arm (Hoytether architecture)",
+  "alternative_fibers": {
+   "Dyneema_SK99_GPa": 3.6,
+   "_sk99_note": "Corrected from 3.9 GPa per VM-001",
+   "T1100G_carbon_GPa": 7,
+   "_t1100g_note": "Verified per VM-001; density 1790 kg/m3"
+  }
+ },
+ "mass_ratio": {
+  "integrated_tether_to_payload_both_arms": {
+   "confidence": "[Certain] for equation; [Likely] for derate ladder",
+   "equation": "2 * sqrt(pi) * x * exp(x^2) * erf(x); x=(V_t/V_c_material)*sqrt(SF/(1-sigma_derate))",
+   "source": "Moravec/Forward taper-optimized integrated tether mass formula; not EQ-5 peak area taper",
+   "payload_mass_kg_for_tonnage": 5000,
+   "SF": 2.5,
+   "reference_v_tip_kms": 2.5,
+   "optimistic_0pct_derate": 40.32,
+   "optimistic_0pct_fiber_mass_t": 201.6,
+   "baseline_15pct_derate": 64.3,
+   "baseline_15pct_fiber_mass_t": 321.5,
+   "conservative_30pct_derate": 121.83,
+   "conservative_30pct_fiber_mass_t": 609.1,
+   "phase3_3p5kms_30pct_derate": 3085.95,
+   "phase3_3p5kms_30pct_fiber_mass_t": 15429.8,
+   "note": "[Certain] The old EQ-5 peak taper entry has been removed because peak area ratio is not integrated tether mass. At the 2.5 km/s GTO/high-elliptical reference, integrated two-arm mass ratio spans 40.32x at 0% derate, 64.30x at 15% derate, and 121.83x at 30% derate. The 2.8 km/s cislunar revenue-gated option is 295.27x at 30% derate; the 3.5 km/s Mars-class growth option reaches ~3085.95x at 30% derate.",
+   "cislunar_2p8kms_30pct_derate": 295.27,
+   "cislunar_2p8kms_30pct_fiber_mass_t": 1476.3
+  },
+  "tip_speed_to_Vc_ratio": 0.92,
+  "_ratio_note": "2.5 / 2.73 = 0.92; below the 1.3x mass-growth guardrail. [Certain]"
+ },
+ "kinematics": {
+  "v_tip_kms": 2.5,
+  "v_lower_tip_groundrel_kms": 4.59,
+  "_lower_tip_note": "v_orb - v_tip - equatorial rotation = 7.55 - 2.5 - 0.465 ~= 4.59 km/s; Likely"
+ },
+ "orbital": {
+  "com_altitude_km": 610,
+  "com_radius_km": 6988,
+  "mu_earth_m3s2": 398600000000000,
+  "v_orb_kms": 7.55,
+  "_v_orb_note": "sqrt(mu/R_orbit); Certain"
+ },
+ "geometry": {
+  "tether_half_length_km": 320,
+  "tip_altitude_lower_km": 290,
+  "_tip_alt_note": "CoM alt minus half-length; atmosphere-grazing variants lower; Likely",
+  "rotation_period_min": 13.4,
+  "_rotation_period_note": "Derived: 2*pi*L / v_tip = 13.40 min at 2.5 km/s GTO/high-elliptical reference; Certain"
+ },
+ "_meta": {
+  "revision": "Rev A",
+  "last_verified": "2026-07-02",
+  "verification_memo": "VM-001",
+  "rule": "Rule 1 — all analysis must cite this revision. Any deviation must be explicit."
+ }
+}

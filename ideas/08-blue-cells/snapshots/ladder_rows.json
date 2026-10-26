@@ -1,0 +1,48 @@
+{
+ "source": "finance/skyhook_finance.py",
+ "lines": {
+  "SCENARIOS": [
+   52,
+   52
+  ],
+  "_LADDER_ROWS": [
+   56,
+   71
+  ],
+  "cols": [
+   114,
+   114
+  ],
+  "sheet": [
+   113,
+   113
+  ]
+ },
+ "rows": {
+  "strength_retention": 3,
+  "ascent_losses_ms": 4,
+  "construction_launch_per_kg": 5,
+  "power_chain_efficiency": 6,
+  "electricity_per_kwh": 7,
+  "ops_wear_per_kg": 8,
+  "hardware_mass_factor": 9,
+  "customer_price_per_kg": 10,
+  "catches_per_day": 11,
+  "payload_kg": 12,
+  "revenue_ramp_y1": 13,
+  "fixed_ops_M": 14,
+  "tip_speed_kms": 15,
+  "program_fleet_capex_M": 16
+ },
+ "scenarios": [
+  "Conservative",
+  "Baseline",
+  "Optimistic"
+ ],
+ "columns": {
+  "Conservative": "B",
+  "Baseline": "C",
+  "Optimistic": "D"
+ },
+ "sheet": "Assumptions"
+}

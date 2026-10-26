@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/financial/skyhook_financial_model.xlsx",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5719c0e 2026-07-02T17:39:34-04:00",
+  "committedBlob": "3fa20f91d426a7e9a3b62877105256d690e9f86d",
+  "readBlob": "3fa20f91d426a7e9a3b62877105256d690e9f86d",
+  "sourceSha256": "a0e774f4b29bc9824b34b622093011042b12274632012a61b02ea9a3f5d41b73",
+  "sourceBytes": 65603,
+  "copiedAt": "2026-10-26T10:18:02.269Z",
+  "mode": "derived",
+  "note": "derived by ladder_export.py: the Assumptions ladder (B3:D16), shared design point (B19:B28) and constants (B32:B33) read as literals, plus the per-sheet formula/cached-value census and the workbook's sha256/md5; no timestamp of its own",
+  "readMatchesCommitted": true,
+  "writtenSha256": "127cc66cab4e8d3907d036c95da35b126295ffdb57e52d02984be9da4ef6270b",
+  "writtenBytes": 15134
+}

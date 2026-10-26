@@ -1,0 +1,24 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/decision_grid.json",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "34935cb 2026-09-10T23:52:55-04:00",
+  "committedBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "readBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "sourceSha256": "3787eb7a4ed8efa14b9d4b59dc5df6a42cc3b46ecdb129f52b8d2a0b69474acf",
+  "sourceBytes": 251394,
+  "copiedAt": "2026-10-26T10:05:16.020Z",
+  "mode": "excerpt",
+  "note": "excerpt: the grid's provenance block only; workbook_md5 is what ladder_export.py's md5 must equal to close the loop",
+  "readMatchesCommitted": true,
+  "picked": [
+    "schema_version",
+    "generated_at",
+    "git_commit",
+    "rev_a_md5",
+    "workbook_md5"
+  ],
+  "writtenSha256": "a73bf35f1b4d26814801afb59c637a36d213ed8bfe06bdb1d11dec55da1e7c75",
+  "writtenBytes": 246
+}

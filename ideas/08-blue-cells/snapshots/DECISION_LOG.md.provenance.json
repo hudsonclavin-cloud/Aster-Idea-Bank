@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/DECISION_LOG.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "969aad2 2026-09-02T14:02:25-04:00",
+  "committedBlob": "79e205e9e6d67dad2ce2583e3c2f455d9f183866",
+  "readBlob": "79e205e9e6d67dad2ce2583e3c2f455d9f183866",
+  "sourceSha256": "e535473dec7beb9f2d261aeea2c069a39a400c3fecde2317b2486d651c2c54d7",
+  "sourceBytes": 12615,
+  "copiedAt": "2026-10-26T10:36:02.093Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 45-57 (item 6, the workbook ladder conflation and its fix, with the 'post-fix workbook results') copied verbatim, every other line left empty so line numbers match the source",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4cf00e32efe77986c41a8b651f3d9339dd4446a72345bebbc7e9c229c0303905",
+  "writtenBytes": 2108
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/skyhook_finance.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "f81b77f 2026-09-06T12:03:46-04:00",
+  "committedBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "readBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "sourceSha256": "c8e15dda24b5af0eab8e56d3dcab0e2806d525a6c095ad91c162095bf87da911",
+  "sourceBytes": 19627,
+  "copiedAt": "2026-10-26T10:36:01.982Z",
+  "mode": "derived",
+  "note": "derived by build_data.py with the ast module: _LADDER_ROWS (lines 56-71), SCENARIOS (line 52), the cols map (line 114) and the sheet name (line 113) of load_ladder_from_workbook; nothing retyped",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ec31b41e07be0a3bee43ccd981d53d7e0571d1d66ef97e64c49d5b8c4c6ec11b",
+  "writtenBytes": 758
+}

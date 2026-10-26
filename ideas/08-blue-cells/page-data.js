@@ -1,0 +1,648 @@
+// Written by ladder_export.py --js; the same JSON as ladder.json, as a classic script so the
+// page works from file://. Do not edit by hand.
+window.BLUE_CELLS_DATA = {
+ "schema": "blue-cells/ladder/1",
+ "tool": "ladder_export.py 0.1.0",
+ "workbook": {
+  "file": "skyhook_financial_model.xlsx",
+  "bytes": 65603,
+  "sha256": "a0e774f4b29bc9824b34b622093011042b12274632012a61b02ea9a3f5d41b73",
+  "md5": "5ccdee4d43e91f8dd98884678c8e99bb",
+  "members": 17,
+  "application": "Microsoft Excel Compatible / Openpyxl 3.1.5",
+  "app_version": "3.1",
+  "creator": "openpyxl",
+  "created": "2026-06-11T20:46:26Z",
+  "modified": "2026-07-02T21:38:34Z",
+  "calc_pr": {
+   "calcId": "124519",
+   "fullCalcOnLoad": "1",
+   "refMode": "A1",
+   "iterate": "0",
+   "iterateCount": "100",
+   "iterateDelta": "0.0001"
+  },
+  "shared_strings": null,
+  "media": [
+   {
+    "member": "xl/media/image1.png",
+    "bytes": 53976,
+    "md5": "11384969e42362346381174c57ddc7ae"
+   }
+  ],
+  "sheets": [
+   "README",
+   "Assumptions",
+   "Design Calcs",
+   "Phase Budgets",
+   "Cash Flow & Payback"
+  ],
+  "legend": "Color code: BLUE = hardcoded inputs · BLACK = formulas · GREEN = cross-sheet links · YELLOW fill = key assumption needing attention."
+ },
+ "ladder": {
+  "sheet": "Assumptions",
+  "header_row": 2,
+  "columns": {
+   "Conservative": "B",
+   "Baseline": "C",
+   "Optimistic": "D"
+  },
+  "rows_map_source": {
+   "file": "finance/skyhook_finance.py",
+   "lines": {
+    "SCENARIOS": [
+     52,
+     52
+    ],
+    "_LADDER_ROWS": [
+     56,
+     71
+    ],
+    "cols": [
+     114,
+     114
+    ],
+    "sheet": [
+     113,
+     113
+    ]
+   }
+  },
+  "rows": {
+   "strength_retention": {
+    "row": 3,
+    "label": "Fiber strength retention (1 - derate); joints/weave/aging",
+    "note": "Rev A ladder = rev_a.json derate_fraction 30%/15%/0%; Conservative is Rule 4 base case",
+    "cells": {
+     "Conservative": "B3",
+     "Baseline": "C3",
+     "Optimistic": "D3"
+    },
+    "values": {
+     "Conservative": 0.7,
+     "Baseline": 0.85,
+     "Optimistic": 1.0
+    },
+    "raw": {
+     "Conservative": "0.7",
+     "Baseline": "0.85",
+     "Optimistic": "1"
+    },
+    "blue": true
+   },
+   "ascent_losses_ms": {
+    "row": 4,
+    "label": "Ascent losses (m/s)",
+    "note": "gravity+drag for suborbital profile",
+    "cells": {
+     "Conservative": "B4",
+     "Baseline": "C4",
+     "Optimistic": "D4"
+    },
+    "values": {
+     "Conservative": 1800.0,
+     "Baseline": 1500.0,
+     "Optimistic": 1200.0
+    },
+    "raw": {
+     "Conservative": "1800",
+     "Baseline": "1500",
+     "Optimistic": "1200"
+    },
+    "blue": true
+   },
+   "construction_launch_per_kg": {
+    "row": 5,
+    "label": "Launch price during construction ($/kg)",
+    "note": "blended commercial, Part 7.2",
+    "cells": {
+     "Conservative": "B5",
+     "Baseline": "C5",
+     "Optimistic": "D5"
+    },
+    "values": {
+     "Conservative": 2500.0,
+     "Baseline": 1500.0,
+     "Optimistic": 800.0
+    },
+    "raw": {
+     "Conservative": "2500",
+     "Baseline": "1500",
+     "Optimistic": "800"
+    },
+    "blue": true
+   },
+   "power_chain_efficiency": {
+    "row": 6,
+    "label": "Power chain efficiency (ED reboost)",
+    "note": "array->PMAD->thrust, MXER studies",
+    "cells": {
+     "Conservative": "B6",
+     "Baseline": "C6",
+     "Optimistic": "D6"
+    },
+    "values": {
+     "Conservative": 0.15,
+     "Baseline": 0.2,
+     "Optimistic": 0.3
+    },
+    "raw": {
+     "Conservative": "0.15",
+     "Baseline": "0.2",
+     "Optimistic": "0.3"
+    },
+    "blue": true
+   },
+   "electricity_per_kwh": {
+    "row": 7,
+    "label": "Electricity cost ($/kWh, amortized array)",
+    "note": "labeled assumption",
+    "cells": {
+     "Conservative": "B7",
+     "Baseline": "C7",
+     "Optimistic": "D7"
+    },
+    "values": {
+     "Conservative": 0.08,
+     "Baseline": 0.06,
+     "Optimistic": 0.04
+    },
+    "raw": {
+     "Conservative": "0.08",
+     "Baseline": "0.06",
+     "Optimistic": "0.04"
+    },
+    "blue": true
+   },
+   "ops_wear_per_kg": {
+    "row": 8,
+    "label": "Ops + wear + insurance increment ($/kg)",
+    "note": "labeled assumption pending subsystem estimates",
+    "cells": {
+     "Conservative": "B8",
+     "Baseline": "C8",
+     "Optimistic": "D8"
+    },
+    "values": {
+     "Conservative": 12.0,
+     "Baseline": 8.0,
+     "Optimistic": 5.0
+    },
+    "raw": {
+     "Conservative": "12",
+     "Baseline": "8",
+     "Optimistic": "5"
+    },
+    "blue": true
+   },
+   "hardware_mass_factor": {
+    "row": 9,
+    "label": "Hardware mass factor (x tether launch cost)",
+    "note": "hub/arrays/tips, Part 7.2",
+    "cells": {
+     "Conservative": "B9",
+     "Baseline": "C9",
+     "Optimistic": "D9"
+    },
+    "values": {
+     "Conservative": 1.8,
+     "Baseline": 1.6,
+     "Optimistic": 1.4
+    },
+    "raw": {
+     "Conservative": "1.8",
+     "Baseline": "1.6",
+     "Optimistic": "1.4"
+    },
+    "blue": true
+   },
+   "customer_price_per_kg": {
+    "row": 10,
+    "label": "Boost price to customer ($/kg)",
+    "note": "held flat across scenarios deliberately",
+    "cells": {
+     "Conservative": "B10",
+     "Baseline": "C10",
+     "Optimistic": "D10"
+    },
+    "values": {
+     "Conservative": 500.0,
+     "Baseline": 500.0,
+     "Optimistic": 500.0
+    },
+    "raw": {
+     "Conservative": "500",
+     "Baseline": "500",
+     "Optimistic": "500"
+    },
+    "blue": true
+   },
+   "catches_per_day": {
+    "row": 11,
+    "label": "Mature cadence (catches/day)",
+    "note": "Part 7.3",
+    "cells": {
+     "Conservative": "B11",
+     "Baseline": "C11",
+     "Optimistic": "D11"
+    },
+    "values": {
+     "Conservative": 1.0,
+     "Baseline": 2.0,
+     "Optimistic": 3.0
+    },
+    "raw": {
+     "Conservative": "1",
+     "Baseline": "2",
+     "Optimistic": "3"
+    },
+    "blue": true
+   },
+   "payload_kg": {
+    "row": 12,
+    "label": "Payload per catch (kg)",
+    "note": "Phase 3 reference",
+    "cells": {
+     "Conservative": "B12",
+     "Baseline": "C12",
+     "Optimistic": "D12"
+    },
+    "values": {
+     "Conservative": 5000.0,
+     "Baseline": 5000.0,
+     "Optimistic": 5000.0
+    },
+    "raw": {
+     "Conservative": "5000",
+     "Baseline": "5000",
+     "Optimistic": "5000"
+    },
+    "blue": true
+   },
+   "revenue_ramp_y1": {
+    "row": 13,
+    "label": "Revenue ramp Y1/Y2/Y3 of ops",
+    "note": "fraction of mature in first ops year",
+    "cells": {
+     "Conservative": "B13",
+     "Baseline": "C13",
+     "Optimistic": "D13"
+    },
+    "values": {
+     "Conservative": 0.3,
+     "Baseline": 0.4,
+     "Optimistic": 0.5
+    },
+    "raw": {
+     "Conservative": "0.3",
+     "Baseline": "0.4",
+     "Optimistic": "0.5"
+    },
+    "blue": true
+   },
+   "fixed_ops_M": {
+    "row": 14,
+    "label": "Fixed annual ops cost ($M)",
+    "note": "mission ops, ground, G&A",
+    "cells": {
+     "Conservative": "B14",
+     "Baseline": "C14",
+     "Optimistic": "D14"
+    },
+    "values": {
+     "Conservative": 80.0,
+     "Baseline": 60.0,
+     "Optimistic": 45.0
+    },
+    "raw": {
+     "Conservative": "80",
+     "Baseline": "60",
+     "Optimistic": "45"
+    },
+    "blue": true
+   },
+   "tip_speed_kms": {
+    "row": 15,
+    "label": "Design tip speed (km/s) — fixed at Rev A 2.5 km/s reference",
+    "note": "Rev A reference (rev_a.json); conservatism lever is fiber derate (row 3), not tip speed",
+    "cells": {
+     "Conservative": "B15",
+     "Baseline": "C15",
+     "Optimistic": "D15"
+    },
+    "values": {
+     "Conservative": 2.5,
+     "Baseline": 2.5,
+     "Optimistic": 2.5
+    },
+    "raw": {
+     "Conservative": "2.5",
+     "Baseline": "2.5",
+     "Optimistic": "2.5"
+    },
+    "blue": true
+   },
+   "program_fleet_capex_M": {
+    "row": 16,
+    "label": "Program + launcher fleet capex ($M)",
+    "note": "Part 7.2: fleet ~$2-3B + program/reserves; conservative adds margin",
+    "cells": {
+     "Conservative": "B16",
+     "Baseline": "C16",
+     "Optimistic": "D16"
+    },
+    "values": {
+     "Conservative": 6000.0,
+     "Baseline": 5000.0,
+     "Optimistic": 4000.0
+    },
+    "raw": {
+     "Conservative": "6000",
+     "Baseline": "5000",
+     "Optimistic": "4000"
+    },
+    "blue": true
+   }
+  }
+ },
+ "design_point": {
+  "sheet": "Assumptions",
+  "header": "SHARED DESIGN POINT",
+  "header_row": 17,
+  "entries": {
+   "com_altitude_km": {
+    "row": 19,
+    "label": "CoM altitude (km)",
+    "cell": "B19",
+    "value": 610.0,
+    "raw": "610",
+    "note": "Zylon baseline, Part 2.3 table",
+    "blue": true
+   },
+   "half_length_l_km": {
+    "row": 20,
+    "label": "Half-length L (km)",
+    "cell": "B20",
+    "value": 320.0,
+    "raw": "320",
+    "note": null,
+    "blue": true
+   },
+   "rev_a_reference_tip_speed_km_s": {
+    "row": 21,
+    "label": "Rev A reference tip speed (km/s) — GTO/high-elliptical",
+    "cell": "B21",
+    "value": 2.5,
+    "raw": "2.5",
+    "note": null,
+    "blue": true
+   },
+   "safety_factor_on_stress": {
+    "row": 22,
+    "label": "Safety factor on stress",
+    "cell": "B22",
+    "value": 2.5,
+    "raw": "2.5",
+    "note": null,
+    "blue": true
+   },
+   "fiber_tensile_strength_sigma_gpa": {
+    "row": 23,
+    "label": "Fiber tensile strength sigma (GPa)",
+    "cell": "B23",
+    "value": 5.8,
+    "raw": "5.8",
+    "note": null,
+    "blue": true
+   },
+   "fiber_density_rho_kg_m3": {
+    "row": 24,
+    "label": "Fiber density rho (kg/m3)",
+    "cell": "B24",
+    "value": 1560.0,
+    "raw": "1560",
+    "note": null,
+    "blue": true
+   },
+   "vehicle_exhaust_velocity_km_s": {
+    "row": 25,
+    "label": "Vehicle exhaust velocity (km/s)",
+    "cell": "B25",
+    "value": 3.4,
+    "raw": "3.4",
+    "note": null,
+    "blue": true
+   },
+   "all_rocket_reference_dv_km_s": {
+    "row": 26,
+    "label": "All-rocket reference dv (km/s)",
+    "cell": "B26",
+    "value": 9.4,
+    "raw": "9.4",
+    "note": null,
+    "blue": true
+   },
+   "structure_fraction_of_vehicle": {
+    "row": 27,
+    "label": "Structure fraction of vehicle",
+    "cell": "B27",
+    "value": 0.04,
+    "raw": "0.04",
+    "note": null,
+    "blue": true
+   },
+   "equatorial_rotation_help_km_s": {
+    "row": 28,
+    "label": "Equatorial rotation help (km/s)",
+    "cell": "B28",
+    "value": 0.465,
+    "raw": "0.465",
+    "note": null,
+    "blue": true
+   }
+  }
+ },
+ "constants": {
+  "sheet": "Assumptions",
+  "header": "PHYSICAL CONSTANTS",
+  "header_row": 31,
+  "entries": {
+   "mu_earth_km3_s2": {
+    "row": 32,
+    "label": "mu Earth (km3/s2)",
+    "cell": "B32",
+    "value": 398600.0,
+    "raw": "398600",
+    "note": null,
+    "blue": true
+   },
+   "earth_radius_km": {
+    "row": 33,
+    "label": "Earth radius (km)",
+    "cell": "B33",
+    "value": 6371.0,
+    "raw": "6371",
+    "note": null,
+    "blue": true
+   }
+  }
+ },
+ "census": {
+  "sheets": {
+   "README": {
+    "cells": 6,
+    "formula_cells": 0,
+    "formula_cells_with_cached_value": 0,
+    "cached_refs": [],
+    "literal_numbers": 0,
+    "strings": 6,
+    "empty": 0,
+    "bools": 0,
+    "errors": 0,
+    "blue_cells": 0,
+    "blue_cells_with_formula": [],
+    "blue_literal_numbers": 0,
+    "green_cells": 0,
+    "green_cells_without_cross_sheet_formula": [],
+    "yellow_fill_cells": []
+   },
+   "Assumptions": {
+    "cells": 106,
+    "formula_cells": 0,
+    "formula_cells_with_cached_value": 0,
+    "cached_refs": [],
+    "literal_numbers": 54,
+    "strings": 52,
+    "empty": 0,
+    "bools": 0,
+    "errors": 0,
+    "blue_cells": 54,
+    "blue_cells_with_formula": [],
+    "blue_literal_numbers": 54,
+    "green_cells": 0,
+    "green_cells_without_cross_sheet_formula": [],
+    "yellow_fill_cells": [
+     "B8",
+     "C8",
+     "D8"
+    ]
+   },
+   "Design Calcs": {
+    "cells": 143,
+    "formula_cells": 81,
+    "formula_cells_with_cached_value": 0,
+    "cached_refs": [],
+    "literal_numbers": 0,
+    "strings": 58,
+    "empty": 4,
+    "bools": 0,
+    "errors": 0,
+    "blue_cells": 0,
+    "blue_cells_with_formula": [],
+    "blue_literal_numbers": 0,
+    "green_cells": 0,
+    "green_cells_without_cross_sheet_formula": [],
+    "yellow_fill_cells": []
+   },
+   "Phase Budgets": {
+    "cells": 24,
+    "formula_cells": 2,
+    "formula_cells_with_cached_value": 0,
+    "cached_refs": [],
+    "literal_numbers": 8,
+    "strings": 14,
+    "empty": 0,
+    "bools": 0,
+    "errors": 0,
+    "blue_cells": 8,
+    "blue_cells_with_formula": [],
+    "blue_literal_numbers": 8,
+    "green_cells": 0,
+    "green_cells_without_cross_sheet_formula": [],
+    "yellow_fill_cells": []
+   },
+   "Cash Flow & Payback": {
+    "cells": 116,
+    "formula_cells": 63,
+    "formula_cells_with_cached_value": 0,
+    "cached_refs": [],
+    "literal_numbers": 19,
+    "strings": 34,
+    "empty": 0,
+    "bools": 0,
+    "errors": 0,
+    "blue_cells": 1,
+    "blue_cells_with_formula": [],
+    "blue_literal_numbers": 0,
+    "green_cells": 5,
+    "green_cells_without_cross_sheet_formula": [],
+    "yellow_fill_cells": [
+     "B2"
+    ]
+   }
+  },
+  "totals": {
+   "cells": 395,
+   "formula_cells": 146,
+   "formula_cells_with_cached_value": 0,
+   "literal_numbers": 81,
+   "strings": 164,
+   "empty": 4,
+   "blue_cells": 63,
+   "blue_literal_numbers": 62,
+   "green_cells": 5,
+   "blue_cells_with_formula": 0,
+   "yellow_fill_cells": 4
+  }
+ },
+ "finding": "The committed workbook holds 146 formula cells and 0 cached results: every <v> under a formula is empty. The file carries inputs (81 literal numbers, 63 blue input cells) and formulas, not results. Any number quoted as a 'workbook result' was computed elsewhere: by a spreadsheet program that recalculated on open (calcPr fullCalcOnLoad=1) and was not saved back, or by finance/skyhook_finance.py.",
+ "checks": [
+  {
+   "name": "ladder-rows",
+   "ok": true,
+   "detail": "14 of 14 rows from finance/skyhook_finance.py found where the map says, labels match LABEL_GUARD"
+  },
+  {
+   "name": "ladder-literals",
+   "ok": true,
+   "detail": "all 42 ladder cells hold literal numbers (none is a formula)"
+  },
+  {
+   "name": "ladder-blue",
+   "ok": true,
+   "detail": "all 42 ladder cells use the blue input font"
+  },
+  {
+   "name": "no-blue-formula",
+   "ok": true,
+   "detail": "none of the 63 blue cells holds a formula"
+  },
+  {
+   "name": "green-are-links",
+   "ok": true,
+   "detail": "all 5 green cells are formulas that reference another sheet"
+  },
+  {
+   "name": "design-point",
+   "ok": true,
+   "detail": "10 shared design-point rows under 'SHARED DESIGN POINT'; 2 physical constants under 'PHYSICAL CONSTANTS'"
+  }
+ ],
+ "provenance": {
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/financial/skyhook_financial_model.xlsx",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5719c0e 2026-07-02T17:39:34-04:00",
+  "committedBlob": "3fa20f91d426a7e9a3b62877105256d690e9f86d",
+  "readBlob": "3fa20f91d426a7e9a3b62877105256d690e9f86d",
+  "sourceSha256": "a0e774f4b29bc9824b34b622093011042b12274632012a61b02ea9a3f5d41b73",
+  "sourceBytes": 65603,
+  "copiedAt": "2026-10-26T10:05:15.863Z",
+  "mode": "copy",
+  "note": "whole-file copy of the financial workbook; ladder_export.py reads it as a zip (binary, hashed byte-for-byte like export_grid.provenance_md5's binary branch)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a0e774f4b29bc9824b34b622093011042b12274632012a61b02ea9a3f5d41b73",
+  "writtenBytes": 65603
+ }
+};
