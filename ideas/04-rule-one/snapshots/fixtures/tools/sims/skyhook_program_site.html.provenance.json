@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/sims/skyhook_program_site.html",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "e282d28 2026-07-06T00:57:17-04:00",
+  "committedBlob": "356f23badc700197bdff5cf99ba9e0bd86ee583b",
+  "readBlob": "356f23badc700197bdff5cf99ba9e0bd86ee583b",
+  "sourceSha256": "5be29a26f0ff42937196c13bb06a40165a825f30295aac2c3e21ec05f0b5d7da",
+  "sourceBytes": 120509,
+  "copiedAt": "2026-10-26T09:32:45.208Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 215-222, 240-247, 360-365, 408-412, 1130-1140, 1415-1420 copied verbatim, every other line left empty so line numbers match the source; kept for FIG labels (219 lower tip 100-150 km), the symbol table (243, 246), the mass-ratio prose (363), FIG 4 caption (410), the Calculator's LAD ladder (1135, DEVIATIONS #8) and the glossary dd (1417, 1419)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f040dfc07d88e509221a75772137a01606e595ed55700ef83fd0b3808f6f7c90",
+  "writtenBytes": 7182
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/sims/skyhook_no_leo_stress_test.jsx",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "f554df882600b630763983bafe56adfbc4c1354d",
+  "readBlob": "f554df882600b630763983bafe56adfbc4c1354d",
+  "sourceSha256": "1f1b159d628715acbe0d1414094ae86908ffb1de774b751aa60f15baeb0a385b",
+  "sourceBytes": 28718,
+  "copiedAt": "2026-10-26T09:32:45.294Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 1-80 copied verbatim, every other line left empty so line numbers match the source; kept for the import of params/rev_a.json (16), the REVA mapping that reads mass_ratio.tether_to_payload_single_arm_range (48), a key rev_a.json does not have, and the line that indexes it (79)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "659621a30303e64220f30ec592d8a68376068ebf336faa110ad9b3e42f89f672",
+  "writtenBytes": 2838
+}

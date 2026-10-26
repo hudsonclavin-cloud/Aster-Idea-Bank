@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/program_manifest.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5160f88 2026-09-02T13:35:47-04:00",
+  "committedBlob": "28ae043c06ca26be703a20eca0da1c1ece733496",
+  "readBlob": "28ae043c06ca26be703a20eca0da1c1ece733496",
+  "sourceSha256": "59df04617baa6bcf31a5d7126b491f0a86c41cc651ec4ab559b2d36c440e3b05",
+  "sourceBytes": 17222,
+  "copiedAt": "2026-10-26T09:32:45.676Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 1-10, 64-70 copied verbatim, every other line left empty so line numbers match the source; kept for the two CANON CORRECTION banners (6: release 10.05, mass ratio ~41x/65x/123x; 8: the correct ladder) and the 24 Aug session delta that says 'v_tip 3.5 km/s reaffirmed' (68)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ccb69e4a5266aa48f669e87edb4ff6be7cfcc0eca3eb0b5a5a24b7ed71490c4d",
+  "writtenBytes": 5728
+}

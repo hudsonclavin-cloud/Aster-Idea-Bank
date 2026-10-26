@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/original_README.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "e89ff4c 2026-07-02T12:01:53-04:00",
+  "committedBlob": "720932aa655eddc248c15646820a15254f46b5de",
+  "readBlob": "720932aa655eddc248c15646820a15254f46b5de",
+  "sourceSha256": "b17b33b9ca19dcb8f17278a862b46d067f33298f4699abd84df150a506449e1c",
+  "sourceBytes": 4797,
+  "copiedAt": "2026-10-26T09:32:45.586Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 1-8 copied verbatim, every other line left empty so line numbers match the source; kept for the prepended archival header (1) and the 'v_tip 3.5 km/s Phase 3 target' sentence (6; DEVIATIONS #1 says line 4)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "7192e9c81828e90bcd55bc1b4ffc230d0136f8bb5816e377ed5ca63d00ed448f",
+  "writtenBytes": 659
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/DEVIATIONS.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "7eb4a67 2026-07-06T08:03:50-04:00",
+  "committedBlob": "bf9c1fb5c4a8e0e3b504fa083b505edc69e4f35a",
+  "readBlob": "bf9c1fb5c4a8e0e3b504fa083b505edc69e4f35a",
+  "sourceSha256": "42c91f00795ef53afd463781b08f0a4786fc686353850615dfc0bb6269ada44d",
+  "sourceBytes": 8460,
+  "copiedAt": "2026-10-26T09:01:37.683Z",
+  "mode": "copy",
+  "note": "Full copy of the deviations register; Rule One parses its table rows as the allow-list (Leave = ACCEPTED, EXECUTED = fixed, otherwise KNOWN OPEN).",
+  "readMatchesCommitted": true,
+  "writtenSha256": "42c91f00795ef53afd463781b08f0a4786fc686353850615dfc0bb6269ada44d",
+  "writtenBytes": 8460
+}

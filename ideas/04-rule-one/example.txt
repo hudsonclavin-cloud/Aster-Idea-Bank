@@ -1,0 +1,150 @@
+# Rule One: canon-drift report
+
+Scanned /home/user/skyhook at 34935cb, 65 files (.md .html .jsx .js .mjs .py .yml .yaml).
+Canon: /home/user/skyhook/params/rev_a.json (Rev A, last verified 2026-07-02, VM-001); sha256 d0828c1e1fae1521...
+Allow-list: /home/user/skyhook/docs/DEVIATIONS.md (9 rows: 5 Leave, 1 open, 3 executed).
+Skipped on purpose: docs/DEVIATIONS.md, docs/verification_memo.md, params/rev_a.json.
+Declared non-rev_a parameter set (patterns and schema only): finance/INSPACE_FORK_FINDINGS.md, finance/REBOOST_BOUND_FINDINGS.md, finance/inspace_fork.py, finance/reboost_bound.py.
+Generated 2026-10-26T09:51:50+00:00. This report is dated to that commit; the next commit may add or fix findings.
+
+Result: 8 NEW, 3 KNOWN OPEN, 4 ACCEPTED, 23 LABELLED, 62 labelled pattern mentions skipped. Exit 1.
+
+## NEW (8): not in DEVIATIONS.md; these fail the run
+
+- docs/glossary.md:27  found 100–200×  [x100_200] the retired 100-200x planning range
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83
+    note: The Rev A ladder is 40.32 / 64.30 / 121.83x at 0 / 15 / 30 % derate (rev_a.json mass_ratio).
+    > Boeing / Tethers Unlimited study (~1999–2001, NASA NIAC funding). Demonstrated on paper that a hypersonic vehicle at Mach 10–12 could hand payload to a 600 km tether (Spectra + Zylon outer segment) with facility mass ~10
+- docs/objections_faq.md:38  found 600 km  [total_length] total tether length 2L
+    canon: 2 x geometry.tether_half_length_km = 640
+    > **11. "A 600 km structure sweeping through Starlink? Operators will kill this in licensing."**
+- tools/sims/skyhook_calculator.jsx:11  found 3.9e9  [sigma_sk99] Dyneema SK99 tensile strength (VM-001 corrected 3.9 to 3.6)
+    canon: materials.alternative_fibers.Dyneema_SK99_GPa = 3.6
+    > "Dyneema SK99": { sigma: 3.9e9, rho: 970 },
+- tools/sims/skyhook_calculator.jsx:20  found 0.6  [ladder] Conservative rung of a derate/retention ladder
+    canon: mass_ratio.*.conservative_30pct_derate = derate 0.3 or retention 0.7
+    note: DEVIATIONS #8 pattern: each rung must be its tier's rev_a.json derate (0.30/0.15/0) or retention (0.70/0.85/1.00).
+    > Conservative: { derate: 0.6, losses: 1800, launch: 2500, eff: 0.15, kwh: 0.08 },
+- tools/sims/skyhook_calculator.jsx:21  found 0.72  [ladder] Baseline rung of a derate/retention ladder
+    canon: mass_ratio.*.baseline_15pct_derate = derate 0.15 or retention 0.85
+    note: DEVIATIONS #8 pattern: each rung must be its tier's rev_a.json derate (0.30/0.15/0) or retention (0.70/0.85/1.00).
+    > Baseline: { derate: 0.72, losses: 1500, launch: 1500, eff: 0.2, kwh: 0.06 },
+- tools/sims/skyhook_calculator.jsx:22  found 0.85  [ladder] Optimistic rung of a derate/retention ladder
+    canon: mass_ratio.*.optimistic_0pct_derate = derate 0 or retention 1
+    note: DEVIATIONS #8 pattern: each rung must be its tier's rev_a.json derate (0.30/0.15/0) or retention (0.70/0.85/1.00).
+    > Optimistic: { derate: 0.85, losses: 1200, launch: 800, eff: 0.3, kwh: 0.04 },
+- tools/sims/skyhook_no_leo_stress_test.jsx:48  found mass_ratio.tether_to_payload_single_arm_range  [schema] parameter path not in rev_a.json
+    canon: mass_ratio = _ratio_note, integrated_tether_to_payload_both_arms, tip_speed_to_Vc_ratio
+    note: 'tether_to_payload_single_arm_range' is not a key of mass_ratio; a consumer indexing it gets undefined.
+    > massRatioArmRange: revA.mass_ratio.tether_to_payload_single_arm_range,
+- tools/sims/skyhook_program_site.html:219  found 100–150 km  [lower_tip_alt] lower-tip altitude
+    canon: geometry.tip_altitude_lower_km = 290
+    > <text x="330" y="312" fill="#9FB6D8" font-family="IBM Plex Mono" font-size="12" text-anchor="middle">lower tip grazes ~100–150 km — rendezvous happens here</text>
+
+## KNOWN OPEN (3): tracked in DEVIATIONS.md, not yet fixed
+
+- tools/sims/skyhook_program_site.html:1135  found .6  [ladder] Conservative rung of a derate/retention ladder [DEVIATIONS #8]
+    canon: mass_ratio.*.conservative_30pct_derate = derate 0.3 or retention 0.7
+    note: DEVIATIONS #8 pattern: each rung must be its tier's rev_a.json derate (0.30/0.15/0) or retention (0.70/0.85/1.00).
+    > var LAD={Conservative:{d:.6,loss:1800,launch:2500,eff:.15,kwh:.08},Baseline:{d:.72,loss:1500,launch:1500,eff:.2,kwh:.06},Optimistic:{d:.85,loss:1200,launch:800,eff:.3,kwh:.04}};
+- tools/sims/skyhook_program_site.html:1135  found .72  [ladder] Baseline rung of a derate/retention ladder [DEVIATIONS #8]
+    canon: mass_ratio.*.baseline_15pct_derate = derate 0.15 or retention 0.85
+    note: DEVIATIONS #8 pattern: each rung must be its tier's rev_a.json derate (0.30/0.15/0) or retention (0.70/0.85/1.00).
+    > var LAD={Conservative:{d:.6,loss:1800,launch:2500,eff:.15,kwh:.08},Baseline:{d:.72,loss:1500,launch:1500,eff:.2,kwh:.06},Optimistic:{d:.85,loss:1200,launch:800,eff:.3,kwh:.04}};
+- tools/sims/skyhook_program_site.html:1135  found .85  [ladder] Optimistic rung of a derate/retention ladder [DEVIATIONS #8]
+    canon: mass_ratio.*.optimistic_0pct_derate = derate 0 or retention 1
+    note: DEVIATIONS #8 pattern: each rung must be its tier's rev_a.json derate (0.30/0.15/0) or retention (0.70/0.85/1.00).
+    > var LAD={Conservative:{d:.6,loss:1800,launch:2500,eff:.15,kwh:.08},Baseline:{d:.72,loss:1500,launch:1500,eff:.2,kwh:.06},Optimistic:{d:.85,loss:1200,launch:800,eff:.3,kwh:.04}};
+
+## ACCEPTED (4): DEVIATIONS.md says Leave: a deviation that states itself
+
+- docs/original_README.md:6  found 3.5 km/s  [v35_unlabelled] 3.5 km/s with no Phase-3 label in reach [DEVIATIONS #1]
+    canon: kinematics.v_tip_kms = 2.5; also allowed: 3.5
+    note: 3.5 km/s is the Phase 3 growth option; the reference is 2.5 km/s. Label it or cite the option key.
+    > This folder is the complete Phase 0 starter kit for an orbital momentum-exchange tether (skyhook) program. Thirteen files, one design. **Canonical design revision: Rev A** (610 km hub altitude · L = 320 km · v_tip 3.5 km
+- docs/project_instructions.md:31  found 3.5 km/s  [v35_unlabelled] 3.5 km/s with no Phase-3 label in reach [DEVIATIONS #5]
+    canon: kinematics.v_tip_kms = 2.5; also allowed: 3.5
+    note: 3.5 km/s is the Phase 3 growth option; the reference is 2.5 km/s. Label it or cite the option key.
+    > The skyhook attacks this equation at its weakest point. **The exponential is in the exponent.** If a tether tip can meet our launch vehicle at, say, 3.5 km/s slower than orbital velocity, the vehicle's required Δv drops 
+- docs/project_instructions.md:126  found 3.5 km/s  [v35_unlabelled] 3.5 km/s with no Phase-3 label in reach [DEVIATIONS #5]
+    canon: kinematics.v_tip_kms = 2.5; also allowed: 3.5
+    note: 3.5 km/s is the Phase 3 growth option; the reference is 2.5 km/s. Label it or cite the option key.
+    > - Release mechanism with timing accuracy < 10 ms (release timing maps directly to injection accuracy of the thrown payload; a 1-second timing error at 3.5 km/s tip speed misplaces the velocity vector substantially, so th
+- tools/sims/skyhook_orbit_theater.html:39  found 3.5 km/s  [v35_unlabelled] 3.5 km/s with no Phase-3 label in reach [DEVIATIONS #4]
+    canon: kinematics.v_tip_kms = 2.5; also allowed: 3.5
+    note: 3.5 km/s is the Phase 3 growth option; the reference is 2.5 km/s. Label it or cite the option key.
+    > const ALT=610, L=320, VTIP=3.5;
+
+## LABELLED (23): a mismatch with a self-label nearby; shown, never fails; read these too
+
+- docs/DECISION_LOG.md:10  found 23.64 (= 0.2364)  [derate] strength derate / retention label "unsourced"
+    canon: materials.derate_fraction = 0.3; also allowed: 0.0, 1.0, 0.15, 0.85, 0.3, 0.7
+    > Program memory carried a "440× tether-to-payload" figure with no derivation. The audit (commit 3401723, `rev_a.json` `tether_to_payload_440x_flag`) showed it does not derive cleanly from any stated parameter set: EQ-5 at
+- docs/DECISION_LOG.md:10  found 3.274  [sf] safety factor label "unsourced"
+    canon: materials.safety_factor = 2.5
+    > Program memory carried a "440× tether-to-payload" figure with no derivation. The audit (commit 3401723, `rev_a.json` `tether_to_payload_440x_flag`) showed it does not derive cleanly from any stated parameter set: EQ-5 at
+- docs/DECISION_LOG.md:24  found 100 x  [mass_ratio] integrated two-arm tether-to-payload mass ratio label "HASTOL"
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83, 295.27, 3085.95, 10
+    > VM-001 found the "HASTOL tether massed ~100× payload" claim was a **misattribution**: HASTOL Phase I's tether-control-station mass was 150 Mg for a 15 Mg payload — **~10× at safety factor 3** at their tip speed (3.5 km/s
+- docs/DECISION_LOG.md:24  found 3  [sf] safety factor label "HASTOL"
+    canon: materials.safety_factor = 2.5
+    > VM-001 found the "HASTOL tether massed ~100× payload" claim was a **misattribution**: HASTOL Phase I's tether-control-station mass was 150 Mg for a 15 Mg payload — **~10× at safety factor 3** at their tip speed (3.5 km/s
+- docs/DECISION_LOG.md:30  found 2.5 km/s  [v_release] upper-tip release speed label "correction"
+    canon: kinematics.v_upper_release_kms = 10.06; also allowed: 10.36, 11.05
+    > - **C3/energy bookkeeping:** release energy had been claimed loosely ("exceeds escape velocity") without evaluating it at the correct radius. Corrected: energy is evaluated at the **upper-tip radius** r = R_E + 610 + 320
+- docs/DECISION_LOG.md:72  found 5  [sf] safety factor label "SF ≈ 5"
+    canon: materials.safety_factor = 2.5
+    > **Consequence:** Reaching 20% sustained load would require SF ≈ 5, which cuts characteristic velocity by √2 and drives the 2.5 km/s reference mass ratio from ~41× to order ~800× under the Moravec form. That is a refutati
+- docs/DECISION_LOG.md:72  found 41 x  [mass_ratio] integrated two-arm tether-to-payload mass ratio label "SF ≈ 5"
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83, 295.27, 3085.95, 10
+    > **Consequence:** Reaching 20% sustained load would require SF ≈ 5, which cuts characteristic velocity by √2 and drives the 2.5 km/s reference mass ratio from ~41× to order ~800× under the Moravec form. That is a refutati
+- docs/program_manifest.md:6  found 10.05 km/s  [v_release] upper-tip release speed label "corrected"
+    canon: kinematics.v_upper_release_kms = 10.06; also allowed: 10.36, 11.05
+    > > **⚠ CANON CORRECTION (25 Aug 2026).** Every artifact that said "Rev B / 3.5 km/s reference / reaffirmed" has been corrected to Rev A (2.5 km/s reference), with 3.5 km/s labeled the growth option: the **public site** (i
+- docs/program_manifest.md:6  found 41 x  [mass_ratio] integrated two-arm tether-to-payload mass ratio label "correction"
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83, 295.27, 3085.95, 10
+    > > **⚠ CANON CORRECTION (25 Aug 2026).** Every artifact that said "Rev B / 3.5 km/s reference / reaffirmed" has been corrected to Rev A (2.5 km/s reference), with 3.5 km/s labeled the growth option: the **public site** (i
+- docs/program_manifest.md:6  found 65 x  [mass_ratio] integrated two-arm tether-to-payload mass ratio label "correction"
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83, 295.27, 3085.95, 10
+    > > **⚠ CANON CORRECTION (25 Aug 2026).** Every artifact that said "Rev B / 3.5 km/s reference / reaffirmed" has been corrected to Rev A (2.5 km/s reference), with 3.5 km/s labeled the growth option: the **public site** (i
+- docs/program_manifest.md:6  found 123 x  [mass_ratio] integrated two-arm tether-to-payload mass ratio label "correction"
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83, 295.27, 3085.95, 10
+    > > **⚠ CANON CORRECTION (25 Aug 2026).** Every artifact that said "Rev B / 3.5 km/s reference / reaffirmed" has been corrected to Rev A (2.5 km/s reference), with 3.5 km/s labeled the growth option: the **public site** (i
+- docs/program_manifest.md:65  found 5  [sf] safety factor label "SF 5"
+    canon: materials.safety_factor = 2.5
+    > - **NEW:** `claude/skyhook_mp001_market_pricing.md` (**MP-001**) — the processed results of that pass. Now sourced: LEO benchmarks (Transporter $7,000/kg, F9-capacity arithmetic $3,245/kg, Electron ~$25,000/kg), HASTE ≈ 
+- docs/program_manifest.md:65  found 41 x  [mass_ratio] integrated two-arm tether-to-payload mass ratio label "SF 5"
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83, 295.27, 3085.95, 10
+    > - **NEW:** `claude/skyhook_mp001_market_pricing.md` (**MP-001**) — the processed results of that pass. Now sourced: LEO benchmarks (Transporter $7,000/kg, F9-capacity arithmetic $3,245/kg, Electron ~$25,000/kg), HASTE ≈ 
+- docs/program_manifest.md:91  found 3 x  [mass_ratio] integrated two-arm tether-to-payload mass ratio label "HASTOL"
+    canon: mass_ratio.integrated_tether_to_payload_both_arms.optimistic_0pct_derate = 40.32; also allowed: 64.3, 121.83, 295.27, 3085.95, 10
+    > 4. **Rev C trade study:** tip speed ↔ rocket-leg speed (HASTOL Phase II exchange rate: Mach 12→17 handoff cut tether mass ~3×). Gates the next revision.
+- docs/project_instructions.md:95  found 3  [sf] safety factor label "was"
+    canon: materials.safety_factor = 2.5
+    > 2. **Hoyt & Forward, Tethers Unlimited — the HASTOL study (with Boeing, ~1999–2001)** — demonstrated on paper that a hypersonic vehicle at Mach 10–12 and ~100 km altitude could hand payloads to a 600 km tether (mostly Sp
+- docs/project_instructions.md:108  found 20 km  [half_length] tether half-length L label "HASTOL"
+    canon: geometry.tether_half_length_km = 320
+    > - **Architecture:** Hoytether-style redundant multi-line ribbon or tubular truss of primary load lines with diagonal cross-links. **Construction baseline (adopted from HASTOL Phase I, verified in VM-001):** Spectra/Dynee
+- docs/research/mp001_market_pricing.md:46  found 5  [sf] safety factor label "Derivation"
+    canon: materials.safety_factor = 2.5
+    > **3c · Creep vs SF 2.5 — a newly quantified named problem [Likely].** At SF 2.5 the HMPE bulk sections carry a **steady centrifugal load of 28–40% of rated break strength** (40% raw; 28% if the 30% strength derate is app
+- finance/DEMAND_SENSITIVITY_FINDINGS.md:24  found 3,364 $/kg  [launch_dedicated] dedicated-launch price anchor (Falcon 9) label "earlier"
+    canon: economics.launch_price_anchor_dedicated_kgs = 3245
+    > **Rule 1 cross-check — the Falcon 9 $74M vindication:** the confirmed $74M ÷ 22,800 kg = **$3,246/kg** essentially matches `rev_a.json`'s existing $3,245/kg dedicated-launch anchor. The research tree's earlier $3,364/kg 
+- materials/core.md:45  found 3.0 km/s  [v_tip] tip speed label "convention"
+    canon: kinematics.v_tip_kms = 2.5; also allowed: 2.8, 3.5, 2.1, 2.8, 2.9, 3.3, 3.5, 3.5
+    > (tip-speed convention) to ~3.0 km/s (the financial model's Design-Calcs
+- tests/test_rev_a_physics.py:167  found 2.0  [sf] safety factor label "_low"
+    canon: materials.safety_factor = 2.5
+    > mr_low = tether_mass_ratio(vtip, Vc, safety_factor=2.0)
+- tests/test_rev_a_physics.py:168  found 3.0  [sf] safety factor label "_low"
+    canon: materials.safety_factor = 2.5
+    > mr_high = tether_mass_ratio(vtip, Vc, safety_factor=3.0)
+- tools/sims/skyhook_program_site.html:422  found 3  [sf] safety factor label "hastol"
+    canon: materials.safety_factor = 2.5
+    > <li><b>Hoyt &amp; Forward / Boeing, <a class="term" href="#g-hastol">HASTOL</a> (~1999–2001)</b> — Mach 10–12 handoff at ~100 km to a 600 km tether (mostly Spectra 2000, Zylon outer 20 km); facility mass ~10× payload at 
+- tools/sims/skyhook_program_site.html:435  found 20 km  [half_length] tether half-length L label "HASTOL"
+    canon: geometry.tether_half_length_km = 320
+    > <p><a class="term" href="#g-hoytether">Hoytether</a>-class redundant ribbon with diagonal cross-links. <b>Construction baseline (per HASTOL Phase I, verified VM-001):</b> Spectra/Dyneema-class UHMWPE for the bulk of each
+
+## Skipped labelled pattern mentions (62): run with --verbose to list them

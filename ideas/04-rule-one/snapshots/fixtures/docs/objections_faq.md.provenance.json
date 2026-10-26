@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/objections_faq.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "f0a696676ecc1f2f8a687db886f77607704c6778",
+  "readBlob": "f0a696676ecc1f2f8a687db886f77607704c6778",
+  "sourceSha256": "821cd79c837144464312c3ca06f0ffd3274a54c371edf40ea88d6fd4bd7aa0f4",
+  "sourceBytes": 10870,
+  "copiedAt": "2026-10-26T09:32:45.763Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 36-39 copied verbatim, every other line left empty so line numbers match the source; kept for 'A 600 km structure' (38) against 2L = 640 km, and the 3.9 g Phase 3 line (36)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "6514c2bc82a411a5c31abe22e3f910e632d062c7003db2de2d54eb91af2f6fa9",
+  "writtenBytes": 1179
+}

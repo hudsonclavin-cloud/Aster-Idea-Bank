@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+V^2/L at the 2.5 km/s reference point is ~=1.99 g steady; the revenue-gated 2.8 km/s cislunar option is ~=2.50 g, and the Phase 3 3.5 km/s point is ~=3.9 g (HASTOL designed to ~2.5 g) -- all are within standard satellite qualification levels, comparable to launch loads. The calculator displays it live and warns above 6 g; it constrains payload adapters, not feasibility. Crewed payloads at higher tip speeds are a later, separate question we don't claim. [Certain] -> *Site calculator; legend.*
+
+**11. "A 600 km structure sweeping through Starlink? Operators will kill this in licensing."**
+The swept annulus genuinely crosses major shells, and we lead with that rather than hide it. The structure is also the most predictable object in the catalog — ballistic, continuously tracked, with propellantless avoidance authority applied hours ahead — and we propose published ephemeris, right-of-way rules written *with* operators, and a 72/24/6-hour gate protocol, exercised first on kilometer-scale demonstrators. We also remove debris commercially, making the system a net subtractor. → *CM-001 white paper; site conjunction visualizer.*

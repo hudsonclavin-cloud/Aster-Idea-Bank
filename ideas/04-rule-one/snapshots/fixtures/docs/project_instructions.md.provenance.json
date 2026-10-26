@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/project_instructions.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "4d4072b 2026-09-02T14:02:59-04:00",
+  "committedBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "readBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "sourceSha256": "4f89e168ee9450d9d9530bf0ff7818919d63dcd3c3dab5998759326cbc086db4",
+  "sourceBytes": 43975,
+  "copiedAt": "2026-10-26T09:32:45.486Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 29-32, 44-49, 124-127, 199-203 copied verbatim, every other line left empty so line numbers match the source; kept for 2.1 'say, 3.5 km/s' (31) and 4.3 '1-second timing error at 3.5 km/s' (126), both DEVIATIONS #5 Leave; the labelled 3.5 mentions at 46 and 48; the Phase 3 HASTOL geometry line (201)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "7ab4970b653142de8eca882e57f10534be3e730a82513d5577d6c5cd6eaca26b",
+  "writtenBytes": 4679
+}

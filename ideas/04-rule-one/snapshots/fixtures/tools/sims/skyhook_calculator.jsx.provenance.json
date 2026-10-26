@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/sims/skyhook_calculator.jsx",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "e89ff4c 2026-07-02T12:01:53-04:00",
+  "committedBlob": "295d2cae73bff3e9674fd1afede0bef0ba837d35",
+  "readBlob": "295d2cae73bff3e9674fd1afede0bef0ba837d35",
+  "sourceSha256": "4daed184f0259d6a840b14e512d413c1a9a4ce3c8eb4cb54d23ed9a6352b68ca",
+  "sourceBytes": 18981,
+  "copiedAt": "2026-10-26T09:01:37.752Z",
+  "mode": "copy",
+  "note": "Whole file, as a self-test fixture: carries SK99 3.9e9 (VM-001 corrected to 3.6) and the 0.6/0.72/0.85 ladder.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4daed184f0259d6a840b14e512d413c1a9a4ce3c8eb4cb54d23ed9a6352b68ca",
+  "writtenBytes": 18981
+}

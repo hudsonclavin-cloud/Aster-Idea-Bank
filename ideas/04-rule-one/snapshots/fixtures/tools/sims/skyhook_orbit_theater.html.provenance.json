@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/sims/skyhook_orbit_theater.html",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "6fd2a409cb111a79473d4b368aaaec47663c11fe",
+  "readBlob": "6fd2a409cb111a79473d4b368aaaec47663c11fe",
+  "sourceSha256": "21b1d007c50d754d303a1881aff56ab8778af505491e1c6eac5d7b6b64e1880b",
+  "sourceBytes": 10905,
+  "copiedAt": "2026-10-26T09:32:45.398Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: lines 30-45, 199-203 copied verbatim, every other line left empty so line numbers match the source; kept for VTIP=3.5 (39, DEVIATIONS #4 Leave) and the self-labelling status line (201)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "35f345d7a8d37d2718a98572a1985c2db7eb6fa5e2b0a3a436a69d168b5ced21",
+  "writtenBytes": 1058
+}

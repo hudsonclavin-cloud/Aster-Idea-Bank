@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule One</title>
+<meta name="description" content="A saved canon-drift report for the Skyhook repository: every number that claims to be a Rev A quantity, read against params/rev_a.json, classed by docs/DEVIATIONS.md, with a quote card for the next number anyone cites.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>Rule One</h1>
+    <p class="tag">Skyhook's Rule 1 says tether numbers come from <code>params/rev_a.json</code>, never from memory. This page is the saved output of <code>lint_canon.py</code>: every number in the repository's prose, HTML, JSX, JS and Python that claims to be a canonical quantity, compared with that file and classed by <code>docs/DEVIATIONS.md</code>.</p>
+    <p class="meta" id="meta">Loading the saved report…</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" aria-labelledby="h-findings">
+    <h2 id="h-findings">Findings</h2>
+    <p class="lead"><b>NEW</b> is not in the deviations register and fails the run (exit 1). <b>KNOWN OPEN</b> is tracked there and not yet fixed. <b>ACCEPTED</b> is a deviation the register says to leave because it states itself. <b>LABELLED</b> is a mismatch that sits next to a word such as <i>Phase 3</i>, <i>historical</i> or <i>SF 5</i>: shown, never failing, worth reading anyway. Tap a tile to filter.</p>
+    <div class="tiles" id="tiles" role="group" aria-label="Filter by class"></div>
+    <div class="filter">
+      <label class="visually-hidden" for="q">Filter findings by text</label>
+      <input id="q" type="search" placeholder="Filter by file, rule or number (e.g. calculator, sk99, 3.5)" autocomplete="off">
+      <span class="count" id="count" aria-live="polite"></span>
+    </div>
+    <ol class="findings" id="findings"></ol>
+    <p class="small" id="declared"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-cite">
+    <h2 id="h-cite">Quote card</h2>
+    <p class="lead">Pick a key and paste the card into a document instead of retyping the number. The same card is printed by <code>python3 lint_canon.py --cite &lt;key&gt; --params params/rev_a.json</code>; this page carries every card from the snapshot at the commit named above.</p>
+    <div class="row">
+      <label for="key">rev_a.json key</label>
+      <select id="key" aria-describedby="cite-help"></select>
+      <button type="button" class="primary" id="copy">Copy card</button>
+      <span class="status" id="copy-status" role="status"></span>
+    </div>
+    <pre class="cardout" id="card" aria-live="polite"></pre>
+    <p class="small" id="cite-help">The value, the notes beside it in the file, their confidence labels, the file, its commit and sha256.</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-verify">
+    <h2 id="h-verify">Canon self-check</h2>
+    <p class="lead">Every derived value in <code>rev_a.json</code> recomputed from the file's own inputs (<code>--verify-canon</code>). A row that disagrees is a number inside the canon that does not follow from the others.</p>
+    <div class="tablewrap">
+      <table id="verify">
+        <thead><tr><th>quantity</th><th>from inputs</th><th>canon</th><th>verdict</th><th>how</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="small" id="verify-summary"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-rules">
+    <h2 id="h-rules">What it checks</h2>
+    <p class="lead">A number followed by a unit is attributed to the nearest keyword on its line, counted in tokens, and compared with the keys that keyword names. Words in the <i>sinks</i> list claim a number without checking it. A literal matches canon when canon rounded to the literal's own precision equals it, within 5 % of canon; an integer ending in zeros is read at its last non-zero digit within 3 %. A range passes when it brackets canon.</p>
+    <details open>
+      <summary>Quantity rules and stale patterns</summary>
+      <div class="tablewrap"><table class="rulegrid" id="rules"><thead><tr><th>rule</th><th>what</th><th>unit</th><th>keywords</th><th>allowed values from</th></tr></thead><tbody></tbody></table></div>
+    </details>
+    <details>
+      <summary>Sinks: keywords that take a number out of play</summary>
+      <p class="small" id="sinks"></p>
+    </details>
+    <details>
+      <summary>Self-labels: words that make a mismatch LABELLED instead of NEW</summary>
+      <p class="small" id="labels"></p>
+    </details>
+    <details>
+      <summary id="sup-summary">Labelled pattern mentions that were skipped</summary>
+      <ul class="plain" id="suppressed"></ul>
+    </details>
+    <details>
+      <summary>The deviations register as parsed</summary>
+      <div class="tablewrap"><table id="devs"><thead><tr><th>#</th><th>files</th><th>state</th><th>quoted snippets</th><th>numbers</th></tr></thead><tbody></tbody></table></div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>An Aster Idea Bank prototype for Skyhook. This page shows one saved run, dated to the commit above; it does not scan anything itself. To see the current state: <code>python3 ideas/04-rule-one/lint_canon.py /path/to/skyhook</code>. The Markdown of this run is <code>example.txt</code>; the data behind the page is <code>page-data.js</code>, written by <code>--emit-page-data</code>.</p>
+  </div>
+</footer>
+
+<script src="page-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
