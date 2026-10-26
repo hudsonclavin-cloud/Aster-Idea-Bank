@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where It Lands</title>
+<meta name="description" content="A pure reader of Skyhook's committed decision grid: place construction-launch and rocket-leg $/kg, read delivered $/kg, delivered + leg and the Y15 breakeven price, with payback and NPV stepped to the nearest grid node and every caveat attached.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#reading">Skip to the reading</a>
+
+<header class="top wrap">
+  <p class="eyebrow">Skyhook · a reader of <code>finance/decision_grid.json</code></p>
+  <h1>Where it lands</h1>
+  <p class="sub">Pick a tier and a ladder column, then place the two numbers the program is still waiting on from the outside world: construction-launch $/kg and the rocket-leg $/kg. The page reads what the committed decision grid says there. It owns no cost model. It interpolates the two fields the grid says it may, adds the leg the one way the grid publishes, steps everything else to the nearest grid node, and refuses what the grid does not cover.</p>
+  <div id="prov" class="prov" aria-label="Provenance of the data on this page"></div>
+</header>
+
+<main class="wrap">
+  <section class="card controls" aria-labelledby="h-controls">
+    <h2 id="h-controls" class="visually-hidden">Controls</h2>
+    <div class="segrow">
+      <div class="segwrap">
+        <span class="seglabel" id="l-tiers">Tier <span class="unit">tip speed from <code>params/rev_a.json</code></span></span>
+        <div class="seg" role="group" aria-labelledby="l-tiers" id="tiers"></div>
+      </div>
+      <div class="segwrap">
+        <span class="seglabel" id="l-columns">Ladder column <span class="unit">workbook Assumptions, derate = 1 − retention</span></span>
+        <div class="seg" role="group" aria-labelledby="l-columns" id="columns"></div>
+      </div>
+    </div>
+
+    <div class="slider">
+      <label for="launch-range">Construction launch <span class="unit">$/kg · the grid's model dimension, log axis</span></label>
+      <div class="sliderrow">
+        <input type="range" id="launch-range" min="0" max="1000" step="1" aria-describedby="launch-note">
+        <span class="numwrap">$<input type="number" id="launch-num" inputmode="decimal" step="any" aria-label="Construction launch, dollars per kilogram"><span class="per">/kg</span></span>
+      </div>
+      <div id="launch-markers" class="chips" aria-label="Launch-price anchors"></div>
+      <p id="launch-note" class="note"></p>
+    </div>
+
+    <div class="slider">
+      <label for="leg-range">Rocket leg <span class="unit">$/kg · a display axis, not a model dimension</span></label>
+      <div class="sliderrow">
+        <input type="range" id="leg-range" min="0" max="1000" step="1" aria-describedby="leg-note">
+        <span class="numwrap">$<input type="number" id="leg-num" inputmode="decimal" step="any" aria-label="Rocket leg, dollars per kilogram"><span class="per">/kg</span></span>
+      </div>
+      <p id="leg-note" class="note"></p>
+    </div>
+  </section>
+
+  <section id="reading" class="reading" aria-live="polite" aria-labelledby="h-reading">
+    <h2 id="h-reading" class="visually-hidden">The reading</h2>
+    <div id="refusal" class="card refusal" role="status" hidden></div>
+    <div id="panes">
+      <article class="card pane" id="pane-cost" aria-labelledby="h-cost">
+        <h2 id="h-cost">Cost side <span class="tag" id="tag-cost">interpolated</span></h2>
+        <div class="hero"><span class="herov" id="delivered"></span><span class="herou">/kg delivered</span></div>
+        <p class="derive" id="delivered-derive"></p>
+        <div class="compose">
+          <div class="composerow"><span>+ rocket leg</span><b id="leg-shown"></b></div>
+          <div class="composerow total"><span id="plusleg-label">= delivered + leg</span><b id="plusleg"></b></div>
+          <p class="derive" id="plusleg-derive"></p>
+        </div>
+      </article>
+
+      <aside class="warning" id="comparability" role="note" aria-label="Comparability warning, verbatim from the grid">
+        <span class="wicon" aria-hidden="true">!</span>
+        <div><b>Not comparable across the panes</b> <span class="small">(verbatim, <code>comparability_warning</code>)</span><p id="comparability-text"></p></div>
+      </aside>
+
+      <article class="card pane" id="pane-price" aria-labelledby="h-price">
+        <h2 id="h-price">Price side <span class="tag" id="tag-price">interpolated</span></h2>
+        <div class="hero"><span class="herov" id="breakeven"></span><span class="herou">/kg customer price for payback by year 15</span></div>
+        <p class="derive" id="breakeven-derive"></p>
+        <p class="derive" id="customer-price"></p>
+      </article>
+    </div>
+
+    <article class="card" id="stepped" aria-labelledby="h-stepped">
+      <h2 id="h-stepped">Stepped to the nearest node, never interpolated <span class="tag step">stepped</span></h2>
+      <p class="derive" id="stepped-where"></p>
+      <dl class="facts">
+        <div><dt>Payback</dt><dd id="payback"></dd></div>
+        <div><dt>NPV @ 10%</dt><dd id="npv"></dd></div>
+        <div><dt>Mass ratio</dt><dd id="massratio"></dd></div>
+        <div><dt>Fibre mass</dt><dd id="fibre"></dd></div>
+        <div><dt>Total capex</dt><dd id="capex"></dd></div>
+        <div><dt>System capex</dt><dd id="syscapex"></dd></div>
+      </dl>
+      <details class="nodedetails">
+        <summary>The nearest node, verbatim</summary>
+        <div class="tablewrap"><table id="node-table"><caption class="visually-hidden">Every field of the nearest grid node</caption><tbody></tbody></table></div>
+        <p class="small" id="node-foot"></p>
+      </details>
+    </article>
+  </section>
+
+  <section class="card" id="plane-card" aria-labelledby="h-plane">
+    <h2 id="h-plane">The plane</h2>
+    <p class="hint">Rocket leg across, construction launch up, both on the grid's log axes. Colour is the one leg-dependent quantity the grid publishes, <code>delivered + leg</code>; the lines are its iso-costs. Drag the crosshair, or use the sliders. Nothing here is a margin: the lane multipliers are listed below as text and are never applied.</p>
+    <div class="planewrap"><canvas id="plane" tabindex="0" role="img" aria-label="Heatmap of delivered plus leg cost over rocket-leg and construction-launch price; arrow keys move the crosshair"></canvas></div>
+    <div class="legend" id="plane-legend"></div>
+  </section>
+
+  <section class="card" id="chart-card" aria-labelledby="h-charts">
+    <h2 id="h-charts">Along the launch axis</h2>
+    <p class="hint">The three ladder columns of the selected tier. Straight segments between nodes on a log axis are exactly the grid's declared log-linear interpolation; the payback chart is stepped at the log midpoints between nodes, because the grid says an integer year must not be interpolated.</p>
+    <h3>Y15 breakeven customer price, $/kg</h3>
+    <div class="chartwrap"><svg id="breakeven-chart" role="img" aria-label="Breakeven customer price against construction launch price, three ladder columns"></svg><div id="chart-tip" class="tip" hidden></div></div>
+    <div class="legend" id="chart-legend"></div>
+    <h3>Payback year, stepped</h3>
+    <div class="chartwrap"><svg id="payback-chart" role="img" aria-label="Payback year against construction launch price, stepped to grid nodes"></svg></div>
+  </section>
+
+  <section class="card" id="caveats" aria-labelledby="h-caveats">
+    <h2 id="h-caveats">Caveats the grid carries, attached here</h2>
+    <div class="caveat partial" id="partial-tier" hidden>
+      <b>Partial-tier caveat <span class="small">(verbatim, <code>partial_tier_caveat</code>; shown because this is not the reference tier)</span></b>
+      <p id="partial-tier-text"></p>
+    </div>
+    <details class="caveat" id="insurance">
+      <summary><b>Insurance is not separately modelled</b> <span class="small">(verbatim, <code>insurance_status</code>; attached to the ops + wear + insurance line)</span></summary>
+      <p id="insurance-text"></p>
+    </details>
+    <div class="caveat" id="lanes">
+      <b>Unvalidated assumptions <span class="small">(<code>unvalidated_assumptions</code>; shown as text, never multiplied into any number on this page)</span></b>
+      <ul id="lanes-list"></ul>
+    </div>
+    <details class="caveat" id="notes">
+      <summary><b>The grid's notes</b> <span class="small">(verbatim)</span></summary>
+      <ol id="notes-list"></ol>
+    </details>
+  </section>
+
+  <section class="card" id="load" aria-labelledby="h-load">
+    <h2 id="h-load">Read a newer grid</h2>
+    <p class="hint">Choose a <code>decision_grid.json</code> from a newer Skyhook checkout. Nothing is uploaded; the file is read in your browser. A grid with another <code>schema_version</code>, a different composition rule or malformed points is refused and the snapshot stays.</p>
+    <label class="filelabel"><input type="file" id="grid-file" accept=".json,application/json"> Choose a decision_grid.json</label>
+    <p id="load-msg" class="note" role="status"></p>
+  </section>
+</main>
+
+<footer class="wrap foot">
+  <p>An Aster Idea Bank prototype. Every number on this page is read from the snapshot named in the header, interpolated by the grid's declared method, or added by the grid's published rule. Where the data runs out the page says so. Skyhook's Rule 1 canon, VM verification and pytest suite have not been applied to this page.</p>
+</footer>
+
+<script src="snapshots/decision_grid.js"></script>
+<script src="snapshots/rev_a.excerpt.js"></script>
+<script src="snapshots/ladder.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

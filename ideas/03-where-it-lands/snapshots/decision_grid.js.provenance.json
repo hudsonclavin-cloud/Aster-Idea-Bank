@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/decision_grid.json",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "34935cb 2026-09-10T23:52:55-04:00",
+  "committedBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "readBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "sourceSha256": "3787eb7a4ed8efa14b9d4b59dc5df6a42cc3b46ecdb129f52b8d2a0b69474acf",
+  "sourceBytes": 251394,
+  "copiedAt": "2026-10-26T10:04:04.431Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the source JSON text is embedded verbatim between /*<json>*/ and /*</json>*/ markers inside a UMD wrapper so the page loads it from file://; sha256 of the embedded text equals sourceSha256",
+  "readMatchesCommitted": true,
+  "writtenSha256": "81f49f09df536e029f1b3001a0377d77960bbb3d5411da29c75ef9c26bf7d88a",
+  "writtenBytes": 252310
+}

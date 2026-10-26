@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/financial/skyhook_financial_model.xlsx",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5719c0e 2026-07-02T17:39:34-04:00",
+  "committedBlob": "3fa20f91d426a7e9a3b62877105256d690e9f86d",
+  "readBlob": "3fa20f91d426a7e9a3b62877105256d690e9f86d",
+  "sourceSha256": "a0e774f4b29bc9824b34b622093011042b12274632012a61b02ea9a3f5d41b73",
+  "sourceBytes": 65603,
+  "copiedAt": "2026-10-26T10:04:04.603Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: Assumptions sheet A2:E16 (the 'blue' ladder inputs) parsed from the xlsx zip with zipfile + xml.etree, inline strings and plain numbers only; row keys mirror finance/skyhook_finance.py _LADDER_ROWS",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f57172654b93934e632af11e1fcd60df423098620b822f57970bbe9d3bf868a7",
+  "writtenBytes": 4404
+}
