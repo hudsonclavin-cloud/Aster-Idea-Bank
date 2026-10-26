@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/coupler.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "20027a2 2026-09-15T17:01:56+00:00",
+  "committedBlob": "013f512847a950e4e510ba7265750005f68e79ac",
+  "readBlob": "013f512847a950e4e510ba7265750005f68e79ac",
+  "sourceSha256": "2b8dbd08946af8c5b6be8f4f2284defba021fbc56cada186f7582dc3ce8cc0d4",
+  "sourceBytes": 5490,
+  "copiedAt": "2026-10-26T15:36:45.600Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: tests/templates/coupler.scad verbatim as a string (its sha256 equals the sidecar's sourceSha256)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "6546e2c53393f454b1e065130b4ac92239234ffba6cd12ae92b6a00d934e3fed",
+  "writtenBytes": 6323
+}

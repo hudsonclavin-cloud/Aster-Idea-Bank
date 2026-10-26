@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/orings_as568.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "2902617 2026-09-20T02:35:52+00:00",
+  "committedBlob": "40b00d2c2b0175ff79dc1423633dc2809620467e",
+  "readBlob": "40b00d2c2b0175ff79dc1423633dc2809620467e",
+  "sourceSha256": "31a60639df754726b3b9202af1cfb7b3bc45796f162f01026df42703aa979b1a",
+  "sourceBytes": 360828,
+  "copiedAt": "2026-10-26T15:36:43.789Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: second-copy.js EXCERPT.orings_as568 applied to data/tables/orings_as568.json at 0974a62, wrapped as a UMD module",
+  "readMatchesCommitted": true,
+  "writtenSha256": "bee11011b5fb7bd879c01e049d3aebe0886bfb3d5c4c3336605731d9201a14d4",
+  "writtenBytes": 19986
+}

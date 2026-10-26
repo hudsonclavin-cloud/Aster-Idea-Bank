@@ -1,0 +1,370 @@
+$ node ideas/18-second-copy/second-copy.mjs --snapshots
+Second Copy — numbers PartForge restates from its own tables, at 0974a62 (snapshots in ideas/18-second-copy/snapshots)
+agrees = equal at the literal's printed precision (±½ unit in its last digit); inch columns as in × 25.4
+
+== flightSystemPrompt() doctrine — 2 DISAGREES, 6 UNBACKED, 1 QUOTED, 78 AGREES; 153 of 272 numbers unpaired
+DISAGREES  index.html:1440       g6 at Ø149.300  declared tolerance vs the fit it names
+           literal 149.300 ±0.05 (149.25–149.35) mm   table 149.261–149.286 (−14/−39 µm, 120–180 mm step)  [likely]   ← fits.json iso286_120-180 g6
+           ""coupler OD" d_mm 149.300 tol_mm 0.05, tol_ref "ISO 286 H7/g6 at 120-180 mm""
+           FLIGHT od entry cites ISO 286 H7/g6 (the shaft half); the doctrine says "Name the fit in a NOTE; put its numbers in tol_mm"
+DISAGREES  index.html:1454       6 in body tubes number of vendors sharing ID 152.4 mm
+           literal four (4)   table 3 vendors at ID 152.4: Blue Tube (ARR), Giant Leap, Madcow; not at 152.4: PML PT-6.0 ID 152.578 [likely]; PML FGPT-6.0 ID 152.578 [recall]   ← airframes.json BodyTube id_mm
+           "four vendors' 6 in airframes share ID 152.4 mm"
+QUOTED     index.html:1493       1/4             clearance, B18.2.8 normal
+           literal 6.76 mm   table —
+           "6.76 mm was the NORMAL hole for 1/4 in"
+           reports a past error ("used to be typed into this doctrine and were one f…"); listed, not judged
+UNBACKED   index.html:1494       p6 at Ø18–30    ISO 286 zone, µm
+           literal +35/+22 µm   table letters carried: d e f g h k n (and H)  [likely]   ← fits.json iso286_18-30 shaft_es_um.p + it_um
+           "p6 = +35/+22"
+           shaft letter p is not in fits.json (it carries d e f g h k n); its width 13 µm equals the table's IT6 = 13 µm, but its deviation +22 µm has no row
+UNBACKED   index.html:1494       p6 at Ø50–80    ISO 286 zone, µm
+           literal +51/+32 µm   table letters carried: d e f g h k n (and H)  [likely]   ← fits.json iso286_50-80 shaft_es_um.p + it_um
+           "p6 = +51/+32"
+           shaft letter p is not in fits.json (it carries d e f g h k n); its width 19 µm equals the table's IT6 = 19 µm, but its deviation +32 µm has no row
+UNBACKED   index.html:1494       p6 at Ø120–180  ISO 286 zone, µm
+           literal +68/+43 µm   table letters carried: d e f g h k n (and H)  [likely]   ← fits.json iso286_120-180 shaft_es_um.p + it_um
+           "p6 = +68/+43"
+           shaft letter p is not in fits.json (it carries d e f g h k n); its width 25 µm equals the table's IT6 = 25 µm, but its deviation +43 µm has no row
+UNBACKED   index.html:1507       98 mm MMT       typical motor-mount tube OD × ID
+           literal 101.6 × 98.5 mm   table no body tube in the table has both; nearest: LOC BT-3.9 101.6 OD × 99.06 ID [recall]; LOC FT-3.9 101.6 OD × 99.06 ID [recall]  [recall]   ← airframes.json BT-3.9 od_mm × id_mm
+           "98 mm MMT ≈ 101.6 OD × 98.5 ID"
+           the doctrine marks these "≈ … NOTE them as assumptions to be measured"
+UNBACKED   index.html:1507       75 mm MMT       typical motor-mount tube OD × ID
+           literal 78.7 × 75.4 mm   table no body tube in the table has both; nearest: Madcow FT30-THIN-600-NAT 78.689 OD × 76.2 ID [likely]; LOC BT-3.00 78.74 OD × 76.2 ID [recall]  [likely]   ← airframes.json FT30-THIN-600-NAT od_mm × id_mm
+           "75 mm ≈ 78.7 × 75.4"
+           the doctrine marks these "≈ … NOTE them as assumptions to be measured"
+UNBACKED   index.html:1507       54 mm MMT       typical motor-mount tube OD × ID
+           literal 57.2 × 54.4 mm   table no body tube in the table has both; nearest: LOC BT-2.14, MMT-2.14, MMT-54 57.404 OD × 54.356 ID [recall]; LOC FT-2.14 57.404 OD × 54.356 ID [recall]  [recall]   ← airframes.json BT-2.14, MMT-2.14, MMT-54 od_mm × id_mm
+           "54 mm ≈ 57.2 × 54.4"
+           the doctrine marks these "≈ … NOTE them as assumptions to be measured"
+AGREES     2 × motor_perf, 8 × GRADE_SY (names), 5 × design_factors_nasa, 23 × fasteners_metric, 2 × fasteners_un, 12 × fits, 20 × orings_as568, 6 × motors   (--all lists them)
+
+== GRADE_SY literal and its comment — 7 UNBACKED, 1 MAPPED, 13 AGREES; 11 of 40 numbers unpaired
+UNBACKED   index.html:5804       2               bolt yield, MPa
+           literal 393 MPa   table —
+           "'2':393"
+           SAE J429 grade 2: no PartForge table carries SAE J429 strengths (fasteners_un has no grades); not corrected here
+UNBACKED   index.html:5804       grade 2         bolt yield, MPa
+           literal 393 MPa   table —
+           "'grade 2':393"
+           SAE J429 grade 2: no PartForge table carries SAE J429 strengths (fasteners_un has no grades); not corrected here
+UNBACKED   index.html:5804       5               bolt yield, MPa
+           literal 634 MPa   table —
+           "'5':634"
+           SAE J429 grade 5: no PartForge table carries SAE J429 strengths (fasteners_un has no grades); not corrected here
+UNBACKED   index.html:5804       grade 5         bolt yield, MPa
+           literal 634 MPa   table —
+           "'grade 5':634"
+           SAE J429 grade 5: no PartForge table carries SAE J429 strengths (fasteners_un has no grades); not corrected here
+UNBACKED   index.html:5804       8               bolt yield, MPa
+           literal 896 MPa   table —
+           "'8':896"
+           SAE J429 grade 8: no PartForge table carries SAE J429 strengths (fasteners_un has no grades); not corrected here
+UNBACKED   index.html:5804       grade 8         bolt yield, MPa
+           literal 896 MPa   table —
+           "'grade 8':896"
+           SAE J429 grade 8: no PartForge table carries SAE J429 strengths (fasteners_un has no grades); not corrected here
+UNBACKED   index.html:5804       18-8            bolt yield, MPa
+           literal 450 MPa   table —
+           "'18-8':450"
+           "18-8" is an alloy family, not a property class; no table row (the code comment equates it to A2-70)
+MAPPED     index.html:5804       a4-80           bolt yield, MPa
+           literal 600 MPa   table 600 MPa (A2-80)  [likely]   ← fasteners_metric.json grades.A2-80 yield_MPa
+           "'a4-80':600"
+           equals A2-80 by assumption: the table carries A2 classes only; ISO 3506-1 gives A4 the same class-80 properties as A2 [Likely, not verified against the standard here]
+AGREES     9 × GRADE_SY (comment vs literal), 4 × fasteners_metric.grades   (--all lists them)
+
+== tests/templates/av-sled.scad — 3 NON-CLASS, 3 UNBACKED; 144 of 150 numbers unpaired
+NON-CLASS  tests/templates/av-sled.scad:4 1/4             clearance, class not named
+           literal 6.60 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20, 1/4-28 clearance classes
+           "clearance holes 6.60 (1/4 in + 0.25)"
+           stated reason: (1/4 in + 0.25)
+UNBACKED   tests/templates/av-sled.scad:5 M3              heat-set insert hole
+           literal 4.00 mm   table —
+           "Ø4.00 × 5 deep blind holes for M3 heat-set insert"
+           no PartForge table carries heat-set insert hole sizes (fasteners_metric has an STI/helical-insert drill, a different part); insert hole sizes are the insert maker's
+NON-CLASS  tests/templates/av-sled.scad:20 1/4             clearance, class not named
+           literal 6.60 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20, 1/4-28 clearance classes
+           ""all-thread rods 1/4 in" d_mm 6.60"
+           no reason stated on this line
+UNBACKED   tests/templates/av-sled.scad:21 M3              heat-set insert hole
+           literal 4.00 mm   table —
+           ""M3 heat-set boss holes" d_mm 4.00"
+           no PartForge table carries heat-set insert hole sizes (fasteners_metric has an STI/helical-insert drill, a different part); insert hole sizes are the insert maker's
+NON-CLASS  tests/templates/av-sled.scad:31 1/4             clearance, class not named
+           literal 6.60 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20, 1/4-28 clearance classes
+           "rod_d = 6.60; // 1/4 in all-thread clearance (reamed)"
+           stated reason: (reamed)
+UNBACKED   tests/templates/av-sled.scad:36 M3              heat-set insert hole
+           literal 4.00 mm   table —
+           "insert_d = 4.00; // M3 heat-set insert hole"
+           no PartForge table carries heat-set insert hole sizes (fasteners_metric has an STI/helical-insert drill, a different part); insert hole sizes are the insert maker's
+
+== tests/templates/bulkhead.scad — 3 DISAGREES, 6 NON-CLASS, 2 UNBACKED, 20 AGREES; 259 of 296 numbers unpaired
+DISAGREES  tests/templates/bulkhead.scad:6 AS568-250       cross-section W
+           literal 0.103 in   table 0.139 in  [likely]   ← orings_as568.json -250 cs_in
+           "// NOTE: O-ring AS568-250, ID 4.984 in = 126.59 mm, W 0.103 in = 2.62 mm, nitrile 70 A (FKM 75 A if the seal sees hot ga"
+           equals, at its printed precision: W 0.103 in is the cross-section of AS568 -1xx; the dash of that cross-section nearest ID 4.984 in is -159 (ID 4.987 in) [likely]
+DISAGREES  tests/templates/bulkhead.scad:6 AS568-250       cross-section W
+           literal 2.62 mm   table 0.139 in = 3.5306 mm  [likely]   ← orings_as568.json -250 cs_in
+           "// NOTE: O-ring AS568-250, ID 4.984 in = 126.59 mm, W 0.103 in = 2.62 mm, nitrile 70 A (FKM 75 A if the seal sees hot ga"
+           equals, at its printed precision: W 0.103 in is the cross-section of AS568 -1xx; the dash of that cross-section nearest ID 4.984 in is -159 (ID 4.987 in) [likely]
+DISAGREES  tests/templates/bulkhead.scad:7 W .103 in       Chart 4-3 face-seal groove width, liquids
+           literal .140–.146 in   table 0.136–0.142 in  [likely]   ← orings_as568.json face_seal_chart_4_3[W .103] groove_width_G_liquids
+           "25 in for vacuum/gases (.140-.146 for liquids), squ"
+           equals, at its printed precision: one end of Table 4-2 groove_width_G_no_backup
+NON-CLASS  tests/templates/bulkhead.scad:9 1/4             clearance, class not named
+           literal 6.60 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20, 1/4-28 clearance classes
+           "6.60 holes = 1/4 in all-thread clearance (6.35 + 0.25) on a 110.00 bolt circle (4.331 in)"
+           stated reason: (6.35 + 0.25)
+NON-CLASS  tests/templates/bulkhead.scad:9 1/4-20          clearance, class not named
+           literal 7.00 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20 clearance classes
+           "7.00 holes for a 1/4-20 U-bolt on 44.45 (1.750 in) centres along y"
+           no reason stated on this line
+UNBACKED   tests/templates/bulkhead.scad:11 grade 2         bolt yield, MPa
+           literal 393 MPa   table —
+           "grade-2 steel one (sy 393 MPa)"
+           SAE J429 grade 2: no PartForge table carries SAE J429 strengths (the same 393 is GRADE_SY's, unbacked there too)
+NON-CLASS  tests/templates/bulkhead.scad:29 1/4             clearance, class not named
+           literal 6.60 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20, 1/4-28 clearance classes
+           ""all-thread rods 1/4 in" d_mm 6.60"
+           no reason stated on this line
+NON-CLASS  tests/templates/bulkhead.scad:30 1/4-20          clearance, class not named
+           literal 7.00 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20 clearance classes
+           ""U-bolt 1/4-20" d_mm 7.00"
+           no reason stated on this line
+UNBACKED   tests/templates/bulkhead.scad:59 Parker gland    tolerance attributed to Parker (width and depth)
+           literal ±.003 in   table —
+           "Parker +/-.003 in on width and depth"
+           the Chart 4-3 rows carry depth, width and radius bands, no ± tolerance; Table 4-2 gives G +.005/−0 for radial glands only
+NON-CLASS  tests/templates/bulkhead.scad:68 1/4             clearance, class not named
+           literal 6.60 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20, 1/4-28 clearance classes
+           "rod_hole_d = 6.60; // 1/4 in all-thread clearance: 6.35 plus 0.25"
+           stated reason: 6.35 plus 0.25
+NON-CLASS  tests/templates/bulkhead.scad:72 1/4-20          clearance, class not named
+           literal 7.00 mm   table close 6.747/6.756, normal 7.144/7.137, loose 7.541/7.544  [likely]   ← fasteners_un.json 1/4-20 clearance classes
+           "ubolt_hole_d = 7.00; // 1/4-20 U-bolt leg clearance: 6.35 plus 0.65 (hole for a bent leg pair)"
+           stated reason: 6.35 plus 0.65 (hole for a bent leg pair)
+AGREES     13 × orings_as568, 7 × fasteners_un   (--all lists them)
+
+== tests/templates/centering-ring.scad — 3 AGREES; 145 of 148 numbers unpaired
+AGREES     3 × fasteners_metric   (--all lists them)
+
+== tests/templates/coupler.scad — 2 NON-CLASS, 6 AGREES; 135 of 141 numbers unpaired
+NON-CLASS  tests/templates/coupler.scad:6 #2-56           clearance, class not named
+           literal 2.20 mm   table close 2.381/2.388, normal 2.578/2.591, loose 2.946/2.946  [recall]   ← fasteners_un.json #2-56 clearance classes
+           "clearance hole 2.20 (2-56 major 2.18 + clearance), the airf"
+           stated reason: (2-56 major 2.18 + clearance)
+NON-CLASS  tests/templates/coupler.scad:32 #2-56           clearance, class not named
+           literal 2.20 mm   table close 2.381/2.388, normal 2.578/2.591, loose 2.946/2.946  [recall]   ← fasteners_un.json #2-56 clearance classes
+           "pin_d = 2.20; // 2-56 nylon shear pin clearance"
+           no reason stated on this line
+AGREES     6 × fasteners_un   (--all lists them)
+
+== tests/templates/fin.scad — 2 AGREES; 241 of 243 numbers unpaired
+AGREES     2 × fasteners_metric   (--all lists them)
+
+== tests/templates/motor-retainer.scad — 3 AGREES; 115 of 118 numbers unpaired
+AGREES     3 × fasteners_metric   (--all lists them)
+
+== tests/templates/nosecone.scad — 3 DISAGREES; 169 of 172 numbers unpaired
+DISAGREES  tests/templates/nosecone.scad:3 H7 at Ø20.00    declared tolerance vs the fit it names
+           literal 20.00 ±0.05 (19.95–20.05) mm   table 20.000–20.021 (+21/0 µm, 18–30 mm step)  [likely]   ← fits.json iso286_18-30 H7
+           "Ø20.00 H7 vs FLIGHT "tip insert pocket" d_mm 20.00 tol_mm 0.05"
+           the line names H7; the FLIGHT bores entry declares ±0.05; the doctrine says "Name the fit in a NOTE; put its numbers in tol_mm"
+DISAGREES  tests/templates/nosecone.scad:7 H7 at Ø20.00    declared tolerance vs the fit it names
+           literal 20.00 ±0.05 (19.95–20.05) mm   table 20.000–20.021 (+21/0 µm, 18–30 mm step)  [likely]   ← fits.json iso286_18-30 H7
+           "20.00 H7 vs FLIGHT "tip insert pocket" d_mm 20.00 tol_mm 0.05"
+           the line names H7; the FLIGHT bores entry declares ±0.05; the doctrine says "Name the fit in a NOTE; put its numbers in tol_mm"
+DISAGREES  tests/templates/nosecone.scad:43 H7 at Ø20.00    declared tolerance vs the fit it names
+           literal 20.00 ±0.05 (19.95–20.05) mm   table 20.000–20.021 (+21/0 µm, 18–30 mm step)  [likely]   ← fits.json iso286_18-30 H7
+           "pocket_d = 20.00; // tip insert shank pocket, reamed H7 (drill 19.50) vs FLIGHT "tip insert pocket" d_mm 20.00 tol_mm 0.05"
+           the line names H7; the FLIGHT bores entry declares ±0.05; the doctrine says "Name the fit in a NOTE; put its numbers in tol_mm"
+
+== tests/templates/*.scad vs TEMPLATES_FLIGHT in index.html — 1 COPY-DRIFT
+COPY-DRIFT tests/templates/bulkhead.scad:11 bulkhead        template line vs the copy index.html ships
+           this file: // NOTE: Recovery shock 5 kN on the U-bolt is tension in the two 1/4-20 legs (122 MPa on the 20.5 mm2 stress area) and tension in the 4 all-thread rod
+           shipped  : // NOTE: Recovery shock 5 kN on the U-bolt is tension in the two 1/4-20 legs (122 MPa on the 20.5 mm2 stress area). Declared as bolt_shear per the con   (index.html line 2062)
+           tests/flight-decl.test.mjs compares only each file's "loads" line with index.html
+
+TOTAL      8 DISAGREES, 1 COPY-DRIFT, 11 NON-CLASS, 18 UNBACKED, 1 MAPPED, 1 QUOTED, 125 AGREES; exit 1 (9 DISAGREES or COPY-DRIFT)
+(exit 1)
+
+$ node ideas/18-second-copy/second-copy.mjs --snapshots --only history --brief
+Second Copy — numbers PartForge restates from its own tables, at 0974a62 (snapshots in ideas/18-second-copy/snapshots)
+agrees = equal at the literal's printed precision (±½ unit in its last digit); inch columns as in × 25.4
+
+== doctrine at ad4d587 (history) — 15 DISAGREES, 3 UNBACKED, 76 AGREES; 2 of 113 numbers unpaired
+DISAGREES  index.html:1407  #4             clearance, B18.2.8 close                 2.95 vs 3.048  (= #2-56 loose (#32) 2.946)
+DISAGREES  index.html:1407  #6             clearance, B18.2.8 normal                3.80 vs 4.305  (= #10-24 75 % tap drill (#25) 3.797)
+DISAGREES  index.html:1407  #6             clearance, B18.2.8 close                 3.57 vs 3.912
+DISAGREES  index.html:1407  #8             clearance, B18.2.8 normal                4.50 vs 4.978  (= #12-24 75 % tap drill (#16) 4.496)
+DISAGREES  index.html:1407  #8             clearance, B18.2.8 close                 4.31 vs 4.572  (= #6-32 normal (#18) 4.305)
+DISAGREES  index.html:1407  #10            clearance, B18.2.8 normal                5.11 vs 5.613  (= 1/4-20 75 % tap drill (#7) 5.105)
+DISAGREES  index.html:1407  #10            clearance, B18.2.8 close                 4.98 vs 5.220  (= #8-32 normal (#9) 4.978)
+DISAGREES  index.html:1407  1/4            clearance, B18.2.8 normal                6.76 vs 7.144  (= 1/4-20 close nominal 6.756)
+DISAGREES  index.html:1407  1/4            clearance, B18.2.8 close                 6.53 vs 6.747  (= 5/16-18 75 % tap drill (F) 6.528)
+DISAGREES  index.html:1407  5/16           clearance, B18.2.8 normal                8.43 vs 8.731  (= 3/8-16 50 % tap drill (Q) 8.433)
+DISAGREES  index.html:1407  5/16           clearance, B18.2.8 close                 8.20 vs 8.334
+DISAGREES  index.html:1407  3/8            clearance, B18.2.8 normal                10.08 vs 10.319
+DISAGREES  index.html:1407  3/8            clearance, B18.2.8 close                 9.80 vs 9.922
+DISAGREES  index.html:1407  1/2            clearance, B18.2.8 normal                13.49 vs 14.287  (= 1/2-13 close (17/32) 13.494)
+DISAGREES  index.html:1407  1/2            clearance, B18.2.8 close                 13.10 vs 13.494
+UNBACKED   index.html:1408  p6 at Ø18–30   ISO 286 zone, µm                         +35/+22 vs letters carried: d e f g h k n
+UNBACKED   index.html:1408  p6 at Ø50–80   ISO 286 zone, µm                         +51/+32 vs letters carried: d e f g h k n
+UNBACKED   index.html:1408  p6 at Ø120–180 ISO 286 zone, µm                         +68/+43 vs letters carried: d e f g h k n
+AGREES     23 × fasteners_metric, 21 × fasteners_un, 12 × fits, 20 × orings_as568   (--all lists them)
+
+== doctrine at 3bffbe0 (history) — 21 DISAGREES, 3 UNBACKED, 62 AGREES; 2 of 97 numbers unpaired
+DISAGREES  index.html:1392  #4             clearance, B18.2.8 close                 2.95 vs 3.048  (= #2-56 loose (#32) 2.946)
+DISAGREES  index.html:1392  #6             clearance, B18.2.8 normal                3.80 vs 4.305  (= #10-24 75 % tap drill (#25) 3.797)
+DISAGREES  index.html:1392  #6             clearance, B18.2.8 close                 3.57 vs 3.912
+DISAGREES  index.html:1392  #8             clearance, B18.2.8 normal                4.50 vs 4.978  (= #12-24 75 % tap drill (#16) 4.496)
+DISAGREES  index.html:1392  #8             clearance, B18.2.8 close                 4.31 vs 4.572  (= #6-32 normal (#18) 4.305)
+DISAGREES  index.html:1392  #10            clearance, B18.2.8 normal                5.11 vs 5.613  (= 1/4-20 75 % tap drill (#7) 5.105)
+DISAGREES  index.html:1392  #10            clearance, B18.2.8 close                 4.98 vs 5.220  (= #8-32 normal (#9) 4.978)
+DISAGREES  index.html:1392  1/4            clearance, B18.2.8 normal                6.76 vs 7.144  (= 1/4-20 close nominal 6.756)
+DISAGREES  index.html:1392  1/4            clearance, B18.2.8 close                 6.53 vs 6.747  (= 5/16-18 75 % tap drill (F) 6.528)
+DISAGREES  index.html:1392  5/16           clearance, B18.2.8 normal                8.43 vs 8.731  (= 3/8-16 50 % tap drill (Q) 8.433)
+DISAGREES  index.html:1392  5/16           clearance, B18.2.8 close                 8.20 vs 8.334
+DISAGREES  index.html:1392  3/8            clearance, B18.2.8 normal                10.08 vs 10.319
+DISAGREES  index.html:1392  3/8            clearance, B18.2.8 close                 9.80 vs 9.922
+DISAGREES  index.html:1392  1/2            clearance, B18.2.8 normal                13.49 vs 14.287  (= 1/2-13 close (17/32) 13.494)
+DISAGREES  index.html:1392  1/2            clearance, B18.2.8 close                 13.10 vs 13.494
+UNBACKED   index.html:1393  p6 at Ø18–30   ISO 286 zone, µm                         +35/+22 vs letters carried: d e f g h k n
+UNBACKED   index.html:1393  p6 at Ø50–80   ISO 286 zone, µm                         +51/+32 vs letters carried: d e f g h k n
+UNBACKED   index.html:1393  p6 at Ø120–180 ISO 286 zone, µm                         +68/+43 vs letters carried: d e f g h k n
+DISAGREES  index.html:1394  W 2.62 mm      face-seal groove width, liquids          3.56–3.71 vs 0.136–0.142 in = 3.4544–3.6068 mm  (= one end of Table 4-2 groove_width_G_no_backup)
+DISAGREES  index.html:1394  W 3.53 mm      face-seal groove width, liquids          4.70–4.90 vs 0.177–0.187 in = 4.4958–4.7498 mm
+DISAGREES  index.html:1394  W 5.33 mm      face-seal groove width, liquids          7.14–7.44 vs 0.270–0.290 in = 6.8580–7.3660 mm  (= one end of Table 4-2 groove_width_G_no_backup)
+DISAGREES  index.html:1394  W 1.78 mm      face-seal groove width, vacuum and gases 2.29–2.41 vs 0.084–0.089 in = 2.1336–2.2606 mm
+DISAGREES  index.html:1394  W 3.53 mm      face-seal groove width, vacuum and gases 4.14–4.32 vs 0.158–0.164 in = 4.0132–4.1656 mm
+DISAGREES  index.html:1394  W 5.33 mm      face-seal groove width, vacuum and gases 6.35–6.60 vs 0.239–0.244 in = 6.0706–6.1976 mm
+AGREES     23 × fasteners_metric, 21 × fasteners_un, 12 × fits, 6 × orings_as568   (--all lists them)
+
+TOTAL      36 DISAGREES, 6 UNBACKED, 138 AGREES; exit 1 (36 DISAGREES or COPY-DRIFT)
+(exit 1)
+
+$ node ideas/18-second-copy/second-copy.mjs --snapshots --json --only copies
+{
+ "ok": true,
+ "tool": "second-copy",
+ "value": {
+  "commit": "0974a62",
+  "read_from": "snapshots in ideas/18-second-copy/snapshots",
+  "totals": {
+   "DISAGREES": 0,
+   "COPY-DRIFT": 1,
+   "NON-CLASS": 0,
+   "UNBACKED": 0,
+   "MAPPED": 0,
+   "QUOTED": 0,
+   "AGREES": 0
+  },
+  "failing": 1,
+  "sources": [
+   {
+    "id": "copies",
+    "label": "tests/templates/*.scad vs TEMPLATES_FLIGHT in index.html",
+    "file": "tests/templates",
+    "counts": {
+     "DISAGREES": 0,
+     "COPY-DRIFT": 1,
+     "NON-CLASS": 0,
+     "UNBACKED": 0,
+     "MAPPED": 0,
+     "QUOTED": 0,
+     "AGREES": 0
+    },
+    "numbers": 0,
+    "unpaired": 0,
+    "findings": [
+     {
+      "source": "copies",
+      "file": "tests/templates/bulkhead.scad",
+      "line": 11,
+      "family": "copies",
+      "key": "bulkhead",
+      "what": "template line vs the copy index.html ships",
+      "literal": "// NOTE: Recovery shock 5 kN on the U-bolt is tension in the two 1/4-20 legs (122 MPa on the 20.5 mm2 stress area) and tension in the 4 all-thread rods. Declared as bolt_shear per the contract, which checks 0.577*sy and is therefore conservative for a tension load. SPECIFY A STAINLESS A2-70 U-BOLT: a zinc-plated grade-2 steel one (sy 393 MPa) makes only SF 1.86 against that conservative basis, and this file used to pass only because an undeclared grade silently defaulted to 8.8",
+      "unit": "",
+      "verdict": "COPY-DRIFT",
+      "table": {
+       "display": "// NOTE: Recovery shock 5 kN on the U-bolt is tension in the two 1/4-20 legs (122 MPa on the 20.5 mm2 stress area). Declared as bolt_shear per the contract, which checks 0.577*sy and is therefore conservative for a tension load. SPECIFY A STAINLESS A2-70 U-BOLT: a zinc-plated grade-2 steel one (sy 393 MPa) makes only SF 1.86 on that basis. A bent U-bolt's real rating is the vendor's working load, not a material yield: check the tag",
+       "file": "index.html",
+       "row": "TEMPLATES_FLIGHT \"Av-bay bulkhead\"",
+       "column": "line 2062",
+       "confidence": "code"
+      },
+      "span": "",
+      "note": "tests/flight-decl.test.mjs compares only each file's \"loads\" line with index.html"
+     }
+    ]
+   }
+  ]
+ },
+ "units": null,
+ "confidence": "measured",
+ "provenance": [
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/fasteners_metric.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  },
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/fasteners_un.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  },
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/fits.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  },
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/orings_as568.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  },
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/design_factors_nasa.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  },
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/motor_perf.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  },
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/motors.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  },
+  {
+   "kind": "repo",
+   "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+   "path": "data/tables/airframes.json",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4"
+  }
+ ],
+ "assumptions": [
+  "agrees = equal to the table value at the literal's printed precision (±½ unit in its last digit)",
+  "UN, AS568 and Parker values compared from the inch columns × 25.4",
+  "only the sentence shapes in second-copy.js are paired; other numbers are counted as unpaired, not judged",
+  "UNBACKED: no table row carries it; not judged wrong, no value proposed"
+ ],
+ "validity_envelope": "PartForge index.html (flightSystemPrompt, GRADE_SY, TEMPLATES_FLIGHT), tests/templates/*.scad and data/tables at the commit shown",
+ "refusal": null,
+ "summary": "0 DISAGREES, 1 COPY-DRIFT, 0 UNBACKED, 0 NON-CLASS, 0 MAPPED, 0 QUOTED, 0 AGREES"
+}
+(exit 1)
+

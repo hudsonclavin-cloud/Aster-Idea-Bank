@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Second Copy</title>
+<meta name="description" content="Every number PartForge's flight doctrine, GRADE_SY and flight templates restate from its own reference tables, paired with its table row, and whether the two copies agree.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Second Copy</h1>
+  <p class="lede">PartForge's rule is that nothing in its doctrine may restate a fastener number the tables carry. It restates dozens, and its templates restate more. This page pairs every number it can with the table row it repeats, and says whether the two copies still agree.</p>
+  <p class="meta" id="meta">Loading…</p>
+</header>
+
+<main>
+  <section aria-labelledby="h-totals">
+    <h2 id="h-totals">At PartForge <span id="commit">…</span></h2>
+    <div class="chips" id="totals" role="list"></div>
+    <p class="hint">A literal <b>agrees</b> when it equals the table value rounded to the literal's own printed precision. <b>Unbacked</b> means no table row carries it, which is not the same as wrong; the page never proposes a value.</p>
+  </section>
+
+  <section aria-labelledby="h-fail">
+    <h2 id="h-fail">What disagrees today</h2>
+    <div id="failing" class="cards"></div>
+  </section>
+
+  <section aria-labelledby="h-browse">
+    <h2 id="h-browse">Every pairing, by source</h2>
+    <div class="tabs" role="tablist" aria-label="Source" id="tabs"></div>
+    <div class="filters" id="filters" role="group" aria-label="Show"></div>
+    <p class="srcnote" id="srcnote"></p>
+    <div id="list" class="cards" aria-live="polite"></div>
+  </section>
+
+  <section aria-labelledby="h-try">
+    <h2 id="h-try">Lint your own text</h2>
+    <p class="hint">Paste a doctrine passage, a .scad template or a GRADE_SY line. It is checked here, in the page, against the same table snapshots; nothing is sent anywhere.</p>
+    <div class="tryrow">
+      <label for="kind">Read it as</label>
+      <select id="kind">
+        <option value="doctrine">doctrine text</option>
+        <option value="template">flight template (.scad)</option>
+        <option value="gradeSy">GRADE_SY literal</option>
+      </select>
+    </div>
+    <textarea id="paste" rows="7" spellcheck="false" aria-label="Text to lint" placeholder="- Use standard sizes. Clearance holes (ISO 273 medium): M6 6.6, M8 9.0"></textarea>
+    <div class="buttons">
+      <button type="button" id="lint">Lint it</button>
+      <button type="button" id="sample" class="ghost">Load the planted M6 drift</button>
+      <button type="button" id="sample2" class="ghost">Load the 2026-09-18 UN block</button>
+    </div>
+    <div id="tryout" class="cards" aria-live="polite"></div>
+  </section>
+
+  <section aria-labelledby="h-how">
+    <h2 id="h-how">Where the numbers come from</h2>
+    <p class="hint" id="prov"></p>
+  </section>
+</main>
+
+<footer><p>Aster Idea Bank, idea 18 · an idea-bank prototype for PartForge, not part of it · <span id="foot"></span></p></footer>
+
+<script src="second-copy.js"></script>
+<script src="snapshots/table-fasteners_metric.js"></script>
+<script src="snapshots/table-fasteners_un.js"></script>
+<script src="snapshots/table-fits.js"></script>
+<script src="snapshots/table-orings_as568.js"></script>
+<script src="snapshots/table-design_factors_nasa.js"></script>
+<script src="snapshots/table-motor_perf.js"></script>
+<script src="snapshots/table-motors.js"></script>
+<script src="snapshots/table-airframes.js"></script>
+<script src="snapshots/index-0974a62.js"></script>
+<script src="snapshots/history.js"></script>
+<script src="snapshots/tpl-av-sled.scad.js"></script>
+<script src="snapshots/tpl-bulkhead.scad.js"></script>
+<script src="snapshots/tpl-centering-ring.scad.js"></script>
+<script src="snapshots/tpl-coupler.scad.js"></script>
+<script src="snapshots/tpl-fin.scad.js"></script>
+<script src="snapshots/tpl-motor-retainer.scad.js"></script>
+<script src="snapshots/tpl-nosecone.scad.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

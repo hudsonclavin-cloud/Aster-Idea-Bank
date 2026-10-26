@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/airframes.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "8a8c4012e01ef496656ac11ede1efa3bc2d18e5c",
+  "readBlob": "8a8c4012e01ef496656ac11ede1efa3bc2d18e5c",
+  "sourceSha256": "8f1fd5e9b3213f357c723976784188d48ec6d63aed90bf1d179b404f2abd9af9",
+  "sourceBytes": 396166,
+  "copiedAt": "2026-10-26T15:36:44.612Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: second-copy.js EXCERPT.airframes applied to data/tables/airframes.json at 0974a62, wrapped as a UMD module",
+  "readMatchesCommitted": true,
+  "writtenSha256": "52e40a447779541781a343f51031eaa13f163c38a9bd6249b378be0074855b00",
+  "writtenBytes": 6021
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/motor_perf.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "d088b20 2026-09-18T01:15:24+00:00",
+  "committedBlob": "efb752096d84dc5030e5a968f510dadd7f5821ae",
+  "readBlob": "efb752096d84dc5030e5a968f510dadd7f5821ae",
+  "sourceSha256": "42609fe54339dd20515b2ed73f81bbf52ecc1c55bad04331725bb2ecfd382ba3",
+  "sourceBytes": 742332,
+  "copiedAt": "2026-10-26T15:36:44.095Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: second-copy.js EXCERPT.motor_perf applied to data/tables/motor_perf.json at 0974a62, wrapped as a UMD module",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2ab9bc288f76eac9b5455ee90848e2fe10e04ed4e370cc359cdda91e6797386f",
+  "writtenBytes": 3125
+}

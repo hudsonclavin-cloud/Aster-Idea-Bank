@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T15:36:46.956Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs from git show <commit>:index.html: the doctrine's \"- Use standard sizes\", \"- Fits\" and \"- O-rings\" bullets at ad4d587 (blob c19410e702b97ed15a5f7254ba46e325595cc161) lines 1407-1409; 3bffbe0 (blob 7dfeaeb44cf00094639d7d3544f7eaf7ab13d542) lines 1392-1394. The sidecar's commit and blob fields describe HEAD; this note names the historical sources",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e07cf0e2ddd1b49889452617c1d5faed806470e23e8227804047647960d43a5c",
+  "writtenBytes": 5288
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T15:36:46.660Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs from index.html at 0974a62: the flightSystemPrompt() slice (lines 1413-1522), GRADE_SY with its comment (lines 5795-5804), dbFit() unedited (lines 4997-5012), and the 7 TEMPLATES_FLIGHT code strings unescaped (6 stored as identical to their tests/templates copy, 1 as line replacements on it, each with the sha256 of the shipped text)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f8df1c1fdef76d3ddb8158202b041531c4bdc17dfff1f7b3238f4318fe9df42c",
+  "writtenBytes": 35982
+}

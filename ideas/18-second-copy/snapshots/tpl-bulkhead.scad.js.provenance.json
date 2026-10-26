@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/bulkhead.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "9e79f4c 2026-09-18T03:10:59+00:00",
+  "committedBlob": "3624faaa769ff9ae3437a9f44d118569bda99922",
+  "readBlob": "3624faaa769ff9ae3437a9f44d118569bda99922",
+  "sourceSha256": "7e237fe822e3942ed1a5126001a0aaeaaee942168ee8ab00fbd9c5c061ea2ea5",
+  "sourceBytes": 13301,
+  "copiedAt": "2026-10-26T15:36:45.106Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: tests/templates/bulkhead.scad verbatim as a string (its sha256 equals the sidecar's sourceSha256)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e263aedb5797da7f2d44bc6f9a19ab3f8ee21f55d30baa73d11823dbc3c3d064",
+  "writtenBytes": 14466
+}
