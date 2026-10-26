@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tip Match</title>
+<meta name="description" content="Give it an Earth-arrival v∞ and it says which Skyhook tether tier could meet the payload at its upper tip, what trim Δv closes the gap, and which conditions nobody can evaluate yet.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Tip Match</h1>
+    <p class="tagline">A payload coming home from an asteroid reaches Earth with some hyperbolic excess speed v∞. Could a rotating tether meet it at the top of its swing? This page checks the one condition that can be checked today, energy, from Skyhook's Rev A constants, and refuses the two it cannot.</p>
+  </header>
+
+  <section class="card controls" aria-label="Inputs">
+    <div class="row">
+      <label class="lbl" for="vinf">Earth-arrival v∞</label>
+      <input id="vinf" type="range" min="0" max="8" step="0.001" value="0" aria-describedby="vinf-note">
+      <span class="nowrap"><input id="vinf-num" type="number" min="0" max="8" step="0.001" value="0" inputmode="decimal" aria-label="Earth-arrival v∞ in km/s"><span class="unit">km/s</span></span>
+      <button type="button" id="set-parabolic" title="v∞ = 0: a parabolic arrival, the slowest possible from beyond Earth's sphere of influence">parabolic (0)</button>
+      <button type="button" id="set-star" title="The one v∞ the Phase 3 tier meets with zero trim">v∞* for Phase 3</button>
+      <p class="note" id="vinf-note">0 is a parabolic arrival (the slowest a body can arrive from beyond Earth's sphere of influence); a return leg from a near-Earth asteroid arrives faster. Aster does not compute this number yet (K1), so you type it.</p>
+    </div>
+    <div class="row">
+      <span class="lbl" id="tier-lbl">Tether tier</span>
+      <div class="seg" role="radiogroup" aria-labelledby="tier-lbl" id="tiers"></div>
+      <p class="note" id="tier-note">Tip speeds from <code>params/rev_a.json</code>.</p>
+    </div>
+    <div class="row">
+      <label class="lbl" for="tol">Grapple tolerance</label>
+      <span class="nowrap"><input id="tol" type="number" min="0" step="0.5" value="1" inputmode="decimal"><span class="unit">m/s relative velocity</span></span>
+      <p class="note">You declare this. The default 1 m/s is the "relative velocity within ~1 m/s at the moment of capture" requirement in Skyhook's founding document (<code>docs/project_instructions.md:124</code>), written for ascending payloads; it is a planning requirement, not a Rev A canon value (it is not in <code>params/rev_a.json</code>).</p>
+    </div>
+    <div class="row">
+      <span class="lbl" id="src-lbl">Where v∞ comes from</span>
+      <div class="seg" role="radiogroup" aria-labelledby="src-lbl">
+        <label><input type="radio" name="src" value="typed" checked><span>Typed above</span></label>
+        <label><input type="radio" name="src" value="aster-cache"><span>Aster's screening cache</span></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card verdict" id="verdict" aria-live="polite">
+    <p class="headline" id="headline">…</p>
+    <div class="chips" id="chips"></div>
+    <p class="small muted" id="verdict-note"></p>
+  </section>
+
+  <section class="card" id="refusal-card" hidden></section>
+
+  <div id="results">
+    <section class="card chart-card">
+      <h2 id="chart-h">Speed at the upper-tip radius <span class="muted small">payload versus tip, km/s</span></h2>
+      <div class="chart-wrap">
+        <svg class="chart" id="chart" viewBox="0 0 680 380" role="img" aria-labelledby="chart-title chart-desc">
+          <title id="chart-title">Payload speed at the upper-tip radius against v∞, with the three tiers' tip speeds as horizontal lines</title>
+          <desc id="chart-desc">The payload curve starts at the parabolic speed at the upper-tip radius and rises with v∞. Tip lines with negative release C3 lie below the curve everywhere, so no hyperbolic arrival matches them; a tip line with positive C3 crosses the curve at v∞*.</desc>
+        </svg>
+        <div class="tip" id="tip" role="status" aria-hidden="true"></div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="card">
+      <h2>The numbers <span class="muted small">and where each one comes from</span></h2>
+      <div class="table-scroll">
+        <table id="numbers">
+          <thead><tr><th>Quantity</th><th>Value</th><th>Traces to</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="grid2">
+      <section class="card bars" id="lower-card">
+        <h2>The lower tip is not an option</h2>
+        <svg id="lower-bars" viewBox="0 0 400 110" role="img" aria-label="Lower tip: payload speed at the lower-tip altitude versus the lower tip's inertial speed"></svg>
+        <p class="small muted" id="lower-note"></p>
+      </section>
+      <section class="card" id="zero-trim-card">
+        <h2>What tip speed would meet this v∞ with zero trim?</h2>
+        <p id="zero-trim"></p>
+        <p class="small muted" id="zero-trim-note"></p>
+      </section>
+    </div>
+
+    <h2 style="margin-top:18px">Three conditions, one computed</h2>
+    <div class="grid3" id="conditions"></div>
+
+    <details class="card" id="envelope-details">
+      <summary>Evidence envelope (Aster shape) for the current inputs</summary>
+      <p class="small muted">The same JSON the CLI prints: <code>node ideas/01-tip-match/tip-match.mjs --vinf … --tier …</code>. Value envelopes carry provenance ids that every quantity cites; refusals carry a code, a reason and what would help.</p>
+      <pre id="envelope" tabindex="0"></pre>
+    </details>
+  </div>
+
+  <section class="card">
+    <h2>What this is, and is not</h2>
+    <ul class="small">
+      <li>Two-body, Earth-centred, instantaneous. The payload's speed at the upper-tip radius follows from v∞ alone, whatever its perigee; the trim shown is that speed difference, which is the whole velocity mismatch only when the payload moves parallel to the tip (perigee at the upper-tip radius, horizontal, prograde). A lower perigee adds a radial component, so the trim shown is a lower bound. The tether's centre of mass is on a circular orbit at the Rev A altitude, rotating rigidly, and the catch is at the top of the swing.</li>
+      <li>Energy is necessary, not sufficient. The arrival plane (needs the v∞ vector and the tether's orbit plane) and the phase (needs a tether ephemeris and an arrival epoch) are refused above, with what would help.</li>
+      <li>Not modelled: J2, drag, the Moon, gravity-gradient spin modulation, grapple geometry, what catching tonnes at 10 km/s does to the tether, or the momentum deposit a down-mass catch makes.</li>
+      <li>Fidelity: an idea-bank prototype. It has not been through Aster's multi-agent math audit or founding-document process, nor Skyhook's Rule 1 canon review, verification memo or pytest suite.</li>
+    </ul>
+    <p class="prov" id="prov"></p>
+  </section>
+</div>
+<script src="snapshots/rev_a.data.js"></script>
+<script src="tip-match.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
