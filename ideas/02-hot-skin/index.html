@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hot Skin</title>
+<meta name="description" content="Stagnation and recovery temperature at a declared speed and altitude, from PartForge's own 1976 Standard Atmosphere, against each flight material's service_max_c. An upper bound, screened, never passed.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#verdict">Skip to the verdict</a>
+<header class="top">
+  <div class="wrap">
+    <h1>Hot Skin</h1>
+    <p class="sub">The stagnation and recovery temperature of air at a speed and altitude are an <strong>upper bound</strong> on how hot a part's skin can get, not a prediction of how hot it does get. This page measures that bound against each PartForge flight material's <code>service_max_c</code>. The verdict is <strong>SCREEN</strong>, never a pass.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card controls" aria-labelledby="controls-h">
+    <h2 id="controls-h">Condition</h2>
+    <div class="grid3">
+      <div class="field">
+        <label for="speed">Speed <span class="muted">m/s</span></label>
+        <input id="speed" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="speed-hint">
+        <input id="speedRange" type="range" min="0" max="1500" step="1" aria-label="Speed in metres per second">
+        <p id="speed-hint" class="hint">The only speed input. Mach is derived. Type <em>Mach 2</em> to see why a bare Mach number is refused. Where T<sub>0</sub> would pass 2,000 K (about 1,855 m/s at sea level) the page refuses: the perfect-gas picture ends there.</p>
+      </div>
+      <div class="field">
+        <label for="alt">Altitude <span class="muted">m, geometric</span></label>
+        <input id="alt" type="number" inputmode="numeric" step="100" min="-4990" max="200000" aria-describedby="alt-hint">
+        <input id="altRange" type="range" min="0" max="40000" step="100" aria-label="Altitude in metres">
+        <p id="alt-hint" class="hint">1976 Standard Atmosphere, geometric altitude as an altimeter reports it. The table ends at 86 km; beyond it the page refuses.</p>
+      </div>
+      <div class="field">
+        <label for="material">Material</label>
+        <select id="material" aria-describedby="material-hint"></select>
+        <p id="material-hint" class="hint">The 21 <code>FLIGHT_MATERIALS</code> keys; the limit and its confidence come from <code>materials_thermal.json</code>.</p>
+        <label for="src" class="later">Where does the speed come from?</label>
+        <select id="src" aria-describedby="src-hint">
+          <option value="default">default: the tool proposed it</option>
+          <option value="user">user: the engineer declared it</option>
+          <option value="source">source: cited (a sim run, a flight log)</option>
+        </select>
+        <p id="src-hint" class="hint">PartForge's <code>inputs_src</code>. A tool-proposed speed makes the margin arithmetic, not evidence.</p>
+      </div>
+    </div>
+    <div class="row">
+      <button type="button" id="finBtn" class="btn">Fin template: 700 m/s at 3,000 m, 6061-T6</button>
+      <span class="muted small" id="finNote"></span>
+    </div>
+  </section>
+
+  <section class="card refusal" id="refusal" hidden aria-live="polite" aria-labelledby="refusal-h">
+    <h2 id="refusal-h">Refused</h2>
+    <p class="code"><span class="tag warn">refusal</span> <code id="refCode"></code></p>
+    <p id="refReason"></p>
+    <p class="what"><strong>What would help:</strong> <span id="refHelp"></span></p>
+    <div id="refExample" hidden>
+      <p class="muted small">The same Mach number, two altitudes, this page's own <code>isa()</code>:</p>
+      <table class="mini">
+        <thead><tr><th scope="col">Altitude</th><th scope="col">T<sub>∞</sub></th><th scope="col">Speed</th><th scope="col">T<sub>0</sub></th></tr></thead>
+        <tbody id="refExampleRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card verdict" id="verdict" aria-live="polite" aria-labelledby="verdict-h">
+    <h2 id="verdict-h" class="vh"><span class="vword">SCREEN</span> <span class="vband" id="vband"></span></h2>
+    <p class="vtext" id="vtext"></p>
+    <div class="figs" id="figs"></div>
+    <ul class="flags" id="flags"></ul>
+    <details class="arith">
+      <summary>Show the arithmetic</summary>
+      <div id="arith"></div>
+    </details>
+  </section>
+
+  <section class="card chart" aria-labelledby="chart-h">
+    <h2 id="chart-h">Bound against speed at this altitude</h2>
+    <div class="legend" id="legend" aria-hidden="true">
+      <span><i class="sw s1"></i>T<sub>0</sub> stagnation</span>
+      <span><i class="sw s2"></i>T<sub>r</sub> turbulent</span>
+      <span><i class="sw s3"></i>T<sub>r</sub> laminar</span>
+      <span><i class="sw lim"></i>service_max_c</span>
+    </div>
+    <canvas id="chart" role="img" aria-label="Three curves of temperature against speed, stagnation above turbulent recovery above laminar recovery, with the material's service limit as a dashed line and the current speed marked."></canvas>
+    <p class="read" id="chartRead" aria-live="off">Hover or touch the chart to read it.</p>
+    <p class="hint">The curves are T<sub>∞</sub> + r·V²/2c<sub>p</sub> with r = 1, Pr<sup>⅓</sup>, Pr<sup>½</sup>. Every point on them is an adiabatic-wall bound, not a skin temperature. The speed axis stops where T<sub>0</sub> reaches the 2,000 K ceiling of the perfect-gas picture.</p>
+  </section>
+
+  <section class="card table" aria-labelledby="table-h">
+    <h2 id="table-h">All 21 materials at this condition</h2>
+    <p class="muted small" id="tableCond"></p>
+    <div class="scroll">
+      <table id="matTable">
+        <thead>
+          <tr><th scope="col">Material</th><th scope="col" class="num"><span class="long">service_max_c</span><span class="short">limit °C</span></th><th scope="col" class="num"><span class="long">margin vs T<sub>r</sub> turb.</span><span class="short">vs T<sub>r</sub></span></th><th scope="col" class="num"><span class="long">margin vs T<sub>0</sub></span><span class="short">vs T<sub>0</sub></span></th><th scope="col">screen</th></tr>
+        </thead>
+        <tbody id="matRows"></tbody>
+      </table>
+    </div>
+    <p class="hint">Margins in °C: positive means the bound sits under the limit. <em>over</em>: even the turbulent recovery temperature exceeds the limit. <em>stagnation</em>: only stagnation points (leading edge, nose tip) exceed it. <em>near</em>: the stagnation bound is within 25 °C of the limit. <em>under</em>: the bound is below the limit; the limit itself is still judgement, not a rating. Confidence: <em>likely</em> = nominal, agreeing across handbooks; <em>recall</em> = model recall, not cited.</p>
+  </section>
+
+  <footer class="prov">
+    <h2>Where the numbers come from</h2>
+    <ul id="prov"></ul>
+    <p class="small">Prototype for the <a href="README.md">Aster Idea Bank</a>; the only constant in the equations not read from PartForge is the Prandtl number of air, 0.71 [Likely]. The 800 K flag and the 2,000 K ceiling are textbook regime limits of the perfect-gas picture [Likely]; the 25 °C "near" band is a presentation choice. Read the README for what this has not been through.</p>
+  </footer>
+</main>
+
+<script src="snapshots/partforge.js"></script>
+<script src="heat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

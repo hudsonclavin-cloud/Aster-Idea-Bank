@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/materials_thermal.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "aca38a1 2026-09-18T01:30:40+00:00",
+  "committedBlob": "080fcd044f5874c26f0734c40bf6c96131e66146",
+  "readBlob": "080fcd044f5874c26f0734c40bf6c96131e66146",
+  "sourceSha256": "ee9e1dcdb97f867da354e822bbe8347dedb8b93586564fada357603df89d977e",
+  "sourceBytes": 15650,
+  "copiedAt": "2026-10-26T08:57:56.507Z",
+  "mode": "copy",
+  "note": "whole table, unmodified: service_max_c with per-row confidence (likely/recall) is the limit every margin on the page is measured against",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ee9e1dcdb97f867da354e822bbe8347dedb8b93586564fada357603df89d977e",
+  "writtenBytes": 15650
+}

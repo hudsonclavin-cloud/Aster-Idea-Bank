@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T09:06:06.779Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the ISA block (constants and function isa) copied verbatim from index.html by text marker, FLIGHT_MATERIALS reduced to {name, kind} per key, plus the folder's materials_thermal.json and fin.scad FLIGHT block embedded so the page runs from file:// with no fetch",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1c60979c3318dd7971da72050cbea791587d061252249ef8e7fe0e5a3e8ab027",
+  "writtenBytes": 22897
+}

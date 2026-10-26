@@ -1,0 +1,205 @@
+{
+ "table": "materials_thermal",
+ "license_note": "Poisson’s ratio and coefficient of thermal expansion are physical constants of commercial materials, published in every handbook and mill data sheet. The values here are recall of those published figures, not a transcription of any one copyrighted table; each row says so and carries its own confidence.",
+ "columns": {
+  "key": "joins FLIGHT_MATERIALS in index.html on the same key",
+  "nu": "Poisson's ratio, dimensionless. Needed by shell buckling, thick-wall hoop and any modal or FEA work.",
+  "cte_um_m_K": "linear coefficient of thermal expansion, micrometres per metre per kelvin, near room temperature. For laminates this is the in-plane or along-fibre value and the note says so.",
+  "service_max_c": "a working upper temperature in °C — where the material starts to lose the properties FLIGHT_MATERIALS quotes, not where it fails",
+  "confidence": "likely for the common metals, recall for everything else",
+  "note": "what varies and in which direction",
+  "source": "how the value was obtained"
+ },
+ "notes": "WHAT THIS IS FOR. (1) ν completes the elastic constants: a thin-wall shell buckling check and a thick-wall hoop stress both need it, and the existing table had E and G but not ν. (2) α decides whether a fit survives the flight. A joint between two different materials changes diametral clearance by (α_hole − α_shaft) × D × ΔT: a 101.6 mm 6061 plug in a 6061 bore does not move at all, but the same plug in a G10 coupler gains about 0.1 mm of clearance going from a 40 °C pad to −40 °C at altitude — more than the whole H7/g6 band. Check any fit that matters at both ends of the temperature range, not at 20 °C.\nLIMITS. (1) Every value is recall; nothing here was fetched or measured. The metals agree closely across sources and are marked likely; the laminates and polymers vary so much with layup, weave, resin, fill and print direction that a single number is a placeholder — the note on each row says which direction it describes. (2) α is not constant with temperature: the figures are near room temperature and rise with it, sharply for polymers above their glass transition. (3) service_max_c is judgement, not a rating. (4) For a pressure boundary or anything that decides a fit, get the number from the mill certificate or the laminate data sheet and say in a NOTE where it came from.",
+ "rows": [
+  {
+   "key": "6061-T6",
+   "nu": 0.33,
+   "cte_um_m_K": 23.6,
+   "service_max_c": 170,
+   "confidence": "likely",
+   "note": "The default airframe alloy. α is the 20–100 °C figure; it rises slightly with temperature. Service limit is where T6 temper starts to draw back, not where it melts.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "7075-T6",
+   "nu": 0.33,
+   "cte_um_m_K": 23.6,
+   "service_max_c": 120,
+   "confidence": "likely",
+   "note": "Same α as 6061 to within the spread of published figures, so a 7075 part in a 6061 bore is very nearly temperature-neutral.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "2024-T3",
+   "nu": 0.33,
+   "cte_um_m_K": 22.9,
+   "service_max_c": 120,
+   "confidence": "likely",
+   "note": null,
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "304",
+   "nu": 0.29,
+   "cte_um_m_K": 17.3,
+   "service_max_c": 800,
+   "confidence": "likely",
+   "note": "Austenitic stainless; α is roughly 0.73× aluminium, so a steel insert in an aluminium boss loosens as it warms.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "316",
+   "nu": 0.3,
+   "cte_um_m_K": 16,
+   "service_max_c": 800,
+   "confidence": "likely",
+   "note": null,
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "17-4PH-H900",
+   "nu": 0.27,
+   "cte_um_m_K": 10.8,
+   "service_max_c": 300,
+   "confidence": "recall",
+   "note": "Precipitation-hardened; α is markedly lower than austenitic stainless and closer to 4130.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "4130-N",
+   "nu": 0.29,
+   "cte_um_m_K": 12.2,
+   "service_max_c": 400,
+   "confidence": "likely",
+   "note": null,
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "Ti-6Al-4V",
+   "nu": 0.34,
+   "cte_um_m_K": 8.6,
+   "service_max_c": 400,
+   "confidence": "likely",
+   "note": "The lowest α of the metals here: a titanium plug in an aluminium bore gains roughly 15 µm/m·K of clearance as it warms.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "C360-brass",
+   "nu": 0.34,
+   "cte_um_m_K": 20.5,
+   "service_max_c": 200,
+   "confidence": "recall",
+   "note": null,
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "C110-copper",
+   "nu": 0.34,
+   "cte_um_m_K": 17,
+   "service_max_c": 200,
+   "confidence": "recall",
+   "note": null,
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "Inconel-718",
+   "nu": 0.29,
+   "cte_um_m_K": 13,
+   "service_max_c": 650,
+   "confidence": "recall",
+   "note": "α is the 20–93 °C figure and rises with temperature; for a hot section use the value at the temperature in question.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "G10-FR4",
+   "nu": 0.18,
+   "cte_um_m_K": 14,
+   "service_max_c": 130,
+   "confidence": "recall",
+   "note": "IN-PLANE only, and it varies with weave and resin. THROUGH-THICKNESS α is four to five times larger (roughly 60–70 µm/m·K) — the direction that matters for a bonded joint or a clamped stack. ν in-plane is 0.12–0.20 depending on source.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "CF-laminate",
+   "nu": 0.3,
+   "cte_um_m_K": 1,
+   "service_max_c": 150,
+   "confidence": "recall",
+   "note": "ALONG THE FIBRES α is near zero and can be slightly negative (−1 to +2 depending on layup and fibre); across them it is 20–30. A quoted single number is meaningless without the layup, so treat this row as a placeholder and use the laminate the club actually buys.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "Fiberglass-laminate",
+   "nu": 0.25,
+   "cte_um_m_K": 22,
+   "service_max_c": 130,
+   "confidence": "recall",
+   "note": "Filament-wound tube; varies with winding angle and resin. Hoop and axial α differ.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "Phenolic",
+   "nu": 0.3,
+   "cte_um_m_K": 35,
+   "service_max_c": 150,
+   "confidence": "recall",
+   "note": "Paper-phenolic airframe tube. Highly variable and moisture-sensitive; it also is not round. Never machine a fit to this number.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "PEEK",
+   "nu": 0.38,
+   "cte_um_m_K": 47,
+   "service_max_c": 250,
+   "confidence": "recall",
+   "note": "Below the glass transition; α roughly triples above it.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "Ultem-9085",
+   "nu": 0.36,
+   "cte_um_m_K": 65,
+   "service_max_c": 160,
+   "confidence": "recall",
+   "note": "Printed; α differs between the print directions.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "PA12-SLS",
+   "nu": 0.4,
+   "cte_um_m_K": 105,
+   "service_max_c": 150,
+   "confidence": "recall",
+   "note": "Four times aluminium: an SLS part fitted to metal at room temperature will not fit at −40 °C.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "CF-Nylon",
+   "nu": 0.35,
+   "cte_um_m_K": 30,
+   "service_max_c": 120,
+   "confidence": "recall",
+   "note": "Strongly anisotropic — along the print beads it can be a third of the value across them.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "Delrin-POM",
+   "nu": 0.35,
+   "cte_um_m_K": 105,
+   "service_max_c": 90,
+   "confidence": "recall",
+   "note": null,
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  },
+  {
+   "key": "Graphite",
+   "nu": 0.2,
+   "cte_um_m_K": 6,
+   "service_max_c": 2000,
+   "confidence": "recall",
+   "note": "Nozzle grade; α depends on grain direction and grade.",
+   "source": "Recall of the standard published figures (ASM/MatWeb-class data for the metals; vendor and textbook ranges for the laminates and polymers). No source was fetched: MatWeb and the vendor sites are unreachable from the build environment. Treat every value as nominal and, for anything that decides a fit or a pressure boundary, get the figure from the mill certificate or the laminate data sheet."
+  }
+ ]
+}
