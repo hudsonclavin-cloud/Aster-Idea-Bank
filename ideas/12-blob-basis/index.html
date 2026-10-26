@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blob Basis</title>
+<meta name="description" content="Hash a file on six bases at once and say which one a recorded provenance hash was taken on.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header class="top">
+    <p class="kicker">Aster Idea Bank · No. 12 · tool for Aster</p>
+    <h1>Blob Basis</h1>
+    <p class="lede">A provenance hash can be checked only if you know which bytes it was taken on. For one text file in a git checkout there are six candidates: the working copy and the committed blob, each as it is, with CRLF folded to LF, and with a CR put before every bare LF. They hash differently. This page shows them for one Aster fixture, places every recorded hash in two of Aster's provenance files and one of Skyhook's, and lets you check a copy of your own.</p>
+    <ul class="headline" id="headline" aria-label="The four hashes Aster records, placed"></ul>
+    <p class="note" id="run-note"></p>
+  </header>
+
+  <section aria-labelledby="h-six">
+    <h2 id="h-six">One file, six bases</h2>
+    <p class="sub" id="six-sub"></p>
+    <div id="six-grid"></div>
+    <ul class="pins" id="six-pins"></ul>
+    <p class="arith" id="six-arith"></p>
+  </section>
+
+  <section aria-labelledby="h-placed">
+    <h2 id="h-placed">Every recorded hash, placed</h2>
+    <p class="sub">Each hash below was read from a snapshot of the file that records it and placed by <code>blob-basis --scan</code>. The file it is about comes from a sibling <code>"path"</code> key or, for the cache, from the generator that wrote it (<code>tools/build/precompute-lambert-screen.mjs:159-167</code>, hashed at <code>:180-182</code>, at <code id="gen-rev"></code>).</p>
+    <div id="placed"></div>
+  </section>
+
+  <section aria-labelledby="h-baked">
+    <h2 id="h-baked">What the MCP package bakes</h2>
+    <p class="sub" id="baked-sub"></p>
+    <div id="baked"></div>
+  </section>
+
+  <section aria-labelledby="h-check" id="check">
+    <h2 id="h-check">Check a copy of your own</h2>
+    <p class="sub">Pick a file (it is read in this page, never uploaded), or try a sample. A browser has no git, so the blob basis needs the committed blob id: paste the output of <code>git rev-parse HEAD:&lt;path&gt;</code>. If one of this copy's three forms has that id, its bytes are the committed blob's, and all six bases follow.</p>
+    <div class="controls">
+      <label class="filebtn" for="file">Choose a file<input type="file" id="file"></label>
+      <span class="or">or a sample:</span>
+      <span class="samples" role="group" aria-label="Samples">
+        <button type="button" data-sample="lf">LF original</button>
+        <button type="button" data-sample="crlf">CRLF twin</button>
+        <button type="button" data-sample="mixed">Mixed endings</button>
+        <button type="button" data-sample="edited">Mixed + one edit</button>
+      </span>
+    </div>
+    <div class="fields">
+      <label for="blobid">Committed blob id <span class="hint">(40 hex, from <code>git rev-parse HEAD:&lt;path&gt;</code>)</span></label>
+      <input id="blobid" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. the output of git rev-parse HEAD:path">
+      <label for="recorded">Recorded hash to place <span class="hint">(sha256, md5, git blob id, or an 8+ hex prefix)</span></label>
+      <input id="recorded" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. a provenance sha256">
+    </div>
+    <p class="sample-note" id="sample-note" hidden></p>
+    <div id="check-out" aria-live="polite"></div>
+  </section>
+
+  <footer>
+    <p id="foot-prov"></p>
+    <p>An idea-bank prototype, not part of Aster: it has not been through Aster's multi-agent math audit, oracle validation or founding-doc DEC process. The CLI (<code>blob-basis.mjs</code>) and this page share <code>basis.js</code>. Method, tests and findings: <a href="README.md">README</a>.</p>
+  </footer>
+</main>
+<script src="basis.js"></script>
+<script src="example-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

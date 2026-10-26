@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/decision_grid.json",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "34935cb 2026-09-10T23:52:55-04:00",
+  "committedBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "readBlob": "a38480579e17d82e84d32710867d17a90d754ea6",
+  "sourceSha256": "3787eb7a4ed8efa14b9d4b59dc5df6a42cc3b46ecdb129f52b8d2a0b69474acf",
+  "sourceBytes": 251394,
+  "copiedAt": "2026-10-26T15:00:32.886Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: provenance keys of finance/decision_grid.json at 27229e25ebf7308f66ab5d60bfa0574a9c177a60 (git show), the parent of 34935cb, whose rev_a_md5 34935cb replaced",
+  "readMatchesCommitted": true,
+  "writtenSha256": "6af880a637bf7cb5983f2074e4ae38e8db83f818959f51050dd1db15964d78ef",
+  "writtenBytes": 615
+}

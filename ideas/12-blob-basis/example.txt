@@ -1,0 +1,141 @@
+# Every recorded hash in the cache's provenance block and in earth-vz-span-max.json, placed on the committed tree; --require blob is the gate a CI job could run
+$ node ideas/12-blob-basis/blob-basis.mjs /home/user/asteroid-mining-planner --rev 62ddb1713feab34ac0730ecd66f18db8a076d718 --scan ideas/12-blob-basis/snapshots/lambert-screen-cache.metadata.json --scan ideas/12-blob-basis/snapshots/earth-vz-span-max.fixture.json --map catalogFixtureSha256=tests/fixtures/v2/nea-catalog-slice9.json --map horizonsFixtureSha256=src/v2/data/horizons-inner-solar-system-2026-2040.json --map precomputeScriptSha256=tools/build/precompute-lambert-screen.mjs --history --require blob
+blob-basis  repo /home/user/asteroid-mining-planner
+            rev  62ddb1713fea (2026-10-25T19:36:43-04:00) · shallow clone, 50 commits reachable · git 2.43.0 · core.autocrlf unset
+
+scan ideas/12-blob-basis/snapshots/lambert-screen-cache.metadata.json  (3 recorded hashes, 1 other id)
+  /metadata/provenance/catalogFixtureSha256
+      recorded  sha256 f88028d2839842299b7aae20644d15fef265b19e3bbca576c5dd0faf7d231418
+      file      tests/fixtures/v2/nea-catalog-slice9.json  (from map)
+      at rev    disk = disk-lf = blob = blob-lf f88028d283984229… (52,969,826 B); disk-crlf = blob-crlf 603e3edb8940bb15… (54,897,563 B)
+      BLOB-BASIS  sha256 equals disk = disk-lf = blob = blob-lf
+        taken on the committed blob: reproducible from any clone with git cat-file blob
+  /metadata/provenance/horizonsFixtureSha256
+      recorded  sha256 b278dd5567f30266593c49bf4fef203e7570d3613187fd112dc7015109a39c15
+      file      src/v2/data/horizons-inner-solar-system-2026-2040.json  (from map)
+      at rev    disk = disk-lf = blob = blob-lf b278dd5567f30266… (7,214,102 B); disk-crlf = blob-crlf c91f4e50da0e6fc5… (7,510,022 B)
+      BLOB-BASIS  sha256 equals disk = disk-lf = blob = blob-lf
+        taken on the committed blob: reproducible from any clone with git cat-file blob
+  /metadata/provenance/precomputeScriptSha256
+      recorded  sha256 44d9443500cb280a625fc99cfd12756c2928430390cda8c46d7b55763f6db4f7
+      file      tools/build/precompute-lambert-screen.mjs  (from map)
+      at rev    disk = disk-lf = blob = blob-lf 124637322914b33e… (13,708 B); disk-crlf = blob-crlf 3ff641fbc005a023… (14,126 B)
+      NO-MATCH  (sha256)
+        matches none of the six bases
+        history: 1 committed version of the path in 1 commit back to fbe8e89 (2026-10-12T13:43:53-04:00): no match. This is a shallow clone; versions older than that are not here to check.
+  /metadata/provenance/solverCommit
+      id        8471659bb1c66c7adc6998730e28da31e60b367d  not in this clone (shallow clone); an object id under a key that names no blob: listed, not placed
+
+scan ideas/12-blob-basis/snapshots/earth-vz-span-max.fixture.json  (1 recorded hash)
+  /fixture/sha256
+      recorded  sha256 c91f4e50da0e6fc550bc5900a94b95aa9256b9623dfcb876d01b22501241bc49, bytes 7,510,022
+      file      src/v2/data/horizons-inner-solar-system-2026-2040.json  (from sibling path)
+      at rev    disk = disk-lf = blob = blob-lf b278dd5567f30266… (7,214,102 B); disk-crlf = blob-crlf c91f4e50da0e6fc5… (7,510,022 B)
+      CRLF-BASIS  sha256 equals disk-crlf = blob-crlf
+        taken on a CRLF copy of the committed blob: reproducible only by adding a CR before every LF
+        recorded bytes 7,510,022 agree
+
+exit 1: a recorded hash matched no basis, or not the required one
+
+# The Horizons fixture on all six bases, with both recorded hashes placed
+$ node ideas/12-blob-basis/blob-basis.mjs /home/user/asteroid-mining-planner src/v2/data/horizons-inner-solar-system-2026-2040.json --rev 62ddb1713feab34ac0730ecd66f18db8a076d718 --expect b278dd5567f30266593c49bf4fef203e7570d3613187fd112dc7015109a39c15 --expect c91f4e50da0e6fc550bc5900a94b95aa9256b9623dfcb876d01b22501241bc49 --bytes 7510022
+blob-basis  repo /home/user/asteroid-mining-planner
+            rev  62ddb1713fea (2026-10-25T19:36:43-04:00) · shallow clone, 50 commits reachable · git 2.43.0 · core.autocrlf unset
+
+src/v2/data/horizons-inner-solar-system-2026-2040.json
+  attributes  text=auto eol=lf   (git ls-files --eol: i/lf w/lf attr/text=auto eol=lf)
+  blob id     20ea55d10d7d079fc6961b3ddf0d771595d93d2f  committed (git rev-parse REV:path)
+              20ea55d10d7d079fc6961b3ddf0d771595d93d2f  the bytes under test, as a git blob (sha1 of "blob <n>\0" + bytes)
+  basis             bytes       CRLF    bare LF  bare CR  sha256
+  disk          7,214,102          0    295,920        0  b278dd5567f30266593c49bf4fef203e7570d3613187fd112dc7015109a39c15
+  disk-lf       7,214,102  = disk  (no CRLF to remove)
+  disk-crlf     7,510,022    295,920          0        0  c91f4e50da0e6fc550bc5900a94b95aa9256b9623dfcb876d01b22501241bc49
+  blob          7,214,102  = disk
+  blob-lf       7,214,102  = disk
+  blob-crlf     7,510,022  = disk-crlf
+  verdict     IDENTICAL: the bytes under test are the committed blob, byte for byte
+  expect      b278dd5567f30266…
+              BLOB-BASIS  sha256 equals disk = disk-lf = blob = blob-lf
+                taken on the committed blob: reproducible from any clone with git cat-file blob
+  expect      c91f4e50da0e6fc5…
+              CRLF-BASIS  sha256 equals disk-crlf = blob-crlf
+                taken on a CRLF copy of the committed blob: reproducible only by adding a CR before every LF
+                recorded bytes 7,510,022 agree
+
+exit 0: held
+
+# The seven files mcp/scripts/bake-provenance.mjs copies into the MCP package from the working tree
+$ node ideas/12-blob-basis/blob-basis.mjs /home/user/asteroid-mining-planner tests/fixtures/v2/nea-catalog-slice9.json tests/fixtures/v2/lambert-screen-cache.json src/v2/data/horizons-inner-solar-system-2026-2040.json tools/slice11-research/data/poliastro-validation.json tools/slice11-research/data/multi-rev-poliastro-validation.json tools/slice12-research/data/dla-oracle-m1-vectors.json tools/slice13-research/elvperf/oracle/oracle-report.md --rev 62ddb1713feab34ac0730ecd66f18db8a076d718 --brief --require blob
+blob-basis  repo /home/user/asteroid-mining-planner
+            rev  62ddb1713fea (2026-10-25T19:36:43-04:00) · shallow clone, 50 commits reachable · git 2.43.0 · core.autocrlf unset
+
+  IDENTICAL      tests/fixtures/v2/nea-catalog-slice9.json
+                   blob  52,969,826 B  f88028d283984229…   blob-crlf  54,897,563 B  603e3edb8940bb15…
+  IDENTICAL      tests/fixtures/v2/lambert-screen-cache.json
+                   blob  34,499,477 B  bd27b9bd882a6534…   blob-crlf  34,541,386 B  fac0964a05a116cd…
+  IDENTICAL      src/v2/data/horizons-inner-solar-system-2026-2040.json
+                   blob   7,214,102 B  b278dd5567f30266…   blob-crlf   7,510,022 B  c91f4e50da0e6fc5…
+  IDENTICAL      tools/slice11-research/data/poliastro-validation.json
+                   blob       2,241 B  89b0646324daa90b…   blob-crlf       2,324 B  17861801a41425f4…
+  IDENTICAL      tools/slice11-research/data/multi-rev-poliastro-validation.json
+                   blob      12,916 B  fb84215c3001633e…   blob-crlf      13,285 B  5f58b0ad9053f3f1…
+  IDENTICAL      tools/slice12-research/data/dla-oracle-m1-vectors.json
+                   blob       4,148 B  88da945ddbb6f40f…   blob-crlf       4,249 B  426313d2af125f7a…
+  IDENTICAL      tools/slice13-research/elvperf/oracle/oracle-report.md
+                   blob       4,867 B  db4e2d5eef283a95…   blob-crlf       4,962 B  0478e885aaa1d23b…
+
+exit 0: held
+
+# The same reading on Skyhook: decision_grid.json records md5s, newline-normalised by design since 34935cb
+$ node ideas/12-blob-basis/blob-basis.mjs /home/user/skyhook --rev 34935cb1f67a8422a9fd49481e080faade2c0d92 --scan ideas/12-blob-basis/snapshots/decision_grid.keys.json --map rev_a_md5=params/rev_a.json --map workbook_md5=tools/financial/skyhook_financial_model.xlsx
+blob-basis  repo /home/user/skyhook
+            rev  34935cb1f67a (2026-09-10T23:52:55-04:00) · shallow clone, 50 commits reachable · git 2.43.0 · core.autocrlf unset
+
+scan ideas/12-blob-basis/snapshots/decision_grid.keys.json  (2 recorded hashes, 1 other id)
+  /rev_a_md5
+      recorded  md5 6e84f7adab62bab1a9b1590e963c85fa
+      file      params/rev_a.json  (from map)
+      at rev    disk = disk-lf = blob = blob-lf 6e84f7adab62bab1… (7,125 B); disk-crlf = blob-crlf 7540d4fb6b031a5f… (7,260 B)
+      BLOB-BASIS  md5 equals disk = disk-lf = blob = blob-lf
+        taken on the committed blob: reproducible from any clone with git cat-file blob
+  /workbook_md5
+      recorded  md5 5ccdee4d43e91f8dd98884678c8e99bb
+      file      tools/financial/skyhook_financial_model.xlsx  (from map)
+      at rev    disk = disk-lf = blob = blob-lf 5ccdee4d43e91f8d… (65,603 B); disk-crlf = blob-crlf ac360932d0866dee… (65,844 B)
+      BLOB-BASIS  md5 equals disk = disk-lf = blob = blob-lf
+        taken on the committed blob: reproducible from any clone with git cat-file blob
+  /git_commit
+      id        27229e25ebf7308f66ab5d60bfa0574a9c177a60  commit in this clone; an object id under a key that names no blob: listed, not placed
+
+exit 0: held
+
+# The md5s 34935cb replaced, from decision_grid.json at its parent 27229e2, placed on that commit's tree
+$ node ideas/12-blob-basis/blob-basis.mjs /home/user/skyhook --rev 27229e25ebf7308f66ab5d60bfa0574a9c177a60 --scan ideas/12-blob-basis/snapshots/decision_grid.parent.json --map rev_a_md5=params/rev_a.json --map workbook_md5=tools/financial/skyhook_financial_model.xlsx
+blob-basis  repo /home/user/skyhook
+            rev  27229e25ebf7 (2026-09-09T13:37:12-04:00) · shallow clone, 50 commits reachable · git 2.43.0 · core.autocrlf unset
+
+scan ideas/12-blob-basis/snapshots/decision_grid.parent.json  (2 recorded hashes, 5 other ids)
+  /rev_a_md5
+      recorded  md5 7540d4fb6b031a5f7117098ab07e656e
+      file      params/rev_a.json  (from map)
+      at rev    disk = disk-lf = blob = blob-lf 6e84f7adab62bab1… (7,125 B); disk-crlf = blob-crlf 7540d4fb6b031a5f… (7,260 B)
+      CRLF-BASIS  md5 equals disk-crlf = blob-crlf
+        taken on a CRLF copy of the committed blob: reproducible only by adding a CR before every LF
+  /workbook_md5
+      recorded  md5 5ccdee4d43e91f8dd98884678c8e99bb
+      file      tools/financial/skyhook_financial_model.xlsx  (from map)
+      at rev    disk = disk-lf = blob = blob-lf 5ccdee4d43e91f8d… (65,603 B); disk-crlf = blob-crlf ac360932d0866dee… (65,844 B)
+      BLOB-BASIS  md5 equals disk = disk-lf = blob = blob-lf
+        taken on the committed blob: reproducible from any clone with git cat-file blob
+  /derivedFrom/rev
+      id        27229e25ebf7308f66ab5d60bfa0574a9c177a60  commit in this clone; an object id under a key that names no blob: listed, not placed
+  /derivedFrom/childCommit
+      id        34935cb1f67a8422a9fd49481e080faade2c0d92  commit in this clone; an object id under a key that names no blob: listed, not placed
+  /derivedFrom/revAJsonIdAtParent
+      id        7b64e55632e78eb1d2b059eb2230d0ef3056d1bc  blob in this clone; an object id under a key that names no blob: listed, not placed
+  /derivedFrom/revAJsonIdAtChild
+      id        7b64e55632e78eb1d2b059eb2230d0ef3056d1bc  blob in this clone; an object id under a key that names no blob: listed, not placed
+  /git_commit
+      id        6ce0026239ce925b53c0206a3a4702067f9820e9  commit in this clone; an object id under a key that names no blob: listed, not placed
+
+exit 0: held

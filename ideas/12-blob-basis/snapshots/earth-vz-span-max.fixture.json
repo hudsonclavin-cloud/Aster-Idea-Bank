@@ -1,0 +1,15 @@
+{
+ "generatedAtUtc": "2026-09-22T17:31:12.580Z",
+ "source": "tools/slice12-research/measure-earth-vz.mjs over src/v2/data/horizons-inner-solar-system-2026-2040.json",
+ "fixture": {
+  "path": "src/v2/data/horizons-inner-solar-system-2026-2040.json",
+  "sha256": "c91f4e50da0e6fc550bc5900a94b95aa9256b9623dfcb876d01b22501241bc49",
+  "bytes": 7510022,
+  "frameLabel": "ICRF/J2000",
+  "timeScale": "TDB",
+  "earthSampleCount": 5479,
+  "firstJdTdb": 2461041.5,
+  "lastJdTdb": 2466519.5,
+  "canonicalFrame": "FRAME_HELIO_J2000_ICRF"
+ }
+}

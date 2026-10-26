@@ -1,0 +1,20 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/lambert-screen-cache.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "readBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "sourceSha256": "bd27b9bd882a65343399f772e37218b5fb05644bea5a822aafcb65e81e750206",
+  "sourceBytes": 34499477,
+  "copiedAt": "2026-10-26T14:50:02.642Z",
+  "mode": "excerpt",
+  "note": "metadata block only (34 MB file): metadata.provenance holds the three sha256 values the generator recorded (tools/build/precompute-lambert-screen.mjs:180-182) and solverCommit; blob-basis --scan reconciles them",
+  "readMatchesCommitted": true,
+  "picked": [
+    "metadata"
+  ],
+  "writtenSha256": "0dd5666d342a0eefd3109f956822d9c6266733bf0418025699740b1f0d582235",
+  "writtenBytes": 871
+}
