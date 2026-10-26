@@ -1,0 +1,31 @@
+{
+ "no": "28",
+ "id": "A4-02",
+ "lens": "Aster: catalog and data studies",
+ "title": "Near Field Guide",
+ "slug": "near-field-guide",
+ "for": "Aster",
+ "kind": "explorable",
+ "surface": "browser",
+ "tagline": "Every distribution the 41,906-body catalog can show about itself, binned over the whole file, with its nulls and its missing fields on the page.",
+ "pitch": "A field guide to the committed NEA catalog: histograms of semi-major axis, eccentricity, inclination, perihelion, aphelion, absolute magnitude, estimated radius (under the assumed albedo, said so), condition code, data arc, observations used, sigma-a, Tisserand parameter, anchor source, fidelity tier, PHA flag and eccentricity band, plus an a-e density plot, all computed by a CLI over the full 53 MB fixture and shipped as bins, so nothing is sampled and every panel sums to 41,906. Tap an orbit class (AMO, APO, ATE, IEO, or the comet tail) or a tier chip and every panel re-draws from that class's own bins with its n. A last panel, read from the measured null census rather than written by hand, says what the catalog does not carry: G is null for all 41,906 bodies, H for 210, data arc for 417, sigma-a for 137, and there is no rotation period, taxonomy or albedo field at all. The user sees in one screen what the catalog is, how well it is observed, and what any kernel that needs a missing field would have to fetch.",
+ "whyNow": "`strategy/IDEA_KERNELS_2026-09.md` \u00a76.1 enumerates the 24 fields the catalog carries and what it lacks (K3 lost its data assumption there); the catalog list (`src/v2/app/catalog-list/panel.ts`) offers one class filter and sort keys, no distributions; `tools/slice9-research/SLICE_9_PRERESEARCH_REPORT.md` has condition-code and data-arc tables as text from an earlier 41,902-row pull, not the committed fixture; the Dossier lens in `strategy/ASTER_FAMILY_MASTER_PLAN.md`.",
+ "computes": "CLI `bin.mjs` parses `tests/fixtures/v2/nea-catalog-slice9.json` and emits, whole-catalog and per `orbitClass` and per `inv014Tier`: histograms of a (AU, 0.05 bins; a converted from `elements.aKm` with the AU constant snapshotted from the repo), e (0.02), i (2\u00b0, from rad), q = a(1\u2212e), Q = a(1+e), H (0.5 mag), estimatedRadiusM (log), conditionCode (0..9 + null), dataArcDays (log bins + null), nObsUsed (log), sigmaA (log, AU), Tisserand T_J from a, e, i with a_J derived by vis-viva from the Jupiter state in `tests/fixtures/v2/horizons-jupiter-system-90d.json` and the repo's GM_SUN; counts of pha, anchorSource, eccentricityBand, named vs provisional designations; a 60\u00d750 a-e joint grid per class; a per-field null census. ~100 KB of bins. The page renders bars and the density grid from bins only, with n and null count on every panel.",
+ "dataNeeded": "Derived bins JSON (~100 KB) with `--sidecar-only` provenance to the fixture at its commit; a 40-body named-examples excerpt via `--pick` or the stratum-cutter (~50 KB) for the hover examples; the Jupiter first record (`--limit targets.jupiter.records=1`, <1 KB) and a snapshot of the GM_SUN / AU constant lines from `src/v2/core/constants/`. Under 200 KB.",
+ "existingOverlap": "Class filter and sorts in the catalog list; per-body U text and size range on the compare page; the pre-research report's static tables; `tools/slice18-research/tier-sizing.mjs` prints an aphelion histogram to stdout. No a/e/i/H plots, no Tisserand, no null census anywhere (`grep -ri 'tisserand\\|histogram' src/v2` is empty). This is the first view of the catalog as a population.",
+ "honestyRisks": "Histograms describe the committed fixture (mass epoch 2026-05-01, 41,906 bodies) and the page says so, never 'the NEA population'. Condition code is shown as the raw MPC ordinal and never converted to kilometres (DEC-18-2 wording quoted). Radius panels are titled 'under assumed albedo 0.14'. T_J is labelled a dynamical heuristic with its a_J derivation shown; it is not an Aster classification. Nulls are their own bar, never dropped. If a class is missing from the bins file the panel shows a refusal, not an empty chart. Nothing on the page is typed: every count comes from the bins file, every constant from a snapshot.",
+ "testPlan": "Every histogram sums to 41,906 or to the fixture's own `catalog.classDistribution` (AMO 14516, APO 23757, ATE 3387, ETC 6, HTC 36, IEO 38, JFC 166) and `inv014TierDistribution` (41558 / 0 / 348); the null census pins G 41906, H 210 (= `missingAbsoluteMagnitudeCount`), dataArcDays 417, sigmaA 137, conditionCode 10; eccentricityBand recomputed from e reproduces the stored bands for all bodies (thresholds snapshotted from the core); T_J(433 Eros) recomputed by hand in the test from its stored a, e, i; a_J from vis-viva lands between 5.19 and 5.21 AU and the derived value is printed, not asserted against a typed target; headless smoke at 390 px with chips tapped.",
+ "buildEstimate": "medium",
+ "landing": "Aster `src/v2/app/` as a 'distributions' drawer on the catalog list or a data page under `/v2/about/`; the bin generator would sit in `tools/slice9-ingestion/` beside `build-nea-catalog.mjs` so bins regenerate with the fixture. Not through any Aster gate: needs a founding-doc seat, DEC-17-5 derived labels, and INV-026 provenance for any count shown on a trust surface.",
+ "judges": 3,
+ "meanValue": 3.6666666666666665,
+ "meanBuildable": 4,
+ "meanHonesty": 5,
+ "meanNovelty": 4,
+ "composite": 4.066666666666666,
+ "notes": [
+  "Verified null census exactly: G null 41,906, H null 210, conditionCode null 10; no tisserand/histogram code in src/v2. First population view of the catalog.",
+  "Reproduced the null census exactly (G 41906, H 210, dataArcDays 417, sigmaA 137, conditionCode 10) and classDistribution/tier counts; every panel sums to the fixture, nothing typed.",
+  "Null census reproduced exactly on the 53 MB fixture (G null 41,906; H null 210; dataArcDays null 417; sigmaA null 137; no rotation/taxonomy/albedo/density keys) and the catalog summary carries classDistribution and qualityRankFormula. Bins-only shipping keeps it under budget; many panels make it a medium build."
+ ]
+}

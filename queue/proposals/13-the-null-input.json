@@ -1,0 +1,31 @@
+{
+ "no": "13",
+ "id": "S2-07",
+ "lens": "Skyhook: finance, program and canon tools",
+ "title": "The Null Input",
+ "slug": "the-null-input",
+ "for": "Skyhook",
+ "kind": "study",
+ "surface": "cli",
+ "tagline": "What a fiber quote would do to the case: a Python sweep that adds the fiber purchase line the model does not have, per tier, and prints a quote-day card so the Toyobo reply can be read in one line.",
+ "pitch": "rev_a.json carries economics.fiber_cost_per_kg: null, flagged WEAKEST INPUT, and DECISION_LOG item 8 notes the finance model prices fiber launch, not fiber purchase, so a quote adds capex nobody has counted. fiber_sweep.py reads the ladder and rev_a tiers, re-derives the conservative/baseline/optimistic cash flows (gated at price 0 to the published triples), then sweeps fiber purchase price from $0 to $3,000/kg (log) with an optional finished-tether multiplier for weaving and jackets (default 1.0, labelled unsourced). For each tier and column it prints added capex, new payback year, NPV@10% and the Y15 breakeven customer price, and shows how the six minimal-relaxation thresholds move (the construction-launch threshold of $1,674/kg falls as fiber price rises; the price at which each baseline-substitution single stops closing). Two markers are drawn and never used as defaults: MP-001's Zylon marketplace proxy ($300/$259/$170 per kg, 'marketplace listing \u2014 low confidence, not a Toyobo quote') and inspace_fork.py's $1,000 placeholder. The --quote P flag prints the quote-day card: 'at $P/kg of fiber, Conservative adds $X M capex (609.1 t), payback Y17 -> Yn; cislunar 2.8 adds $Y M (1,476.3 t); phase-3 adds $Z M (15,429.8 t); the rev_a key to fill is economics.fiber_cost_per_kg'. With no price set it refuses to print any fiber line.",
+ "whyNow": "params/rev_a.json economics.fiber_cost_per_kg null with _fiber_cost_note 'WEAKEST INPUT \u2014 no vendor quote; obtain from Toyobo/Avient/Toray'; README.md open item 1 ('Fiber vendor quote \u2014 largest unpriced capex input'); docs/DECISION_LOG.md item 8 ('the financial model currently prices fiber launch, not fiber purchase, so a quote adds capex not yet in the model'); MORNING_REPORT.md anomaly 5; handoff.md 'Waiting ... Toyobo, FibrXL'.",
+ "computes": "Inputs: ladder.json, rev_a.json materials/kinematics tiers, price p, multiplier m. Math: fiber mass per tier/column from EQ-6; purchase capex = p \u00d7 m \u00d7 fiber kg, added to total capex and spread 15/30/35/20 over Y1\u20134 like the rest; cash flow, payback, NPV@8/10/12, breakeven price as in finance/skyhook_finance.py; thresholds by bisection as in sensitivity.py, recomputed at each p; quote card formatting. Gate: p=0 must reproduce $8,741M/Y17/\u2212$3,883M, $5,772M/Y9, $4,226M/Y7 or the script exits 2 before printing a sweep.",
+ "dataNeeded": "ladder.json (1 KB, derived with sidecar from the workbook); rev_a.json --pick materials,kinematics,economics (3 KB); MP-001 proxy row cited to docs/research/mp001_market_pricing.md line 24 at 34935cb; example.txt of the sweep for the gallery.",
+ "existingOverlap": "finance/inspace_fork.py has a fiber-price axis (SURFACE_FIBER_PRICE_PER_KG=1000, require_non_null guard, fiber_purchase_M rows) but for the DRAFT, non-canonical MXER in-space fork, not the Rev A suborbital program; finance/skyhook_finance.py has no purchase line; tools/sims/skyhook_no_leo_stress_test.jsx hardcodes fiberPriceKg 250 [Speculative]. This candidate puts the purchase line on the Rev A tiers, shows the threshold shifts, and gives the quote-day card.",
+ "honestyRisks": "The marketplace proxy read as a price \u2014 it is a marker with its MP-001 wording, never a default. A quote may be per kg of yarn while the tether needs finished rope \u2014 the multiplier exists for that and is flagged unsourced at 1.0. Fiber mass is the canonical Zylon-only EQ-6 mass although the baseline is a hybrid \u2014 stated. Printing a fiber cost with no price set \u2014 refused, mirroring inspace_fork.require_non_null.",
+ "testPlan": "test_fiber_sweep.py (stdlib): p=0 reproduces the three published triples and the $6,877M/Y14 variant; conservative added capex at p=300, m=1 equals 609.1304 \u00d7 300 \u00d7 1000 / 1e6 = $182.74M (hand check); payback and NPV are monotone in p; the launch threshold decreases with p and the cadence threshold increases; --quote without a number exits 2 with the null-input message; output is byte-identical across runs.",
+ "buildEstimate": "small",
+ "landing": "Skyhook finance/fiber_price_sweep.py with FIBER_PRICE_FINDINGS.md. To ship: add a null-guarded purchase line to skyhook_finance.py and the workbook's Assumptions sheet, then replace the sweep with the actual quote and fill economics.fiber_cost_per_kg with its source.",
+ "judges": 3,
+ "meanValue": 3.6666666666666665,
+ "meanBuildable": 5,
+ "meanHonesty": 5,
+ "meanNovelty": 4,
+ "composite": 4.316666666666666,
+ "notes": [
+  "Verified economics.fiber_cost_per_kg null with the WEAKEST INPUT note and inspace_fork's require_non_null pattern for the non-canonical fork only. Quote-day card is small and immediately useful.",
+  "Verified economics.fiber_cost_per_kg is null with the WEAKEST INPUT note and inspace_fork.py:55 SURFACE_FIBER_PRICE_PER_KG=1000 with require_non_null at :194; refuses to print a fiber line without a price.",
+  "economics.fiber_cost_per_kg null with the WEAKEST INPUT note, inspace_fork.py SURFACE_FIBER_PRICE_PER_KG 1000 with require_non_null, and MP-001 line 24's $300/$259/$170 marketplace proxy all confirmed. A sweep plus quote-day card is small; refusing to print a fiber line without a price mirrors the repo's own guard."
+ ]
+}

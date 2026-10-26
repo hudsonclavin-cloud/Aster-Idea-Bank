@@ -1,0 +1,31 @@
+{
+ "no": "19",
+ "id": "P2-04",
+ "lens": "PartForge: data integrity and provenance",
+ "title": "Caliper Ledger",
+ "slug": "caliper-ledger",
+ "for": "PartForge",
+ "kind": "tool",
+ "surface": "browser",
+ "tagline": "Type the readings from the machined part against its FLIGHT declaration and get a verdict per feature, with the mesh kept in its own column.",
+ "pitch": "Every measurement in PartForge today is of the mesh; the ICD prints an empty 'Verified on the article' column and the tier evidence list asks for 'as-built inspection of every interface dimension, recorded against this drawing'. This page takes a .scad with a FLIGHT block (the seven templates ship as snapshots; paste your own) and/or a measurement report JSON (the browser's `measurementReport()` shape or the headless `flight.measurements` rows), lists every declared feature with its nominal and tolerance, and lets a person on a phone at the bench enter, per feature, the instrument (caliper, micrometer, pin or plug gauge, CMM), its resolution, and n readings. It computes mean, range, deviation from nominal and a verdict IN / OUT / NOT MEASURED, flags a discrimination problem when the instrument resolution exceeds a tenth of the tolerance band ([Likely] stated as the common 10:1 rule of thumb, not as a standard), records GO/NO-GO gauges as clear/blocked, shows the model's measured value in a separate 'as modelled' column that is never evidence for the article, and exports an as-built JSON (part, sha256 of the FLIGHT block, rows with readings, instrument, operator, date) and a Markdown table in the ICD's column order. The part-level verdict is INCOMPLETE until every tolerance-carrying feature has readings.",
+ "whyNow": "docs/roadmap-evaluation.md 'What the 50 missed' #4 (as-built / first-article entry, 'the missing half of the whole CMM story') and #37's verdict 'keep the 2-day caliper-entry subset'; index.html icdSheet (\u2248:6766) 'Fill the last column from inspection of the real part'; tierEvidence (\u2248:4795) 'As-built inspection of every interface dimension'; headless/partforge.mjs measurementRows() defines the row shape to import.",
+ "computes": "Inputs: FLIGHT block (critical/od/bores/holes/revolve/gauges with nominal_mm or d_mm, tol_mm, pos_tol_mm, tol_src) and optionally report rows {kind,name,nominal_mm,measured_mm,tol_mm,tol_src}; per feature: instrument, resolution, readings[]. Logic: mean, range, deviation, in-tolerance test inclusive at the limits, resolution/tol ratio, holes as one row per hole, gauges as boolean. Outputs: per-feature verdicts, part verdict, as-built JSON with declaration hash, Markdown table.",
+ "dataNeeded": "Snapshots of tests/templates/bulkhead.scad, coupler.scad, centering-ring.scad, motor-retainer.scad (\u224830 KB). No measurement report exists in the checkout (producing one needs openscad-wasm), so the page derives its rows from the FLIGHT block; a synthetic report in the headless shape, labelled invented, is used only by the tests.",
+ "existingOverlap": "flightCheck's CMM (measureOD/measureBore/measureHoles/measureRevolve) measures the mesh; ICD and measurement report print model values with an empty article column; nothing accepts readings. Differs: readings of the physical article, stored with instrument and declaration hash, diffed against the declaration, never against the mesh.",
+ "honestyRisks": "A typed number presented as 'measured' without saying by whom and with what: a verdict requires instrument and resolution; readings never prefill from the model column; the export carries the FLIGHT-block hash so a ledger cannot be mistaken for another revision; IN means 'the readings you typed lie within the declared band' and the page says so; the 10:1 rule is labelled a rule of thumb; no tolerance is ever relaxed or proposed by the page.",
+ "testPlan": "node --test on the pure module: FLIGHT parse of the templates yields the counts the app's flightCounts would (bulkhead 5 critical, 2 bores, 4 holes, 4 gauges, 2 loads); verdict arithmetic including the \u00b1tol boundary inclusive; resolution ratio flag at 0.01 mm vs \u00b10.05; any unread feature \u2192 INCOMPLETE; import of headless-shape rows maps 1:1 by kind and name and refuses a report whose part name differs from the .scad; export round-trips; the declaration hash is stable under edits outside the FLIGHT block and changes on a one-digit edit inside it; ui-check at 390 px enters readings by touch with no overflow.",
+ "buildEstimate": "medium",
+ "landing": "index.html \u22ef menu beside 'Measurement report (.json)' (\u2248:8014), reading `lastGate.flightRows` and using the DECL block's parseFlight and mdSafe instead of this page's parser; the ICD's last column filled from the ledger; headless `cli.mjs check --asbuilt ledger.json`. Idea-bank fidelity: the FLIGHT parser here is a mirror, and the app's own must replace it to ship.",
+ "judges": 3,
+ "meanValue": 4,
+ "meanBuildable": 4,
+ "meanHonesty": 5,
+ "meanNovelty": 4,
+ "composite": 4.2,
+ "notes": [
+  "Missed #4, named a prerequisite; verified icdSheet's empty 'Verified on the article' column and tierEvidence's as-built line. Readings never prefilled from the mesh; declaration hash binds the ledger.",
+  "Verified icdSheet at :6741 and measurementReport at :6816; as-built entry is the evaluation's named missing half and nothing accepts readings; readings never prefill from the model column.",
+  "headless/partforge.mjs:97 measurementRows() defines the import shape and the ICD's empty article column is the gap the evaluation names as 'the missing half'. Readings never prefill from the model and the FLIGHT-block hash binds the ledger to a revision; a phone-first form is a fair one-session build."
+ ]
+}

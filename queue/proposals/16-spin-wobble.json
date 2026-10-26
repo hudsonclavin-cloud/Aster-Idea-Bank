@@ -1,0 +1,31 @@
+{
+ "no": "16",
+ "id": "S1-05",
+ "lens": "Skyhook: physics explorables",
+ "title": "Spin Wobble",
+ "slug": "spin-wobble",
+ "for": "Skyhook",
+ "kind": "study",
+ "surface": "both",
+ "tagline": "The gravity-gradient tip-speed modulation the lumped-mass model noticed, derived in closed form for a rigid dumbbell and checked against the twin's own golden run.",
+ "pitch": "A planar rigid dumbbell spinning on a circular orbit obeys theta'' + 3 n^2 sin(theta) cos(theta) = 0 in the orbital frame, so its spin rate satisfies theta'^2 + 3 n^2 sin^2(theta) = const. That one line gives the modulation the program recorded as 'observed in the lumped-mass model': peak tip-speed excursion 1.5 n^2/omega^2 (2.88 % at Rev A, 72 m/s), rotation-mean depression 0.75 n^2/omega^2 (1.44 %) when spun up at radial phase, and a mean elevation of the same size when spun up horizontally, which decides which way 'set the nominal spin slightly above target' actually goes. The browser page plots instantaneous tip speed against spin angle for each tier and half-length with these numbers labelled; the Node study runs the snapshot of tools/twin/physics.js (the validated port of physics/tether_dynamics.py) for two rotations and overlays its tip speed on the analytic curve, and reproduces golden.json's mean_tip_speed_mps = 2,462.6 m/s (1.50 % below 2,500) through the twin's own gate.",
+ "whyNow": "docs/glossary.md 'Gravity-gradient tip-speed modulation' is labelled '[Likely - observed in the lumped-mass model, V1/V2 development]'; tests/test_tether_dynamics.py V1 docstring records it as a development observation; MORNING_REPORT.md lists 'the tip-speed depression finding' under 'deserves your scrutiny'; physics/tether_dynamics.py::run_measuring docstring states the 1.5 n^2/omega^2 order without derivation; tools/twin/golden.json carries the measured mean.",
+ "computes": "Inputs: mu, CoM altitude, L, v_tip (snapshot); spin-up phase (radial or horizontal). Math: n = sqrt(mu/R^3); omega_0 = v_tip/L; omega(theta)^2 = omega_0^2 - 3 n^2 sin^2(theta) (radial start) or + 3 n^2 cos^2(theta) (horizontal start); rotation mean by quadrature; peak fraction 1.5 n^2/omega_0^2 to first order. Outputs: v_tip(theta) curves, peak and mean excursions per tier (2.88 / 2.30 / 1.47 % at 2.5 / 2.8 / 3.5 km/s), modulation vs L (proportional to L^2 at fixed v_tip), and in the study the lumped-model overlay and residual.",
+ "dataNeeded": "snapshots/rev_a.json (about 7 KB); snapshots/physics.mjs copied from tools/twin/physics.js (13.9 KB, ES module, imported by the Node test as-is, not used by the page); snapshots/golden.json from tools/twin/golden.json (8.6 KB). About 30 KB total.",
+ "existingOverlap": "physics/tether_dynamics.py and tools/twin/physics.js produce the effect numerically; tools/twin/verify.mjs checks the port against golden.json. No file has the analytic form, the phase-of-spin-up dependence, or the per-tier amplitudes. This idea does not re-port the model; it snapshots the port and uses it as an oracle for the closed form.",
+ "honestyRisks": "The dumbbell result is independent of mass distribution along a rigid line but ignores elasticity, hub mass only through the CoM (which is exact for a point mass at the centre), and payload; the residual against the 17-node run is reported, not hidden. The golden mean (2,462.6) and the analytic mean (2,464) differ by elastic and discretisation effects of order 0.1 %, stated as such. The browser page carries no lumped-model claim it cannot compute; the twin overlay exists only in the Node study and its output is saved as a figure with a provenance sidecar. Fabrication risk is quoting glossary percentages as results; the page prints computed values and shows the glossary numbers only as the thing being checked.",
+ "testPlan": "node --test: peak fraction 1.5 n^2/omega^2 = 0.0288 +/- 1e-4 at Rev A from snapshot inputs; quadrature mean depression 0.0144 +/- 2e-4 for a radial start and an elevation of the same magnitude for a horizontal start; the physics.mjs snapshot run for 600 s at dt = 1/60 reproduces golden.json checkpoints within 0.1 % relative per node and mean_tip_speed_mps within 1 % (the verify.mjs gate); the lumped-model tip speed over two rotations stays within 10 % of the analytic excursion envelope; modulation at fixed v_tip scales as L^2 within 1 % between L = 160 and 320 km; the page refuses when the snapshot is absent; smoke at 390 px.",
+ "buildEstimate": "medium",
+ "landing": "Skyhook, physics/skyhook_physics.py as gravity_gradient_modulation(v_tip, L, alt) with the test, the glossary entry upgraded from 'observed' to 'derived, [Certain] for the rigid-dumbbell first order, [Likely] for the lumped-model residual', and a one-line resolution of the spin-up-phase question in docs/DECISION_LOG.md. To ship: Rule 1 imports and a pytest twin of the Node test.",
+ "judges": 3,
+ "meanValue": 4,
+ "meanBuildable": 4,
+ "meanHonesty": 5,
+ "meanNovelty": 4.333333333333333,
+ "composite": 4.25,
+ "notes": [
+  "Recomputed 1.5 n\u00b2/\u03c9\u00b2 = 0.0288 at Rev A; verified golden.json mean_tip_speed_mps 2462.64 and the glossary labels the effect 'observed'. Closed form plus twin overlay upgrades a [Likely] observation to a derivation.",
+  "Verified tether_dynamics.py:260 states 1.5\u00b7n\u00b2/\u03c9\u00b2 without derivation and golden.json mean_tip_speed_mps 2462.64; the twin port is a real oracle for the closed form, upgrading a glossary 'observed' to 'derived'.",
+  "1.5 n\u00b2/\u03c9\u00b2 = 2.88 % re-derives; golden.json mean_tip_speed_mps 2462.64 and tools/twin/physics.js (ESM, A&S 7.1.26 erf) confirmed as the oracle. Upgrading a glossary '[Likely \u2014 observed]' to a derived closed form with the spin-up-phase sign is real value for the dynamics record."
+ ]
+}

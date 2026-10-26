@@ -1,0 +1,31 @@
+{
+ "no": "25",
+ "id": "W1-02",
+ "lens": "Wildcard and completeness critic",
+ "title": "Reach Census",
+ "slug": "reach-census",
+ "for": "Aster + PartForge + Skyhook",
+ "kind": "linter",
+ "surface": "cli",
+ "tagline": "For every test file in the three repos, which runner discovers it and which CI job runs that runner; the files nobody reaches are the finding.",
+ "pitch": "A dependency-free Node CLI that enumerates test files (*.test.mjs, *.test.ts, test_*.py, PartForge's tests/harness/*.mjs), parses each repo's runners as text (package.json scripts with shell-glob expansion, Aster's tools/run-tests.mjs searchRoots and shouldSkip, PartForge's tests/run.mjs explicit list plus its readdir pattern and the existsSync(headless/node_modules) condition, pytest's tests/test_*.py discovery, each .github/workflows/*.yml step) and prints a matrix: file x {runner, CI job}. Three result classes matter: orphans (reached by no runner), CI-less (reached by a runner no workflow runs), and doc drift (a doc names a runner that reaches fewer files than the CI one). Scouting: Aster's npm test is 'node --test tests/*.test.mjs', which is not recursive, so 13 files under tests/v2-golden and tests/v2-lambert are reached only by tools/run-tests.mjs, and AGENTS.md section 1 still documents the non-recursive form; mcp/test (3 .test.ts files, run by mcp's own 'npm test' after tsc) and tools/slice16-harness/test (6 files) are in no CI job; PartForge has no .github directory at all, its 13 harness scripts are manual, and its headless suite is skipped silently without node_modules; Skyhook's ci.yml runs pytest and physics/skyhook_physics.py but never tools/twin/verify.mjs, the cross-language golden gate that scripts/generate_golden.py feeds.",
+ "whyNow": "asteroid-mining-planner/STATUS.md Cleanup C15 (run-tests.mjs count parsing) and AGENTS.md section 1 repo map 'tests/ <- test suite: node --test tests/*.test.mjs' versus .github/workflows/ci.yml full-tests job running tools/run-tests.mjs; Partforge/tests/run.mjs comment 'they shipped passing under node --test and were never run by this file, which is the one every doc tells you to run' and the absence of any workflow file; skyhook/.github/workflows/ci.yml (pytest + physics script only) versus tools/twin/verify.mjs and scripts/generate_golden.py.",
+ "computes": "Inputs: one or more checkout paths. Discover candidate test files by name patterns per language. Parse runners: npm scripts (own glob matcher cross-checked against fs.globSync), run-tests.mjs (extract searchRoots array and shouldSkip segments from source text), tests/run.mjs (explicit array, readdir filter expression, headless condition quoted), pytest defaults, workflow yml 'run:' lines mapped to scripts. Produce for each file the set of runners and CI jobs; derive orphans, CI-less, conditional (quoted condition), and doc-drift rows by comparing runner reach sets named in docs. Output: JSON + Markdown matrix, exit 1 if orphans exist unless listed in an explicit allow file.",
+ "dataNeeded": "Snapshots via tools/snapshot.mjs of the runner definitions: Aster package.json, tools/run-tests.mjs (7 KB), .github/workflows/ci.yml (2.4 KB), mcp/package.json, AGENTS.md (16.8 KB); PartForge tests/run.mjs (5 KB), headless/package.json; Skyhook .github/workflows/ci.yml (0.6 KB), tools/twin/package.json. Plus a committed census JSON at the three pinned commits (about 10 KB). Total about 45 KB.",
+ "existingOverlap": "Aster's run-tests.mjs asserts accounting within a run (discovered == ok + failed + load-timeout) but cannot see files it never discovers; PartForge fixed one orphan class by switching to a name pattern; Skyhook has nothing. Differs: cross-runner, cross-CI, static, with doc-drift detection and an explicit allow list for intentional exclusions.",
+ "honestyRisks": "Runner semantics are parsed from text; a runner written in a shape the parser does not understand must be reported as 'runner not understood, N files unclassified', never as 'reached'. Intentional exclusions (the sealed slice16 harness; headless skipped without node_modules) are reported as 'conditional' with the condition quoted, not as failures. It does not execute any test, so it cannot claim a reached file passes.",
+ "testPlan": "Three fixture mini-repos with known orphan, CI-less and conditional sets; glob expansion compared against Node's fs.globSync on the fixture. Against the pinned checkouts: Aster discovers 103 test files, 13 missed by the npm test glob, 9 in no CI job (mcp/test 3, slice16-harness 6), AGENTS.md section 1 flagged as doc drift; PartForge 0 workflow files, 13 harness scripts manual, headless suite conditional; Skyhook 6 pytest files reached by CI and tools/twin/verify.mjs unreached. A fixture runner the parser cannot read yields the 'not understood' row and a non-zero exit.",
+ "buildEstimate": "medium",
+ "landing": "Aster: tools/reach-census.mjs as a step in the full-tests job and a wording fix to AGENTS.md section 1 (protected path, needs a dispatch). PartForge: a drafted .github/workflows/ci.yml shipped inside the idea folder (node tests/run.mjs on Node 22; harness optional) for the maintainer to carry over, not applied. Skyhook: one added step 'node tools/twin/verify.mjs' in ci.yml.",
+ "judges": 3,
+ "meanValue": 4,
+ "meanBuildable": 4,
+ "meanHonesty": 4.666666666666667,
+ "meanNovelty": 4,
+ "composite": 4.133333333333334,
+ "notes": [
+  "Verified: npm test is non-recursive 'node --test tests/*.test.mjs' (AGENTS.md:32 agrees) while 13 files under v2-golden/v2-lambert are reached only by run-tests.mjs; mcp/test and slice16-harness/test are in no CI job; PartForge has no .github; Skyhook CI never runs tools/twin/verify.mjs.",
+  "Verified PartForge has no .github directory, tests/run.mjs:46 says files 'shipped passing under node --test and were never run by this file', and Skyhook ci.yml runs pytest only with zero mentions of verify.mjs; orphan counts for Aster not independently recounted.",
+  "Confirmed: Aster package.json test is non-recursive 'node --test tests/*.test.mjs' with AGENTS.md:32 repeating it while tests/v2-golden and tests/v2-lambert hold 13 files reached only by run-tests.mjs; PartForge has no .github/ and 13 harness scripts; Skyhook ci.yml runs pytest and the physics script but never tools/twin/verify.mjs. Real cross-repo gaps."
+ ]
+}

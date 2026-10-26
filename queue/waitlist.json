@@ -1,0 +1,132 @@
+{
+ "waitlist": [
+  {
+   "id": "S2-03",
+   "title": "Volume Beats Price",
+   "for": "Skyhook",
+   "composite": 4.066666666666666
+  },
+  {
+   "id": "A2-01",
+   "title": "Dossier Press",
+   "for": "Aster",
+   "composite": 4.050000000000001
+  },
+  {
+   "id": "A1-10",
+   "title": "Honest Digits",
+   "for": "Aster",
+   "composite": 4.05
+  },
+  {
+   "id": "A2-03",
+   "title": "Bullet Proof",
+   "for": "Aster",
+   "composite": 4.05
+  },
+  {
+   "id": "A2-07",
+   "title": "Refusal Atlas",
+   "for": "Aster",
+   "composite": 4.05
+  },
+  {
+   "id": "A4-04",
+   "title": "Albedo Dial",
+   "for": "Aster",
+   "composite": 4.05
+  },
+  {
+   "id": "A4-10",
+   "title": "Sigfig Ledger",
+   "for": "Aster",
+   "composite": 4.05
+  },
+  {
+   "id": "W1-05",
+   "title": "Cold Start",
+   "for": "Aster + PartForge + Skyhook",
+   "composite": 4.05
+  },
+  {
+   "id": "W1-08",
+   "title": "Glossary Keeper",
+   "for": "Skyhook",
+   "composite": 4.05
+  },
+  {
+   "id": "A4-03",
+   "title": "Window Census",
+   "for": "Aster",
+   "composite": 4.016666666666667
+  },
+  {
+   "id": "S2-04",
+   "title": "After the Pull",
+   "for": "Skyhook + PartForge",
+   "composite": 4.016666666666667
+  },
+  {
+   "id": "A1-06",
+   "title": "Declination Gate",
+   "for": "Aster",
+   "composite": 4
+  },
+  {
+   "id": "A2-05",
+   "title": "Last Pass",
+   "for": "Aster",
+   "composite": 4
+  },
+  {
+   "id": "A2-09",
+   "title": "Edge of Span",
+   "for": "Aster",
+   "composite": 4
+  },
+  {
+   "id": "A3-10",
+   "title": "Still Loading",
+   "for": "Aster",
+   "composite": 4
+  }
+ ],
+ "dropped": [
+  {
+   "id": "A1-09",
+   "title": "Bytes per Kilometre",
+   "reason": "duplicate of A4-01 (Clenshaw's Bargain)"
+  },
+  {
+   "id": "A3-06",
+   "title": "Stray Literals",
+   "reason": "duplicate of A2-02 (Said vs Derived)"
+  },
+  {
+   "id": "P3-08",
+   "title": "Chain of Custody",
+   "reason": "duplicate of P2-06 (Cut From This)"
+  },
+  {
+   "id": "X1-02",
+   "title": "Capstan Kit",
+   "reason": "duplicate of P3-09 (Capstan Keeper)"
+  },
+  {
+   "id": "S1-09",
+   "title": "Rule One",
+   "reason": "duplicate of S2-06 (Rule One)"
+  },
+  {
+   "id": "X1-04",
+   "title": "Retyped",
+   "reason": "duplicate of S2-06 (Rule One)"
+  }
+ ],
+ "totals": {
+  "candidates": 110,
+  "survivors": 104,
+  "judges": 3
+ },
+ "note": "Candidates ranked 31-45 by the three-judge panel (composite of value 0.4, buildable 0.25, honesty 0.2, novelty 0.15), and the six dropped as duplicates. Full candidate records for the waitlist are not kept; re-run ideation for detail."
+}

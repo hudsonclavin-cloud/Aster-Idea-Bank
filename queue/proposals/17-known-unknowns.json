@@ -1,0 +1,31 @@
+{
+ "no": "17",
+ "id": "A4-07",
+ "lens": "Aster: catalog and data studies",
+ "title": "Known Unknowns",
+ "slug": "known-unknowns",
+ "for": "Aster",
+ "kind": "study",
+ "surface": "both",
+ "tagline": "The bodies that are easy to reach and badly known: condition code and data arc crossed with screening C3, and the list an observing plan would start from.",
+ "pitch": "Half the catalog has condition code 7 or worse (measured: 9,587 at U=7, 8,958 at 8, 3,281 at 9) and the median data arc is 22 days, yet 98.8% of bodies clear the screening threshold. This study crosses the two: minimum C3 bands against U, data-arc and observation-count bands, with a 'what-if gate' you set with two sliders (U at most u, arc at least d days) that shows how many low-C3 bodies would survive and which would not. Its product is a ranked table of accessible-but-poorly-determined bodies with their best screening window dates and H: the raw material the Survey lens needs to turn `what_would_help` into 'recover this object before its window'. It also checks the stored `qualityRank` against its own published formula for every body. The user learns that accessibility and knowledge are anti-correlated in this catalog, and by how much.",
+ "whyNow": "Survey lens in `strategy/ASTER_FAMILY_MASTER_PLAN.md` ('turn `what_would_help` into an observing plan'); `tests/fixtures/v2/nea-catalog-slice9.spec.md` (`planning-tier` reserved, never numerically assigned; the `qualityRank` formula); `src/v2/SLICE_18_FOUNDING.md` 'Q ANSWERED \u2014 condition code does NOT predict propagation error' with its structural caveat that U's actual claim (solution error) was untestable there; INV-028 refusals with `what_would_help` in `mcp/src/tools/envelope-schema.ts`.",
+ "computes": "Inputs: catalog (conditionCode, dataArcDays, nObsUsed, qualityRank, H, orbitClass) joined to the cache (minC3, minC3Date, bestWindows) by bodyId; `metadata.feasibleC3MaxKm2S2` and the near-zero constant define the C3 band edges. Outputs: three-way cross-tabs (C3 band \u00d7 U, \u00d7 arc band, \u00d7 nObs band) with null bands; survivor curves for every (u, d) pair on a grid; a top-N list (minC3 ascending within U \u2265 7 and arc < 30 d) with designation, class, H, U, arc, nObs, best launchDate, tofDays, c3, vInfArr; qualityRank recomputed from the spec formula vs stored.",
+ "dataNeeded": "Cross-tab and survivor-grid JSON (~30 KB, sidecar-only); top-200 list as a joined excerpt via the stratum cutter `--must` (~40 KB); cache `metadata` excerpt; near-zero constant snapshot. About 75 KB.",
+ "existingOverlap": "The compare page explains U per body in prose; `qualityRank` is stored but 'does not prescribe UI visuals'; Slice 18 correlated U with model drift on 17 bodies; MCP `search_bodies` filters by orbitClass and screeningStatus only (`mcp/src/tools/search-bodies.ts:15`). No catalog-wide quality \u00d7 accessibility table exists. This is about solution quality, which Slice 18 explicitly could not test.",
+ "honestyRisks": "U and arc measure orbit-determination quality, not model error, and the page quotes Slice 18's caveat verbatim so the two are not conflated. 'Accessible' means screening minC3 on the single-rev 7\u00d730-day grid, named from metadata. The list is a sorted table, not a recommendation, and the sliders are labelled 'what-if gate', never 'planning tier' (which is Aster policy the fixture reserves). No observability is computed (no magnitude, no sky position); the README says an observing plan needs an observer model this idea lacks. Null-U and null-arc bodies are their own bands.",
+ "testPlan": "All cross-tab cells sum to 41,906; the U marginal equals the measured distribution {0: 8470, 1: 1705, 2: 651, 3: 477, 4: 1189, 5: 2468, 6: 5110, 7: 9587, 8: 8958, 9: 3281, null: 10}; qualityRank recomputed via the spec formula equals the stored value within 1e-6 for every body (reconciliation to the fixture's own formula string); survivor count is monotone in u and in d; every listed body has minC3 \u2264 threshold, U \u2265 7 and arc < 30 or null; the cache threshold is read from metadata and the test fails if a literal 25 appears in the page source; smoke at 390 px with both sliders dragged.",
+ "buildEstimate": "medium",
+ "landing": "Aster MCP as filters on `search_bodies` (conditionCode, dataArcDays) and as the Survey lens's first artefact, where an INV-028 refusal would carry `what_would_help: 'extend the data arc'`; needs a founding-doc seat and the envelope's provenance refs; nothing here has been through those.",
+ "judges": 3,
+ "meanValue": 4,
+ "meanBuildable": 4,
+ "meanHonesty": 5,
+ "meanNovelty": 4,
+ "composite": 4.2,
+ "notes": [
+  "Verified the U distribution exactly ({7: 9587, 8: 8958, 0: 8470, \u2026, null: 10}) and the qualityRank formula string. First Survey-lens artefact; search_bodies has no U/arc filter.",
+  "Reproduced the U distribution exactly ({7: 9587, 8: 8958, 9: 3281, null: 10} etc.); quotes Slice 18's caveat to avoid conflating solution quality with model error; the Survey lens's first real artefact.",
+  "Condition-code distribution reproduced exactly ({0:8470,1:1705,2:651,3:477,4:1189,5:2468,6:5110,7:9587,8:8958,9:3281,null:10}); search-bodies.ts filters only orbitClass and screeningStatus. Survey-lens pre-research with every number from committed data; quotes the Slice 18 caveat so U is not read as model error."
+ ]
+}

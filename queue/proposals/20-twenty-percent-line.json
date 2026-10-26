@@ -1,0 +1,31 @@
+{
+ "no": "20",
+ "id": "S1-02",
+ "lens": "Skyhook: physics explorables",
+ "title": "Twenty Percent Line",
+ "slug": "twenty-percent-line",
+ "for": "Skyhook",
+ "kind": "explorable",
+ "surface": "browser",
+ "tagline": "Slide the HMPE/PBO boundary along the arm and see what it costs in tonnes to keep every HMPE metre under the 20 % sustained-load guidance that DECISION_LOG item 10 calls the creep hard part.",
+ "pitch": "A strip of the tether from hub to tip coloured by stress-as-fraction-of-break for each material section, under a two-material uniform-working-stress taper: PBO (Zylon, rev_a.json) and HMPE (Dyneema SK99 3.6 GPa, 970 kg/m3, rev_a.json alternative_fibers). Three controls: boundary position along the arm, the HMPE allowable sustained-load fraction f_H (default the SF 2.5 sizing rule, 0.28 derated / 0.40 raw, with a marked line at the 0.20 guidance), and the PBO fraction f_P. The page integrates the piecewise profile in closed form (erf per piece, tension continuous at the boundary) and plots integrated two-arm mass ratio versus boundary position for f_H = 0.28 and for f_H = 0.20, so the cost of admissible outcome (b) 'shift the boundary toward PBO' is a curve, not an adjective. It also reports the length fraction of the tether above the 20 % line (under the SF 2.5 rule that is simply the HMPE share of length, which is the point) and recomputes item 10's '41x to order 800x' sentence from EQ-6 at SF 5, reporting what it actually gets.",
+ "whyNow": "docs/DECISION_LOG.md item 10 (HMPE at 28-40 % of break vs <= 20 % multi-year guidance; admissible outcomes a/b/c not yet decided; 'SF 5 ... ~41x to ~800x'); docs/research/mp001_market_pricing.md section 3c; docs/research/lr001_splice_literature.md section D (DM20 creeps >50x slower than SK78); docs/project_instructions.md section 4.1 construction baseline 'UHMWPE bulk + Zylon outer ~20 km of the lower arm'; physics/tether_dynamics.py module docstring gives the single-material profile A(s) = A_L exp[x^2 (1 - s^2/L^2)] this generalises.",
+ "computes": "Inputs: boundary s_b in [0, L], f_H, f_P, optional derate, v_tip tier, from rev_a.json geometry/kinematics/materials. Math: in each section the working stress is sigma_w,i = f_i sigma_i; the free-space centrifugal ODE dA/ds = -(rho_i omega^2 s / sigma_w,i) A gives A(s) = A(s_0) exp[-(rho_i omega^2 / 2 sigma_w,i)(s^2 - s_0^2)]; tension continuity at s_b sets sigma_w,1 A_1(s_b) = sigma_w,2 A_2(s_b); mass per section = rho_i integral A ds in erf closed form; two-arm ratio = 2 x total / m_payload. Outputs: stress-fraction strip, mass ratio vs boundary at two f_H values, tonnes at 5,000 kg, the recomputed SF 5 figures (scoping run from the snapshot: 484x at 0 % derate, 1,105x at 15 %, 3,515x at 30 %, none of which is 800x), and the observation that SK99 and Zylon have almost identical Vc (2.724 vs 2.727 km/s) so at equal load fraction the boundary is nearly free in mass and only the creep cap makes it matter.",
+ "dataNeeded": "snapshots/rev_a.json whole (about 7 KB). No DM20 or SK78 strength exists in rev_a.json, so no DM20 curve is drawn; the page offers a user-typed sigma/rho slot labelled 'not canon'.",
+ "existingOverlap": "physics/tether_dynamics.py and tools/twin/physics.js implement the single-material taper profile and exact erf lump masses; the program-site calculator draws a single-material taper SVG. Nothing in the repo computes a two-material tether, a load-fraction map, or the mass cost of the 20 % rule; DECISION_LOG item 10 states the consequence in prose only.",
+ "honestyRisks": "The 20 % guidance, the 8-year SK78 life and the DM20 ratio are secondary-sourced (MP-001, LR-001) and must not be rendered as physics: the page draws the 20 % line with the citation string 'MP-001 section 3c [Likely], spot-check pending' and never computes a lifetime. Fabrication could creep in by inventing a DM20 strength or a creep law; the page has no creep model and refuses to show any curve for a material not in rev_a.json unless the user types values, which are then rendered as 'user-entered'. Gravity-gradient loading is omitted (free-space centrifugal only, the same approximation as EQ-6) and said so. The recomputed SF 5 numbers are reported as a discrepancy against item 10's '~800x' with the exact inputs tried, not as a correction.",
+ "testPlan": "node --test: single-material limits (s_b = 0 and s_b = L) reproduce EQ-6: 121.83 for all-Zylon at f = 0.28 and 122.6 for all-SK99 at f = 0.28, rel 5e-4; all-SK99 at f = 0.20 = 488.1 within 0.5 % (EQ-6 at SF 5, 0 % derate); tension is continuous at the boundary to 1e-9 relative; the piecewise mass equals a 1e5-point numerical quadrature to 1e-6; mass ratio is monotone in s_b when f_H < f_P and flat within 1 % when f_H = f_P (the Vc coincidence); the stress strip reports length fraction above 0.20 equal to the HMPE share under the SF 2.5 rule; the page shows a refusal when the snapshot is absent; smoke at 390 px.",
+ "buildEstimate": "medium",
+ "landing": "Skyhook, physics/ as hybrid_taper.py (a two-material generalisation of the tether_dynamics profile) plus a tools/sims page; the recomputed SF 5 figures and the Vc-coincidence note belong in DECISION_LOG item 10's evidence list. To ship: import constants from params/rev_a.json, pass a VM review of the piecewise derivation, and add the DM20/SK78 data only once a vendor datasheet is in docs/references/.",
+ "judges": 3,
+ "meanValue": 4,
+ "meanBuildable": 4,
+ "meanHonesty": 4.333333333333333,
+ "meanNovelty": 4.666666666666667,
+ "composite": 4.166666666666667,
+ "notes": [
+  "Recomputed EQ-6 at SF 5: 484/1,105/3,515\u00d7 at 0/15/30 % derate, so DECISION_LOG item 10's '~800\u00d7' indeed does not reproduce; nothing in the repo models a two-material tether. Directly costs admissible outcome (b).",
+  "DECISION_LOG item 10 says SF\u22485 gives 'order ~800\u00d7'; EQ-6 from rev_a.json gives 484/1105/3515 at 0/15/30% derate, so the discrepancy finding is real; two-material taper is genuinely absent from the repo.",
+  "Its headline check reproduces: EQ-6 at SF 5 gives 484/1105/3515x at 0/15/30 % derate, none near DECISION_LOG item 10's '~800x', and SK99/Zylon Vc are 2.724/2.727 km/s. The piecewise two-material erf integral needs a VM review but is closed-form; no DM20 data is invented."
+ ]
+}

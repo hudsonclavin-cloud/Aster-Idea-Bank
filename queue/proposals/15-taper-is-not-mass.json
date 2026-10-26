@@ -1,0 +1,31 @@
+{
+ "no": "15",
+ "id": "S1-01",
+ "lens": "Skyhook: physics explorables",
+ "title": "Taper Is Not Mass",
+ "slug": "taper-is-not-mass",
+ "for": "Skyhook",
+ "kind": "explorable",
+ "surface": "browser",
+ "tagline": "Two curves that the program once confused, drawn against each other across tip speed, derate, safety factor and fibre, with the three canon tiers pinned and the numbers in rev_a.json re-derived live on the page.",
+ "pitch": "A single page with four controls (tip speed 0.5 to 4 km/s, derate 0 to 50 %, safety factor 1 to 5, material from the rev_a.json menu: Zylon PBO, Dyneema SK99 3.6 GPa, T1100G 7.0 GPa) and two curves over tip speed: EQ-5 peak area taper exp[(v/Vc)^2 SF] and EQ-6 integrated two-arm mass ratio 2 sqrt(pi) x e^(x^2) erf(x). The 2.5 / 2.8 / 3.5 km/s tiers are vertical pins; the canon ladder points (40.32 / 64.30 / 121.83 at 2.5 km/s; 295.27 at 2.8; 3085.95 at 3.5) are plotted as hollow markers that turn into green badges only when the page's own computation lands within 5e-4 of the snapshot value, and the historical 440x ghost (EQ-6 at 3.5 km/s, 0 % derate, DECISION_LOG item 1 addendum) is drawn as a labelled grey marker. A fibre-mass readout multiplies by the 5,000 kg tonnage payload from the file. The user drags derate and watches the gap between the two curves open: at Rev A the taper is 8.2 (20.1 derated) while the mass ratio is 121.83, which is the sentence the program spent a night purging.",
+ "whyNow": "docs/DECISION_LOG.md items 1 and 2 (the EQ-5-as-mass-ratio conflation and the unsourced 440x that turned out to be EQ-6 at 0 % derate); docs/DEVIATIONS.md item 8: tools/sims/skyhook_program_site.html ~line 1135 `LAD={Conservative:{d:.6},Baseline:{d:.72},Optimistic:{d:.85}}` is not the rev_a.json ladder (0.70 / 0.85 / 1.00 retention); tools/sims/skyhook_calculator.jsx lines 11 and 20-22 still carry Dyneema SK99 at 3.9 GPa (VM-001 corrected to 3.6) and the same stale ladder; docs/glossary.md 'Taper ratio' entry.",
+ "computes": "Inputs: v_tip, derate, SF, material (sigma, rho) from the rev_a.json snapshot or a user-typed fibre flagged 'not canon'. Math: Vc = sqrt(2 sigma/rho) (EQ-4); taper = exp[(v/Vc)^2 SF] (EQ-5); x = (v/Vc) sqrt(SF/(1-derate)); M/m = arms sqrt(pi) x e^(x^2) erf(x) (EQ-6) with erf from the Abramowitz-Stegun 7.1.26 form the twin already uses (abs error 1.5e-7, far inside the 5e-4 badge tolerance); fibre mass = ratio x payload_mass_kg_for_tonnage. Outputs: two log-scale curves, tier pins, reconciliation badges, the v/Vc = 1.3 guardrail band from rev_a.json `_ratio_note`, a tonnes readout.",
+ "dataNeeded": "snapshots/rev_a.json copied whole with tools/snapshot.mjs from /home/user/skyhook params/rev_a.json (about 7 KB); nothing else.",
+ "existingOverlap": "tools/sims/skyhook_program_site.html 'Reference Design Calculator' and tools/sims/skyhook_calculator.jsx compute taper and mass ratio as point values with sliders, but with hardcoded materials (SK99 3.9 GPa), a non-canon ladder applied inside Vc, and a 'CNT yarn (future)' entry that is not in rev_a.json. physics/skyhook_physics.py has the functions and verify_rev_a() prints a table. This idea differs by plotting both quantities as curves over tip speed so the conflation is visible, by reading every constant from the snapshot, by pinning the three tiers and the 440x ghost, and by re-deriving the ladder badges on the page instead of displaying typed values.",
+ "honestyRisks": "Fabrication could creep in through typed canon numbers in the page source (the ladder, the tiers, 3.9 vs 3.6 GPa). Refusal: the page holds no tether number in JS; every value is read from snapshots/rev_a.json at load and a badge is shown only when computed and snapshot agree; if the snapshot fails to load the page renders the equations and an explicit 'no canon file, no numbers' notice instead of defaults (the params-loader.js posture). User-typed fibres render in a different colour with 'not in rev_a.json'. The 2 % 'guardrail' and 1.3 Vc rule are quoted with their rev_a.json keys as [Certain] notes, the derate ladder as [Likely] per the file's own `_derate_note`.",
+ "testPlan": "node --test: EQ-6 reproduces 40.32 / 64.30 / 121.83 (2.5 km/s, 0/15/30 %), 295.27 (2.8, 30 %), 3085.95 (3.5, 30 %) within rel 5e-4 using only snapshot inputs; EQ-6(3.5, 0 %) = 440.40 within 0.05 (DECISION_LOG item 1 addendum); EQ-5 at Rev A = 8.2 +/- 0.1 and 20.1 +/- 0.2 with 30 % derate (glossary); EQ-6 > EQ-5 for every grid point in the slider ranges; Vc(5.8 GPa, 1560) = 2.73 and Vc(3.6 GPa, 970) = 2.72 within 1 %; the A&S erf is within 2e-7 of a high-precision series on 0..4; a loader test asserts the page shows the refusal notice when the snapshot is withheld; tools/smoke.mjs at 390 px.",
+ "buildEstimate": "medium",
+ "landing": "Skyhook, tools/sims/ as a standalone page (or the calculator's materials/mass block replaced by it). To ship: fetch ../../params/rev_a.json live via the params-loader.js pattern instead of the snapshot, drop the user-typed fibre or gate it behind an explicit deviation label (Rule 1), and port the badge assertions into tests/test_rev_a_physics.py. It also hands the maintainer the DEVIATIONS item 8 fix as a reference implementation.",
+ "judges": 3,
+ "meanValue": 3.6666666666666665,
+ "meanBuildable": 5,
+ "meanHonesty": 5,
+ "meanNovelty": 3.6666666666666665,
+ "composite": 4.266666666666667,
+ "notes": [
+  "Recomputed from rev_a.json: EQ-6 gives 40.3/64.3/121.8, 295.27, 3085.95 and 440.4 at 3.5 km/s 0 % derate; verified calculator.jsx:11 SK99 3.9e9 and program_site:1135 LAD .6/.72/.85. Badges-only-when-recomputed is the right posture.",
+  "Verified calculator.jsx:11 SK99 3.9e9 and :20-22 derate 0.6/0.72/0.85, program_site LAD at :1135, and EQ-6 from rev_a.json reproduces 40.32/64.30/121.83/295.27/3085.95 and 440.4; the shipped calculator already draws taper, so this is a corrected view.",
+  "All canon re-derives from rev_a.json inputs (40.32/64.30/121.83/295.27/3085.95, the 440.40 ghost, EQ-5 taper 8.18 and 20.12) and both stale ladders (calculator.jsx:20-22, program_site:1135) are exactly as cited. Reading every number from the snapshot with a refusal notice is the right Rule 1 posture."
+ ]
+}

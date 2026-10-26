@@ -1,0 +1,31 @@
+{
+ "no": "18",
+ "id": "P2-02",
+ "lens": "PartForge: data integrity and provenance",
+ "title": "Second Copy",
+ "slug": "second-copy",
+ "for": "PartForge",
+ "kind": "linter",
+ "surface": "cli",
+ "tagline": "Finds every number the doctrine, the templates and the code restate from a table, and says whether the two copies still agree.",
+ "pitch": "The repo's rule is that nothing in the doctrine may restate a fastener number the tables carry, but the only guard is four regexes for the UN clearances that already drifted once. This CLI extracts the flight doctrine (the same `flightSystemPrompt()` slice tests/run.mjs takes), the `GRADE_SY` literal, and the FLIGHT blocks and `// NOTE` lines of the seven templates, pairs each numeric literal with the table key beside it (an M-size, a UN designation, 'H7', 'g6', an O-ring cross-section, a grade name) and resolves it against the shipped tables. Each literal gets AGREES / DISAGREES (both values) / UNBACKED (no table row carries it) / NON-CLASS (a template hole diameter that matches no clearance class, with the stated reason if the comment gives one). Read at 0974a62 and verified in this session: the doctrine's 23 metric clearance and tap-drill values all agree with fasteners_metric.json but no test pins them; its ISO 286 block agrees in 12 of 15 values and prints p6 at three sizes although fits.json carries no p letter and its own note warns against a fit named for a letter it was not built from; its ~24 Parker chart 4-3 depths and widths agree with the orings supplement; GRADE_SY's 8.8/10.9/12.9/A2-70 agree with fasteners_metric.grades, 'a4-80' maps to A2-80 only by assumption, and grade 2/5/8 and '18-8' have no table behind them at all; the bulkhead template's 7.00 (U-bolt 1/4-20) and 6.60 (1/4 rod) match no ASME B18.2.8 class (6.747/7.144/7.541) and both state a reason in their comments. This is also where the GRADE_SY audit seed lands: the grade-2 fix shipped (index.html:5804 now has '2':393 and refuses unknown grades), so what remains is provenance, and the tool shows it.",
+ "whyNow": "tests/flight-db.test.mjs '== the doctrine does not contradict the tables ==' (four UN regexes only); docs/roadmap-evaluation.md 'What this evaluation already changed' bullets 1 and 3 and idea #44; GRADE_SY at index.html:5804 (the roadmap's :4929 has moved); the doctrine's fits line and O-ring line inside flightSystemPrompt() (\u2248 index.html:1495\u20131496) still carry table numbers.",
+ "computes": "Inputs: index.html (doctrine slice, GRADE_SY line), tests/templates/*.scad, and the tables. Logic: tokenise text into (key token, number, unit) triples within a short window; resolvers per table family: fasteners_metric clearance_coarse/medium/fine and tap_drill_mm; fasteners_un clearance classes in mm and in; fits.json \u2192 recompute H/g/h/k/n limits exactly as dbFit does (IT and es/ei in \u00b5m) and compare the \u00b1pairs; orings supplement chart 4-3 and table 4-2 bands; fasteners_metric.grades yield_MPa. Comparison tolerance declared as 0.0005 mm / 0.5 \u00b5m. Outputs: a table of literals with verdict and the matched text span, counts per class, exit 1 on DISAGREES.",
+ "dataNeeded": "Snapshots: fits.json whole (17 KB); fasteners_metric excerpt (rows: key, clearance_*_mm, tap_drill_mm; grades) \u224810 KB; fasteners_un excerpt (key, clearance_* in/mm) \u22485 KB; orings_as568 --pick supplement.gland_parker_ord5700.face_seal_chart_4_3,supplement.gland_parker_ord5700.radial_static_table_4_2 \u22486 KB; the doctrine text and the GRADE_SY line as derived extracts with --sidecar-only naming index.html at 0974a62; tests/templates/bulkhead.scad, coupler.scad, motor-retainer.scad \u224820 KB. \u2248 80 KB.",
+ "existingOverlap": "flight-db.test.mjs's four UN regexes and two presence checks; headless/build.mjs --check guards index.html\u2194core.gen.mjs drift, not literal\u2194table drift. This generalises the check to every table-backed literal and lists them; it does not rewrite the doctrine.",
+ "honestyRisks": "Adjacency pairing can mis-pair ('M6 6.6' vs '6 \u00d7 M6'), so every verdict prints the matched span and the tests pin the pairing on the real doctrine; UNBACKED is not 'wrong' \u2014 p6 may well be correct ISO 286 and the tool cannot know, so the README says so and the tool never proposes a value; GRADE_SY's SAE numbers are flagged unbacked, not corrected (no retyping SAE J429 from memory); the rounding tolerance is declared up front, not tuned until everything agrees.",
+ "testPlan": "Planted drift fixtures (one doctrine clearance moved one class; GRADE_SY 8.8 set to 660) \u2192 DISAGREES with both values; clean fixture \u2192 all AGREES; the fit recomputation reproduces the \u00d850 H7/g6 limits flight-db.test.mjs asserts (50.000/50.025 over 49.975/49.991, clearance 0.009\u20130.050); against the snapshot: exactly 3 UNBACKED in the fits block (p6 \u00d73), 0 DISAGREES in the metric and Parker blocks, GRADE_SY unbacked set == {2, grade 2, 5, grade 5, 8, grade 8, 18-8} with a4-80 marked 'mapped by assumption', bulkhead 7.00 and 6.60 NON-CLASS with their stated reasons quoted.",
+ "buildEstimate": "medium",
+ "landing": "tests/flight-db.test.mjs (replace the four regexes with the general scan) or tools/db/lint-doctrine.mjs run by tests/run.mjs; findings to docs/STATUS.md. To ship: the maintainer decides whether UNBACKED literals (p6, SAE grades) get a table row with a confidence label or are deleted from the doctrine, which this tool does not decide.",
+ "judges": 3,
+ "meanValue": 4,
+ "meanBuildable": 4,
+ "meanHonesty": 5,
+ "meanNovelty": 4,
+ "composite": 4.2,
+ "notes": [
+  "Verified GRADE_SY at :5804 now has grade 2 = 393 and refuses unknown grades (roadmap :4929 is stale), and the doctrine fits line at :1494 prints p6 while fits.json carries no p letter. Generalises the four UN regexes.",
+  "Verified the doctrine prints p6 three times while fits.json has no p letter, and GRADE_SY's SAE entries have no table behind them; UNBACKED is reported, never corrected.",
+  "Doctrine fits line (index.html:1495) does carry p6 values though fits.json has no p letter, GRADE_SY at :5804 maps a4-80 to 600 and carries SAE 2/5/8 and 18-8 with no table, and flight-db.test.mjs:57-67 guards only four UN regexes. All verified; UNBACKED-not-wrong is the correct framing."
+ ]
+}
