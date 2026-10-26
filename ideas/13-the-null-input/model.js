@@ -49,6 +49,14 @@
     program_fleet_capex_M: 'prog capex', fixed_ops_M: 'fixed ops',
   };
   const TIER_SHORT = { cislunar_revenue_gated_option: 'Cislunar', phase3_growth_option: 'Phase 3' };
+  // The fiber a quote is for (fiber_sweep.MATERIALS). Every mass here is rev_a's Zylon PBO EQ-6 mass;
+  // docs/outreach_log.md:5-17 and :27-29 (snapshotted) say which fiber each outstanding ask is for.
+  const MATERIALS = {
+    pbo: 'Zylon PBO (the Toyobo and Avient asks)',
+    uhmwpe: 'UHMWPE / Dyneema (the FibrXL SK78 ask)',
+    carbon: 'carbon fiber (the Toray T1100G ask, retired on 31 Aug)',
+    other: 'a fiber other than Zylon PBO',
+  };
 
   // ── erf: JavaScript has none. Maclaurin series below 3 (terms peak near e^{x²} ≈ 8,100 at x = 3, so
   // about 1e-12 relative is kept), continued fraction for erfc above. The Rev A domain is x in
@@ -210,15 +218,17 @@
       const pb = this.paybackYear(s, price, mult);
       return pb !== null && pb <= WINDOW_YEARS;
     }
+    // The far end of sensitivity.py's bisection: ×5 up, ÷5 down, derate and fixed ops floored at 0.
+    static relaxationFar(base, field) {
+      const v0 = Model.getInput(base, field);
+      if (INPUTS[field][1] === 'up') return v0 * MAX_STRETCH;
+      if (field === 'fixed_ops_M' || field === 'derate_fraction') return 0.0;
+      return v0 / MAX_STRETCH;
+    }
     relaxationThreshold(base, field, price, mult) {
       const v0 = Model.getInput(base, field);
       const direction = INPUTS[field][1];
-      let far;
-      if (direction === 'up') far = v0 * MAX_STRETCH;
-      else {
-        far = field !== 'fixed_ops_M' ? v0 / MAX_STRETCH : 0.0;
-        if (field === 'derate_fraction') far = 0.0;
-      }
+      const far = Model.relaxationFar(base, field);
       if (!this.closes(Model.setInput(base, field, far), price, mult)) return null;
       if (this.closes(base, price, mult)) return v0;
       let lo = direction === 'up' ? v0 : far;
@@ -246,8 +256,17 @@
       }
       return out;
     }
+    // The fiber price at which a single substitution stops closing the conservative case.
     singleStopPrice(cons, base, field, mult) {
-      const s = Model.setInput(cons, field, Model.getInput(base, field));
+      return this.stopPrice(Model.setInput(cons, field, Model.getInput(base, field)), mult);
+    }
+    // The fiber price above which relaxationThreshold returns null: the stop price of the stretch's far end.
+    thresholdVanishPrice(base, field, mult) {
+      return this.stopPrice(Model.setInput(base, field, Model.relaxationFar(base, field)), mult);
+    }
+    // The fiber price at which scenario s stops closing (bisection over [0, cap]); null if it does not close
+    // at $0, Infinity if it still closes at the cap. Closed form: cum15(0) × 1000 / (fiber_t × m).
+    stopPrice(s, mult) {
       if (!this.closes(s, 0.0, mult)) return null;
       if (this.closes(s, STOP_PRICE_CAP, mult)) return Infinity;
       let lo = 0.0;
@@ -308,22 +327,29 @@
       conservative_thresholds: model.thresholds(cons, p, mult),
       baseline_singles: model.baselineSingles(cons, base, p, mult),
     }));
+    const capped = (sp) => (sp === null ? null : (sp === Infinity ? '> cap' : sp));
     const stops = {};
     for (const f of Object.keys(INPUTS)) {
       if (Model.getInput(cons, f) === Model.getInput(base, f)) continue;
-      const sp = model.singleStopPrice(cons, base, f, mult);
-      stops[f] = sp === null ? null : (sp === Infinity ? '> cap' : sp);
+      stops[f] = capped(model.singleStopPrice(cons, base, f, mult));
     }
+    const vanish = {};
+    for (const f of Object.keys(INPUTS)) vanish[f] = capped(model.thresholdVanishPrice(cons, f, mult));
     const markerRows = [];
     if (markers) {
       for (const mk of markers.markers) {
+        const lines = mk.lines_per_key || {};
         for (const [key, price] of Object.entries(mk.prices_per_kg)) {
-          markerRows.push({ id: mk.id, label: mk.label, key, price_per_kg: price, file: mk.file, line: mk.line, status: mk.status,
+          markerRows.push({ id: mk.id, label: mk.label, key, price_per_kg: price, file: mk.file, line: key in lines ? lines[key] : mk.line, status: mk.status,
             rows: rows.map((s) => model.summarize(s, price, mult)) });
         }
       }
     }
-    return { fiber_multiplier: mult, price_grid: prices.slice(), sweep, single_stop_prices: stops, single_stop_cap_per_kg: STOP_PRICE_CAP, markers: markerRows };
+    return {
+      fiber_multiplier: mult, price_grid: prices.slice(),
+      at_zero: { conservative_thresholds: model.thresholds(cons, 0.0, mult), baseline_singles: model.baselineSingles(cons, base, 0.0, mult) },
+      sweep, single_stop_prices: stops, threshold_vanish_prices: vanish, single_stop_cap_per_kg: STOP_PRICE_CAP, markers: markerRows,
+    };
   }
 
   function quoteCard(model, ladder, price, mult, source) {
@@ -336,6 +362,7 @@
     });
     return {
       fiber_price_per_kg: price, fiber_multiplier: mult, effective_price_per_kg: price * mult, price_source: source,
+      material: { key: 'pbo', name: model.params.materials.primary_fiber, tensile_strength_GPa: model.sigma_GPa, density_kgm3: model.rho, safety_factor: model.SF },
       rows,
       conservative_thresholds_before: model.thresholds(cons, 0.0, mult),
       conservative_thresholds_after: model.thresholds(cons, price, mult),
@@ -352,21 +379,62 @@
       code: 'null_input',
       what: 'no fiber price: rev_a.json economics.fiber_cost_per_kg is null and none has been typed',
       note: params.economics._fiber_cost_note || '',
-      what_would_help: 'a vendor quote in $/kg (Toyobo / Avient / Toray), stating yarn vs finished rope, MOQ, currency and date; '
-        + 'then fill economics.fiber_cost_per_kg in params/rev_a.json with its source in _fiber_cost_note',
+      what_would_help: 'a vendor quote in $/kg for Zylon PBO (the Toyobo and Avient asks are pending), stating yarn vs finished rope, '
+        + 'MOQ, currency and date; then fill economics.fiber_cost_per_kg in params/rev_a.json with its source in _fiber_cost_note. '
+        + 'A FibrXL reply is for Dyneema SK78, a different fiber: choose its material and the card refuses it.',
     };
   }
 
+  // A flat object as Python's json.dumps prints it (", " and ": " separators), so the refusal reads the same in both.
+  const pyJson = (o) => (o && typeof o === 'object'
+    ? `{${Object.entries(o).map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(', ')}}` : JSON.stringify(o));
+
+  // The refusal for a quote on a fiber other than Zylon PBO (mirrors fiber_sweep.material_refusal).
+  function materialRefusal(params, key) {
+    if (key === 'pbo') return null;
+    const mat = params.materials;
+    return {
+      code: 'material_not_in_canon',
+      what: `the quote is for ${MATERIALS[key] || MATERIALS.other}, but every fiber mass here is rev_a.json's EQ-6 mass for `
+        + `materials.primary_fiber = ${mat.primary_fiber} (σ ${mat.tensile_strength_GPa} GPa, ρ ${thousands(mat.density_kgm3)} kg/m³). `
+        + `materials.alternative_fibers = ${pyJson(mat.alternative_fibers)} gives strengths, with a density only in a free-text note, `
+        + 'so there is no canonical tether mass to multiply this price by',
+      what_would_help: 'a VM-verified strength and density for that fiber in params/rev_a.json materials, and the tether\'s mass in it '
+        + '(materials.construction_baseline is a UHMWPE-core / Zylon-arm hybrid whose split rev_a does not give); '
+        + 'until then this page prints no fiber line for it',
+    };
+  }
+
+  // Dotted path of the first number that is NaN or infinite in a nested object, or null (fiber_sweep.first_non_finite).
+  function firstNonFinite(obj, path) {
+    const here = path || '';
+    if (typeof obj === 'number') return Number.isFinite(obj) ? null : (here || 'value');
+    if (Array.isArray(obj)) {
+      for (let i = 0; i < obj.length; i++) { const b = firstNonFinite(obj[i], `${here}[${i}]`); if (b) return b; }
+    } else if (obj && typeof obj === 'object') {
+      for (const [k, v] of Object.entries(obj)) { const b = firstNonFinite(v, here ? `${here}.${k}` : k); if (b) return b; }
+    }
+    return null;
+  }
+
   // ── Formatting, matching fiber_sweep.py's text output ─────────────────────────────────────────
+  // Exact decimal digits of |round(n)|, also at and above 1e21, where String() and toFixed() switch to
+  // exponent notation (Python's format() never does; a double that large is an integer, so BigInt is exact).
+  function intDigits(n) {
+    const r = Math.round(Math.abs(n));
+    return r < 1e21 ? String(r) : BigInt(r).toString();
+  }
   function thousands(n) {
-    const s = String(Math.abs(Math.round(n)));
+    const s = intDigits(n);
     return (n < 0 && Math.round(n) !== 0 ? '-' : '') + s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
   function fixed(n, d) {
-    const s = Math.abs(n).toFixed(d);
+    const s = Math.abs(n) < 1e21 ? Math.abs(n).toFixed(d) : intDigits(n) + (d ? '.' + '0'.repeat(d) : '');
     const [i, f] = s.split('.');
     return (n < 0 && Number(s) !== 0 ? '-' : '') + i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (f ? '.' + f : '');
   }
+  // The number as fiber_sweep.number_str prints it: 300, 123.456789, 1e+300.
+  const numberStr = (x) => String(x + 0);
   const money = (x) => { const r = Math.round(x); return `${r < 0 ? '-' : ''}$${thousands(Math.abs(r))}M`; };
   const pbStr = (pb) => (pb === null || pb === undefined) ? `>Y${MAX_PAYBACK_SEARCH}` : `Y${pb}${pb > WINDOW_YEARS ? '*' : ''}`;
   const priceStr = (p) => (Number.isInteger(p) ? `$${thousands(p)}` : `$${fixed(p, 2)}`);
@@ -391,8 +459,8 @@
 
   return {
     CAPEX_SPREAD, OPS_START_YEAR, RAMP_STEP, WINDOW_YEARS, MAX_PAYBACK_SEARCH, R_EARTH_KM, COLUMNS, DEFAULT_PRICES,
-    BISECT_ITERS, MAX_STRETCH, STOP_PRICE_CAP, LADDER_KEYS, INPUTS, SHORT, TIER_SHORT,
-    erf, roundTo, derate, loadLadder, Model, runGate, tierRows, computeStudy, quoteCard, refusal,
-    money, pbStr, priceStr, thrStr, rowLabel, thousands, fixed,
+    BISECT_ITERS, MAX_STRETCH, STOP_PRICE_CAP, LADDER_KEYS, INPUTS, SHORT, TIER_SHORT, MATERIALS,
+    erf, roundTo, derate, loadLadder, Model, runGate, tierRows, computeStudy, quoteCard, refusal, materialRefusal, firstNonFinite,
+    money, pbStr, priceStr, thrStr, rowLabel, thousands, fixed, numberStr,
   };
 });

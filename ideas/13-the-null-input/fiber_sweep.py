@@ -58,6 +58,17 @@ BISECT_ITERS = 80                         # sensitivity.py relaxation_threshold 
 MAX_STRETCH = 5.0                         # sensitivity.py (:107)
 STOP_PRICE_CAP = 20000.0                  # $/kg; a single that still closes here is reported as "> cap"
 
+# The fiber a quote is for. Every fiber mass here is rev_a's EQ-6 mass for materials.primary_fiber
+# (Zylon PBO). The asks outstanding at 34935cb are not all for it (docs/outreach_log.md:5-17 and
+# :27-29, snapshotted): Toyobo and Avient were asked about Zylon PBO, FibrXL about Dyneema SK78
+# (UHMWPE), and the Toray T1100G ask is retired. A quote for a fiber other than PBO is refused.
+MATERIALS = {
+    "pbo": "Zylon PBO (the Toyobo and Avient asks)",
+    "uhmwpe": "UHMWPE / Dyneema (the FibrXL SK78 ask)",
+    "carbon": "carbon fiber (the Toray T1100G ask, retired on 31 Aug)",
+    "other": "a fiber other than Zylon PBO",
+}
+
 # The eight sensitivity inputs, label and the direction that improves the case (sensitivity.py:45-54).
 INPUTS = {
     "customer_price_per_kg":      ("Customer price ($/kg)", "up"),
@@ -148,12 +159,67 @@ class Scenario:
 
 
 class RefusedError(Exception):
-    """A structured refusal: what is missing and what would help."""
+    """A structured refusal: a code, what is missing and what would help."""
 
-    def __init__(self, what: str, help_text: str):
+    def __init__(self, what: str, help_text: str, code: str = "null_input"):
         super().__init__(what)
         self.what = what
         self.help_text = help_text
+        self.code = code
+
+    def as_dict(self) -> dict:
+        return {"code": self.code, "what": self.what, "what_would_help": self.help_text}
+
+
+def material_refusal(params: dict, material: str) -> RefusedError | None:
+    """None for Zylon PBO, the only fiber rev_a gives EQ-6 inputs for; a refusal for anything else."""
+    if material == "pbo":
+        return None
+    mat = params["materials"]
+    return RefusedError(
+        f"the quote is for {MATERIALS[material]}, but every fiber mass here is rev_a.json's EQ-6 mass for "
+        f"materials.primary_fiber = {mat['primary_fiber']} (σ {mat['tensile_strength_GPa']:g} GPa, ρ {mat['density_kgm3']:,g} kg/m³). "
+        f"materials.alternative_fibers = {json.dumps(mat.get('alternative_fibers'), ensure_ascii=False)} gives strengths, "
+        "with a density only in a free-text note, so there is no canonical tether mass to multiply this price by",
+        "a VM-verified strength and density for that fiber in params/rev_a.json materials, and the tether's mass in it "
+        "(materials.construction_baseline is a UHMWPE-core / Zylon-arm hybrid whose split rev_a does not give); "
+        "until then this tool prints no fiber line for it",
+        code="material_not_in_canon")
+
+
+def material_note(params: dict) -> str:
+    mat = params["materials"]
+    return (f"{mat['primary_fiber']} (rev_a materials.primary_fiber): every fiber mass is its EQ-6 mass at "
+            f"σ {mat['tensile_strength_GPa']:g} GPa, ρ {mat['density_kgm3']:,g} kg/m³, SF {mat['safety_factor']:g}; "
+            "a quote for another fiber (FibrXL's is Dyneema SK78, UHMWPE) does not price this mass (--material refuses it)")
+
+
+def first_non_finite(obj, path: str = "") -> str | None:
+    """Dotted path of the first float that is NaN or infinite in a nested dict/list, or None."""
+    if isinstance(obj, float):
+        return None if math.isfinite(obj) else (path or "value")
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            bad = first_non_finite(v, f"{path}.{k}" if path else str(k))
+            if bad:
+                return bad
+    elif isinstance(obj, (list, tuple)):
+        for i, v in enumerate(obj):
+            bad = first_non_finite(v, f"{path}[{i}]")
+            if bad:
+                return bad
+    return None
+
+
+def check_markers(markers: dict) -> None:
+    """Raise ValueError unless markers.json has the shape the study reads."""
+    for mk in markers["markers"]:
+        for k in ("id", "label", "file", "line", "status", "prices_per_kg"):
+            if k not in mk:
+                raise ValueError(f"marker {mk.get('id', '?')} has no {k!r}")
+        for key, v in mk["prices_per_kg"].items():
+            if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v) or v < 0:
+                raise ValueError(f"marker {mk['id']} {key} price is not a finite non-negative number: {v!r}")
 
 
 def load_json(path: Path) -> dict:
@@ -322,17 +388,23 @@ class Model:
         pb = self.payback_year(s, price, mult)
         return pb is not None and pb <= WINDOW_YEARS
 
+    @staticmethod
+    def relaxation_far(base: Scenario, field: str) -> float:
+        """The far end of sensitivity.py's bisection: a MAX_STRETCH-fold improvement (x5 up, /5 down),
+        with derate and fixed ops floored at 0."""
+        v0 = Model.get_input(base, field)
+        if INPUTS[field][1] == "up":
+            return v0 * MAX_STRETCH
+        if field in ("fixed_ops_M", "derate_fraction"):
+            return 0.0
+        return v0 / MAX_STRETCH
+
     def relaxation_threshold(self, base: Scenario, field: str, price: float = 0.0, mult: float = 1.0) -> float | None:
         """Bisect (as sensitivity.py) for the value of `field` alone at which payback first comes inside
         Y15, at the given fiber price. None if a MAX_STRETCH-fold improvement does not close the case."""
         v0 = self.get_input(base, field)
         _, direction = INPUTS[field]
-        if direction == "up":
-            far = v0 * MAX_STRETCH
-        else:
-            far = v0 / MAX_STRETCH if field != "fixed_ops_M" else 0.0
-            if field == "derate_fraction":
-                far = 0.0
+        far = self.relaxation_far(base, field)
         if not self.closes(self.set_input(base, field, far), price, mult):
             return None
         if self.closes(base, price, mult):
@@ -369,11 +441,11 @@ class Model:
                         "payback_year": self.payback_year(s, price, mult), "closes": self.closes(s, price, mult)})
         return out
 
-    def single_stop_price(self, cons: Scenario, base: Scenario, field: str, mult: float = 1.0) -> float | None:
-        """The fiber price at which the single substitution of `field` to its baseline value stops
-        closing the conservative case: bisection on price over [0, STOP_PRICE_CAP]. None if it does
-        not close even at $0; math.inf if it still closes at the cap."""
-        s = self.set_input(cons, field, self.get_input(base, field))
+    def stop_price(self, s: Scenario, mult: float = 1.0) -> float | None:
+        """The fiber price at which scenario `s` stops closing the case (payback inside Y15): bisection
+        on price over [0, STOP_PRICE_CAP]. None if it does not close even at $0; math.inf if it still
+        closes at the cap. Closed form, since the purchase line only moves years 1-4 and cum15 falls
+        linearly with price: cum15(0) x 1000 / (fiber_t x m) (the tests hold the two to 1e-6)."""
         if not self.closes(s, 0.0, mult):
             return None
         if self.closes(s, STOP_PRICE_CAP, mult):
@@ -386,6 +458,17 @@ class Model:
             else:
                 hi = mid
         return lo
+
+    def single_stop_price(self, cons: Scenario, base: Scenario, field: str, mult: float = 1.0) -> float | None:
+        """The fiber price at which the single substitution of `field` to its baseline value stops
+        closing the conservative case."""
+        return self.stop_price(self.set_input(cons, field, self.get_input(base, field)), mult)
+
+    def threshold_vanish_price(self, base: Scenario, field: str, mult: float = 1.0) -> float | None:
+        """The fiber price above which no value of `field` alone within the MAX_STRETCH-fold stretch
+        closes the case, i.e. above which relaxation_threshold returns None. It is the stop price of
+        the stretch's far end. For construction launch this is (L*(0) - L0/5) x hmf / m."""
+        return self.stop_price(self.set_input(base, field, self.relaxation_far(base, field)), mult)
 
 
 # ── The p = 0 gate ────────────────────────────────────────────────────────────────────────────
@@ -447,27 +530,38 @@ def compute_study(model: Model, ladder: dict[str, Scenario], prices: tuple[float
             "conservative_thresholds": model.thresholds(cons, p, mult),
             "baseline_singles": model.baseline_singles(cons, base, p, mult),
         })
+    def capped(sp: float | None):
+        return None if sp is None else ("> cap" if sp == math.inf else sp)
+
     stops = {}
     for f in INPUTS:
         if model.get_input(cons, f) == model.get_input(base, f):
             continue
-        sp = model.single_stop_price(cons, base, f, mult)
-        stops[f] = None if sp is None else ("> cap" if sp == math.inf else sp)
+        stops[f] = capped(model.single_stop_price(cons, base, f, mult))
     marker_rows = []
     if markers:
         for mk in markers["markers"]:
+            lines = mk.get("lines_per_key", {})
             for key, price in mk["prices_per_kg"].items():
                 marker_rows.append({
                     "id": mk["id"], "label": mk["label"], "key": key, "price_per_kg": price,
-                    "file": mk["file"], "line": mk["line"], "status": mk["status"],
+                    "file": mk["file"], "line": lines.get(key, mk["line"]), "status": mk["status"],
                     "rows": [model.summarize(s, price, mult) for s in rows],
                 })
     return {
         "fiber_multiplier": mult,
         "fiber_multiplier_status": "unsourced; 1.0 reads the quoted $/kg as the finished-tether $/kg",
         "price_grid": list(prices),
+        # Always at $0, whatever the grid: what the singles and thresholds are before any fiber line.
+        "at_zero": {
+            "conservative_thresholds": model.thresholds(cons, 0.0, mult),
+            "baseline_singles": model.baseline_singles(cons, base, 0.0, mult),
+        },
         "sweep": sweep,
         "single_stop_prices": stops,
+        # Above this fiber price the input alone cannot close the case within the 5x stretch (exact,
+        # by bisection on price; not read off the grid).
+        "threshold_vanish_prices": {f: capped(model.threshold_vanish_price(cons, f, mult)) for f in INPUTS},
         "single_stop_cap_per_kg": STOP_PRICE_CAP,
         "markers": marker_rows,
     }
@@ -484,6 +578,8 @@ def quote_card(model: Model, ladder: dict[str, Scenario], price: float, mult: fl
     return {
         "fiber_price_per_kg": price, "fiber_multiplier": mult, "effective_price_per_kg": price * mult,
         "price_source": source,
+        "material": {"key": "pbo", "name": model.params["materials"]["primary_fiber"],
+                     "tensile_strength_GPa": model.sigma_GPa, "density_kgm3": model.rho, "safety_factor": model.SF},
         "rows": rows,
         "conservative_thresholds_before": model.thresholds(cons, 0.0, mult),
         "conservative_thresholds_after": model.thresholds(cons, price, mult),
@@ -534,6 +630,11 @@ def row_label(r: dict) -> str:
     return f"{short} {r['tip_speed_kms']:.1f} km/s @ {r['column']} column"
 
 
+def number_str(x: float) -> str:
+    """The number as typed, as JavaScript's String() prints it: 300, 123.456789, 1e+300."""
+    return str(int(x)) if float(x).is_integer() and abs(x) < 1e21 else repr(float(x))
+
+
 def price_str(p: float) -> str:
     return f"${p:,.0f}" if float(p).is_integer() else f"${p:,.2f}"
 
@@ -548,6 +649,7 @@ def format_header(model: Model, mult: float, params_path: Path, ladder_path: Pat
         f"rev_a.json economics.fiber_cost_per_kg = {json.dumps(fc)}   (\"{note}\")",
         f"inputs: {params_path.name} (orbital, kinematics, materials, mass_ratio, economics) and {ladder_path.name} "
         f"(workbook Assumptions rows 3-16, three columns) @ {commit}",
+        f"fiber: {material_note(model.params)}",
         f"finished-tether multiplier: {mult:.2f}  [unsourced; 1.0 reads the quoted $/kg as the finished-tether $/kg]",
         f"purchase line: $/kg × multiplier × fiber kg, added to total capex, spread {'/'.join(f'{int(x * 100)}' for x in CAPEX_SPREAD)}% over Y1-4; "
         "hardware mass factor not applied (it scales launched mass, not fiber bought)",
@@ -590,14 +692,24 @@ def format_study(study: dict, ladder: dict[str, Scenario]) -> list[str]:
         thr = step["conservative_thresholds"]
         out.append(f"  {price_str(step['fiber_price_per_kg']):>10}" + "".join(f"{thr_str(f, thr[f]):>{W}}" for f in fields))
     cons = ladder["Conservative"]
+    vanish = study["threshold_vanish_prices"]
+
+    def vanish_str(f: str) -> str:
+        v = vanish[f]
+        if v is None:
+            return f"{SHORT[f]} never"
+        if v == "> cap":
+            return f"{SHORT[f]} beyond ${study['single_stop_cap_per_kg']:,.0f}"
+        return f"{SHORT[f]} ${v:,.0f}"
+    out.append("  'cannot' from this fiber price up (exact, by bisection on price; x"
+               f"{study['fiber_multiplier']:.2f}): " + ", ".join(vanish_str(f) for f in fields))
     out.append("  (conservative values: " + ", ".join(f"{SHORT[f]} {thr_str(f, Model.get_input(cons, f))}" for f in fields)
                + "; 'cannot' = no value within a 5x stretch, or none physical, closes the case. The launch threshold falls by"
                " multiplier ÷ hardware mass factor $/kg per $/kg of fiber; the up-thresholds rise. A hw factor below the"
                " optimistic column's 1.4x is implausible and below 1.0x unphysical: printed as the arithmetic says, as sensitivity.py does.)")
 
     out += ["", "BASELINE-VALUE SINGLES — each conservative input swapped alone to its baseline-column value; the fiber price at which it stops closing the case"]
-    first = study["sweep"][0]["baseline_singles"] if study["sweep"] else []
-    for sg in first:
+    for sg in study["at_zero"]["baseline_singles"]:
         f = sg["field"]
         sp = study["single_stop_prices"].get(f)
         at0 = f"{pb_str(sg['payback_year'])} at $0" if sg["closes"] else f"does not close at $0 ({pb_str(sg['payback_year'])})"
@@ -621,7 +733,9 @@ def format_study(study: dict, ladder: dict[str, Scenario]) -> list[str]:
 def format_card(card: dict) -> list[str]:
     p, m = card["fiber_price_per_kg"], card["fiber_multiplier"]
     out = ["", f"QUOTE-DAY CARD — fiber at {price_str(p)}/kg × {m:.2f} (finished-tether multiplier, unsourced) = {price_str(card['effective_price_per_kg'])}/kg of tether mass",
-           f"  price source: {card['price_source']}"]
+           f"  price source: {card['price_source']}",
+           f"  material: {card['material']['name']}, priced against its EQ-6 mass (σ {card['material']['tensile_strength_GPa']:g} GPa, "
+           f"ρ {card['material']['density_kgm3']:,g} kg/m³, SF {card['material']['safety_factor']:g}); a quote for another fiber does not apply"]
     for r in card["rows"]:
         b, a = r["before"], r["after"]
         out.append(f"  {row_label(a)}, {a['fiber_mass_t']:,.1f} t fiber:")
@@ -636,7 +750,7 @@ def format_card(card: dict) -> list[str]:
     out.append("  baseline singles at this price: " + "; ".join(
         f"{SHORT[sg['field']]} -> {thr_str(sg['field'], sg['baseline_value'])} {'closes' if sg['closes'] else 'does not close'} ({pb_str(sg['payback_year'])})"
         for sg in card["baseline_singles_after"]))
-    out.append(f"  to fill: rev_a.json {card['rev_a_key_to_fill']} = {p:g} and {card['rev_a_note_key']} with vendor, date, currency, yarn-or-finished-rope, MOQ;"
+    out.append(f"  to fill: rev_a.json {card['rev_a_key_to_fill']} = {number_str(p)} and {card['rev_a_note_key']} with vendor, date, currency, yarn-or-finished-rope, MOQ;"
                " then finance/skyhook_finance.py needs this purchase line (it has none) and the workbook's Assumptions sheet a row for it.")
     out.append("  (* beyond the 15-year window, extrapolated; option-tier rows are the partial tier model)")
     return out
@@ -645,9 +759,12 @@ def format_card(card: dict) -> list[str]:
 # ── CLI ───────────────────────────────────────────────────────────────────────────────────────
 
 def parse_prices(text: str) -> tuple[float, ...]:
-    vals = tuple(float(x) for x in text.split(",") if x.strip())
-    if not vals or any(v < 0 for v in vals):
-        raise argparse.ArgumentTypeError("--prices wants a comma list of non-negative $/kg values")
+    try:
+        vals = tuple(float(x) + 0.0 for x in text.split(",") if x.strip())   # + 0.0 turns -0 into 0
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(f"--prices wants a comma list of numbers in $/kg, got {text!r}") from e
+    if not vals or any(not math.isfinite(v) or v < 0 for v in vals):
+        raise argparse.ArgumentTypeError("--prices wants a comma list of finite, non-negative $/kg values")
     return vals
 
 
@@ -662,18 +779,21 @@ def build_parser() -> argparse.ArgumentParser:
                     help="print the quote-day card at P $/kg; bare --quote reads rev_a's economics.fiber_cost_per_kg and refuses if it is null")
     ap.add_argument("--multiplier", type=float, default=1.0, metavar="M",
                     help="finished-tether $/kg per quoted $/kg (weaving, jackets, splices, waste); default 1.0, unsourced")
+    ap.add_argument("--material", choices=sorted(MATERIALS), default="pbo",
+                    help="the fiber the quote is for; every mass here is rev_a's Zylon PBO EQ-6 mass, so anything but "
+                         "pbo (Toyobo, Avient) is refused: uhmwpe (FibrXL's Dyneema SK78), carbon (Toray, retired), other")
     ap.add_argument("--prices", type=parse_prices, default=DEFAULT_PRICES, metavar="A,B,C",
                     help=f"sweep grid in $/kg (default {','.join(f'{p:g}' for p in DEFAULT_PRICES)})")
     ap.add_argument("--no-sweep", action="store_true", help="print only the gate (and the card if --quote)")
     ap.add_argument("--json", action="store_true", help="machine-readable output of everything computed")
     ap.add_argument("--params", type=Path, default=DEFAULT_PARAMS, help="rev_a.json (or an excerpt with the five blocks)")
     ap.add_argument("--ladder", type=Path, default=DEFAULT_LADDER, help="ladder.json derived from the workbook by build_data.py")
-    ap.add_argument("--markers", type=Path, default=DEFAULT_MARKERS, help="markers.json (pass an empty path to omit)")
+    ap.add_argument("--markers", type=str, default=str(DEFAULT_MARKERS), help="markers.json; pass '' or - to omit the markers")
     return ap
 
 
 def resolve_quote(arg: str | None, params: dict) -> tuple[float | None, str | None]:
-    """Returns (price, source) or raises RefusedError when a card was asked for without a price."""
+    """Returns (price, source) or raises RefusedError when a card was asked for without a usable price."""
     if arg is None:
         return None, None
     if arg == "rev_a":
@@ -681,77 +801,98 @@ def resolve_quote(arg: str | None, params: dict) -> tuple[float | None, str | No
         if fc is None:
             raise RefusedError(
                 "no fiber price: rev_a.json economics.fiber_cost_per_kg is null and no --quote P was given",
-                "pass --quote P with the vendor's $/kg (Toyobo / Avient / Toray; state yarn vs finished rope, MOQ, date), "
-                "or fill economics.fiber_cost_per_kg in params/rev_a.json with its source in _fiber_cost_note. "
+                "pass --quote P with the vendor's $/kg for Zylon PBO (the Toyobo and Avient asks are pending; state yarn vs "
+                "finished rope, MOQ, currency, date), or fill economics.fiber_cost_per_kg in params/rev_a.json with its source "
+                "in _fiber_cost_note. A FibrXL reply is for Dyneema SK78, a different fiber: --material uhmwpe refuses it. "
                 "This tool prints no fiber line without a price (mirrors finance/inspace_fork.py require_non_null).")
-        return float(fc), "rev_a.json economics.fiber_cost_per_kg (check _fiber_cost_note says it is a vendor quote)"
+        if isinstance(fc, bool) or not isinstance(fc, (int, float)) or not math.isfinite(fc) or fc < 0:
+            raise RefusedError(f"rev_a.json economics.fiber_cost_per_kg is not a finite non-negative $/kg: {fc!r}",
+                               "fix the value in params/rev_a.json", code="invalid_input")
+        return float(fc) + 0.0, "rev_a.json economics.fiber_cost_per_kg (check _fiber_cost_note says it is a vendor quote)"
     try:
-        p = float(arg)
+        p = float(arg) + 0.0   # + 0.0 turns -0 into 0
     except ValueError as e:
-        raise RefusedError(f"--quote wants a number in $/kg, got {arg!r}", "pass --quote 300, for example") from e
-    if p < 0 or math.isnan(p) or math.isinf(p):
-        raise RefusedError(f"--quote wants a finite non-negative $/kg, got {arg!r}", "pass --quote 300, for example")
+        raise RefusedError(f"--quote wants a number in $/kg, got {arg!r}", "pass --quote 300, for example", code="invalid_input") from e
+    if not math.isfinite(p) or p < 0:
+        raise RefusedError(f"--quote wants a finite non-negative $/kg, got {arg!r}", "pass --quote 300, for example", code="invalid_input")
     return p, "--quote flag (rev_a.json economics.fiber_cost_per_kg is still null)"
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = build_parser()
     args = ap.parse_args(argv)
-    if args.multiplier <= 0 or math.isnan(args.multiplier) or math.isinf(args.multiplier):
+    if not math.isfinite(args.multiplier) or args.multiplier <= 0:
         print("refused: --multiplier must be a finite positive number", file=sys.stderr)
         return 2
+    mult = args.multiplier + 0.0
     try:
         params = load_json(args.params)
         ladder_data = load_json(args.ladder)
         ladder = load_ladder(args.ladder)
+        model = Model(params)
+        params["economics"]  # noqa: B018  (read below; a missing block is an input error, not a crash)
+        markers = None
+        if args.markers.strip() not in ("", "-"):
+            markers = load_json(Path(args.markers))
+            check_markers(markers)
+        gate = run_gate(model, ladder)
     except (OSError, KeyError, ValueError, TypeError) as e:
-        print(f"refused: cannot read inputs: {e}", file=sys.stderr)
+        print(f"refused: cannot read inputs: {type(e).__name__}: {e}", file=sys.stderr)
         return 2
-    markers = None
-    if args.markers and str(args.markers) not in ("", "-") and Path(args.markers).exists():
-        markers = load_json(args.markers)
-    model = Model(params)
 
-    gate = run_gate(model, ladder)
-    try:
-        price, source = resolve_quote(args.quote, params)
-    except RefusedError as e:
-        price, source = None, None
-        refusal = e
-    else:
-        refusal = None
+    refusal = material_refusal(params, args.material)
+    price, source = None, None
+    if refusal is None:
+        try:
+            price, source = resolve_quote(args.quote, params)
+        except RefusedError as e:
+            refusal = e
+
+    study = card = None
+    if gate["ok"] and (refusal is None or refusal.code == "null_input"):
+        if not args.no_sweep:
+            study = compute_study(model, ladder, args.prices, mult, markers)
+        if price is not None:
+            card = quote_card(model, ladder, price, mult, source)
+        bad = first_non_finite({"study": study, "quote_card": card})
+        if bad:
+            study = card = None
+            refusal = RefusedError(
+                f"a computed value is not finite ({bad}): price x multiplier x fiber mass overflows a double",
+                "a $/kg and a multiplier of the size a vendor quote has",
+                code="invalid_input")
 
     if args.json:
         out = {
-            "inputs": {"params": args.params.name, "ladder": args.ladder.name, "ladder_commit": ladder_data.get("_meta", {}).get("commit"),
+            "inputs": {"params": Path(args.params).name, "ladder": Path(args.ladder).name,
+                       "ladder_commit": ladder_data.get("_meta", {}).get("commit"),
                        "fiber_cost_per_kg_in_rev_a": params["economics"].get("fiber_cost_per_kg"),
+                       "material": args.material,
                        "Vc_kms": model.Vc_kms, "v_orb_kms": model.v_orb_kms, "tiers": model.tiers},
             "gate": gate,
-            "study": None if (not gate["ok"] or args.no_sweep) else compute_study(model, ladder, args.prices, args.multiplier, markers),
-            "quote_card": None if (not gate["ok"] or price is None) else quote_card(model, ladder, price, args.multiplier, source),
-            "refusal": None if refusal is None else {"what": refusal.what, "what_would_help": refusal.help_text},
+            "study": study,
+            "quote_card": card,
+            "refusal": None if refusal is None else refusal.as_dict(),
         }
         print(json.dumps(out, indent=1, sort_keys=True))
-        if not gate["ok"] or refusal is not None:
-            return 2
-        return 0
+        return 2 if (not gate["ok"] or refusal is not None) else 0
 
-    lines = format_header(model, args.multiplier, args.params, args.ladder, ladder_data.get("_meta", {}))
+    lines = format_header(model, mult, Path(args.params), Path(args.ladder), ladder_data.get("_meta", {}))
     lines += format_gate(gate)
     if not gate["ok"]:
         print("\n".join(lines))
         print("refused: the p=0 gate did not reproduce the published figures; nothing below it is trustworthy", file=sys.stderr)
         return 2
-    if not args.no_sweep:
-        lines += format_study(compute_study(model, ladder, args.prices, args.multiplier, markers), ladder)
-    if price is not None:
-        lines += format_card(quote_card(model, ladder, price, args.multiplier, source))
+    if study is not None:
+        lines += format_study(study, ladder)
+    if card is not None:
+        lines += format_card(card)
     elif refusal is None:
         lines += ["", "QUOTE CARD: not printed. No fiber price is set (rev_a.json economics.fiber_cost_per_kg is null) and no --quote P was given; "
                   "every row above is a hypothetical price, labelled as such. Pass --quote P ($/kg) for the quote-day card."]
     print("\n".join(lines))
     if refusal is not None:
-        print(f"\nrefused: {refusal.what}\n  what would help: {refusal.help_text}", file=sys.stderr)
+        print(f"\nrefused ({refusal.code}): {refusal.what}\n  what would help: {refusal.help_text}", file=sys.stderr)
         return 2
     return 0
 

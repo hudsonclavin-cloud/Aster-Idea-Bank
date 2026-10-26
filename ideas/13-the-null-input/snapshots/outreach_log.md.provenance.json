@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/outreach_log.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "7c47d43 2026-08-31T14:58:14-04:00",
+  "committedBlob": "9db4f1cf56dc2a5b6d98ddecb0bde35e88432c3f",
+  "readBlob": "9db4f1cf56dc2a5b6d98ddecb0bde35e88432c3f",
+  "sourceSha256": "636686735b71b43c699ca820a2e7e98475080938a92eabb79e589500a0340d29",
+  "sourceBytes": 8522,
+  "copiedAt": "2026-10-26T16:16:44.407Z",
+  "mode": "copy",
+  "note": "whole copy: the 31-Aug reconciliation (lines 5-17: Toyobo second touch, FibrXL asked about Dyneema SK78 (UHMWPE, not PBO), Toray retired) and the July fiber-vendor table (lines 27-29), which say which fiber each outstanding quote will price; the card's material line and --material refusal rest on them",
+  "readMatchesCommitted": true,
+  "writtenSha256": "636686735b71b43c699ca820a2e7e98475080938a92eabb79e589500a0340d29",
+  "writtenBytes": 8522
+}

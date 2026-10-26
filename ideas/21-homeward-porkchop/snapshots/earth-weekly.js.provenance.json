@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/data/horizons-inner-solar-system-2026-2040.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "20ea55d10d7d079fc6961b3ddf0d771595d93d2f",
+  "readBlob": "20ea55d10d7d079fc6961b3ddf0d771595d93d2f",
+  "sourceSha256": "b278dd5567f30266593c49bf4fef203e7570d3613187fd112dc7015109a39c15",
+  "sourceBytes": 7214102,
+  "copiedAt": "2026-10-26T16:29:20.563Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: every 7th daily record of targets.earth.records starting with the first, plus the last record; values verbatim (784 of 5479); wrapped as a classic script for file://",
+  "readMatchesCommitted": true,
+  "writtenSha256": "3f0d7b1295ca138bc54af9f5ec060e3dbf73a7613a258e72ef8dd43384613f61",
+  "writtenBytes": 97841
+}

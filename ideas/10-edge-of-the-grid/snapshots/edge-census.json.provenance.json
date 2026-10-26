@@ -8,10 +8,10 @@
   "readBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
   "sourceSha256": "bd27b9bd882a65343399f772e37218b5fb05644bea5a822aafcb65e81e750206",
   "sourceBytes": 34499477,
-  "copiedAt": "2026-10-26T10:36:53.820Z",
+  "copiedAt": "2026-10-26T16:25:22.356Z",
   "mode": "derived",
-  "note": "derived by edge-census.mjs: for every body in bodies[], the lattice cell of each of its five bestWindows (column = days since metadata.screeningWindow.startUtc / departureGridSpacingDays, row = (tofDays - tofMinDays) / tofGridSpacingDays), the body's cheapest window's year x flight-time cell, its edge flags, the inward-neighbour slope evidence and basin count; joined with tests/fixtures/v2/nea-catalog-slice9.json (sha256 recorded under inputs.catalog) for orbitClass, H, pha and a; the porkchop view's depEndJD read from src/v2/app/porkchop/main.ts and AU_KM from tools/build/precompute-lambert-screen.mjs, both with line numbers under inputs. No per-body record is copied except the fifteen sample bodies' five windows.",
+  "note": "derived by edge-census.mjs: for every body in bodies[], the lattice cell of each of its five bestWindows (column = days since metadata.screeningWindow.startUtc / departureGridSpacingDays, row = (tofDays - tofMinDays) / tofGridSpacingDays), the body's cheapest window's year x flight-time cell, its edge flags, the inward rise (recorded when the inward neighbour is stored, else bounded below by the spread of the stored windows), three-cell quadratic vertices, constant-arrival-date windows at the flight-time edges, basin counts under four rules and the interior alternative; joined with tests/fixtures/v2/nea-catalog-slice9.json (sha256 recorded under inputs.catalog) for orbitClass, H, pha, a and the elements of the body without windows; the porkchop view's depEndJD read from src/v2/app/porkchop/main.ts, AU_KM and the five-window insertion bound from tools/build/precompute-lambert-screen.mjs, all with line numbers under inputs. No per-body record is copied except the sample bodies' five windows.",
   "readMatchesCommitted": true,
-  "writtenSha256": "f31b9ed9bca419230f137047122ceb1e45f58ea93cd009799ec7272e933fcf4e",
-  "writtenBytes": 53105
+  "writtenSha256": "eb5f23b6b2ec235b657c8c9160e54dac538909ca859dba6a47faa206b540b6ca",
+  "writtenBytes": 69381
 }

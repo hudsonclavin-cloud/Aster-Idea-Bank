@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": ".gitignore",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "d0a5cec9ecbf602d32b0dae722c461c48fd93e9c",
+  "readBlob": "d0a5cec9ecbf602d32b0dae722c461c48fd93e9c",
+  "sourceSha256": "007543ff5c72fefaac40332741580cb7810b3fc756f317ed08df2a648c7b284c",
+  "sourceBytes": 1423,
+  "copiedAt": "2026-10-26T16:23:57.311Z",
+  "mode": "copy",
+  "note": "whole .gitignore at 62ddb17: line 17 is now a comment and the glob INV-034 names is on line 19",
+  "readMatchesCommitted": true,
+  "writtenSha256": "007543ff5c72fefaac40332741580cb7810b3fc756f317ed08df2a648c7b284c",
+  "writtenBytes": 1423
+}

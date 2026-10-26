@@ -53,6 +53,11 @@ async function open(opts) {
   await page.waitForTimeout(250);
   return { context, page, errors };
 }
+const labelsApart = (page) => page.evaluate(() => {
+  const r = [...document.querySelectorAll('#mini svg text.basin-label')].map((t) => t.getBoundingClientRect());
+  for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) if (!(r[i].right <= r[j].left || r[j].right <= r[i].left || r[i].bottom <= r[j].top || r[j].bottom <= r[i].top)) return false;
+  return r.length > 0;
+});
 const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
 const text = (page, sel) => page.locator(sel).first().textContent();
 const count = (page, sel) => page.locator(sel).count();
@@ -119,7 +124,8 @@ const tipText = (page, id) => page.evaluate((i) => (document.getElementById(i).h
   const colsLabels = await page.locator('#cols svg text').allTextContents();
   ok(colsLabels.some((t) => t.includes(f(E.first.touched)) && t.includes(L.firstDepartureUtc)), 'first edge direct-labelled with its count and date');
   ok(colsLabels.some((t) => t.includes(f(E.last.touched)) && t.includes(L.lastDepartureUtc)), 'last edge direct-labelled');
-  ok(colsLabels.some((t) => t.includes(`interior median ${f(C.interior.medianPerCol)}`)), 'interior median reference labelled');
+  ok((await count(page, '#cols svg line.ref')) === 1 && (await text(page, '#colsLegend')).includes(`interior median, ${f(C.interior.medianPerCol)} per date`), 'interior median reference drawn and named in the legend');
+  ok(!colsLabels.some((t) => t.includes('interior median')), 'no reference label drawn over the data line');
   await page.focus('#cols');
   await page.waitForTimeout(80);
   tip = await tipText(page, 'colsTip');
@@ -134,18 +140,36 @@ const tipText = (page, id) => page.evaluate((i) => (document.getElementById(i).h
   ok(tip && tip.includes(G.colDate(L, L.nCols - 2)) && tip.includes(f(C.perColumn.minima[L.nCols - 2])), 'ArrowLeft steps one departure date');
   const colsRows = await page.locator('#colsTable tbody tr').count();
   ok(colsRows === 21, 'column table: ten, an ellipsis, ten');
-  // edge table
+  // edge table: counts, per edge cell and the next three lines in
   const edgeRows = page.locator('#edgeTable tbody tr');
   ok((await edgeRows.count()) === 5, 'edge table: four edges and a total');
   for (let i = 0; i < 4; i++) {
     const k = G.EDGE_KEYS[i];
     const cells = await edgeRows.nth(i).locator('td').allTextContents();
-    ok(cells[0] === G.EDGE_NAMES[k] && cells[2] === f(E[k].touched) && cells[4] === f(E[k].likelyClipped) && cells[5] === f(E[k].undetermined), `edge row ${k} reads ${f(E[k].touched)} / ${f(E[k].likelyClipped)} / ${f(E[k].undetermined)}`);
+    ok(cells[0] === G.EDGE_NAMES[k] && cells[2] === f(E[k].touched) && cells[4] === f(E[k].cellsOnEdge) && cells[5] === E[k].minimaPerEdgeCell.toFixed(2) && cells[6] === E[k].inwardLines.slice(1).map(f).join(' · '), `edge row ${k} reads ${f(E[k].touched)}, ${E[k].minimaPerEdgeCell.toFixed(2)} per cell, ${E[k].inwardLines.slice(1).join('/')}`);
   }
   const totalCells = await edgeRows.nth(4).locator('td').allTextContents();
   ok(totalCells[2] === f(C.edges.any) && totalCells[1].includes(String(C.edges.multiple)), 'edge total row');
-  ok((await text(page, '#verdictHint')).includes(`${E.tofMin.neighbourPresent}`), 'verdict note names the one floor body with a neighbour');
-  ok((await text(page, '#altHint')).includes(f(C.interiorAlternative.withAlternative)), 'interior-alternative note');
+  const eh = await text(page, '#edgesHint');
+  ok(eh.includes('but not on the floor') && eh.includes(`${f(E.tofMin.inwardLines[1])} at ${f(L.tofMinDays + L.tofSpacingDays)}`) && /Speculative/.test(eh), 'edges note: the floor shows no pile-up; truncation labelled Speculative');
+  ok(!/binds/.test(eh.replace('not because it is shown to bind', '')), 'edges note does not claim the floor binds');
+  // the inward rise
+  const rn = await text(page, '#riseNotes');
+  ok(rn.includes(E.tofMin.riseBound.median.toFixed(3)) && rn.includes(`n ${f(E.tofMin.riseBound.n)}`) && rn.includes(E.first.riseRecorded.median.toFixed(3)), 'rise notes carry recorded and bounded medians');
+  ok(rn.includes(`beyond the edge for ${C.edges.vertex.beyond}`) && rn.includes(`for ${C.edges.vertex.inside}`) && rn.includes(`for ${C.edges.vertex.none}`), 'rise notes carry the vertex split');
+  ok(rn.includes('within half a lattice step of the edge or beyond it'), 'the half-step statement');
+  const riseRows = page.locator('#riseTable tbody tr');
+  ok((await riseRows.count()) === 4, 'rise table: four edges');
+  const rr = await riseRows.nth(2).locator('td').allTextContents();
+  ok(rr[0] === G.EDGE_NAMES.tofMin && rr[1] === f(E.tofMin.riseRecorded.n) && rr[4] === f(E.tofMin.riseBound.n) && rr[5] === E.tofMin.riseBound.median.toFixed(3), 'rise table floor row: recorded n, bound n and median bound');
+  const body = await page.locator('body').innerText();
+  ok(!/likely clipped|undetermined/i.test(body), 'no "likely clipped" or "undetermined" verdicts anywhere');
+  // another stored window off the edge, under each rule
+  const alt = await text(page, '#altHint');
+  const AR = C.interiorAlternative.byRule;
+  ok(alt.includes(f(AR[0].withAlternative)) && alt.includes(f(AR.find((r) => r.rule.arrival).withAlternative)) && alt.includes(f(E.tofMin.arrivalLine.withWindow)), 'alternative note: box, arrival-aware and the floor\'s arrival line');
+  ok(!/fallback/.test(alt), 'no "fallback"');
+  ok((await count(page, '#altTable tbody tr')) === AR.length, 'one alternative row per basin rule');
   // tail
   const tailVals = await page.locator('#tailTiles .tile .value').allTextContents();
   ok(tailVals.includes(f(C.viewTail.minimaAfter)) && tailVals.includes(f(C.viewTail.anyWindowAfter)) && tailVals.includes(C.viewTail.depEndUtc) && tailVals.includes(L.lastDepartureUtc), 'tail tiles: counts and both end dates');
@@ -172,11 +196,18 @@ const tipText = (page, id) => page.evaluate((i) => (document.getElementById(i).h
   const basinLabels = await page.locator('#basins svg text').allTextContents();
   for (const k of ['1', '2', '3', '4', '5']) ok(basinLabels.includes(f(C.basins[0].histogram[k])), `basin bar ${k} labelled ${f(C.basins[0].histogram[k])}`);
   ok((await count(page, '#basinsTable tbody tr')) === C.basins.length, 'one basin-rule row per rule');
+  const arrIdx = C.basins.findIndex((b) => b.rule.arrival);
+  await page.selectOption('#basinRule', String(arrIdx));
+  await page.waitForTimeout(80);
+  const arrLabels = await page.locator('#basins svg text').allTextContents();
+  ok(['1', '2', '3', '4', '5'].every((k) => arrLabels.includes(f(C.basins[arrIdx].histogram[k]))), 'the rule picker redraws the bars for the arrival-aware rule');
+  ok((await text(page, '#basinsHint')).includes(f(C.basins[arrIdx].histogram[1])), 'basins note names the arrival-aware one-basin count');
   // inspector
   const eros = C.sample.find((s) => s.bodyId === 'asteroid-433');
   let head = await text(page, '#inspectHead');
   ok(head.includes(`column ${eros.evidence.cell.col}`) && head.includes(`row ${eros.evidence.cell.row}`) && head.includes(`${eros.basins} basins`), 'inspector opens on Eros with column, row and basins');
   ok(head.includes('interior minimum'), 'Eros is an interior minimum');
+  ok(await labelsApart(page), 'Eros: basin labels do not overlap');
   ok((await count(page, '#mini svg g.win')) === 5, 'five windows drawn');
   ok((await count(page, '#inspectTable tbody tr')) === 5, 'five window rows');
   await page.selectOption('#bodyPick', 'asteroid-2015 D1');
@@ -187,17 +218,17 @@ const tipText = (page, id) => page.evaluate((i) => (document.getElementById(i).h
   await page.selectOption('#bodyPick', 'asteroid-190166');
   await page.waitForTimeout(80);
   head = await text(page, '#inspectHead');
-  ok(head.includes('Likely clipped') && head.includes('chain 3'), 'likely-clipped body shows its verdict and chain');
+  ok(head.includes('rise recorded') && head.includes('chain of 3') && head.includes('beyond the edge'), 'chain-of-three body shows its recorded rise and vertex');
   ok((await count(page, '#mini svg g.zwin')) === 3, 'zoom panel shows the three windows in the first columns');
   ok((await count(page, '#mini svg rect.zcell.zedge')) === 5, 'zoom panel marks the first column\'s five cells as the edge');
   ok((await page.locator('#mini svg text').allTextContents()).some((t) => /2 of 5 windows lie outside the zoom/.test(t)), 'zoom panel says how many windows it does not show');
   ok(await page.locator('#inspectRefusal').isHidden(), 'refusal hidden again');
   await page.selectOption('#bodyPick', 'asteroid-66063');
   await page.waitForTimeout(80);
-  ok((await text(page, '#inspectHead')).includes('Undetermined'), 'undetermined body shows its verdict');
+  ok((await text(page, '#inspectHead')).includes('rise bounded below') && (await text(page, '#inspectHead')).includes('rise ≥'), 'unstored-neighbour body shows its bound');
   await page.selectOption('#bodyPick', 'asteroid-2006 KD40');
   await page.waitForTimeout(80);
-  ok((await count(page, '#inspectTable tbody tr.edge-row')) >= 1 && (await text(page, '#inspectHead')).split('Undetermined').length === 3, 'two-edge body shows two verdicts');
+  ok((await count(page, '#inspectTable tbody tr.edge-row')) >= 1 && (await page.locator('#inspectHead .edge-ev').count()) === 2, 'two-edge body shows two edge lines');
   // mini tooltip by mouse on the minimum (scrolled into view first: mouse coordinates are viewport-relative)
   await page.locator('#mini svg').scrollIntoViewIfNeeded();
   const box = await page.locator('#mini svg circle.edge-dot').first().boundingBox();
@@ -209,6 +240,11 @@ const tipText = (page, id) => page.evaluate((i) => (document.getElementById(i).h
   ok((await count(page, '#cannot .r')) === 5, 'five structured refusals');
   const cannotText = await text(page, '#cannot');
   ok(cannotText.includes('insufficient_data') && cannotText.includes('out_of_envelope') && cannotText.includes(f(M_totalSolves())), 'refusals carry codes and the cache\'s totalSolves');
+  const probe = G.floorProbe(L, E.tofMin.touched, 2);
+  ok(cannotText.includes(`about ${f(probe.total)} in all`) && cannotText.includes('bound the sub-floor cost'), `floor refusal proposes the ${f(probe.total)}-solve probe and says it bounds`);
+  const fwd = Math.round(365 / L.departureSpacingDays) * L.nRows * E.last.touched;
+  ok(cannotText.includes(`about ${f(fwd)} solves`) && !cannotText.includes('each side'), `extension refusal is forward-only (${f(fwd)} solves)`);
+  ok(cannotText.includes('hyperbolic') && cannotText.includes(C.bodies.withoutWindows[0].elements.e.toFixed(4)), 'the body without windows: its hyperbolic elements named');
   const prov = await text(page, '#prov');
   ok(prov.includes(D.censusProvenance.commit.slice(0, 12)) && prov.includes(D.censusProvenance.sourceSha256), 'provenance shows the commit and sha256');
   ok(prov.includes('equals the cache\'s catalogFixtureSha256'), 'catalog hash reconciled on the page');
@@ -256,6 +292,14 @@ for (const scheme of ['light', 'dark']) {
   await page.waitForTimeout(100);
   tip = await tipText(page, 'miniTip');
   ok(tip && tip.includes('C3'), `phone ${scheme}: tapping the minimum shows its tooltip`);
+  // every caption and label in the inspector chart fits inside its SVG (none cut off mid-word)
+  const cut = await page.evaluate(() => {
+    const svg = document.querySelector('#mini svg');
+    const box = svg.getBoundingClientRect();
+    return [...svg.querySelectorAll('text')].filter((t) => { const r = t.getBoundingClientRect(); return r.right > box.right + 0.5 || r.left < box.left - 0.5; }).map((t) => t.textContent);
+  });
+  ok(cut.length === 0, `phone ${scheme}: no inspector text runs past the chart (${cut.join(' | ')})`);
+  ok(await labelsApart(page), `phone ${scheme}: Eros basin labels do not overlap`);
   // the heatmap's cell colours follow the scheme
   const fill = await page.evaluate(() => getComputedStyle(document.querySelector('#heat svg rect.cell.hc5')).fill);
   ok(scheme === 'dark' ? /rgb\(183, 211, 246\)/.test(fill) : /rgb\(16, 66, 129\)/.test(fill), `phone ${scheme}: top heat class is the ${scheme} ramp's end (${fill})`);

@@ -87,7 +87,13 @@
    "source": "tools/build/precompute-lambert-screen.mjs",
    "line": 81
   },
-  "auKmRefusal": null
+  "auKmRefusal": null,
+  "windowsKept": {
+   "value": 5,
+   "source": "tools/build/precompute-lambert-screen.mjs",
+   "line": 132
+  },
+  "windowsKeptRefusal": null
  },
  "lattice": {
   "startUtc": "2026-01-01",
@@ -203,7 +209,8 @@
   "cheapestIsFirstWindowViolations": 0,
   "minC3SummaryMismatches": 0,
   "windowsNotAscendingViolations": 0,
-  "bodiesWithOtherThanFiveWindows": 0,
+  "windowsKeptPerBody": 5,
+  "bodiesWithFullList": 41905,
   "catalogMisses": 0
  },
  "bodies": {
@@ -216,7 +223,12 @@
     "status": "propagator_failed",
     "orbitClass": "JFC",
     "H": null,
-    "hBand": "H missing"
+    "hBand": "H missing",
+    "elements": {
+     "aKm": -1255166219.5433092,
+     "e": 1.003535566834499,
+     "maRad": null
+    }
    }
   ],
   "byStatus": {
@@ -479,9 +491,26 @@
     "cell": "column 0, 2026-01-01",
     "touched": 218,
     "shareOfBodies": 0.005202243169072903,
-    "likelyClipped": 113,
-    "undetermined": 105,
+    "cellsOnEdge": 55,
+    "minimaPerEdgeCell": 3.963636363636364,
+    "inwardLines": [218,154,149,149],
+    "edgeOverNextLine": 1.4155844155844155,
     "neighbourPresent": 113,
+    "riseRecorded": {
+     "n": 113,
+     "median": 0.38636810756237683,
+     "min": 0.008071948463798329,
+     "max": 9.182839591524136,
+     "unit": "km²/s² from the edge minimum to the stored inward neighbour"
+    },
+    "riseBound": {
+     "n": 105,
+     "median": 0.7189888134355664,
+     "min": 0.05609266730081316,
+     "max": 10.93219795593658,
+     "unit": "km²/s²; the inward neighbour is not among the stored windows, so its rise is at least the spread of the stored windows"
+    },
+    "riseNone": 0,
     "chains": {
      "1": 105,
      "2": 69,
@@ -492,21 +521,37 @@
     "chains3plus": 44,
     "monotone3plus": 44,
     "nonMonotone3plus": 0,
-    "slopeC3PerCell": {
-     "n": 113,
-     "median": 0.38636810756237683,
-     "min": 0.008071948463798329,
-     "max": 9.182839591524136,
-     "unit": "km²/s² per lattice step inward"
-    }
+    "vertex": {
+     "beyond": 19,
+     "inside": 22,
+     "none": 3
+    },
+    "arrivalLine": null
    },
    "last": {
     "cell": "column 782, 2040-12-27",
     "touched": 165,
     "shareOfBodies": 0.003937477627968023,
-    "likelyClipped": 87,
-    "undetermined": 78,
+    "cellsOnEdge": 55,
+    "minimaPerEdgeCell": 3,
+    "inwardLines": [165,131,113,121],
+    "edgeOverNextLine": 1.2595419847328244,
     "neighbourPresent": 87,
+    "riseRecorded": {
+     "n": 87,
+     "median": 0.5188462144004338,
+     "min": 0.003004705407222419,
+     "max": 8.298366584438007,
+     "unit": "km²/s² from the edge minimum to the stored inward neighbour"
+    },
+    "riseBound": {
+     "n": 78,
+     "median": 1.07537336145455,
+     "min": 0.0899728258676209,
+     "max": 8.019937035340305,
+     "unit": "km²/s²; the inward neighbour is not among the stored windows, so its rise is at least the spread of the stored windows"
+    },
+    "riseNone": 0,
     "chains": {
      "1": 78,
      "2": 49,
@@ -517,21 +562,37 @@
     "chains3plus": 38,
     "monotone3plus": 38,
     "nonMonotone3plus": 0,
-    "slopeC3PerCell": {
-     "n": 87,
-     "median": 0.5188462144004338,
-     "min": 0.003004705407222419,
-     "max": 8.298366584438007,
-     "unit": "km²/s² per lattice step inward"
-    }
+    "vertex": {
+     "beyond": 14,
+     "inside": 21,
+     "none": 3
+    },
+    "arrivalLine": null
    },
    "tofMin": {
     "cell": "row 0, 182 days",
     "touched": 2530,
     "shareOfBodies": 0.06037465696217635,
-    "likelyClipped": 1,
-    "undetermined": 2529,
+    "cellsOnEdge": 783,
+    "minimaPerEdgeCell": 3.231162196679438,
+    "inwardLines": [2530,2772,6280,10319],
+    "edgeOverNextLine": 0.9126984126984127,
     "neighbourPresent": 1,
+    "riseRecorded": {
+     "n": 1,
+     "median": 0.7513016252039648,
+     "min": 0.7513016252039648,
+     "max": 0.7513016252039648,
+     "unit": "km²/s² from the edge minimum to the stored inward neighbour"
+    },
+    "riseBound": {
+     "n": 2529,
+     "median": 1.7535443073853099,
+     "min": 0.010580745955028982,
+     "max": 41.485769026572285,
+     "unit": "km²/s²; the inward neighbour is not among the stored windows, so its rise is at least the spread of the stored windows"
+    },
+    "riseNone": 0,
     "chains": {
      "1": 2529,
      "2": 1,
@@ -542,21 +603,50 @@
     "chains3plus": 0,
     "monotone3plus": 0,
     "nonMonotone3plus": 0,
-    "slopeC3PerCell": {
-     "n": 1,
-     "median": 0.7513016252039648,
-     "min": 0.7513016252039648,
-     "max": 0.7513016252039648,
-     "unit": "km²/s² per lattice step inward"
+    "vertex": {
+     "beyond": 0,
+     "inside": 0,
+     "none": 0
+    },
+    "arrivalLine": {
+     "columnsPerRow": 4.285714285714286,
+     "offsets": [3,6],
+     "direction": "earlier departures one row up",
+     "anyInwardRow": 1316,
+     "withWindow": 1137,
+     "rise": {
+      "n": 1137,
+      "median": 0.8615575155295105,
+      "min": 0.000666716981280846,
+      "max": 28.033627550864466,
+      "unit": "km²/s² from the edge minimum to the cheapest stored window on that line"
+     }
     }
    },
    "tofMax": {
     "cell": "row 54, 1802 days",
     "touched": 34,
     "shareOfBodies": 0.0008113590263691683,
-    "likelyClipped": 28,
-    "undetermined": 6,
+    "cellsOnEdge": 783,
+    "minimaPerEdgeCell": 0.04342273307790549,
+    "inwardLines": [34,0,1,0],
+    "edgeOverNextLine": null,
     "neighbourPresent": 28,
+    "riseRecorded": {
+     "n": 28,
+     "median": 7.110699328906691,
+     "min": 0.016804072820150395,
+     "max": 17.049123288800388,
+     "unit": "km²/s² from the edge minimum to the stored inward neighbour"
+    },
+    "riseBound": {
+     "n": 6,
+     "median": 17.654641916318496,
+     "min": 4.489975589531696,
+     "max": 26.237883995841003,
+     "unit": "km²/s²; the inward neighbour is not among the stored windows, so its rise is at least the spread of the stored windows"
+    },
+    "riseNone": 0,
     "chains": {
      "1": 6,
      "2": 19,
@@ -567,29 +657,110 @@
     "chains3plus": 9,
     "monotone3plus": 9,
     "nonMonotone3plus": 0,
-    "slopeC3PerCell": {
-     "n": 28,
-     "median": 7.110699328906691,
-     "min": 0.016804072820150395,
-     "max": 17.049123288800388,
-     "unit": "km²/s² per lattice step inward"
+    "vertex": {
+     "beyond": 8,
+     "inside": 1,
+     "none": 0
+    },
+    "arrivalLine": {
+     "columnsPerRow": 4.285714285714286,
+     "offsets": [3,6],
+     "direction": "later departures one row down",
+     "anyInwardRow": 28,
+     "withWindow": 0,
+     "rise": null
     }
    }
   },
   "any": 2936,
   "anyShare": 0.07006323827705524,
-  "multiple": 11
+  "multiple": 11,
+  "riseRecorded": {
+   "n": 229,
+   "median": 0.5322655404616059,
+   "min": 0.003004705407222419,
+   "max": 17.049123288800388,
+   "unit": "km²/s²"
+  },
+  "riseBound": {
+   "n": 2718,
+   "median": 1.7102730885203725,
+   "min": 0.010580745955028982,
+   "max": 41.485769026572285,
+   "unit": "km²/s² (lower bounds)"
+  },
+  "vertex": {
+   "beyond": 41,
+   "inside": 44,
+   "none": 6
+  },
+  "chains3plus": 91
  },
  "interiorAlternative": {
   "ofEdgeBodies": 2936,
-  "withAlternative": 2616,
-  "without": 320,
-  "gapC3": {
-   "median": 0.622714993265149,
-   "min": 0.00021058182742318687,
-   "max": 32.52995962388413,
-   "unit": "km²/s² above the edge minimum"
-  }
+  "byRule": [
+   {
+    "rule": {
+     "maxColGap": 2,
+     "maxRowGap": 1
+    },
+    "withAlternative": 2616,
+    "without": 320,
+    "gapC3": {
+     "n": 2616,
+     "median": 0.622714993265149,
+     "min": 0.00021058182742318687,
+     "max": 32.52995962388413,
+     "unit": "km²/s² above the edge minimum"
+    }
+   },
+   {
+    "rule": {
+     "maxColGap": 4,
+     "maxRowGap": 2
+    },
+    "withAlternative": 2230,
+    "without": 706,
+    "gapC3": {
+     "n": 2230,
+     "median": 0.7103699003355564,
+     "min": 0.00021058182742318687,
+     "max": 36.10246706948392,
+     "unit": "km²/s² above the edge minimum"
+    }
+   },
+   {
+    "rule": {
+     "maxColGap": 8,
+     "maxRowGap": 2
+    },
+    "withAlternative": 2004,
+    "without": 932,
+    "gapC3": {
+     "n": 2004,
+     "median": 0.7258365667552227,
+     "min": 0.00021058182742318687,
+     "max": 36.10246706948392,
+     "unit": "km²/s² above the edge minimum"
+    }
+   },
+   {
+    "rule": {
+     "maxColGap": 2,
+     "maxRowGap": 1,
+     "arrival": true
+    },
+    "withAlternative": 2121,
+    "without": 815,
+    "gapC3": {
+     "n": 2121,
+     "median": 0.7357885413517709,
+     "min": 0.00021058182742318687,
+     "max": 36.10246706948392,
+     "unit": "km²/s² above the edge minimum"
+    }
+   }
+  ]
  },
  "basins": [
   {
@@ -629,6 +800,20 @@
     "3": 5970,
     "4": 1854,
     "5": 393
+   }
+  },
+  {
+   "rule": {
+    "maxColGap": 2,
+    "maxRowGap": 1,
+    "arrival": true
+   },
+   "histogram": {
+    "1": 16832,
+    "2": 16027,
+    "3": 6565,
+    "4": 2023,
+    "5": 458
    }
   }
  ],
@@ -972,9 +1157,10 @@
      "count": 0,
      "any": false
     },
+    "listFull": true,
     "edges": []
    },
-   "why": "Eros: the hand-worked column, row and basin arithmetic in the tests"
+   "why": "Eros: the hand-worked column, row and basin arithmetic in the tests (Slice 18 re-solved its four neighbours)"
   },
   {
    "bodyId": "asteroid-99942",
@@ -1058,6 +1244,7 @@
      "count": 0,
      "any": false
     },
+    "listFull": true,
     "edges": []
    },
    "why": "Apophis: the porkchop page's compare body"
@@ -1144,6 +1331,7 @@
      "count": 0,
      "any": false
     },
+    "listFull": true,
     "edges": []
    },
    "why": "the porkchop page's default body"
@@ -1166,10 +1354,10 @@
    "evidence": null,
    "refusal": {
     "code": "insufficient_data",
-    "reason": "asteroid-2015 D1 has no stored windows (status propagator_failed)",
-    "what_would_help": "a body the precompute could propagate; this one is excluded from every count"
+    "reason": "asteroid-2015 D1 has no stored windows (status propagator_failed): the catalog gives e 1.0035 and a -1.2552e+9 km, an open (hyperbolic) orbit, and the elliptic Kepler propagator the screen uses requires a > 0 and e < 1",
+    "what_would_help": "a hyperbolic or universal-variable propagator, or an explicit \"not screened: hyperbolic orbit\" state wherever the catalog shows a status; this body is excluded from every count"
    },
-   "why": "the one body with no stored windows (propagator_failed)"
+   "why": "the one body with no stored windows (propagator_failed; hyperbolic in the catalog)"
   },
   {
    "bodyId": "asteroid-163693",
@@ -1253,20 +1441,24 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "tofMin",
       "cell": "row 0 (182 days)",
       "neighbourPresent": false,
-      "slopeC3PerCell": null,
+      "rise": {
+       "kind": "bound",
+       "atLeast": 4.966570399495817
+      },
+      "chain": [7.191393068210365],
       "chainLength": 1,
       "monotone": true,
-      "verdict": "undetermined",
-      "label": "Speculative"
+      "vertex": null
      }
     ]
    },
-   "why": "Atira: all five windows on the flight-time floor (Slice 17's F3 body)"
+   "why": "Atira: all five windows on the flight-time floor (Slice 17's F3 body; Slice 18 re-solved its neighbours)"
   },
   {
    "bodyId": "asteroid-190166",
@@ -1350,20 +1542,133 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "first",
       "cell": "column 0 (2026-01-01)",
       "neighbourPresent": true,
-      "slopeC3PerCell": 0.38636810756237683,
+      "rise": {
+       "kind": "recorded",
+       "value": 0.38636810756237683
+      },
+      "chain": [7.507685165767759,7.894053273330136,8.602070565640854],
       "chainLength": 3,
       "monotone": true,
-      "verdict": "likely_clipped",
-      "label": "Likely"
+      "vertex": {
+       "curvature": 0.3216491847483418,
+       "xSteps": -0.7012096591031969,
+       "position": "beyond"
+      }
      }
     ]
    },
-   "why": "first departure date, a chain of three rising inward: likely clipped"
+   "why": "first departure date, a stored chain of three: the quadratic vertex lies beyond the edge"
+  },
+  {
+   "bodyId": "asteroid-190491",
+   "designation": "190491",
+   "name": "190491 (2000 FJ10)",
+   "status": "low_departure_c3",
+   "minC3": 2.1873440960826063,
+   "minC3Date": "2026-01-01",
+   "minC3TofDays": 332,
+   "isCoOrbital": false,
+   "orbitClass": "APO",
+   "H": 21.06,
+   "hBand": "18 ≤ H < 22",
+   "synodicYears": 2.9403192445531294,
+   "windows": [
+    {
+     "launchDate": "2026-01-01",
+     "tofDays": 332,
+     "c3": 2.1873440960826063,
+     "col": 0,
+     "row": 5,
+     "onLattice": true,
+     "edges": ["first"],
+     "basin": 0
+    },
+    {
+     "launchDate": "2026-01-08",
+     "tofDays": 332,
+     "c3": 2.3359588199137233,
+     "col": 1,
+     "row": 5,
+     "onLattice": true,
+     "edges": [],
+     "basin": 0
+    },
+    {
+     "launchDate": "2028-12-21",
+     "tofDays": 362,
+     "c3": 2.6723351482081497,
+     "col": 155,
+     "row": 6,
+     "onLattice": true,
+     "edges": [],
+     "basin": 1
+    },
+    {
+     "launchDate": "2028-12-14",
+     "tofDays": 362,
+     "c3": 2.9431333220628013,
+     "col": 154,
+     "row": 6,
+     "onLattice": true,
+     "edges": [],
+     "basin": 1
+    },
+    {
+     "launchDate": "2026-01-15",
+     "tofDays": 332,
+     "c3": 2.95139591809468,
+     "col": 2,
+     "row": 5,
+     "onLattice": true,
+     "edges": [],
+     "basin": 0
+    }
+   ],
+   "basins": 2,
+   "evidence": {
+    "hasMinimum": true,
+    "minimumOnLattice": true,
+    "minIndex": 0,
+    "cell": {
+     "col": 0,
+     "row": 5
+    },
+    "flags": {
+     "first": true,
+     "last": false,
+     "tofMin": false,
+     "tofMax": false,
+     "count": 1,
+     "any": true
+    },
+    "listFull": true,
+    "edges": [
+     {
+      "edge": "first",
+      "cell": "column 0 (2026-01-01)",
+      "neighbourPresent": true,
+      "rise": {
+       "kind": "recorded",
+       "value": 0.14861472383111707
+      },
+      "chain": [2.1873440960826063,2.3359588199137233,2.95139591809468],
+      "chainLength": 3,
+      "monotone": true,
+      "vertex": {
+       "curvature": 0.46682237434983964,
+       "xSteps": 0.18164609925113773,
+       "position": "inside"
+      }
+     }
+    ]
+   },
+   "why": "first departure date, a stored chain of three: the quadratic vertex lies inside the lattice"
   },
   {
    "bodyId": "asteroid-21088",
@@ -1447,20 +1752,24 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "first",
       "cell": "column 0 (2026-01-01)",
       "neighbourPresent": false,
-      "slopeC3PerCell": null,
+      "rise": {
+       "kind": "bound",
+       "atLeast": 3.843434646501332
+      },
+      "chain": [5.26085942738315],
       "chainLength": 1,
       "monotone": true,
-      "verdict": "undetermined",
-      "label": "Speculative"
+      "vertex": null
      }
     ]
    },
-   "why": "first departure date, the other four windows elsewhere: undetermined"
+   "why": "first departure date, inward neighbour not stored: the rise is bounded below"
   },
   {
    "bodyId": "asteroid-2368",
@@ -1544,20 +1853,24 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "last",
       "cell": "column 782 (2040-12-27)",
       "neighbourPresent": true,
-      "slopeC3PerCell": 0.8467391550969081,
+      "rise": {
+       "kind": "recorded",
+       "value": 0.8467391550969081
+      },
+      "chain": [5.411147852983848,6.257887008080756],
       "chainLength": 2,
       "monotone": true,
-      "verdict": "likely_clipped",
-      "label": "Likely"
+      "vertex": null
      }
     ]
    },
-   "why": "last departure date, neighbour stored: likely clipped"
+   "why": "last departure date, inward rise recorded"
   },
   {
    "bodyId": "asteroid-66063",
@@ -1641,20 +1954,129 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "last",
       "cell": "column 782 (2040-12-27)",
       "neighbourPresent": false,
-      "slopeC3PerCell": null,
+      "rise": {
+       "kind": "bound",
+       "atLeast": 0.9722862028732866
+      },
+      "chain": [10.51101290801994],
       "chainLength": 1,
       "monotone": true,
-      "verdict": "undetermined",
-      "label": "Speculative"
+      "vertex": null
      }
     ]
    },
-   "why": "last departure date, undetermined"
+   "why": "last departure date, inward rise bounded below"
+  },
+  {
+   "bodyId": "asteroid-2014 QV295",
+   "designation": "2014 QV295",
+   "name": "(2014 QV295)",
+   "status": "low_departure_c3",
+   "minC3": 1.9520532075113701,
+   "minC3Date": "2040-12-27",
+   "minC3TofDays": 332,
+   "isCoOrbital": false,
+   "orbitClass": "AMO",
+   "H": 24.9,
+   "hBand": "22 ≤ H < 25",
+   "synodicYears": 1.417700636330977,
+   "windows": [
+    {
+     "launchDate": "2040-12-27",
+     "tofDays": 332,
+     "c3": 1.9520532075113701,
+     "col": 782,
+     "row": 5,
+     "onLattice": true,
+     "edges": ["last"],
+     "basin": 0
+    },
+    {
+     "launchDate": "2040-12-20",
+     "tofDays": 332,
+     "c3": 2.296371627436109,
+     "col": 781,
+     "row": 5,
+     "onLattice": true,
+     "edges": [],
+     "basin": 0
+    },
+    {
+     "launchDate": "2040-11-15",
+     "tofDays": 362,
+     "c3": 2.3325927690427832,
+     "col": 776,
+     "row": 6,
+     "onLattice": true,
+     "edges": [],
+     "basin": 1
+    },
+    {
+     "launchDate": "2040-11-08",
+     "tofDays": 362,
+     "c3": 2.35013400768083,
+     "col": 775,
+     "row": 6,
+     "onLattice": true,
+     "edges": [],
+     "basin": 1
+    },
+    {
+     "launchDate": "2040-12-13",
+     "tofDays": 332,
+     "c3": 2.634371579696439,
+     "col": 780,
+     "row": 5,
+     "onLattice": true,
+     "edges": [],
+     "basin": 0
+    }
+   ],
+   "basins": 2,
+   "evidence": {
+    "hasMinimum": true,
+    "minimumOnLattice": true,
+    "minIndex": 0,
+    "cell": {
+     "col": 782,
+     "row": 5
+    },
+    "flags": {
+     "first": false,
+     "last": true,
+     "tofMin": false,
+     "tofMax": false,
+     "count": 1,
+     "any": true
+    },
+    "listFull": true,
+    "edges": [
+     {
+      "edge": "last",
+      "cell": "column 782 (2040-12-27)",
+      "neighbourPresent": true,
+      "rise": {
+       "kind": "recorded",
+       "value": 0.3443184199247389
+      },
+      "chain": [1.9520532075113701,2.296371627436109,2.634371579696439],
+      "chainLength": 3,
+      "monotone": true,
+      "vertex": {
+       "curvature": -0.0063184676644088,
+       "xSteps": null,
+       "position": "none"
+      }
+     }
+    ]
+   },
+   "why": "last departure date, a chain of three with no quadratic minimum on the inward side"
   },
   {
    "bodyId": "asteroid-2004 RZ164",
@@ -1738,20 +2160,24 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "last",
       "cell": "column 782 (2040-12-27)",
       "neighbourPresent": true,
-      "slopeC3PerCell": 8.298366584438007,
+      "rise": {
+       "kind": "recorded",
+       "value": 8.298366584438007
+      },
+      "chain": [8.698675424131029,16.997042008569036],
       "chainLength": 2,
       "monotone": true,
-      "verdict": "likely_clipped",
-      "label": "Likely"
+      "vertex": null
      }
     ]
    },
-   "why": "last departure date, the steepest recorded inward slope"
+   "why": "last departure date, the steepest recorded inward rise"
   },
   {
    "bodyId": "asteroid-2006 KD40",
@@ -1835,26 +2261,33 @@
      "count": 2,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "first",
       "cell": "column 0 (2026-01-01)",
       "neighbourPresent": false,
-      "slopeC3PerCell": null,
+      "rise": {
+       "kind": "bound",
+       "atLeast": 1.5066232232394992
+      },
+      "chain": [5.709553519431324],
       "chainLength": 1,
       "monotone": true,
-      "verdict": "undetermined",
-      "label": "Speculative"
+      "vertex": null
      },
      {
       "edge": "tofMin",
       "cell": "row 0 (182 days)",
       "neighbourPresent": false,
-      "slopeC3PerCell": null,
+      "rise": {
+       "kind": "bound",
+       "atLeast": 1.5066232232394992
+      },
+      "chain": [5.709553519431324],
       "chainLength": 1,
       "monotone": true,
-      "verdict": "undetermined",
-      "label": "Speculative"
+      "vertex": null
      }
     ]
    },
@@ -1942,20 +2375,125 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "tofMax",
       "cell": "row 54 (1802 days)",
       "neighbourPresent": false,
-      "slopeC3PerCell": null,
+      "rise": {
+       "kind": "bound",
+       "atLeast": 13.502980019731694
+      },
+      "chain": [502.0834812208444],
       "chainLength": 1,
       "monotone": true,
-      "verdict": "undetermined",
-      "label": "Speculative"
+      "vertex": null
      }
     ]
    },
-   "why": "flight-time ceiling"
+   "why": "flight-time ceiling, inward rise bounded below"
+  },
+  {
+   "bodyId": "asteroid-2017 UR52",
+   "designation": "2017 UR52",
+   "name": "(2017 UR52)",
+   "status": "high_departure_c3",
+   "minC3": 1462.9506048730348,
+   "minC3Date": "2026-02-12",
+   "minC3TofDays": 1802,
+   "isCoOrbital": false,
+   "orbitClass": "AMO",
+   "H": 21.2,
+   "hBand": "18 ≤ H < 22",
+   "synodicYears": 1.000150605983291,
+   "windows": [
+    {
+     "launchDate": "2026-02-12",
+     "tofDays": 1802,
+     "c3": 1462.9506048730348,
+     "col": 6,
+     "row": 54,
+     "onLattice": true,
+     "edges": ["tofMax"],
+     "basin": 0
+    },
+    {
+     "launchDate": "2026-02-05",
+     "tofDays": 1802,
+     "c3": 1467.4482559605976,
+     "col": 5,
+     "row": 54,
+     "onLattice": true,
+     "edges": ["tofMax"],
+     "basin": 0
+    },
+    {
+     "launchDate": "2026-02-12",
+     "tofDays": 1772,
+     "c3": 1474.4012916512493,
+     "col": 6,
+     "row": 53,
+     "onLattice": true,
+     "edges": [],
+     "basin": 0
+    },
+    {
+     "launchDate": "2026-02-05",
+     "tofDays": 1772,
+     "c3": 1479.5433241288717,
+     "col": 5,
+     "row": 53,
+     "onLattice": true,
+     "edges": [],
+     "basin": 0
+    },
+    {
+     "launchDate": "2026-02-19",
+     "tofDays": 1802,
+     "c3": 1482.709626781855,
+     "col": 7,
+     "row": 54,
+     "onLattice": true,
+     "edges": ["tofMax"],
+     "basin": 0
+    }
+   ],
+   "basins": 1,
+   "evidence": {
+    "hasMinimum": true,
+    "minimumOnLattice": true,
+    "minIndex": 0,
+    "cell": {
+     "col": 6,
+     "row": 54
+    },
+    "flags": {
+     "first": false,
+     "last": false,
+     "tofMin": false,
+     "tofMax": true,
+     "count": 1,
+     "any": true
+    },
+    "listFull": true,
+    "edges": [
+     {
+      "edge": "tofMax",
+      "cell": "row 54 (1802 days)",
+      "neighbourPresent": true,
+      "rise": {
+       "kind": "recorded",
+       "value": 11.450686778214504
+      },
+      "chain": [1462.9506048730348,1474.4012916512493],
+      "chainLength": 2,
+      "monotone": true,
+      "vertex": null
+     }
+    ]
+   },
+   "why": "flight-time ceiling, inward rise recorded (Slice 18 re-solved its neighbours)"
   },
   {
    "bodyId": "asteroid-2021 UO20",
@@ -2039,20 +2577,212 @@
      "count": 1,
      "any": true
     },
+    "listFull": true,
     "edges": [
      {
       "edge": "tofMin",
       "cell": "row 0 (182 days)",
       "neighbourPresent": true,
-      "slopeC3PerCell": 0.7513016252039648,
+      "rise": {
+       "kind": "recorded",
+       "value": 0.7513016252039648
+      },
+      "chain": [14.112446699030123,14.863748324234088],
       "chainLength": 2,
       "monotone": true,
-      "verdict": "likely_clipped",
-      "label": "Likely"
+      "vertex": null
      }
     ]
    },
    "why": "the one floor body whose longer-flight neighbour is stored"
+  },
+  {
+   "bodyId": "asteroid-17274",
+   "designation": "17274",
+   "name": "17274 (2000 LC16)",
+   "status": "low_departure_c3",
+   "minC3": 2.5787982775322296,
+   "minC3Date": "2036-02-21",
+   "minC3TofDays": 182,
+   "isCoOrbital": false,
+   "orbitClass": "AMO",
+   "H": 16.87,
+   "hBand": "H < 18",
+   "synodicYears": 1.2847023981482386,
+   "windows": [
+    {
+     "launchDate": "2036-02-21",
+     "tofDays": 182,
+     "c3": 2.5787982775322296,
+     "col": 529,
+     "row": 0,
+     "onLattice": true,
+     "edges": ["tofMin"],
+     "basin": 0
+    },
+    {
+     "launchDate": "2036-02-28",
+     "tofDays": 182,
+     "c3": 2.6430972876700847,
+     "col": 530,
+     "row": 0,
+     "onLattice": true,
+     "edges": ["tofMin"],
+     "basin": 0
+    },
+    {
+     "launchDate": "2036-01-24",
+     "tofDays": 212,
+     "c3": 3.023045440075839,
+     "col": 525,
+     "row": 1,
+     "onLattice": true,
+     "edges": [],
+     "basin": 1
+    },
+    {
+     "launchDate": "2036-03-06",
+     "tofDays": 182,
+     "c3": 3.8343872900408793,
+     "col": 531,
+     "row": 0,
+     "onLattice": true,
+     "edges": ["tofMin"],
+     "basin": 0
+    },
+    {
+     "launchDate": "2027-02-18",
+     "tofDays": 182,
+     "c3": 3.8981590625433187,
+     "col": 59,
+     "row": 0,
+     "onLattice": true,
+     "edges": ["tofMin"],
+     "basin": 2
+    }
+   ],
+   "basins": 3,
+   "evidence": {
+    "hasMinimum": true,
+    "minimumOnLattice": true,
+    "minIndex": 0,
+    "cell": {
+     "col": 529,
+     "row": 0
+    },
+    "flags": {
+     "first": false,
+     "last": false,
+     "tofMin": true,
+     "tofMax": false,
+     "count": 1,
+     "any": true
+    },
+    "listFull": true,
+    "edges": [
+     {
+      "edge": "tofMin",
+      "cell": "row 0 (182 days)",
+      "neighbourPresent": false,
+      "rise": {
+       "kind": "bound",
+       "atLeast": 1.319360785011089
+      },
+      "chain": [2.5787982775322296],
+      "chainLength": 1,
+      "monotone": true,
+      "vertex": null
+     }
+    ]
+   },
+   "why": "flight-time floor: another stored window one row up, on the constant-arrival-date line"
+  },
+  {
+   "bodyId": "asteroid-1979 XB",
+   "designation": "1979 XB",
+   "name": "(1979 XB)",
+   "status": "low_departure_c3",
+   "minC3": 2.4062596694509333,
+   "minC3Date": "2029-03-08",
+   "minC3TofDays": 242,
+   "isCoOrbital": false,
+   "orbitClass": "APO",
+   "H": 18.6,
+   "hBand": "18 ≤ H < 22",
+   "synodicYears": 1.43142136551586,
+   "windows": [
+    {
+     "launchDate": "2029-03-08",
+     "tofDays": 242,
+     "c3": 2.4062596694509333,
+     "col": 166,
+     "row": 2,
+     "onLattice": true,
+     "edges": [],
+     "basin": 0
+    },
+    {
+     "launchDate": "2029-02-01",
+     "tofDays": 272,
+     "c3": 2.9148151390835153,
+     "col": 161,
+     "row": 3,
+     "onLattice": true,
+     "edges": [],
+     "basin": 1
+    },
+    {
+     "launchDate": "2039-02-17",
+     "tofDays": 242,
+     "c3": 4.935997283653205,
+     "col": 685,
+     "row": 2,
+     "onLattice": true,
+     "edges": [],
+     "basin": 2
+    },
+    {
+     "launchDate": "2032-01-29",
+     "tofDays": 392,
+     "c3": 5.466342317943611,
+     "col": 317,
+     "row": 7,
+     "onLattice": true,
+     "edges": [],
+     "basin": 3
+    },
+    {
+     "launchDate": "2029-04-05",
+     "tofDays": 212,
+     "c3": 5.960543591485468,
+     "col": 170,
+     "row": 1,
+     "onLattice": true,
+     "edges": [],
+     "basin": 4
+    }
+   ],
+   "basins": 5,
+   "evidence": {
+    "hasMinimum": true,
+    "minimumOnLattice": true,
+    "minIndex": 0,
+    "cell": {
+     "col": 166,
+     "row": 2
+    },
+    "flags": {
+     "first": false,
+     "last": false,
+     "tofMin": false,
+     "tofMax": false,
+     "count": 0,
+     "any": false
+    },
+    "listFull": true,
+    "edges": []
+   },
+   "why": "interior minimum (Slice 18 re-solved its neighbours: all dearer than its fifth window)"
   },
   {
    "bodyId": "asteroid-2059",
@@ -2136,6 +2866,7 @@
      "count": 0,
      "any": false
     },
+    "listFull": true,
     "edges": []
    },
    "why": "all five windows in one basin"
@@ -2222,6 +2953,7 @@
      "count": 0,
      "any": false
     },
+    "listFull": true,
     "edges": []
    },
    "why": "Icarus: five windows, five basins"

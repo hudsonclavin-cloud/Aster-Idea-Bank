@@ -83,7 +83,7 @@ section.card h3 { margin: 22px 0 6px; font-size: 1rem; }
 .controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; margin: 8px 0 6px; }
 .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .field label { font-size: 0.85rem; color: var(--soft); }
-input[type="number"] {
+input[type="number"], select {
   font: inherit;
   font-family: var(--mono);
   color: var(--ink);
@@ -94,7 +94,8 @@ input[type="number"] {
   width: 11.5rem;
   max-width: 100%;
 }
-input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select { font-family: var(--sans); width: auto; min-height: 40px; }
+input:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 button {
   font: inherit;
   border-radius: 8px;
@@ -127,7 +128,7 @@ button.secondary { color: var(--soft); }
 }
 .refusal:empty { display: none; }
 .refusal .code { font-family: var(--mono); font-size: 0.8rem; color: var(--refuse); font-weight: 600; }
-.refusal p { margin: 4px 0; }
+.refusal p { margin: 4px 0; overflow-wrap: anywhere; }
 .cardout {
   border: 1px solid var(--line);
   border-left: 4px solid var(--accent);
@@ -165,11 +166,12 @@ svg .s5 { stroke: var(--s5); } svg .s6 { stroke: var(--s6); } svg .s7 { stroke: 
 svg .bar { fill: var(--accent); opacity: 0.85; }
 svg .bar.open { fill: var(--soft); opacity: 0.5; }
 svg .lbl.onbar { fill: var(--accent-ink); }
-svg .lbl { font-size: 11px; }
+svg .lbl { font-size: 11px; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+svg .lbl.onbar { stroke: none; }
 svg .soft { fill: var(--soft); }
 ul.legend { list-style: none; padding: 0; margin: 6px 0 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.82rem; }
-ul.legend li { display: inline-flex; align-items: center; gap: 6px; }
-ul.legend .sw { display: inline-block; width: 18px; height: 3px; border-radius: 2px; background: var(--c); }
+ul.legend li { display: inline-flex; align-items: baseline; gap: 6px; }
+ul.legend .sw { display: inline-block; flex: 0 0 18px; width: 18px; height: 3px; border-radius: 2px; background: var(--c); transform: translateY(-3px); }
 ul.legend .note { color: var(--soft); }
 ul.plain { list-style: none; padding: 0; margin: 0; }
 ul.plain li { padding: 8px 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
@@ -178,7 +180,7 @@ ul.mono li { font-family: var(--mono); font-size: 0.8rem; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 480px) {
   header.top h1 { font-size: 1.6rem; }
-  input[type="number"] { width: 100%; }
+  input[type="number"], select { width: 100%; }
   .field { flex: 1 1 100%; }
   svg text { font-size: 13px; }
 }

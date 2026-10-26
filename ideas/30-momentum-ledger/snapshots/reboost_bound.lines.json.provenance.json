@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/reboost_bound.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "8dc0e20 2026-07-12T17:36:19-04:00",
+  "committedBlob": "044f53e5d74e9d1461cf618b95b0e076a7a959eb",
+  "readBlob": "044f53e5d74e9d1461cf618b95b0e076a7a959eb",
+  "sourceSha256": "8c031d785676ad860d7904520418fed11b59b091eb6fa3990117f8043da396ca",
+  "sourceBytes": 13579,
+  "copiedAt": "2026-10-26T16:31:09.214Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 28, 29, 30, 31, 32, 33, 36, 118, 119, 120, 147",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2c390e52dc0c831f9106446b9c84ad79ba2ed3889048e651732ed587393c365c",
+  "writtenBytes": 795
+}

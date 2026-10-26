@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Momentum Ledger</title>
+<meta name="description" content="What one Skyhook catch-and-throw takes out of the tether, how long reboost takes to put it back, and where the tether's orbit goes in between.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="wrap">
+  <p class="eyebrow">Skyhook · Aster Idea Bank prototype · canon <code id="commit">params/rev_a.json</code></p>
+  <h1>Momentum Ledger</h1>
+  <p class="lede">Every upbound throw is a withdrawal from the tether's orbit. This page books one: the energy it takes, how long electrodynamic reboost needs to put it back, and where the tether's orbit goes in between. All numbers are computed here from a snapshot of Skyhook's canon; nothing is typed in.</p>
+</header>
+
+<main class="wrap">
+  <section class="card controls" id="setup" aria-labelledby="setup-h">
+    <h2 id="setup-h">The throw</h2>
+    <fieldset>
+      <legend>Tier (params/rev_a.json)</legend>
+      <div class="seg" id="tier"></div>
+    </fieldset>
+    <fieldset>
+      <legend>Fibre strength derate</legend>
+      <div class="seg" id="derate"></div>
+      <p class="hint" id="derate-hint"></p>
+    </fieldset>
+    <div>
+      <label class="label" for="hub">Hub mass, tonnes <span class="tag spec">[Speculative]</span></label>
+      <div class="row">
+        <input type="number" id="hub" min="0" max="5000" step="10" inputmode="decimal">
+        <input type="range" id="hub-range" min="0" max="3000" step="10" aria-label="Hub mass slider, tonnes">
+      </div>
+      <div class="chips" id="hub-presets"></div>
+    </div>
+    <div>
+      <label class="label" for="payload">Payload, kg</label>
+      <input type="number" id="payload" min="1" step="100" inputmode="decimal">
+      <p class="hint" id="payload-hint"></p>
+    </div>
+    <fieldset>
+      <legend>Release state</legend>
+      <div class="seg" id="release"></div>
+      <p class="hint" id="release-hint"></p>
+    </fieldset>
+  </section>
+
+  <section class="card" id="cost" aria-labelledby="cost-h">
+    <h2 id="cost-h">1 · What one throw takes</h2>
+    <p class="sub">The payload is caught at the lower tip and let go at the upper tip. With nothing dissipated, the tether system loses exactly the orbital energy the payload gains, so that is what reboost has to put back.</p>
+    <div id="cost-body"></div>
+  </section>
+
+  <section class="card" id="back" aria-labelledby="back-h">
+    <h2 id="back-h">2 · Putting it back</h2>
+    <p class="sub">Time to restore one throw is energy ÷ (installed power × efficiency × duty), the arithmetic of <code>finance/reboost_bound.py</code>. The founding document's sizing rule: restore one design-payload boost within the inter-catch interval, initially 5–10 days, with 30 % margin.</p>
+    <div class="controls" style="padding:0;border:0;margin:0">
+      <div>
+        <label class="label" for="power">Installed power: <span id="power-out"></span></label>
+        <input type="range" id="power" min="4" max="8" step="0.01" aria-describedby="power-hint">
+        <div class="chips" id="power-presets"></div>
+        <p class="hint" id="power-hint">Logarithmic slider, 10 kW to 100 MW.</p>
+      </div>
+      <div>
+        <label class="label" for="eta">Efficiency, electrical to orbital energy: <span id="eta-out"></span></label>
+        <input type="range" id="eta" min="0.05" max="0.8" step="0.01">
+        <div class="chips" id="eta-presets"></div>
+      </div>
+      <div>
+        <label class="label" for="duty">Duty, usable-thrust fraction: <span id="duty-out"></span></label>
+        <input type="range" id="duty" min="0.05" max="1" step="0.01">
+        <div class="chips" id="duty-presets"></div>
+      </div>
+    </div>
+    <div id="back-body"></div>
+  </section>
+
+  <section class="card" id="orbit" aria-labelledby="orbit-h">
+    <h2 id="orbit-h">3 · The orbit in between</h2>
+    <p class="sub">Reboost takes days; the tether's orbit changes at once. The tether system (hub plus fibre) gives up the payload's energy gain, its centre of mass ends lower at the throw point, and half an orbit later the lower tip comes lowest.</p>
+    <div id="orbit-body"></div>
+    <div class="controls" style="padding:0;border:0;margin:8px 0 0">
+      <div>
+        <label class="label" for="floor">Lower-tip floor: <span id="floor-out"></span> km <span class="tag">your input, not canon</span></label>
+        <input type="range" id="floor" min="40" max="289" step="1">
+        <p class="hint">The repository names no tip-altitude floor. <code>docs/project_instructions.md:44</code> puts a HASTOL-class tip at 80–150 km; the Rev A tip is designed at 290 km.</p>
+      </div>
+      <div id="floor-body"></div>
+    </div>
+    <figure>
+      <div class="chart" id="chart-throws"></div>
+      <div class="legend" id="legend-throws"></div>
+      <figcaption id="cap-throws"></figcaption>
+    </figure>
+    <h3>Three models of the same throw</h3>
+    <p class="small">The ledger above, the judged proposal's impulsive model, and Skyhook's own 17-node tether model (<code>tools/twin/physics.js</code>, a snapshot) carried through the catch, the swing, the throw and one orbit.</p>
+    <div class="row"><button type="button" id="twin-run" class="primary">Run Skyhook's tether model</button><span class="progress" id="twin-progress" aria-live="polite"></span></div>
+    <div id="models-body"></div>
+  </section>
+
+  <section class="card" id="checks" aria-labelledby="checks-h">
+    <h2 id="checks-h">4 · Checks against what Skyhook publishes</h2>
+    <div id="checks-body"></div>
+  </section>
+
+  <section class="card" id="refused" aria-labelledby="refused-h">
+    <h2 id="refused-h">5 · What this page will not say</h2>
+    <div id="refused-body"></div>
+  </section>
+
+  <section class="card" id="sources" aria-labelledby="sources-h">
+    <h2 id="sources-h">6 · Where every input comes from</h2>
+    <div id="sources-body"></div>
+  </section>
+</main>
+<footer class="wrap">An Aster Idea Bank prototype for Skyhook. It has not been through Skyhook's Rule 1 canon process, a verification memo or its pytest suite. Made by Ledgerline.</footer>
+
+<script src="data.js"></script>
+<script src="ledger.js"></script>
+<script src="twin-check.js"></script>
+<script src="snapshots/twin-classic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/REBOOST_BOUND_FINDINGS.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "8dc0e20 2026-07-12T17:36:19-04:00",
+  "committedBlob": "51f2e1ec4b16d12f8f6ef01a3691600c458ba101",
+  "readBlob": "51f2e1ec4b16d12f8f6ef01a3691600c458ba101",
+  "sourceSha256": "21960c4e72bd035cf2e814a27eb2fd5a96ac41c80d4a7142fa422b9d69c9b1a7",
+  "sourceBytes": 4480,
+  "copiedAt": "2026-10-26T16:31:08.238Z",
+  "mode": "copy",
+  "note": "whole file: reboost_bound.py's published energy, recovery grid and minimum-power tables, reproduced by the tests",
+  "readMatchesCommitted": true,
+  "writtenSha256": "21960c4e72bd035cf2e814a27eb2fd5a96ac41c80d4a7142fa422b9d69c9b1a7",
+  "writtenBytes": 4480
+}

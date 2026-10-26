@@ -2,12 +2,13 @@
  "_meta": {
   "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
   "derived_by": "ideas/13-the-null-input/build_data.py",
-  "note": "fiber prices the repository already carries; none is a vendor quote and none is used as a default by fiber_sweep.py or the page"
+  "note": "fiber prices the repository already carries, from three sources; none is a vendor quote and none is used as a default by fiber_sweep.py or the page"
  },
  "markers": [
   {
    "id": "mp001_marketplace_proxy",
    "label": "MP-001 Zylon (PBO) marketplace proxy",
+   "short": "MP-001",
    "prices_per_kg": {
     "conservative": 300.0,
     "baseline": 259.0,
@@ -23,28 +24,53 @@
    "status": "marketplace listing, low confidence, 10 kg MOQ, not a Toyobo quote (the row's own words); a marker, never a default"
   },
   {
-   "id": "inspace_fork_surface_placeholder",
-   "label": "inspace_fork.py SURFACE_FIBER_PRICE_PER_KG",
+   "id": "inspace_fork_bracket",
+   "label": "inspace_fork.py fiber-price bracket",
+   "short": "inspace_fork",
    "prices_per_kg": {
-    "placeholder": 1000.0
+    "bracket low": 200.0,
+    "bracket mid": 500.0,
+    "bracket high / surface": 1000.0
+   },
+   "lines_per_key": {
+    "bracket low": 54,
+    "bracket mid": 54,
+    "bracket high / surface": 55
    },
    "file": "finance/inspace_fork.py",
-   "line": 55,
-   "text": "SURFACE_FIBER_PRICE_PER_KG = 1000.0",
+   "line": 54,
+   "text": "FIBER_PRICE_BRACKET_PER_KG = (200.0, 500.0, 1000.0)",
    "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
-   "status": "placeholder for the DRAFT, non-canonical MXER in-space fork's v2 surface, used there only when rev_a economics.fiber_cost_per_kg is null (require_non_null); flagged 'no vendor quote' in its own findings; a marker, never a default"
+   "texts": [
+    "FIBER_PRICE_BRACKET_PER_KG = (200.0, 500.0, 1000.0)",
+    "SURFACE_FIBER_PRICE_PER_KG = 1000.0"
+   ],
+   "status": "the DRAFT, non-canonical MXER in-space fork's explicit fiber-price bracket and the placeholder its v2 surface uses because rev_a economics.fiber_cost_per_kg is null (require_non_null), flagged 'no vendor quote' in its own output; params/service_mxer_draft.json capex_inputs carries the same bracket as that fork's written result; markers, never defaults"
   },
   {
-   "id": "stress_test_sim_default",
+   "id": "stress_test_sim_prices",
    "label": "skyhook_no_leo_stress_test.jsx fiberPriceKg",
+   "short": "stress-test sim",
    "prices_per_kg": {
-    "default": 250.0
+    "cons. preset": 400.0,
+    "default": 250.0,
+    "opt. preset": 150.0
+   },
+   "lines_per_key": {
+    "cons. preset": 325,
+    "default": 54,
+    "opt. preset": 327
    },
    "file": "tools/sims/skyhook_no_leo_stress_test.jsx",
    "line": 54,
    "text": "fiberPriceKg: 250, // [Speculative] Delivered Zylon-class fiber price; needs quote.",
    "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
-   "status": "the React strategy simulator's hardcoded slider default, labelled [Speculative] 'needs quote' on its own line; a marker, never a default here"
+   "texts": [
+    "fiberPriceKg: 250, // [Speculative] Delivered Zylon-class fiber price; needs quote.",
+    "if (preset === \"conservative\") setS((x) => ({ ...x, launchPriceNow: REVA.launchPriceNow, launchFloor: 500, yearsToFloor: 6, fiberPriceKg: 400, facilityCapex: 2400, catchesPerYr: 150, rocketLegCost: 1100, customerDiscount: 0.35, captureShare: 0.20, segLEO: false }));",
+    "if (preset === \"optimistic\") setS((x) => ({ ...x, launchPriceNow: REVA.launchPriceNow, launchFloor: 250, yearsToFloor: 10, fiberPriceKg: 150, facilityCapex: 1400, catchesPerYr: 320, rocketLegCost: 700, customerDiscount: 0.25, captureShare: 0.45, segLEO: false }));"
+   ],
+   "status": "the React strategy simulator's slider default, labelled [Speculative] 'needs quote' on its own line, and its conservative and optimistic preset values; fiberCost_M is never read (README finding 1), so none of them changes what the simulator reports; markers, never defaults here"
   }
  ]
 }

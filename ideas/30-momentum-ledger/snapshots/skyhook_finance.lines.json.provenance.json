@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/skyhook_finance.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "f81b77f 2026-09-06T12:03:46-04:00",
+  "committedBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "readBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "sourceSha256": "c8e15dda24b5af0eab8e56d3dcab0e2806d525a6c095ad91c162095bf87da911",
+  "sourceBytes": 19627,
+  "copiedAt": "2026-10-26T16:31:08.879Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 211, 215, 216",
+  "readMatchesCommitted": true,
+  "writtenSha256": "120aa7d72dfa20513810b47f9ddb49574df7137c0990df9272a982d1e6c7e1a1",
+  "writtenBytes": 312
+}

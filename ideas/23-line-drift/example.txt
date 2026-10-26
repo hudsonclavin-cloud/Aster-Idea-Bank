@@ -1,0 +1,307 @@
+Line Drift: 1316 references in 26 documents
+checkout /home/user/asteroid-mining-planner (worktree)
+at 62ddb17 (2026-10-25T19:36:43-04:00) from https://github.com/hudsonclavin-cloud/asteroid-mining-planner; 50 commits reachable; working tree clean
+shallow clone: history starts at fbe8e89 (2026-10-12); older commits read UNCHECKABLE, not unreachable
+
+status              line   path   commit  total
+OK                  22     516    39      577
+PARTIAL             2      0      0       2
+MOVED               13     0      0       13
+GONE                8      0      0       8
+IN-RANGE            53     0      0       53
+MISSING-PATH        2      71     0       73
+IGNORED             0      2      0       2
+UNCHECKABLE         8      32     548     588
+all                 108    621    587     1316
+
+document                                           refs  OK        PARTIAL   MOVED     GONE      IN-RANGE  MISSING   IGNORED   UNCHECK   
+STATUS.md                                          333   94        0         5         6         16        17        0         195       
+INVARIANTS.md                                      65    57        0         1         0         3         0         0         4         
+AGENTS.md                                          14    11        0         0         0         0         0         1         2         
+README.md                                          20    20        0         0         0         0         0         0         0         
+mcp/README.md                                      5     1         0         3         0         1         0         0         0         
+SLICE_17_FOUNDING.md                               48    0         1         0         0         8         0         0         39        
+src/v2/SLICE_10_FOUNDING.md                        30    2         0         0         0         0         3         0         25        
+src/v2/SLICE_11_FOUNDING.md                        58    15        0         0         0         0         0         0         43        
+src/v2/SLICE_12_FOUNDING.md                        23    14        0         1         0         2         0         0         6         
+src/v2/SLICE_13_FOUNDING.md                        24    2         0         0         0         2         5         0         15        
+src/v2/SLICE_14_FOUNDING.md                        65    21        0         0         0         4         0         0         40        
+src/v2/SLICE_15_FOUNDING.md                        90    39        0         0         0         0         5         0         46        
+src/v2/SLICE_16_FOUNDING.md                        160   116       0         1         1         3         1         0         38        
+src/v2/SLICE_18_FOUNDING.md                        144   70        0         0         0         1         17        0         56        
+src/v2/SLICE_19_5_FOUNDING.md                      54    41        1         0         1         0         6         0         5         
+src/v2/SLICE_19_FOUNDING.md                        44    13        0         1         0         3         6         0         21        
+src/v2/SLICE_8_5_FOUNDING.md                       0     0         0         0         0         0         0         0         0         
+src/v2/SLICE_9_FOUNDING.md                         27    3         0         1         0         0         0         1         22        
+src/v2/SLICE_V1_FOUNDING.md                        42    20        0         0         0         0         3         0         19        
+strategy/ASTER_FAMILY_CHARTERS.md                  0     0         0         0         0         0         0         0         0         
+strategy/ASTER_FAMILY_MASTER_PLAN.md               4     4         0         0         0         0         0         0         0         
+strategy/ASTER_ROADMAP_2026-08.md                  1     1         0         0         0         0         0         0         0         
+strategy/IDEA_KERNELS_2026-09.md                   12    8         0         0         0         0         1         0         3         
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md  48    23        0         0         0         9         9         0         7         
+strategy/RESEARCH_LEDGER_2026-08.md                1     0         0         0         0         0         0         0         1         
+strategy/SLICE21_QOL_BACKLOG_TRIAGED.md            4     2         0         0         0         1         0         0         1         
+
+Drift (96; 96 not allowlisted):
+INVARIANTS.md:178  line  SLICE_9_FOUNDING.md:202  MOVED  -> src/v2/SLICE_9_FOUNDING.md; snippet now at :426-427
+    snippet: "the committed 162-body set"
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+mcp/README.md:59  line  src/tools/compute-shared.ts:130-136  MOVED  -> mcp/src/tools/compute-shared.ts; snippet now at :141, :150, :151
+    snippet: `jdTdbToUtcDateString`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+mcp/README.md:73  line  src/tools/compute-shared.ts:146-148  MOVED  -> mcp/src/tools/compute-shared.ts; snippet now at :179
+    snippet: `earthSpanHelp`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+mcp/README.md:75  line  src/tools/compute-shared.ts:139-144  MOVED  -> mcp/src/tools/compute-shared.ts; snippet now at :226
+    snippet: `out_of_envelope`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_12_FOUNDING.md:45  line  src/v2/core/propagators/keplerian.ts:146-158, 249-251  MOVED  snippet now at :195, :266
+    snippet: `propagateKeplerianStateVectors`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_16_FOUNDING.md:247  line  mcp/src/tools/compute-shared.ts:237-267  MOVED  snippet now at :270
+    snippet: `siteVerdictRows`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_19_FOUNDING.md:85  line  src/v2/app/catalog-list/honesty-disclosure.ts:74-82  MOVED  snippet now at :83
+    snippet: "a flag to inspect the geometry, not a real planning number,"
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_9_FOUNDING.md:427  line  .gitignore:17  MOVED  snippet now at :19
+    snippet: `tools/slice9-research/data/*`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:213  line  app/porkchop/main.ts:916  MOVED  -> src/v2/app/porkchop/main.ts; snippet now at :996
+    snippet: `M: 1`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:253  line  porkchop-view.ts:468  MOVED  -> src/v2/porkchop/porkchop-view.ts; snippet now at :537, :897, :1078
+    snippet: `findGlobalMinimumCell`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:345  line  compare-data.ts:303-308  MOVED  -> src/v2/porkchop/compare-data.ts; snippet now at :18, :108, :113, :114, :326, :327 (+5 more)
+    snippet: `liveMin`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 88b9133: not in this shallow clone
+STATUS.md:421  line  :189  MOVED  (src/v2/app/porkchop/main.ts); snippet now at :196
+    snippet: `depEndJD: utcMidnightToJdTdb('2040-01-01')`
+    history: line last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:448  line  precompute-lambert-screen.mjs:132  MOVED  -> tools/build/precompute-lambert-screen.mjs; snippet now at :10, :127, :129, :129, :135, :136 (+4 more)
+    snippet: `bestWindows`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_16_FOUNDING.md:153  line  mcp/src/tools/get-body.ts:48  GONE  snippet not found anywhere in the file
+    snippet: `confidence:"assumed"`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:57  line  fk3-guided-tour.ts:36  GONE  -> src/v2/app/porkchop/fk3-guided-tour.ts; snippet not found anywhere in the file
+    snippet: "flies only with a dogleg"
+    history: first appeared and last edited 6575d0d, 2026-10-13: MOVED (snippet now at :37); at the commit its paragraph names fe61ef9, 2026-10-12: MOVED (snippet now at :37)
+STATUS.md:239  line  app/ui-overlay/overlay.ts:339  GONE  -> src/v2/app/ui-overlay/overlay.ts; snippet not found anywhere in the file
+    snippet: `M: 1`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:256  line  app/ui-overlay/overlay.ts:339  GONE  -> src/v2/app/ui-overlay/overlay.ts; snippet not found anywhere in the file
+    snippet: `M: 1`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:418  line  src/v2/app/porkchop/main.ts:637  GONE  snippet not found anywhere in the file
+    snippet: "Grid spans 2026-2040 departures and 182.5-1826.25 day flight times."
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:420  line  :646  GONE  (src/v2/app/porkchop/main.ts); snippet not found anywhere in the file
+    snippet: `Grid: ${GRID_PARAMS.nDep}x${GRID_PARAMS.nTof}`
+    history: line last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:429  line  src/v2/app/solar-system/loader.ts:8-9  GONE  snippet not found anywhere in the file
+    snippet: `docs/assets/asteroid-catalog-slice7-*.json`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:535  line  .githooks/pre-commit:53  GONE  snippet not found anywhere in the file
+    snippet: `git diff --cached -- "$doc" | grep -c '^-[^-]'`
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 2032b9e: not in this shallow clone
+src/v2/SLICE_10_FOUNDING.md:83  path  core/iod.py  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: names poliastro
+src/v2/SLICE_10_FOUNDING.md:99  path  tests/v2-lambert-izzo.test.mjs  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: names poliastro
+src/v2/SLICE_10_FOUNDING.md:99  path  tests/test_iod.py  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: names poliastro
+src/v2/SLICE_13_FOUNDING.md:19  line  view.ts:974  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_13_FOUNDING.md:39  path  aster-audit-reports/slice13-showcase-recon.md  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: annotated at :112
+src/v2/SLICE_13_FOUNDING.md:61  line  view.ts:974  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_13_FOUNDING.md:98  path  aster-audit-reports/slice13-phaseF-audit.md  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_13_FOUNDING.md:112  path  aster-audit-reports/slice13-showcase-recon.md  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so
+src/v2/SLICE_15_FOUNDING.md:62  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names bcf1738: not in this shallow clone
+    context: annotated at :212
+src/v2/SLICE_15_FOUNDING.md:134  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: reads as a plan or proposal; annotated at :212
+src/v2/SLICE_15_FOUNDING.md:212  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names bcf1738: not in this shallow clone
+    context: its own sentence says so
+src/v2/SLICE_15_FOUNDING.md:212  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names bcf1738: not in this shallow clone
+    context: its own sentence says so
+src/v2/SLICE_15_FOUNDING.md:212  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names bcf1738: not in this shallow clone
+    context: its own sentence says so
+src/v2/SLICE_16_FOUNDING.md:16  path  evals/honesty-study/REPORT.md  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_18_FOUNDING.md:194  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: annotated at :207
+src/v2/SLICE_18_FOUNDING.md:207  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names cba6e6a: not in this shallow clone
+    context: its own sentence says so; annotated at :219
+src/v2/SLICE_18_FOUNDING.md:211  path  porkchopV2-DPwWKoPv.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 4d3bae2: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:211  path  solarSystemV2-BM6ai_je.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 4d3bae2: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:211  path  compareV2-Br2FOkFz.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 4d3bae2: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:211  path  porkchopV2-Ci6r-fmN.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 4d3bae2: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:211  path  solarSystemV2-DFJ0f0Yh.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 4d3bae2: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:211  path  compareV2-CEg78aFw.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 4d3bae2: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:219  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names cba6e6a: not in this shallow clone
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:245  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:245  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:255  path  porkchopV2-z3nhVK2W.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names c6dc7dd: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:255  path  solarSystemV2-Z_zaFg6C.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names c6dc7dd: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:255  path  compareV2-BbpSakkn.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names c6dc7dd: not in this shallow clone
+src/v2/SLICE_18_FOUNDING.md:298  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 2eaf936: not in this shallow clone
+    context: annotated at :207
+src/v2/SLICE_18_FOUNDING.md:345  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its paragraph names 355fa5f: not in this shallow clone
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:347  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_19_5_FOUNDING.md:136  path  tokens.json  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:136  path  src/v2/app/design/tokens.json  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:138  path  src/v2/app/design/tokens.ts  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:138  path  tools/design/gen-tokens.mjs  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:147  path  src/v2/app/design/components/  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:329  path  tokens.ts  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:309  path  porkchop-view-DIQWyODm.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: MISSING-PATH; at the commit its sentence names 03e2ba4, 2026-10-12: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:309  path  porkchop-view-BUTSEuRs.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: held; at the commit its sentence names 03e2ba4, 2026-10-12: held
+src/v2/SLICE_19_FOUNDING.md:310  path  porkchopV2-CqMV94y9.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: MISSING-PATH; at the commit its sentence names 03e2ba4, 2026-10-12: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:310  path  porkchopV2-C402DrAR.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: held; at the commit its sentence names 03e2ba4, 2026-10-12: held
+src/v2/SLICE_19_FOUNDING.md:311  path  solarSystemV2-CJ3pA1d9.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: MISSING-PATH; at the commit its sentence names 03e2ba4, 2026-10-12: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:311  path  solarSystemV2-MvRu-sdm.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: held; at the commit its sentence names 03e2ba4, 2026-10-12: held
+src/v2/SLICE_V1_FOUNDING.md:73  path  night-lights-fallback.ts  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so; annotated at :483
+src/v2/SLICE_V1_FOUNDING.md:386  path  src/v2/render/planet-textures.ts  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_V1_FOUNDING.md:483  path  night-lights-fallback.ts  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so; annotated at :73
+STATUS.md:28  path  porkchopV2-Ci6r-fmN.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names 81252f2: not in this shallow clone
+STATUS.md:28  path  solarSystemV2-DFJ0f0Yh.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names 81252f2: not in this shallow clone
+STATUS.md:28  path  compareV2-CEg78aFw.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names 81252f2: not in this shallow clone
+STATUS.md:28  path  porkchopV2-z3nhVK2W.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:28  path  solarSystemV2-Z_zaFg6C.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:28  path  compareV2-BbpSakkn.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:28  path  porkchop-view-BTebVubw.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:28  path  tier-assignments-C-5EqJQL.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:28  path  resolve-catalog-body-pmopDgKo.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:28  path  store-CkJiJhKO.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:28  path  porkchopV2-DPwWKoPv.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so
+STATUS.md:28  path  solarSystemV2-BM6ai_je.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so
+STATUS.md:28  path  compareV2-Br2FOkFz.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so
+STATUS.md:312  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked; at the commit its sentence names cba6e6a: not in this shallow clone
+STATUS.md:312  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so
+STATUS.md:425  path  docs/assets/porkchopV2-z3nhVK2W.js  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+STATUS.md:557  path  tools/slice16-harness/FULL_RUN_REPORT.md  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so
+strategy/IDEA_KERNELS_2026-09.md:35  path  params/rev_a.json  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: names Skyhook
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:11  path  Aster_V2_Full_Chat_Log.txt  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:11  path  Aster_V2_Full_Chat_Log.pdf  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:12  path  Aster_V2_Grand_Vision_Blueprint.pdf  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:47  path  src/v2/core/ephemeris/chebyshev.ts  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:58  path  src/v2/core/dynamics/lowThrustPropagator.ts  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:70  path  fetch_horizons.py  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:70  path  tools/ephemeris-compressor/  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:82  path  compress.py  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:156  path  dispatches/RECON-HORIZON-2060-2026-09-11.txt  MISSING-PATH
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+AGENTS.md:142  path  mcp/dist/mcp/src/index.js  IGNORED  absent here, and git ignores this location (mcp/.gitignore:2 `dist/`); same name at proxy/index.js, worker/index.js
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+src/v2/SLICE_9_FOUNDING.md:426  path  tools/slice9-research/data/slice9-cutover-sample.json  IGNORED  absent here, and git ignores this location (.gitignore:19 `tools/slice9-research/data/*`)
+    history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
+    context: its own sentence says so
+
+Not fully checkable (588), by reason:
+  538   commit: not in this shallow clone (history starts at the boundary)
+  30    path: several files share this name
+  10    commit: reads as a content hash, not a commit
+  7     line: several files share this name
+  2     path: reads as a placeholder name, not a file the document says exists
+  1     line: a bare :N with no path earlier in its paragraph
+
+IN-RANGE (53): the cited line exists, but no snippet sits in the sentence to check it against; --only IN-RANGE lists them.
+
+exit 1: 96 drift findings not allowlisted

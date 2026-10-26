@@ -79,12 +79,15 @@
     return el('div', { class: `tile${hero ? ' hero' : ''}` }, el('div', { class: 'label', text: label }), el('div', { class: 'value', text: value }), el('div', { class: 'note', text: note }));
   }
   const tiles = $('tiles');
+  // each edge tile carries the count on the next line inward: the edges differ in length, so the
+  // comparison that says whether minima pile up against an edge is with its neighbour line
+  const nextIn = (k, what) => `${f(E[k].inwardLines[1])} ${what}`;
   tiles.append(
     tile('Cheapest window on any edge', f(C.edges.any), `${pct(C.edges.anyShare)} of ${f(C.bodies.withWindows)} bodies; ${C.edges.multiple} touch two edges`, true),
-    tile('At the flight-time floor', f(E.tofMin.touched), `${L.tofMinDays}-day flights, the shortest solved; ${pct(E.tofMin.shareOfBodies)}`),
-    tile('On the first departure date', f(E.first.touched), `${L.firstDepartureUtc}; ${f(E.first.likelyClipped)} likely clipped`),
-    tile('On the last departure date', f(E.last.touched), `${L.lastDepartureUtc}; ${f(E.last.likelyClipped)} likely clipped`),
-    tile('At the flight-time ceiling', f(E.tofMax.touched), `${f(L.lastTofDays)}-day flights, the longest solved`),
+    tile('At the flight-time floor', f(E.tofMin.touched), `${L.tofMinDays}-day flights, the shortest solved; ${nextIn('tofMin', `at ${f(rowTof(1))} days`)}`),
+    tile('On the first departure date', f(E.first.touched), `${L.firstDepartureUtc}; ${nextIn('first', 'on the next date')}`),
+    tile('On the last departure date', f(E.last.touched), `${L.lastDepartureUtc}; ${nextIn('last', 'on the date before')}`),
+    tile('At the flight-time ceiling', f(E.tofMax.touched), `${f(L.lastTofDays)}-day flights, the longest solved; ${nextIn('tofMax', `at ${f(rowTof(L.nRows - 2))} days`)}`),
     G.isRefusal(C.viewTail)
       ? tile('After the porkchop view\'s end', 'refused', C.viewTail.refusal.reason)
       : tile('After the porkchop view\'s end', f(C.viewTail.minimaAfter), `cached minima departing after ${C.viewTail.depEndUtc}; ${pct(C.viewTail.shareOfBodies)}`),
@@ -337,10 +340,9 @@
     });
     dArea += `L${xOf(n - 1)},${yOf(0)}Z`;
     svg.append(sv('path', { d: dArea, class: 's1-area' }));
-    // interior median reference line, labelled
-    const med = C.interior.medianPerCol;
-    svg.append(sv('line', { x1: left, x2: W - right, y1: yOf(med), y2: yOf(med), class: 'ref' }));
-    svg.append(sv('text', { x: W - right - 4, y: yOf(med) - 5, 'text-anchor': 'end', 'font-size': 10, class: 'halo' }, `interior median ${f(med)} per date`));
+    // interior median reference line (named in the legend: a label on the line sat on the data)
+    const med = G.isRefusal(C.interior) ? null : C.interior.medianPerCol;
+    if (med !== null) svg.append(sv('line', { x1: left, x2: W - right, y1: yOf(med), y2: yOf(med), class: 'ref' }));
     svg.append(sv('path', { d: dLine, class: 's1-line' }));
     // edge markers with direct labels
     for (const [c, anchor, dx] of [[0, 'start', 8], [n - 1, 'end', -8]]) {
@@ -356,7 +358,7 @@
     const overlay = sv('rect', { x: left, y: top, width: W - left - right, height: H - top - bottom, fill: 'transparent' });
     svg.append(overlay);
     host.replaceChildren(svg);
-    host.setAttribute('aria-label', `Line chart of cheapest windows per departure date over ${f(n)} dates; first date ${f(PC[0])}, last date ${f(PC[n - 1])}, interior median ${f(med)}. Arrow keys move the crosshair.`);
+    host.setAttribute('aria-label', `Line chart of cheapest windows per departure date over ${f(n)} dates; first date ${f(PC[0])}, last date ${f(PC[n - 1])}, interior median ${med === null ? 'not available' : f(med)}. Arrow keys move the crosshair.`);
     const tip = $('colsTip');
     function place(c, kbd) {
       colsState.cursor = c;
@@ -366,7 +368,7 @@
       dot.setAttribute('cx', xOf(c));
       dot.setAttribute('cy', yOf(PC[c]));
       dot.setAttribute('visibility', 'visible');
-      const lines = [`${f(PC[c])} cheapest windows`, `${colDate(c)} · departure date ${c + 1} of ${n}`, `${f(C.perColumn.allWindows[c])} stored windows of any rank; interior median ${f(med)}`];
+      const lines = [`${f(PC[c])} cheapest windows`, `${colDate(c)} · departure date ${c + 1} of ${n}`, `${f(C.perColumn.allWindows[c])} stored windows of any rank${med === null ? '' : `; interior median ${f(med)}`}`];
       if (c === 0) lines.push(`first departure date of the grid`);
       if (c === n - 1) lines.push(`last departure date of the grid`);
       showTip(tip, host, xOf(c), yOf(PC[c]) + (kbd ? 10 : 0), lines);
@@ -397,7 +399,8 @@
     legend.replaceChildren(
       el('span', null, el('span', { class: 'ln' }), 'cheapest windows per departure date'),
       el('span', null, el('span', { class: 'mk' }), 'the two edge dates'),
-      el('span', { class: 'muted', text: `${f(C.interior.firstColRatio.toFixed(1))}× and ${C.interior.lastColRatio.toFixed(1)}× the interior median at the edges` }),
+      med === null ? null : el('span', null, el('span', { class: 'rf' }), `interior median, ${f(med)} per date`),
+      med === null ? el('span', { class: 'muted', text: `no interior baseline: ${C.interior.refusal.reason}` }) : el('span', { class: 'muted', text: `${C.interior.firstColRatio.toFixed(1)}× and ${C.interior.lastColRatio.toFixed(1)}× the interior median at the edges` }),
     );
     // table view: first and last ten
     const table = $('colsTable');
@@ -406,22 +409,23 @@
     const idx = [...Array.from({ length: 10 }, (_, i) => i), ...Array.from({ length: 10 }, (_, i) => n - 10 + i)];
     idx.forEach((c, i) => {
       if (i === 10) tb.append(el('tr', null, el('td', { text: '…', colspan: 5 })));
-      tb.append(el('tr', { class: c === 0 || c === n - 1 ? 'edge-row' : null }, el('td', { class: 'key', text: colDate(c) }), el('td', { class: 'num', text: String(c) }), el('td', { class: 'num', text: f(PC[c]) }), el('td', { class: 'num', text: f(C.perColumn.allWindows[c]) }), el('td', { class: 'num', text: (PC[c] / med).toFixed(2) })));
+      tb.append(el('tr', { class: c === 0 || c === n - 1 ? 'edge-row' : null }, el('td', { class: 'key', text: colDate(c) }), el('td', { class: 'num', text: String(c) }), el('td', { class: 'num', text: f(PC[c]) }), el('td', { class: 'num', text: f(C.perColumn.allWindows[c]) }), el('td', { class: 'num', text: med ? (PC[c] / med).toFixed(2) : 'n/a' })));
     });
     table.append(tb);
   }
   $('colsHint').textContent =
     `One point per departure date of the lattice (${L.departureSpacingDays}-day spacing): how many bodies have their cheapest stored window there. ` +
-    `The interior median is taken over the dates outside ${firstYear.year} and ${lastYear.year}; the first date carries ${C.interior.firstColRatio.toFixed(1)}× it and the last ${C.interior.lastColRatio.toFixed(1)}×. ` +
-    `The opening pile-up is wider than one date: ${firstYear.year} carries ${C.interior.firstYearRatio.toFixed(2)}× a median interior year per date, ${lastYear.year} ${C.interior.lastYearRatio.toFixed(2)}×.`;
+    (G.isRefusal(C.interior)
+      ? `No interior baseline: ${C.interior.refusal.reason}.`
+      : `The interior median is taken over the dates outside ${firstYear.year} and ${lastYear.year}; the first date carries ${C.interior.firstColRatio.toFixed(1)}× it and the last ${C.interior.lastColRatio.toFixed(1)}×. ` +
+        `The opening pile-up is wider than one date: ${firstYear.year} carries ${C.interior.firstYearRatio.toFixed(2)}× a median interior year per date, ${lastYear.year} ${C.interior.lastYearRatio.toFixed(2)}×.`);
 
   // ---------------------------------------------------------------- edge table
   function edgeTable() {
     const t = $('edgeTable');
     t.replaceChildren();
-    const slope = (e) => (e.slopeC3PerCell ? `${e.slopeC3PerCell.median.toFixed(3)} km²/s² (n ${e.slopeC3PerCell.n})` : 'none recorded');
-    const likelyAll = G.EDGE_KEYS.reduce((n, k) => n + E[k].likelyClipped, 0);
-    const undetAll = G.EDGE_KEYS.reduce((n, k) => n + E[k].undetermined, 0);
+    const lines = (e) => e.inwardLines.slice(1).map((x) => (x === null ? '–' : f(x))).join(' · ');
+    const lineWord = (k) => (k === 'first' || k === 'last' ? 'dates' : 'flight times');
     if (isNarrow()) {
       // one block per edge: label / value rows, nothing hidden, nothing scrolling sideways
       for (const k of G.EDGE_KEYS) {
@@ -429,43 +433,105 @@
         const tb = el('tbody', { class: 'kv' });
         tb.append(el('tr', null, el('th', { colspan: 2 }, `${G.EDGE_NAMES[k]} `, el('span', { class: 'muted', text: `(${e.cell})` }))));
         tb.append(el('tr', null, el('td', { text: 'cheapest windows there' }), el('td', { class: 'num', text: `${f(e.touched)} (${pct(e.shareOfBodies)})` })));
-        tb.append(el('tr', null, el('td', null, 'likely clipped ', tag('likely', 'Likely')), el('td', { class: 'num', text: f(e.likelyClipped) })));
-        tb.append(el('tr', null, el('td', null, 'undetermined ', tag('spec', 'Speculative')), el('td', { class: 'num', text: f(e.undetermined) })));
-        tb.append(el('tr', null, el('td', { text: 'chains ≥ 3 (monotone)' }), el('td', { class: 'num', text: `${e.chains3plus} (${e.monotone3plus})` })));
-        tb.append(el('tr', null, el('td', { text: 'median inward slope' }), el('td', { class: 'num', text: slope(e) })));
+        tb.append(el('tr', null, el('td', { text: `per edge cell (${f(e.cellsOnEdge)} cells)` }), el('td', { class: 'num', text: e.minimaPerEdgeCell.toFixed(2) })));
+        tb.append(el('tr', null, el('td', { text: `next three ${lineWord(k)} in` }), el('td', { class: 'num', text: lines(e) })));
         t.append(tb);
       }
       const tb = el('tbody', { class: 'kv edge-row' });
       tb.append(el('tr', null, el('th', { colspan: 2, text: `any edge (${C.edges.multiple} bodies touch two)` })));
       tb.append(el('tr', null, el('td', { text: 'cheapest windows there' }), el('td', { class: 'num', text: `${f(C.edges.any)} (${pct(C.edges.anyShare)})` })));
-      tb.append(el('tr', null, el('td', { text: 'likely clipped / undetermined' }), el('td', { class: 'num', text: `${f(likelyAll)} / ${f(undetAll)}` })));
       t.append(tb);
     } else {
       t.append(el('thead', null, el('tr', null,
         el('th', { text: 'edge' }), el('th', { text: 'cell' }), el('th', { class: 'num', text: 'cheapest windows there' }), el('th', { class: 'num', text: 'share' }),
-        el('th', { class: 'num', text: 'likely clipped' }), el('th', { class: 'num', text: 'undetermined' }),
-        el('th', { class: 'num', text: 'chains ≥ 3 (monotone)' }), el('th', { class: 'num', text: 'median inward slope' }))));
+        el('th', { class: 'num', text: 'edge cells' }), el('th', { class: 'num', text: 'per edge cell' }), el('th', { class: 'num', text: 'next three lines in' }))));
       const tb = el('tbody');
       for (const k of G.EDGE_KEYS) {
         const e = E[k];
         tb.append(el('tr', null,
           el('td', { class: 'key', text: G.EDGE_NAMES[k] }), el('td', { class: 'key', text: e.cell }), el('td', { class: 'num', text: f(e.touched) }), el('td', { class: 'num', text: pct(e.shareOfBodies) }),
-          el('td', { class: 'num', text: f(e.likelyClipped) }), el('td', { class: 'num', text: f(e.undetermined) }),
-          el('td', { class: 'num', text: `${e.chains3plus} (${e.monotone3plus})` }),
-          el('td', { class: 'num', text: slope(e) })));
+          el('td', { class: 'num', text: f(e.cellsOnEdge) }), el('td', { class: 'num', text: e.minimaPerEdgeCell.toFixed(2) }), el('td', { class: 'num', text: lines(e) })));
       }
       tb.append(el('tr', { class: 'edge-row' }, el('td', { class: 'key', text: 'any edge' }), el('td', { class: 'key', text: `${C.edges.multiple} bodies touch two` }), el('td', { class: 'num', text: f(C.edges.any) }), el('td', { class: 'num', text: pct(C.edges.anyShare) }),
-        el('td', { class: 'num', text: f(likelyAll) }), el('td', { class: 'num', text: f(undetAll) }), el('td', { text: '' }), el('td', { text: '' })));
+        el('td', { text: '' }), el('td', { text: '' }), el('td', { text: '' })));
       t.append(tb);
     }
-    $('edgesHint').textContent = `A body is on an edge when its cheapest stored window is in the first or last departure column or the lowest or highest flight-time row of the ${f(L.nCols)} × ${L.nRows} lattice. The flight-time floor binds: it holds ${(E.tofMin.touched / Math.max(1, E.first.touched + E.last.touched + E.tofMax.touched)).toFixed(1)}× as many minima as the other three edges together.`;
-    const v = $('verdictHint');
-    v.replaceChildren(
-      tag('likely', 'Likely'), ` clipped: the next cell inward along the same row or column is among the body's five stored windows and costs more (every stored chain of three or more rises inward: ${G.EDGE_KEYS.map((k) => `${E[k].monotone3plus} of ${E[k].chains3plus}`).join(', ')}), so the sampled surface is still falling as it leaves the grid and its minimum is at or beyond the edge. The slope quoted is that one step, not an extrapolation. `,
-      tag('spec', 'Speculative'), ` undetermined: the other four windows lie in other basins and the cache records no slope at that edge; the true minimum may or may not be off-grid. At the floor this is almost every body (${f(E.tofMin.undetermined)} of ${f(E.tofMin.touched)}): the ${L.tofMinDays + L.tofSpacingDays}-day neighbour is among the five for ${E.tofMin.neighbourPresent}.`,
+    const piled = G.EDGE_KEYS.filter((k) => E[k].edgeOverNextLine === null ? E[k].touched > 0 : E[k].edgeOverNextLine > 1);
+    const notPiled = G.EDGE_KEYS.filter((k) => !piled.includes(k));
+    const fl = E.tofMin.inwardLines;
+    $('edgesHint').replaceChildren(
+      `A body is on an edge when its cheapest stored window is in the first or last departure column or the lowest or highest flight-time row of the ${f(L.nCols)} × ${L.nRows} lattice. `,
+      tag('certain', 'Certain'),
+      ` The counts. The edges differ in length (a departure edge has ${L.nRows} cells, a flight-time edge ${f(L.nCols)}), so the raw counts do not compare; per edge cell they are ${G.EDGE_KEYS.map((k) => `${E[k].minimaPerEdgeCell.toFixed(2)} (${shortName(k)})`).join(', ')}. ` +
+      `Against the next line in, minima pile up on ${andList(piled.map((k) => `the ${shortName(k)}`))}${notPiled.length ? `, but not on ${andList(notPiled.map((k) => `the ${shortName(k)}`))}` : ''}` +
+      (notPiled.includes('tofMin') ? `: ${f(fl[0])} at ${L.tofMinDays} days against ${fl.slice(1).map((x, i) => `${f(x)} at ${f(rowTof(i + 1))}`).join(', ')} days, so the counts there fall toward the floor. ` : '. '),
+      tag('spec', 'Speculative'),
+      ' Whether any edge truncates minima, and how many, is not shown by these counts; the floor holds the most edge minima because it is the longest edge and minima crowd toward short flight times, not because it is shown to bind.',
     );
+    riseNotesAndTable();
+    altTable();
+  }
+  const andList = (xs) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  const shortName = (k) => ({ first: 'first date', last: 'last date', tofMin: 'floor', tofMax: 'ceiling' })[k];
+
+  function riseNotesAndTable() {
+    const all = C.edges, VX = C.edges.vertex;
+    const notes = $('riseNotes');
+    const li = (...kids) => el('li', null, ...kids);
+    const st = (s) => (s ? `median ${s.median.toFixed(3)} (n ${f(s.n)})` : 'none');
+    notes.replaceChildren(
+      li(tag('certain', 'Certain'), ` Every edge minimum is, by construction, cheaper than every other solved cell: the cache keeps each body's ${C.verification.windowsKeptPerBody === null ? 'few' : C.verification.windowsKeptPerBody} cheapest cells of the whole lattice. So the sampled surface always falls toward an edge minimum, and that alone says nothing about clipping.`),
+      li(tag('certain', 'Certain'), ` One step inward along the same row or column, the rise is recorded when that neighbour is among the stored windows: ${G.EDGE_KEYS.map((k) => `${shortName(k)} ${st(E[k].riseRecorded)}`).join('; ')} km²/s².`),
+      li(tag('likely', 'Likely'), ` When it is not, it cost at least as much as the dearest stored window, so the rise is at least the spread of the stored windows: ${G.EDGE_KEYS.map((k) => `${shortName(k)} ${st(E[k].riseBound)}`).join('; ')} km²/s² (lower bounds). This holds wherever that neighbour's Lambert solve converged; the cache does not record the cells where one failed. The bounded rises are the steeper ones (all edges: median ≥ ${all.riseBound ? all.riseBound.median.toFixed(3) : 'n/a'} against ${all.riseRecorded ? all.riseRecorded.median.toFixed(3) : 'n/a'} recorded): a shallow rise lets the neighbour into the stored windows, a steep one keeps it out, so the split sorts edges by steepness, not by strength of evidence.`),
+      li(tag('likely', 'Likely'), ` Under a local quadratic model, a minimum on the edge cell with a dearer neighbour puts the continuous minimum along that line within half a lattice step of the edge or beyond it. For the ${f(all.chains3plus)} stored chains of three or more cells running inward, the quadratic through the first three puts its vertex beyond the edge for ${VX.beyond}, inside the lattice (within half a step) for ${VX.inside}, and has no minimum on the inward side (straight or concave) for ${VX.none}. For the rest the stored windows hold one or two cells on the line, too few for a vertex.`),
+    );
+    const t = $('riseTable');
+    t.replaceChildren();
+    const range = (s) => (s ? `${s.min.toFixed(3)}–${s.max.toFixed(3)}` : '–');
+    const vtx = (e) => (e.chains3plus ? `${e.vertex.beyond} / ${e.vertex.inside} / ${e.vertex.none}` : '–');
+    if (isNarrow()) {
+      for (const k of G.EDGE_KEYS) {
+        const e = E[k];
+        const tb = el('tbody', { class: 'kv' });
+        tb.append(el('tr', null, el('th', { colspan: 2, text: G.EDGE_NAMES[k] })));
+        tb.append(el('tr', null, el('td', { text: 'rise recorded' }), el('td', { class: 'num wrap', text: e.riseRecorded ? `${st(e.riseRecorded)}, ${range(e.riseRecorded)}` : 'none' })));
+        tb.append(el('tr', null, el('td', { text: 'rise at least' }), el('td', { class: 'num wrap', text: e.riseBound ? `${st(e.riseBound)}, ${range(e.riseBound)}` : 'none' })));
+        tb.append(el('tr', null, el('td', { text: 'chains ≥ 3: vertex beyond / inside / none' }), el('td', { class: 'num', text: vtx(e) })));
+        t.append(tb);
+      }
+    } else {
+      t.append(el('thead', null, el('tr', null,
+        el('th', { text: 'edge' }), el('th', { class: 'num', text: 'rise recorded: n' }), el('th', { class: 'num', text: 'median' }), el('th', { class: 'num', text: 'range' }),
+        el('th', { class: 'num', text: 'rise at least: n' }), el('th', { class: 'num', text: 'median bound' }), el('th', { class: 'num', text: 'range' }),
+        el('th', { class: 'num', text: 'chains ≥ 3: vertex beyond / inside / none' }))));
+      const tb = el('tbody');
+      for (const k of G.EDGE_KEYS) {
+        const e = E[k];
+        tb.append(el('tr', null, el('td', { class: 'key', text: G.EDGE_NAMES[k] }),
+          el('td', { class: 'num', text: e.riseRecorded ? f(e.riseRecorded.n) : '0' }), el('td', { class: 'num', text: e.riseRecorded ? e.riseRecorded.median.toFixed(3) : '–' }), el('td', { class: 'num', text: range(e.riseRecorded) }),
+          el('td', { class: 'num', text: e.riseBound ? f(e.riseBound.n) : '0' }), el('td', { class: 'num', text: e.riseBound ? e.riseBound.median.toFixed(3) : '–' }), el('td', { class: 'num', text: range(e.riseBound) }),
+          el('td', { class: 'num', text: vtx(e) })));
+      }
+      t.append(tb);
+    }
+  }
+
+  function altTable() {
     const A = C.interiorAlternative;
-    $('altHint').textContent = `Interior alternative: ${f(A.withAlternative)} of the ${f(A.ofEdgeBodies)} edge bodies also store a window in a different basin that is on no edge, costing a median ${A.gapC3.median.toFixed(3)} km²/s² more than the edge minimum (${A.gapC3.min.toFixed(4)} to ${A.gapC3.max.toFixed(2)}); ${f(A.without)} store none, so for them the grid offers no interior fallback among the five.`;
+    const R = A.byRule;
+    const box = R[0], arr = R.find((r) => r.rule.arrival);
+    const ao = E.tofMin.arrivalLine;
+    const rho = G.arrivalOffsets(L).columnsPerRow;
+    $('altHint').textContent =
+      `Does an edge body also store a window off the edge, in another basin? Under the proposal's rule (${G.describeRule(box.rule, L)}) ${f(box.withAlternative)} of the ${f(A.ofEdgeBodies)} do, a median ${box.gapC3 ? box.gapC3.median.toFixed(3) : 'n/a'} km²/s² dearer than the edge minimum. ` +
+      `That rule splits transfer valleys that run along a nearly constant arrival date: one ${L.tofSpacingDays}-day flight-time row is ${rho.toFixed(1)} departure dates of ${L.departureSpacingDays} days, so the same valley one row over sits ${Math.floor(rho)} or ${Math.ceil(rho)} columns away, outside the box. ` +
+      (arr ? `Measured along arrival dates (${G.describeRule(arr.rule, L)}), ${f(arr.withAlternative)} have such a window. ` : '') +
+      (ao && E.tofMin.touched ? `At the floor, ${f(ao.withWindow)} of the ${f(E.tofMin.touched)} bodies store a window one row up and ${ao.offsets[0]}–${ao.offsets[1]} dates earlier, on that line, a median ${ao.rise ? ao.rise.median.toFixed(3) : 'n/a'} km²/s² dearer: the valley runs toward the floor at later departures.` : '');
+    const t = $('altTable');
+    t.replaceChildren(el('thead', null, el('tr', null, el('th', { text: 'basin rule' }), el('th', { class: 'num', text: 'with one' }), el('th', { class: 'num wrap', text: 'median extra C3, km²/s²' }), el('th', { class: 'num', text: 'without' }))));
+    const tb = el('tbody');
+    for (const r of R) tb.append(el('tr', null, el('td', { class: 'wrap', text: G.describeRule(r.rule, L) }), el('td', { class: 'num', text: f(r.withAlternative) }), el('td', { class: 'num', text: r.gapC3 ? r.gapC3.median.toFixed(3) : '–' }), el('td', { class: 'num', text: f(r.without) })));
+    t.append(tb);
   }
 
   // ---------------------------------------------------------------- the porkchop view's tail
@@ -543,9 +609,16 @@
   let whoDraw = null;
 
   // ---------------------------------------------------------------- basins
+  const basinState = { rule: 0 };
   function drawBasins() {
     const host = $('basins');
-    const hist = C.basins[0].histogram;
+    const ruleSel = $('basinRule');
+    if (!ruleSel.options.length) {
+      C.basins.forEach((b, i) => ruleSel.append(el('option', { value: String(i), text: `${G.describeRule(b.rule, L)}${i === 0 ? ' (proposal)' : ''}` })));
+      ruleSel.addEventListener('change', () => { basinState.rule = Number(ruleSel.value); drawBasins(); });
+    }
+    const B = C.basins[basinState.rule] || C.basins[0];
+    const hist = B.histogram;
     const keys = ['1', '2', '3', '4', '5'];
     const vals = keys.map((k) => hist[k]);
     const W = Math.max(300, host.clientWidth || 600);
@@ -569,22 +642,30 @@
       svg.append(sv('text', { x: x + barW / 2, y: H - 8, 'text-anchor': 'middle', 'font-size': 10 }, `${keys[i]} basin${keys[i] === '1' ? '' : 's'}`));
     });
     host.replaceChildren(svg);
-    host.setAttribute('aria-label', `Bodies by how many basins their five windows span: ${keys.map((k) => `${k}: ${f(hist[k])}`).join(', ')}.`);
+    host.setAttribute('aria-label', `Bodies by how many basins their five windows span, ${G.describeRule(B.rule, L)}: ${keys.map((k) => `${k}: ${f(hist[k])}`).join(', ')}.`);
     const t = $('basinsTable');
-    const ruleText = (b) => `${b.rule.maxColGap} col · ${b.rule.maxRowGap} row`;
+    const ruleText = (b) => (b.rule.arrival ? `arrival ≤ ${b.rule.maxColGap} dates · ${b.rule.maxRowGap} row` : `${b.rule.maxColGap} col · ${b.rule.maxRowGap} row`);
     if (isNarrow()) {
       // transposed on narrow screens: one row per basin count, one column per rule
-      t.replaceChildren(el('thead', null, el('tr', null, el('th', { text: 'basins' }), ...C.basins.map((b) => el('th', { class: 'num wrap', text: `within ${ruleText(b)}` })))));
+      t.replaceChildren(el('thead', null, el('tr', null, el('th', { text: 'basins' }), ...C.basins.map((b) => el('th', { class: 'num wrap', text: b.rule.arrival ? ruleText(b) : `within ${ruleText(b)}` })))));
       const tb = el('tbody');
       for (const k of keys) tb.append(el('tr', null, el('td', { class: 'num', text: k }), ...C.basins.map((b) => el('td', { class: 'num', text: f(b.histogram[k]) }))));
       t.append(tb);
     } else {
       t.replaceChildren(el('thead', null, el('tr', null, el('th', { text: 'same basin within' }), ...keys.map((k) => el('th', { class: 'num', text: `${k} basin${k === '1' ? '' : 's'}` })))));
       const tb = el('tbody');
-      for (const b of C.basins) tb.append(el('tr', null, el('td', { class: 'key', text: ruleText(b) }), ...keys.map((k) => el('td', { class: 'num', text: f(b.histogram[k]) }))));
+      for (const b of C.basins) tb.append(el('tr', { class: b === B ? 'sel-row' : null }, el('td', { class: 'key', text: ruleText(b) }), ...keys.map((k) => el('td', { class: 'num', text: f(b.histogram[k]) }))));
       t.append(tb);
     }
-    $('basinsHint').textContent = `Two stored windows are in the same basin when their cells are within ${C.basins[0].rule.maxColGap} departure columns (${C.basins[0].rule.maxColGap * L.departureSpacingDays} days) and ${C.basins[0].rule.maxRowGap} flight-time row (${C.basins[0].rule.maxRowGap * L.tofSpacingDays} days) of each other; basins are the connected groups. Under this rule most bodies spread their five windows over three or more basins, i.e. the top five are not usually the five neighbours of the minimum. The table shows how the count moves under looser rules.`;
+    const arr = C.basins.find((b) => b.rule.arrival);
+    const box = C.basins[0];
+    const rho = G.arrivalOffsets(L).columnsPerRow;
+    const h = (b) => b.histogram;
+    $('basinsHint').textContent =
+      `Two stored windows are in the same basin when their cells are close under the rule, and basins are the connected groups. The proposal's rule is a box: within ${box.rule.maxColGap} departure columns (${box.rule.maxColGap * L.departureSpacingDays} days) and ${box.rule.maxRowGap} flight-time row (${box.rule.maxRowGap * L.tofSpacingDays} days). ` +
+      `Under it, ${f(h(box)[3] + h(box)[4] + h(box)[5])} of ${f(C.bodies.withWindows)} bodies spread their five windows over three or more basins. That is mostly the lattice's aspect ratio: a transfer valley often runs along a nearly constant arrival date, and one ${L.tofSpacingDays}-day row then sits ${rho.toFixed(1)} departure columns away, outside the box. ` +
+      (arr ? `The arrival-aware rule keeps the box's reach but measures columns along arrival dates: ${G.describeRule(arr.rule, L)}. Under it ${f(h(arr)[1])} bodies have one basin and ${f(h(arr)[2])} two, and ${f(h(arr)[3] + h(arr)[4] + h(arr)[5])} three or more. ` : '') +
+      'The chart follows the rule picked above; the table shows all four.';
   }
 
   // ---------------------------------------------------------------- inspector
@@ -620,29 +701,53 @@
       el('span', { class: 'name', text: s.name || s.bodyId }),
       el('span', { class: 'muted', text: `${s.orbitClass || '?'} · H ${s.H === null ? 'missing' : s.H}${s.synodicYears ? ` · synodic ${s.synodicYears > 1000 ? 'very long' : `${s.synodicYears.toFixed(2)} yr`}` : ''} · ${s.status}` }),
       el('span', { text: `min C3 ${fix(s.minC3, 4)} km²/s² at column ${ev.cell.col} (${s.minC3Date}), row ${ev.cell.row} (${f(s.minC3TofDays)} days)` }),
-      el('span', { text: `${s.basins} basin${s.basins === 1 ? '' : 's'}` }),
+      el('span', { text: `${s.basins} basin${s.basins === 1 ? '' : 's'} (${G.describeRule(G.DEFAULT_BASIN_RULE, L)})` }),
     );
     if (!ev.edges.length) head.append(tag('certain', 'interior minimum'));
     for (const e of ev.edges) {
-      head.append(el('span', null, `${G.EDGE_NAMES[e.edge]}: `, tag(e.verdict === 'likely_clipped' ? 'likely' : 'spec', e.verdict === 'likely_clipped' ? 'Likely clipped' : 'Undetermined'), e.neighbourPresent ? ` inward +${e.slopeC3PerCell.toFixed(3)} km²/s², chain ${e.chainLength}${e.monotone ? ', monotone' : ', not monotone'}` : ' no inward neighbour stored'));
+      const kind = e.rise.kind === 'recorded' ? tag('certain', 'rise recorded') : e.rise.kind === 'bound' ? tag('likely', 'rise bounded below') : tag('spec', 'no rise');
+      head.append(el('span', { class: 'edge-ev' }, `${G.EDGE_NAMES[e.edge]}: `, kind, ` ${G.describeRise(e)}`, e.vertex && e.vertex.position !== 'none' ? ' ' : '', e.vertex && e.vertex.position !== 'none' ? tag('likely', 'Likely, local quadratic') : ''));
     }
     // mini grid: the whole lattice for context (adjacent columns are a pixel apart here), then a zoom
     // around the minimum where every lattice cell is a square and the stored windows can be read off
     const W = Math.max(300, mini.clientWidth || 600);
     const narrow = W < 560;
+    const left = narrow ? 72 : 84, right = 16;
+    // captions wrap to the width they have (a 10 px system font runs about 5.6 px a character)
+    const wrap = (text, px, font) => {
+      const max = Math.max(12, Math.floor(px / ((font || 10) * 0.56)));
+      const out = [];
+      let cur = '';
+      for (const word of text.split(' ')) {
+        if (cur && (cur + ' ' + word).length > max) { out.push(cur); cur = word; } else cur = cur ? `${cur} ${word}` : word;
+      }
+      if (cur) out.push(cur);
+      return out;
+    };
+    const captionW = W - left - right;
+    const topCap = wrap('the whole lattice; orange is its edge; one label per basin', captionW);
     const fullH = narrow ? 120 : 140;
-    const left = narrow ? 72 : 84, right = 16, top = 14, gap = 44;
+    const top = 14 + 12 * (topCap.length - 1);
     const zoomCols = narrow ? 9 : 13, zoomRows = 5;
     const cellPx = Math.min(narrow ? 30 : 40, (W - left - right) / zoomCols);
-    const zTop = top + fullH + gap;
+    const c0 = Math.max(0, Math.min(L.nCols - zoomCols, ev.cell.col - Math.floor(zoomCols / 2)));
+    const r0 = Math.max(0, Math.min(L.nRows - zoomRows, ev.cell.row - Math.floor(zoomRows / 2)));
+    const inZoom = (w) => w.col >= c0 && w.col < c0 + zoomCols && w.row >= r0 && w.row < r0 + zoomRows;
+    const outside = s.windows.filter((w) => !inZoom(w)).length;
+    const zoomCap = wrap(`zoom: ${zoomCols} departure dates × ${zoomRows} flight times around the minimum (columns ${c0}–${c0 + zoomCols - 1}, rows ${r0}–${r0 + zoomRows - 1})`, captionW)
+      .concat(outside ? wrap(`${outside} of ${s.windows.length} windows lie outside the zoom`, captionW) : []);
+    const zTop = top + fullH + 26 + 12 * zoomCap.length;
     const zH = zoomRows * cellPx;
-    const H = zTop + zH + 30;
+    const y0 = colDate(c0).slice(0, 4), y1 = colDate(c0 + zoomCols - 1).slice(0, 4);
+    const bottomCap = wrap(`departure dates of ${y0}${y0 === y1 ? '' : `–${y1}`} (month-day); orange cells are the lattice's edge`, captionW, 9);
+    const H = zTop + zH + 18 + 11 * bottomCap.length;
     const xOf = (c) => left + (c / (L.nCols - 1)) * (W - left - right);
     const yOf = (r) => top + (1 - r / (L.nRows - 1)) * fullH;
     const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, 'aria-hidden': 'true' });
+    const caption = (lines, x, y, font, step) => lines.forEach((t, i) => svg.append(sv('text', { x, y: y + i * step, 'font-size': font, class: 'muted-text' }, t)));
     svg.append(sv('rect', { x: left, y: top, width: W - left - right, height: fullH, class: 'lattice' }));
-    for (const [x1, x2, y1, y2] of [[left, left, top, top + fullH], [W - right, W - right, top, top + fullH], [left, W - right, top + fullH, top + fullH], [left, W - right, top, top]]) {
-      svg.append(sv('line', { x1, x2, y1, y2, class: 'edge-line' }));
+    for (const [x1, x2, ya, yb] of [[left, left, top, top + fullH], [W - right, W - right, top, top + fullH], [left, W - right, top + fullH, top + fullH], [left, W - right, top, top]]) {
+      svg.append(sv('line', { x1, x2, y1: ya, y2: yb, class: 'edge-line' }));
     }
     svg.append(sv('text', { x: left - 8, y: top + fullH + 3, 'text-anchor': 'end', 'font-size': 10 }, `${f(L.tofMinDays)} floor`));
     svg.append(sv('text', { x: left - 8, y: top + 3, 'text-anchor': 'end', 'font-size': 10 }, `${f(L.lastTofDays)} ceiling`));
@@ -653,27 +758,42 @@
       svg.append(sv('line', { x1: xOf(y.firstCol), x2: xOf(y.firstCol), y1: top + fullH, y2: top + fullH + 4, class: 'axis' }));
       if (!narrow || i % 2 === 0) svg.append(sv('text', { x: xOf(y.firstCol + y.cols / 2), y: top + fullH + 15, 'text-anchor': 'middle', 'font-size': 10 }, String(y.year)));
     });
-    svg.append(sv('text', { x: left, y: top - 4, 'font-size': 10, class: 'muted-text' }, 'the whole lattice; orange is its edge; one label per basin'));
+    caption(topCap, left, 10, 10, 12);
+    // basin labels avoid each other and the dots: try above, below, further out, on either side
+    const placed = s.windows.map((w) => ({ x: xOf(w.col) - 7, y: yOf(w.row) - 7, w: 14, h: 14 }));
+    const overlaps = (a) => placed.some((p) => !(a.x + a.w <= p.x || p.x + p.w <= a.x || a.y + a.h <= p.y || p.y + p.h <= a.y));
+    const placeLabel = (x, y, text) => {
+      const w = text.length * 5.6 + 2;
+      for (const dy of [-8, 15, -20, 27, -32, 39]) {
+        for (const side of x < W - right - w - 12 ? [1, -1] : [-1, 1]) {
+          const lx = side === 1 ? x + 9 : x - 9 - w;
+          const rect = { x: lx, y: y + dy - 9, w, h: 11 };
+          if (lx < 2 || lx + w > W - 2 || rect.y < top - 2 || rect.y + rect.h > top + fullH + 2 || overlaps(rect)) continue;
+          placed.push(rect);
+          return { x: side === 1 ? x + 9 : x - 9, y: y + dy, anchor: side === 1 ? 'start' : 'end' };
+        }
+      }
+      return null;
+    };
     const hits = [];
     const labelled = new Set();
     s.windows.forEach((w, i) => {
       const isMin = i === ev.minIndex;
       const g = sv('g', { class: 'win' });
       g.append(sv('circle', { cx: xOf(w.col), cy: yOf(w.row), r: isMin ? 6.5 : 4.5, class: isMin ? 'edge-dot' : 's1-dot' }));
-      if (!labelled.has(w.basin)) {
-        labelled.add(w.basin);
-        const onRight = xOf(w.col) < W - right - 60;
-        g.append(sv('text', { x: xOf(w.col) + (onRight ? 9 : -9), y: yOf(w.row) + (w.basin % 2 ? 12 : -6), 'font-size': 10, 'text-anchor': onRight ? 'start' : 'end', class: 'halo' }, `basin ${w.basin}`));
-      }
       svg.append(g);
       hits.push({ x: xOf(w.col), y: yOf(w.row), i });
     });
+    s.windows.forEach((w) => {
+      if (labelled.has(w.basin)) return;
+      labelled.add(w.basin);
+      const p = placeLabel(xOf(w.col), yOf(w.row), `basin ${w.basin}`);
+      if (p) svg.append(sv('text', { x: p.x, y: p.y, 'font-size': 10, 'text-anchor': p.anchor, class: 'halo basin-label' }, `basin ${w.basin}`));
+    });
     // zoom panel around the minimum
-    const c0 = Math.max(0, Math.min(L.nCols - zoomCols, ev.cell.col - Math.floor(zoomCols / 2)));
-    const r0 = Math.max(0, Math.min(L.nRows - zoomRows, ev.cell.row - Math.floor(zoomRows / 2)));
     const zx = (c) => left + (c - c0) * cellPx;
     const zy = (r) => zTop + (r0 + zoomRows - 1 - r) * cellPx;
-    svg.append(sv('text', { x: left, y: zTop - 20, 'font-size': 10, class: 'muted-text' }, `zoom: ${zoomCols} departure dates × ${zoomRows} flight times around the minimum (columns ${c0}–${c0 + zoomCols - 1}, rows ${r0}–${r0 + zoomRows - 1})`));
+    caption(zoomCap, left, top + fullH + 30, 10, 12);
     for (let c = c0; c < c0 + zoomCols; c++) {
       for (let r = r0; r < r0 + zoomRows; r++) {
         const onEdge = c === 0 || c === L.nCols - 1 || r === 0 || r === L.nRows - 1;
@@ -683,10 +803,10 @@
     for (let c = c0; c < c0 + zoomCols; c++) {
       if ((c - c0) % (narrow ? 2 : 1) === 0) svg.append(sv('text', { x: zx(c) + cellPx / 2, y: zTop + zH + 12, 'text-anchor': 'middle', 'font-size': 9 }, colDate(c).slice(5)));
     }
-    svg.append(sv('text', { x: left, y: zTop + zH + 24, 'font-size': 9, class: 'muted-text' }, `departure dates of ${colDate(c0).slice(0, 4)}${colDate(c0).slice(0, 4) === colDate(c0 + zoomCols - 1).slice(0, 4) ? '' : `–${colDate(c0 + zoomCols - 1).slice(0, 4)}`} (month-day); orange cells are the lattice's edge`));
+    caption(bottomCap, left, zTop + zH + 25, 9, 11);
     for (let r = r0; r < r0 + zoomRows; r++) svg.append(sv('text', { x: left - 8, y: zy(r) + cellPx / 2 + 3, 'text-anchor': 'end', 'font-size': 10 }, `${f(rowTof(r))} d`));
     s.windows.forEach((w, i) => {
-      if (w.col < c0 || w.col >= c0 + zoomCols || w.row < r0 || w.row >= r0 + zoomRows) return;
+      if (!inZoom(w)) return;
       const isMin = i === ev.minIndex;
       const g = sv('g', { class: 'zwin' });
       g.append(sv('circle', { cx: zx(w.col) + cellPx / 2, cy: zy(w.row) + cellPx / 2, r: isMin ? 7 : 5, class: isMin ? 'edge-dot' : 's1-dot' }));
@@ -694,10 +814,8 @@
       svg.append(g);
       hits.push({ x: zx(w.col) + cellPx / 2, y: zy(w.row) + cellPx / 2, i });
     });
-    const outside = s.windows.filter((w) => w.col < c0 || w.col >= c0 + zoomCols || w.row < r0 || w.row >= r0 + zoomRows).length;
-    if (outside) svg.append(sv('text', { x: left, y: zTop - 8, 'font-size': 10, class: 'muted-text' }, `${outside} of 5 windows lie outside the zoom`));
     mini.replaceChildren(svg);
-    mini.setAttribute('aria-label', `${s.name || s.bodyId}: five stored windows on the lattice and a zoom around the minimum at column ${ev.cell.col}, row ${ev.cell.row}; ${s.basins} basins.`);
+    mini.setAttribute('aria-label', `${s.name || s.bodyId}: ${s.windows.length} stored windows on the lattice and a zoom around the minimum at column ${ev.cell.col}, row ${ev.cell.row}; ${s.basins} basins.`);
     const tip = $('miniTip');
     const hit = (ev2) => {
       const rect = svg.getBoundingClientRect();
@@ -741,23 +859,41 @@
   function cannot() {
     const host = $('cannot');
     const card = (code, title, reason, help) => el('div', { class: 'r' }, el('div', { class: 'code', text: `refusal · ${code} · ${title}` }), el('p', { text: reason }), el('p', null, el('strong', { text: 'What would help: ' }), help));
-    const floorN = E.tofMin.touched;
+    const fl = E.tofMin;
+    const ao = fl.arrivalLine;
+    const probe = G.floorProbe(L, fl.touched, 2);
+    const VX = C.edges.vertex;
+    const lastN = E.last.touched;
+    const yearCols = Math.round(365 / L.departureSpacingDays);
+    const today = new Date().toISOString().slice(0, 10);
+    const firstPast = today > L.firstDepartureUtc;
+    const nw = C.bodies.withoutWindows;
+    const hyper = nw.filter((b) => b.elements && ((Number.isFinite(b.elements.e) && b.elements.e >= 1) || (Number.isFinite(b.elements.aKm) && b.elements.aKm <= 0)));
     host.append(
-      card('insufficient_data', 'the slope at the flight-time floor',
-        `${f(floorN)} bodies have their cheapest stored window at ${L.tofMinDays} days, the shortest flight the grid solves. The ${L.tofMinDays + L.tofSpacingDays}-day neighbour is among the five stored windows for ${E.tofMin.neighbourPresent} of them, so for ${f(E.tofMin.undetermined)} the cache holds no slope there, and whether their minima lie below ${L.tofMinDays} days cannot be read from it.`,
-        `one Lambert solve per such body at a shorter flight time (for instance ${L.tofMinDays - L.tofSpacingDays} days): about ${f(floorN)} solves against the ${f(M.totalSolves)} the cache took.`),
+      card('insufficient_data', 'what lies below the flight-time floor',
+        `${f(fl.touched)} bodies have their cheapest stored window at ${L.tofMinDays} days, the shortest flight the grid solves. ` +
+        `For ${f(fl.riseRecorded ? fl.riseRecorded.n : 0)} the ${f(rowTof(1))}-day neighbour is stored and its rise recorded; for ${f(fl.riseBound ? fl.riseBound.n : 0)} the rise is at least the spread of the stored windows (median ≥ ${fl.riseBound ? fl.riseBound.median.toFixed(3) : 'n/a'} km²/s²). ` +
+        (ao ? `${f(ao.withWindow)} also store a ${f(rowTof(1))}-day window ${ao.offsets[0]}–${ao.offsets[1]} departure dates earlier, on the constant-arrival-date line, a median ${ao.rise ? ao.rise.median.toFixed(3) : 'n/a'} km²/s² dearer: that valley runs toward the floor at later departures. ` : '') +
+        `None of this says what a shorter flight would cost, so whether these minima lie below ${L.tofMinDays} days cannot be read from the cache.`,
+        G.isRefusal(probe)
+          ? probe.refusal.reason
+          : `a small probe that follows that line: flight times of ${probe.tofs.map((x) => f(x)).join(' and ')} days at the minimum's departure date and the next ${probe.colsAhead} dates (the line moves ${G.arrivalOffsets(L).columnsPerRow.toFixed(1)} dates per row), ${probe.perBody} solves per body, about ${f(probe.total)} in all against the ${M.totalSolves ? f(M.totalSolves) : 'unrecorded number of'} solves the cache took. It would bound the sub-floor cost along the valley, not settle where the true minimum is.`),
       card('out_of_envelope', 'how far beyond an edge the true minimum lies',
-        `The lattice has no cell beyond its bounds. For the ${f(E.first.likelyClipped + E.last.likelyClipped)} departure-edge bodies marked likely clipped, the quoted slope is the rise over one ${L.departureSpacingDays}-day step inward, not an extrapolation; the page never estimates an off-grid C3.`,
-        `a widened lattice for the ${f(E.first.touched + E.last.touched)} bodies whose minimum sits on a departure edge: one extra year each side is ${Math.round(365 / L.departureSpacingDays)} columns × ${L.nRows} rows × ${f(E.first.touched + E.last.touched)} bodies, about ${f(Math.round(365 / L.departureSpacingDays) * L.nRows * (E.first.touched + E.last.touched))} solves; the whole-catalog horizon question is the H0 seat's.`),
+        `The lattice has no cell beyond its bounds. The rises above are one step inward and are not extrapolated; no off-grid C3 is estimated. Under a local quadratic model the continuous minimum lies within half a step of the edge or beyond it, and the ${f(C.edges.chains3plus)} stored three-cell chains split ${VX.beyond} beyond, ${VX.inside} inside, ${VX.none} without a vertex: a model reading, not a measurement.`,
+        `for the ${f(lastN)} bodies on the last departure date, a forward extension of the lattice: one more year is ${yearCols} columns × ${L.nRows} rows × ${f(lastN)} bodies, about ${f(yearCols * L.nRows * lastN)} solves. The first departure date (${L.firstDepartureUtc}) is ${firstPast ? `already past (today is ${today})` : 'still ahead'}, ${firstPast ? 'so extending the lattice backward would answer a question no mission can use' : 'so a backward extension would also be possible'}; the whole-catalog horizon question is the H0 seat's.`),
       card('out_of_envelope', 'whether an edge minimum is the body\'s true best window',
         `Every count here is over sampled cells of a single-revolution patched-conic screen on a ${L.departureSpacingDays} × ${L.tofSpacingDays}-day lattice. The cache's own disclosure applies: each stored C3 is the lowest sampled point; the true minimum is at or below it, also for interior bodies.`,
         'the porkchop page\'s finer live grid for any one body, or a sub-lattice refinement around each stored minimum.'),
       card('insufficient_data', `absolute magnitude for ${C.inputs.catalog ? f(C.inputs.catalog.missingAbsoluteMagnitudeCount) : 'some'} bodies`,
         'The catalog carries no H for them, so they cannot be placed in a size band; they keep their own row in the H table rather than being dropped or guessed.',
         'H values from the MPC or JPL SBDB for those designations.'),
-      card('insufficient_data', `${C.bodies.withoutWindows.map((b) => b.bodyId).join(', ')}`,
-        `${C.bodies.withoutWindows.map((b) => `${b.bodyId} has status ${b.status} and no stored windows`).join('; ')}. It is excluded from every count and shown in the inspector as a refusal.`,
-        'a propagation that converges for it, or an explicit "not screened" state wherever the catalog shows a status.'),
+      card('insufficient_data', nw.map((b) => b.bodyId).join(', '),
+        nw.map((b) => {
+          const el2 = b.elements;
+          const isHyp = hyper.includes(b);
+          return `${b.bodyId} has status ${b.status} and no stored windows` + (isHyp ? `: the catalog gives it e ${el2.e.toFixed(4)} and a ${el2.aKm.toExponential(4)} km, an open (hyperbolic) orbit, and the elliptic Kepler propagator the screen uses requires a > 0 and e < 1${el2.maRad === null ? '; its mean anomaly is also missing from the catalog' : ''}` : '');
+        }).join('; ') + '. It is excluded from every count and shown in the inspector as a refusal.',
+        hyper.length ? 'a hyperbolic or universal-variable propagator for open orbits, or an explicit "not screened: hyperbolic orbit" state wherever the catalog shows a status.' : 'a propagation that succeeds for it, or an explicit "not screened" state wherever the catalog shows a status.'),
     );
   }
 
@@ -768,10 +904,13 @@
     const dl = el('dl');
     const add = (k, v) => dl.append(el('dt', { text: k }), el('dd', { text: v }));
     add('cache', `${sc.path} @ ${String(sc.commit).slice(0, 12)} (committed ${sc.commitDate}; file last changed ${sc.pathLastChanged}); sha256 ${sc.sourceSha256}; ${f(sc.sourceBytes)} bytes; read bytes ${sc.readMatchesCommitted ? 'equal' : 'DIFFER FROM'} the committed blob`);
-    add('cache metadata', `generatedAt ${M.generatedAt}; solverCommit ${M.provenance.solverCommit}; totalSolves ${f(M.totalSolves)}; wall time ${Math.round(M.wallTimeSeconds)} s; feasibleC3MaxKm2S2 ${M.feasibleC3MaxKm2S2}`);
-    if (C.inputs.catalog) add('catalog', `${C.inputs.catalog.path}; sha256 ${C.inputs.catalog.sha256} (${C.inputs.catalog.sha256 === M.provenance.catalogFixtureSha256 ? 'equals' : 'differs from'} the cache's catalogFixtureSha256); ${f(C.inputs.catalog.totalBodies)} bodies; selection ${C.inputs.catalog.selectionSource}`);
+    const mp = M.provenance || {};
+    const nr = (x) => (x === undefined || x === null ? 'not recorded' : x);
+    add('cache metadata', `generatedAt ${nr(M.generatedAt)}; solverCommit ${nr(mp.solverCommit)}; totalSolves ${Number.isFinite(M.totalSolves) ? f(M.totalSolves) : 'not recorded'}; wall time ${Number.isFinite(M.wallTimeSeconds) ? `${Math.round(M.wallTimeSeconds)} s` : 'not recorded'}; feasibleC3MaxKm2S2 ${nr(M.feasibleC3MaxKm2S2)}`);
+    if (C.inputs.catalog) add('catalog', `${C.inputs.catalog.path}; sha256 ${C.inputs.catalog.sha256} (${!mp.catalogFixtureSha256 ? 'the cache records no catalogFixtureSha256' : C.inputs.catalog.sha256 === mp.catalogFixtureSha256 ? 'equals the cache\'s catalogFixtureSha256' : 'differs from the cache\'s catalogFixtureSha256'}); ${f(C.inputs.catalog.totalBodies)} bodies; selection ${C.inputs.catalog.selectionSource}`);
     if (C.inputs.viewGrid) add('porkchop view grid', `${C.inputs.viewGrid.source}: depStartJD line ${C.inputs.viewGrid.lines.depStartJD}, depEndJD line ${C.inputs.viewGrid.lines.depEndJD}, nDep ${C.inputs.viewGrid.nDep}, nTof ${C.inputs.viewGrid.nTof}, flight times ${C.inputs.viewGrid.tofMinDays}–${C.inputs.viewGrid.tofMaxDays} days; span label derived at line ${C.inputs.viewGrid.spanLabelDerivedAtLine}`);
     if (C.inputs.auKm) add('AU', `${C.inputs.auKm.value} km, ${C.inputs.auKm.source} line ${C.inputs.auKm.line}`);
+    if (C.inputs.windowsKept) add('windows kept per body', `${C.inputs.windowsKept.value} (the precompute's best-window insertion bound, ${C.inputs.windowsKept.source} line ${C.inputs.windowsKept.line}); ${f(C.verification.bodiesWithFullList)} of ${f(C.bodies.withWindows)} bodies store that many, so each list is the body's cheapest cells of the whole lattice`);
     add('derived', `snapshots/edge-census.json by edge-census.mjs (sidecar ${sm.copiedAt.slice(0, 10)}); wrapped by build-data.mjs as snapshots/edge-census.data.js; the lattice is derived from the metadata excerpt snapshots/metadata.json (sha256 ${sm.writtenSha256.slice(0, 16)}…)`);
     p.append(el('div', null, el('strong', { text: 'Provenance. ' }), 'An idea-bank prototype: a census of a committed cache, not a result that has passed Aster\'s audit, oracle validation or DEC process. Every figure above is in snapshots/edge-census.json; the tests recompute them from the checkout when it is present.'), dl);
   }

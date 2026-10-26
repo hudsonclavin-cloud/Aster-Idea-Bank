@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "physics/tether_dynamics.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "809b931692ee6a7932a42c9d98eabbbc3496cf4c",
+  "readBlob": "809b931692ee6a7932a42c9d98eabbbc3496cf4c",
+  "sourceSha256": "154fd606da388814a7fc4815dae459ae65865201aefce2aab333c5188704eacb",
+  "sourceBytes": 16924,
+  "copiedAt": "2026-10-26T16:31:08.547Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 75, 76, 77",
+  "readMatchesCommitted": true,
+  "writtenSha256": "848f7ba4e6336675c6970f592b5208e392ba93e9d97e10c3257c1044b529355f",
+  "writtenBytes": 279
+}

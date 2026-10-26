@@ -1,0 +1,27 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "params/service_mxer_draft.json",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5cbaa5c 2026-07-11T21:21:11-04:00",
+  "committedBlob": "13ddd0c871d6b9cc81513bc73cc26faf6bc8358d",
+  "readBlob": "13ddd0c871d6b9cc81513bc73cc26faf6bc8358d",
+  "sourceSha256": "6f3b31d01b82377a82781b148b674b4ad3e0bdbce35977f7876aea956eb1c17a",
+  "sourceBytes": 1633,
+  "copiedAt": "2026-10-26T16:31:08.127Z",
+  "mode": "excerpt",
+  "note": "excerpt: the DRAFT in-space fork config finance/reboost_bound.py reads, for the cross-check against its golden",
+  "readMatchesCommitted": true,
+  "picked": [
+    "status",
+    "confidence",
+    "catch_origin",
+    "tether_com_orbit",
+    "tether",
+    "payload_class",
+    "capex_inputs.hub_mass_t",
+    "capex_inputs.hub_mass_note"
+  ],
+  "writtenSha256": "723213f6236b996d6c1dae50139a89aa0982e5a497a38decde65111d6658947d",
+  "writtenBytes": 926
+}

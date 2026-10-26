@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homeward Porkchop</title>
+<meta name="description" content="A body-to-Earth porkchop for Aster: departure v-infinity at the asteroid, Earth-arrival v-infinity and its declination, entry speed, and a structured refusal where a delivered mass would go.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="page">
+  <header class="masthead">
+    <p class="kicker">Aster · K1 return leg · idea-bank prototype</p>
+    <h1>Homeward Porkchop</h1>
+    <p class="lede">Aster plans the trip out. This page plans the trip home: leave the asteroid on a given day, reach Earth some days later, and read the push you need to leave, the speed you arrive with, and where in the sky you come from. It never prices a delivered mass, because no launch-vehicle curve describes leaving an asteroid.</p>
+  </header>
+
+  <section class="controls" aria-label="Choose a body and a colour">
+    <label class="field">
+      <span>Body</span>
+      <select id="body"></select>
+    </label>
+    <div class="field" role="radiogroup" aria-label="Colour the plot by">
+      <span>Colour by</span>
+      <div class="seg">
+        <button type="button" id="mArr" role="radio" aria-checked="true">Earth-arrival v∞</button>
+        <button type="button" id="mDep" role="radio" aria-checked="false">Departure v∞ at the body</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="tier" id="tier"></p>
+
+  <section class="plot card" aria-labelledby="plotTitle">
+    <div class="plot-head">
+      <h2 id="plotTitle">Return legs</h2>
+      <p class="lattice" id="lattice"></p>
+    </div>
+    <div class="canvas-wrap" id="wrap">
+      <canvas id="pc" tabindex="0" role="img" aria-label="Porkchop plot of return legs. Use the arrow keys to move the selected cell."></canvas>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <div class="legend" id="legend">
+      <div class="ramp-wrap">
+        <canvas id="ramp" aria-hidden="true"></canvas>
+        <div class="ramp-ticks" id="rampTicks"></div>
+        <p class="ramp-cap" id="rampCap"></p>
+      </div>
+      <ul class="keys">
+        <li><span class="key key-hatch" aria-hidden="true"></span><span id="keyEarth">No Earth ephemeris: refused</span></li>
+        <li><span class="key key-wash" aria-hidden="true"></span><span id="keyWash">Departs after the L1 encounter</span></li>
+        <li><span class="key key-nhats" aria-hidden="true"></span><span>JPL NHATS return leg</span></li>
+        <li><span class="key key-sel" aria-hidden="true"></span><span>Selected cell</span></li>
+      </ul>
+    </div>
+    <div class="jump">
+      <button type="button" id="jArr">Lowest Earth-arrival v∞</button>
+      <button type="button" id="jDep">Lowest departure v∞</button>
+      <button type="button" id="jNhats">NHATS leg</button>
+    </div>
+    <ul class="minima" id="minima"></ul>
+  </section>
+
+  <section class="cell card" aria-labelledby="cellTitle" aria-live="polite">
+    <h2 id="cellTitle">Selected return leg</h2>
+    <p class="support" id="support"></p>
+    <dl class="readout" id="readout"></dl>
+    <div class="refusal" id="refusal"></div>
+  </section>
+
+  <section class="card" aria-labelledby="nhTitle">
+    <h2 id="nhTitle">Against JPL NHATS</h2>
+    <p class="note" id="nhNote"></p>
+    <div class="table-wrap"><table class="nh" id="nhTable"></table></div>
+  </section>
+
+  <section class="card how" aria-labelledby="howTitle">
+    <h2 id="howTitle">How the numbers are made</h2>
+    <ul id="how"></ul>
+  </section>
+
+  <footer class="foot" id="foot"></footer>
+</main>
+<script src="homeward.js"></script>
+<script src="data.js"></script>
+<script src="snapshots/earth-weekly.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

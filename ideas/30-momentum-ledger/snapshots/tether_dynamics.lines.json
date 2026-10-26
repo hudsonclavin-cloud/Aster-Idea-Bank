@@ -1,0 +1,8 @@
+{
+  "path": "physics/tether_dynamics.py",
+  "lines": {
+    "75": "    # [Speculative] hub mass: project_instructions Part VI Phase 2 quotes a",
+    "76": "    # 100-300 t hub; 200 t midpoint used until a hub mass budget exists.",
+    "77": "    hub_mass_kg: float = 200e3"
+  }
+}

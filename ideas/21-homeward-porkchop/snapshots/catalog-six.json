@@ -1,0 +1,299 @@
+{
+ "selectionSource": "JPL SBDB Query API (sb-group=neo)",
+ "anchorSource": "Hybrid SBDB/Horizons: SBDB elements for fresh bodies, Horizons re-anchor at common epoch for stale subsets",
+ "frame": "ICRF/J2000",
+ "timeScale": "TDB",
+ "units": {
+  "anchorPosition": "km",
+  "anchorVelocity": "km/s",
+  "anchorTime": "TDB JD",
+  "semiMajorAxis": "km",
+  "estimatedRadius": "m",
+  "angles": "rad",
+  "dataArc": "days",
+  "sigmaA": "au",
+  "sigmaE": "unitless"
+ },
+ "propagation": {
+  "method": "keplerian-two-body",
+  "epochPolicy": "hybrid-per-body-sbdb-or-horizons-reanchor"
+ },
+ "asteroids": {
+  "asteroid-1999 AO10": {
+   "designation": "1999 AO10",
+   "spkId": 50017332,
+   "name": "(1999 AO10)",
+   "class": "ATE",
+   "orbitClass": "ATE",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 24.29,
+   "G": null,
+   "estimatedRadiusM": 24.62810335181136,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -105876687.295966,
+     -77652785.59185827,
+     -40397510.11051541
+    ],
+    "velocityKmPerS": [
+     22.2333261376102,
+     -19.82269982808032,
+     -8.497091388393525
+    ]
+   },
+   "elements": {
+    "aKm": 136442257.3898985,
+    "e": 0.11099982250628627,
+    "iRad": 0.045018665401087093,
+    "omRad": 5.449112839586011,
+    "wRad": 0.1251739281242541,
+    "maRad": 4.761577026029055,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "B",
+   "conditionCode": 1,
+   "dataArcDays": 9927,
+   "nObsUsed": 195,
+   "sigmaA": 3.7109e-8,
+   "sigmaE": 4.9732e-8,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 0.933333,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-101955": {
+   "designation": "101955",
+   "spkId": 20101955,
+   "name": "101955 Bennu (1999 RQ36)",
+   "class": "APO",
+   "orbitClass": "APO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": true,
+   "H": 20.21,
+   "G": null,
+   "estimatedRadiusM": 161.22447352763214,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -87854528.77198242,
+     101340444.4918719,
+     57626543.74194905
+    ],
+    "velocityKmPerS": [
+     -28.32504393061313,
+     -13.19880473719875,
+     -7.340613323736131
+    ]
+   },
+   "elements": {
+    "aKm": 168444415.86363044,
+    "e": 0.20369784790713552,
+    "iRad": 0.10529366531720277,
+    "omRad": 0.03433468367554138,
+    "wRad": 1.1591643158154996,
+    "maRad": 0.7029021135002829,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "C",
+   "conditionCode": 0,
+   "dataArcDays": 7693,
+   "nObsUsed": 554,
+   "sigmaA": 1.9673e-10,
+   "sigmaE": 6.9748e-11,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-2000 SG344": {
+   "designation": "2000 SG344",
+   "spkId": 50054397,
+   "name": "(2000 SG344)",
+   "class": "ATE",
+   "orbitClass": "ATE",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 24.7,
+   "G": null,
+   "estimatedRadiusM": 20.390645177229697,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -140308935.8183868,
+     -34117673.40917289,
+     -14775005.47713423
+    ],
+    "velocityKmPerS": [
+     5.804824515235938,
+     -27.35372451861728,
+     -11.79398893873334
+    ]
+   },
+   "elements": {
+    "aKm": 146225530.17980936,
+    "e": 0.06692390820313417,
+    "iRad": 0.0019743541695912527,
+    "omRad": 3.3467597756480925,
+    "wRad": 4.809425966007311,
+    "maRad": 1.394287794522893,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "A",
+   "conditionCode": 3,
+   "dataArcDays": 507,
+   "nObsUsed": 31,
+   "sigmaA": 3.4205e-7,
+   "sigmaE": 0.0000020379,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 0.76073,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-99942": {
+   "designation": "99942",
+   "spkId": 20099942,
+   "name": "99942 Apophis (2004 MN4)",
+   "class": "ATE",
+   "orbitClass": "ATE",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": true,
+   "H": 19.09,
+   "G": null,
+   "estimatedRadiusM": 270.0417833762203,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -70151129.783288,
+     133192511.4918129,
+     47724751.39335984
+    ],
+    "velocityKmPerS": [
+     -25.32756365772645,
+     -8.022652587761687,
+     -3.619120753681292
+    ]
+   },
+   "elements": {
+    "aKm": 137983836.49472314,
+    "e": 0.19114292963930402,
+    "iRad": 0.0583104793547796,
+    "omRad": 3.558669667479859,
+    "wRad": 2.210936757854796,
+    "maRad": 2.3027310118528863,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "B",
+   "conditionCode": 0,
+   "dataArcDays": 6599,
+   "nObsUsed": 7370,
+   "sigmaA": 2.4147e-9,
+   "sigmaE": 1.3149e-9,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-2001 GP2": {
+   "designation": "2001 GP2",
+   "spkId": 50076797,
+   "name": "(2001 GP2)",
+   "class": "APO",
+   "orbitClass": "APO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 26.4,
+   "G": null,
+   "estimatedRadiusM": 9.320323089139208,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -63896606.66711549,
+     141721837.7648782,
+     57413344.76267975
+    ],
+    "velocityKmPerS": [
+     -25.33912955770501,
+     -9.304216006576437,
+     -3.963706624229948
+    ]
+   },
+   "elements": {
+    "aKm": 154808988.93489096,
+    "e": 0.07231200373984387,
+    "iRad": 0.022481325812776,
+    "omRad": 3.41620060999072,
+    "wRad": 1.9008269252737655,
+    "maRad": 2.9012051395721645,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "A",
+   "conditionCode": 0,
+   "dataArcDays": 7157,
+   "nObsUsed": 63,
+   "sigmaA": 8.676e-9,
+   "sigmaE": 1.1835e-7,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-433": {
+   "designation": "433",
+   "spkId": 20000433,
+   "name": "433 Eros (A898 PA)",
+   "class": "AMO",
+   "orbitClass": "AMO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 10.39,
+   "G": null,
+   "estimatedRadiusM": 14839.899761463936,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -184294550.5137226,
+     293987.5019030194,
+     -33140557.96937972
+    ],
+    "velocityKmPerS": [
+     -2.486718248191993,
+     -24.44629636938456,
+     -14.32918842721964
+    ]
+   },
+   "elements": {
+    "aKm": 218150587.6896261,
+    "e": 0.22288929294611265,
+    "iRad": 0.18899384901473204,
+    "omRad": 5.310478612736303,
+    "wRad": 3.1226809007487173,
+    "maRad": 0.710056713354084,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "C",
+   "conditionCode": 0,
+   "dataArcDays": 46582,
+   "nObsUsed": 9130,
+   "sigmaA": 1.5722e-10,
+   "sigmaE": 9.3863e-9,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  }
+ }
+}

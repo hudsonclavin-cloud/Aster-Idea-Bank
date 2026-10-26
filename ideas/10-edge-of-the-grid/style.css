@@ -104,6 +104,7 @@ p { overflow-wrap: anywhere; }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 8px 0 0; font-size: 0.8rem; color: var(--ink2); align-items: center; }
 .legend .sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; border: 1px solid var(--line); }
 .legend .ln { display: inline-block; width: 16px; height: 0; border-top: 2px solid var(--s1); vertical-align: 3px; margin-right: 4px; }
+.legend .rf { display: inline-block; width: 16px; height: 0; border-top: 1px dashed var(--ink2); vertical-align: 3px; margin-right: 4px; }
 .legend .mk { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--edge); vertical-align: -1px; margin-right: 4px; }
 .controls-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 4px 0 10px; font-size: 0.9rem; }
 .controls-row label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
@@ -183,7 +184,7 @@ footer { padding: 10px 0 40px; }
 .chart .s1-dot { fill: var(--s1); stroke: var(--card); stroke-width: 2; }
 .chart .grid { stroke: var(--line); stroke-width: 1; }
 .chart .axis { stroke: var(--axis); stroke-width: 1; }
-.chart .ref { stroke: var(--muted); stroke-width: 1; }
+.chart .ref { stroke: var(--ink2); stroke-width: 1; stroke-dasharray: 4 3; }
 .chart .cross { stroke: var(--ink2); stroke-width: 1; }
 .chart .cursor { fill: none; stroke: var(--ink); stroke-width: 2; }
 .chart .lattice { fill: var(--soft); stroke: none; }
@@ -200,3 +201,6 @@ tr.sub td { padding-top: 0; border-bottom: 1px solid var(--line); }
 tr.sub + tr td { border-top: 0; }
 tbody tr:has(+ tr.sub) td { border-bottom: 0; padding-bottom: 1px; }
 td.wrap, th.wrap { white-space: normal; }
+ul.notes { padding-left: 1.1em; }
+ul.notes li { margin: 0 0 5px; }
+tr.sel-row td { background: var(--soft); font-weight: 600; }

@@ -1,0 +1,75 @@
+#!/bin/sh
+STAGED=$(git diff --cached --name-only --diff-filter=ACMRD)
+[ -z "$STAGED" ] && exit 0
+if [ "$ASTER_PROTECTED_OK" = "1" ]; then
+  exit 0
+fi
+SCOPE_FILE=".dispatch-scope"
+if [ ! -f "$SCOPE_FILE" ]; then
+  echo "COMMIT BLOCKED: no $SCOPE_FILE present (fail-closed). See AGENTS.md §2 hard rule 2." >&2
+  exit 1
+fi
+normalize_scope_line() {
+  printf '%s' "$1" | sed 's/\r$//; s/^[[:space:]]*//; s/[[:space:]]*$//'
+}
+scope_line_hex() {
+  printf '%s' "$1" | od -An -tx1 | tr -d '\n' | sed 's/^ *//'
+}
+print_scope_hint() {
+  blocked_path="$1"
+  line_no=0
+  while IFS= read -r raw_pat || [ -n "$raw_pat" ]; do
+    line_no=$((line_no + 1))
+    normalized_pat=$(normalize_scope_line "$raw_pat")
+    if [ "$normalized_pat" = "$blocked_path" ] && [ "$raw_pat" != "$normalized_pat" ]; then
+      echo "hint: $SCOPE_FILE line $line_no matches after CRLF/whitespace normalization; raw bytes: $(scope_line_hex "$raw_pat")" >&2
+    fi
+  done < "$SCOPE_FILE"
+}
+fail=0
+for f in $STAGED; do
+  [ "$f" = "$SCOPE_FILE" ] && continue
+  case "$f" in
+    src/v2/core/*|.githooks/*|AGENTS.md|CLAUDE.md)
+      echo "BLOCKED protected path: $f (needs ASTER_PROTECTED_OK + Hudson dispatch)" >&2
+      print_scope_hint "$f"
+      fail=1; continue;;
+  esac
+  ok=0
+  while IFS= read -r raw_pat || [ -n "$raw_pat" ]; do
+    pat=$(normalize_scope_line "$raw_pat")
+    case "$pat" in ''|'#'*) continue;; esac
+    case "$f" in $pat) ok=1; break;; esac
+  done < "$SCOPE_FILE"
+  if [ "$ok" -ne 1 ]; then
+    echo "BLOCKED out-of-scope path: $f (not in $SCOPE_FILE)" >&2
+    print_scope_hint "$f"
+    fail=1
+  fi
+done
+# Additive-only guard. Deletions are COUNTED BY GIT (--numstat), never by pattern-matching
+# diff lines. The former `grep -c '^-[^-]'` could not see a deleted markdown bullet: it
+# renders in a diff as "-- item", whose second character is also "-", so the pattern
+# reported 0 for the most common deletion case in these documents. Demonstrated against
+# 2032b9e (--stat: 1 deletion; old pattern: 0). Recorded as STATUS.md Cleanup C17.
+# git reports deletions as a number, so there is no pattern left to get wrong.
+# awk skips binary diffs, where numstat emits "-" instead of a count.
+#
+# Guarded set, widened 2026-09-22: INVARIANTS.md; every SLICE_*_FOUNDING.md at the repo ROOT
+# (SLICE_17_FOUNDING.md lives there) and under src/v2/ (a `case` glob's * also crosses /, so
+# src/v2/founding-drafts/ is covered); and src/v2/*_LOCKED.md. The root-level and *_LOCKED
+# paths are additive-only by policy but were matched by NO pattern here until this change —
+# SLICE_16_APPENDIX_A_LOCKED.md was appended to on 2026-09-21 with the guard silently inert.
+# STATUS.md is deliberately absent: it is the living file and is rewritten every session.
+for doc in $STAGED; do
+  case "$doc" in
+    INVARIANTS.md|SLICE_*_FOUNDING.md|src/v2/*_FOUNDING.md|src/v2/*_LOCKED.md)
+      dels=$(git diff --cached --numstat -- "$doc" | awk '$2 != "-" { d += $2 } END { print d + 0 }')
+      if [ "$dels" -gt 0 ]; then
+        echo "BLOCKED: $dels deletion line(s) in $doc — additive/annotation only (needs ASTER_PROTECTED_OK)" >&2
+        fail=1
+      fi;;
+  esac
+done
+[ "$fail" -ne 0 ] && { echo "See AGENTS.md §2. Commit rejected." >&2; exit 1; }
+exit 0

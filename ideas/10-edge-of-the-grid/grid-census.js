@@ -59,6 +59,7 @@
   }
   const mean = (xs) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.length : null);
   const share = (n, d) => (d ? n / d : null);
+  const ratio = (n, d) => (d > 0 && Number.isFinite(n) ? n / d : null); // null, not NaN or Infinity, when the baseline is empty
 
   // ---------------------------------------------------------------- the lattice
   // The precompute script walks departures from screeningWindow.startUtc in steps of
@@ -195,8 +196,24 @@
   }
 
   const DEFAULT_BASIN_RULE = { maxColGap: 2, maxRowGap: 1 };
-  // Windows whose cells are within maxColGap columns and maxRowGap rows of each other are in the same
-  // basin; basins are the connected components of that relation (union–find), so the count does not
+  // A basin rule is a box (cells within maxColGap columns and maxRowGap rows) or, with arrival: true,
+  // a box sheared along lines of constant arrival date: two cells are close when their arrival dates
+  // (departure + flight time) differ by at most maxColGap departure steps and their rows by at most
+  // maxRowGap. On this lattice one flight-time row is tofSpacing/departureSpacing departure columns
+  // (30/7 ≈ 4.3), so a valley that runs along a constant arrival date steps about four columns per
+  // row and a plain (2, 1) box splits it.
+  function sameBasin(a, b, lat, r) {
+    const dc = b.col - a.col, dr = b.row - a.row;
+    if (Math.abs(dr) > r.maxRowGap) return false;
+    if (r.arrival) return Math.abs(dc * lat.departureSpacingDays + dr * lat.tofSpacingDays) <= r.maxColGap * lat.departureSpacingDays;
+    return Math.abs(dc) <= r.maxColGap;
+  }
+  function ruleOf(r) {
+    const out = { maxColGap: r.maxColGap, maxRowGap: r.maxRowGap };
+    if (r.arrival) out.arrival = true;
+    return out;
+  }
+  // Basins are the connected components of the rule's relation (union–find), so the count does not
   // depend on the order of the windows. Returns the basin label of each window (0 = the cheapest's).
   function basins(windows, lat, rule) {
     const r = rule || DEFAULT_BASIN_RULE;
@@ -214,9 +231,7 @@
       if (!cells[i].onLattice) continue;
       for (let j = i + 1; j < n; j++) {
         if (!cells[j].onLattice) continue;
-        if (Math.abs(cells[i].col - cells[j].col) <= r.maxColGap && Math.abs(cells[i].row - cells[j].row) <= r.maxRowGap) {
-          parent[find(i)] = find(j);
-        }
+        if (sameBasin(cells[i], cells[j], lat, r)) parent[find(i)] = find(j);
       }
     }
     const roots = cells.map((_, i) => find(i));
@@ -227,21 +242,40 @@
     const byC3 = windows.map((w, i) => i).sort((a, b) => windows[a].c3 - windows[b].c3);
     for (const i of byC3) if (!order.includes(roots[i])) order.push(roots[i]);
     const labels = roots.map((root) => order.indexOf(root));
-    return { count: order.length, labels, rule: { maxColGap: r.maxColGap, maxRowGap: r.maxRowGap } };
+    return { count: order.length, labels, rule: ruleOf(r) };
+  }
+
+  // The quadratic through three equally spaced values c0, c1, c2 at x = 0, 1, 2 (x counted in lattice
+  // steps inward from the edge cell): f(x) = c0 + (c1 − c0 − k/2)·x + (k/2)·x², k = c2 − 2c1 + c0.
+  // With k > 0 its vertex is at x* = 1/2 − (c1 − c0)/k; x* < 0 is beyond the edge, 0 ≤ x* < 1/2 is
+  // inside the lattice within half a step of it (when c1 > c0 the vertex cannot be further in).
+  // With k ≤ 0 the local model has no minimum on the inward side (straight or concave): it keeps
+  // falling past the edge. [Likely] only under the stated local-quadratic model.
+  function quadraticVertex(c0, c1, c2) {
+    if (![c0, c1, c2].every(Number.isFinite)) return null;
+    const k = c2 - 2 * c1 + c0;
+    if (!(k > 0)) return { curvature: k, xSteps: null, position: 'none' };
+    const x = 0.5 - (c1 - c0) / k;
+    return { curvature: k, xSteps: x, position: x < 0 ? 'beyond' : 'inside' };
   }
 
   // For the cheapest window of a body: which edges it touches and what the other stored windows say
-  // about the slope there. For a departure edge the evidence is the chain of stored windows along
-  // the same flight-time row walking inward (columns 1, 2, … or nCols−2, nCols−3, …); for a
-  // flight-time edge it is the chain along the same column walking inward (rows 1, 2, … or
-  // nRows−2, …). The chain is "monotone" when c3 rises at every inward step.
-  //   verdict 'likely_clipped'  — the inward neighbour is stored and every stored step rises:
-  //                                the sampled surface is still falling as it leaves the grid, so
-  //                                the surface's minimum is at or beyond the edge. [Likely]
-  //   verdict 'undetermined'    — the neighbour is not among the five (the other windows lie in
-  //                                other basins), so the cache records no slope at the edge; or
-  //                                the chain is not monotone. [Speculative]
-  function edgeEvidence(windows, lat) {
+  // about the surface there. The precompute keeps each body's topN cheapest cells of the WHOLE lattice
+  // (tools/build/precompute-lambert-screen.mjs, maybeInsertBestWindow), so the cheapest stored window
+  // is the lattice minimum and every other solved cell costs at least as much: the sampled surface
+  // falls toward an edge minimum by construction, and that alone says nothing about clipping.
+  // What the windows add is how steeply it rises inward, one step along the same row (departure
+  // edges) or column (flight-time edges):
+  //   rise 'recorded' — the inward neighbour is among the stored windows: its C3 minus the minimum.
+  //   rise 'bound'    — it is not, and the list is full (topN windows), so the neighbour cost at least
+  //                     as much as the most expensive stored window: rise ≥ c3[max] − c3[min]. This
+  //                     holds for every neighbour whose Lambert solve converged; the cache does not
+  //                     record the cells where one failed, hence [Likely] rather than [Certain].
+  //   rise 'none'     — neither (the list is short or topN was not supplied).
+  // Which of the first two applies depends on how steep the rise is (a shallow rise lets the
+  // neighbour into the five), so the split is not a ranking of evidence.
+  // For a chain of three or more stored cells running inward, quadraticVertex() of the first three.
+  function edgeEvidence(windows, lat, topN) {
     const min = argminC3(windows);
     if (min < 0) return { hasMinimum: false, edges: [] };
     const cells = windows.map((w) => cellOf(w, lat));
@@ -252,6 +286,9 @@
     cells.forEach((c, i) => {
       if (c.onLattice) byCell.set(`${c.col},${c.row}`, windows[i].c3);
     });
+    let maxC3 = -Infinity;
+    for (const w of windows) if (Number.isFinite(w.c3) && w.c3 > maxC3) maxC3 = w.c3;
+    const listFull = isPosInt(topN) && windows.length === topN;
     const edges = [];
     for (const key of EDGE_KEYS) {
       if (!flags[key]) continue;
@@ -265,18 +302,42 @@
       }
       const monotone = chain.every((v, i) => i === 0 || v > chain[i - 1]);
       const neighbourPresent = chain.length >= 2;
+      let rise;
+      if (neighbourPresent) rise = { kind: 'recorded', value: chain[1] - chain[0] };
+      else if (listFull) rise = { kind: 'bound', atLeast: maxC3 - windows[min].c3 };
+      else rise = { kind: 'none', reason: isPosInt(topN) ? `the body stores ${windows.length} windows, not the full ${topN}` : 'the precompute\'s window-list length was not supplied' };
       edges.push({
         edge: key,
         cell: key === 'first' || key === 'last' ? `column ${m.col} (${colDate(lat, m.col)})` : `row ${m.row} (${rowTof(lat, m.row)} days)`,
         neighbourPresent,
-        slopeC3PerCell: neighbourPresent ? chain[1] - chain[0] : null,
+        rise,
+        chain,
         chainLength: chain.length,
         monotone,
-        verdict: neighbourPresent && monotone ? 'likely_clipped' : 'undetermined',
-        label: neighbourPresent && monotone ? 'Likely' : 'Speculative',
+        vertex: chain.length >= 3 ? quadraticVertex(chain[0], chain[1], chain[2]) : null,
       });
     }
-    return { hasMinimum: true, minimumOnLattice: true, minIndex: min, cell: { col: m.col, row: m.row }, flags, edges };
+    return { hasMinimum: true, minimumOnLattice: true, minIndex: min, cell: { col: m.col, row: m.row }, flags, listFull, edges };
+  }
+
+  // The constant-arrival-date offsets one flight-time row away: tofSpacing/departureSpacing columns
+  // (30/7 ≈ 4.3 here), widened to whole columns floor − 1 … ceil + 1 (3 … 6 here).
+  function arrivalOffsets(lat) {
+    const rho = lat.tofSpacingDays / lat.departureSpacingDays;
+    return { columnsPerRow: rho, lo: Math.max(1, Math.floor(rho) - 1), hi: Math.ceil(rho) + 1 };
+  }
+
+  // A probe below the flight-time floor that follows the constant-arrival-date line: the rowsBelow
+  // flight times under the floor, at the minimum's departure date and the next ceil(rowsBelow·rho)
+  // dates (a flight one row shorter arrives on the same date when it departs rho columns later).
+  function floorProbe(lat, nBodies, rowsBelow) {
+    const k = isPosInt(rowsBelow) ? rowsBelow : 2;
+    const tofs = [];
+    for (let i = 1; i <= k; i++) tofs.push(lat.tofMinDays - i * lat.tofSpacingDays);
+    if (tofs[tofs.length - 1] <= 0) return refuse('out_of_envelope', `${k} rows below the floor is a flight time of ${tofs[tofs.length - 1]} days`, 'fewer rows below the floor');
+    const colsAhead = Math.ceil(k * arrivalOffsets(lat).columnsPerRow);
+    const perBody = k * (colsAhead + 1);
+    return { tofs, colsAhead, departures: colsAhead + 1, perBody, bodies: nBodies, total: perBody * nBodies };
   }
 
   // ---------------------------------------------------------------- catalog bands
@@ -311,8 +372,9 @@
 
   // ---------------------------------------------------------------- the census
   function newEdgeStats() {
-    return { touched: 0, neighbourPresent: 0, undetermined: 0, chains: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, chains3plus: 0, monotone3plus: 0, nonMonotone3plus: 0, slopes: [] };
+    return { touched: 0, neighbourPresent: 0, riseNone: 0, chains: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, chains3plus: 0, monotone3plus: 0, nonMonotone3plus: 0, recorded: [], bounds: [], vertex: { beyond: 0, inside: 0, none: 0 }, arrival: [], anyInwardRow: 0 };
   }
+  const stats = (xs, unit) => (xs.length ? { n: xs.length, median: median(xs), min: Math.min.apply(null, xs), max: Math.max.apply(null, xs), unit } : null);
   function newTableRow(key) {
     return { key, n: 0, any: 0, first: 0, last: 0, tofMin: 0, tofMax: 0 };
   }
@@ -322,8 +384,9 @@
   }
 
   // cache: parsed lambert-screen-cache.json. catalog: parsed nea-catalog-slice9.json or null.
-  // options: { viewGrid: {depEndUtc, …} | null, auKm: number | null, sampleIds: [bodyId…], sampleWhy: {bodyId: text},
-  //            basinRules: [{maxColGap,maxRowGap}…] (alternates to report), inputs: {…} (recorded as is) }
+  // options: { viewGrid: {depEndUtc, …} | null, auKm: number | null, topN: number | null (how many
+  //            windows the precompute keeps per body), sampleIds: [bodyId…], sampleWhy: {bodyId: text},
+  //            basinRules: [{maxColGap,maxRowGap[,arrival]}…] (alternates to report), inputs: {…} (recorded as is) }
   function census(cache, catalog, options) {
     const opts = options || {};
     if (!cache || typeof cache !== 'object' || !Array.isArray(cache.bodies)) {
@@ -334,7 +397,9 @@
     if (!cache.bodies.length) return refuse('insufficient_data', 'the cache lists no bodies', 'a cache with at least one screened body');
     const asteroids = catalog && catalog.asteroids && typeof catalog.asteroids === 'object' ? catalog.asteroids : null;
     const auKm = Number.isFinite(opts.auKm) ? opts.auKm : null;
+    const topN = isPosInt(opts.topN) ? opts.topN : null;
     const viewEnd = opts.viewGrid && !Number.isNaN(parseUtcDate(opts.viewGrid.depEndUtc)) ? opts.viewGrid.depEndUtc : null;
+    const arrOff = arrivalOffsets(lat);
 
     // accumulators
     const perColMin = new Array(lat.nCols).fill(0);
@@ -346,16 +411,15 @@
     const yearMin = new Array(lat.years.length).fill(0);
     const yearAll = new Array(lat.years.length).fill(0);
     const edges = { first: newEdgeStats(), last: newEdgeStats(), tofMin: newEdgeStats(), tofMax: newEdgeStats() };
-    let anyEdge = 0, multipleEdges = 0;
-    const altGaps = [];
-    let altWith = 0, altWithout = 0;
+    let anyEdge = 0, multipleEdges = 0, listFull = 0;
     const basinRules = [DEFAULT_BASIN_RULE].concat(opts.basinRules || []);
     const basinHist = basinRules.map(() => ({ 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }));
+    const alt = basinRules.map(() => ({ withAlternative: 0, without: 0, gaps: [] }));
     const dates = new Set(), tofs = new Set();
     let windowsChecked = 0, violations = 0;
     const violationExamples = [];
     let firstSeen = null, lastSeen = null, minTofSeen = null, maxTofSeen = null;
-    let minimumNotFirst = 0, summaryMismatch = 0, unsorted = 0, windowCountOther = 0;
+    let minimumNotFirst = 0, summaryMismatch = 0, unsorted = 0;
     const byStatus = {};
     let withWindows = 0, coOrbital = 0;
     const withoutWindows = [];
@@ -378,11 +442,18 @@
       const windows = Array.isArray(body.bestWindows) ? body.bestWindows : [];
       if (!windows.length) {
         const a = asteroids ? asteroids[body.bodyId] : null;
-        withoutWindows.push({ bodyId: body.bodyId, designation: body.designation, status: body.status, orbitClass: a ? a.orbitClass || a.class || null : null, H: a ? (Number.isFinite(a.H) ? a.H : null) : null, hBand: a ? hBand(a.H) : null });
+        const el = a && a.elements && typeof a.elements === 'object' ? a.elements : null;
+        const num = (x) => (Number.isFinite(x) ? x : null);
+        withoutWindows.push({
+          bodyId: body.bodyId, designation: body.designation, status: body.status,
+          orbitClass: a ? a.orbitClass || a.class || null : null, H: a ? (Number.isFinite(a.H) ? a.H : null) : null, hBand: a ? hBand(a.H) : null,
+          // the catalog's elements as recorded (null where the catalog has none), so a reader can see why
+          elements: el ? { aKm: num(el.aKm), e: num(el.e), maRad: num(el.maRad) } : null,
+        });
         continue;
       }
       withWindows += 1;
-      if (windows.length !== 5) windowCountOther += 1;
+      if (topN !== null && windows.length === topN) listFull += 1;
       const cells = windows.map((w) => cellOf(w, lat));
       cells.forEach((c, i) => {
         windowsChecked += 1;
@@ -421,7 +492,7 @@
         if (windows[min].launchDate > viewEnd) tailAfter += 1;
         else if (windows[min].launchDate === viewEnd) tailOn += 1;
       }
-      const ev = edgeEvidence(windows, lat);
+      const ev = edgeEvidence(windows, lat, topN);
       const flags = ev.flags;
       if (flags.any) anyEdge += 1;
       if (flags.count > 1) multipleEdges += 1;
@@ -429,36 +500,50 @@
         const s = edges[e.edge];
         s.touched += 1;
         s.chains[Math.min(e.chainLength, 5)] += 1;
-        if (e.neighbourPresent) {
-          s.neighbourPresent += 1;
-          s.slopes.push(e.slopeC3PerCell);
-        }
+        if (e.neighbourPresent) s.neighbourPresent += 1;
+        if (e.rise.kind === 'recorded') s.recorded.push(e.rise.value);
+        else if (e.rise.kind === 'bound') s.bounds.push(e.rise.atLeast);
+        else s.riseNone += 1;
         if (e.chainLength >= 3) {
           s.chains3plus += 1;
           if (e.monotone) s.monotone3plus += 1;
           else s.nonMonotone3plus += 1;
+          if (e.vertex) s.vertex[e.vertex.position] += 1;
         }
-        if (e.verdict === 'undetermined') s.undetermined += 1;
+        if (e.edge === 'tofMin' || e.edge === 'tofMax') {
+          // one row inward, along the constant-arrival-date line: earlier departures above the floor,
+          // later departures below the ceiling
+          const inRow = e.edge === 'tofMin' ? m.row + 1 : m.row - 1;
+          const sign = e.edge === 'tofMin' ? -1 : 1;
+          let best = null, anyRow = false;
+          cells.forEach((c, i) => {
+            if (i === min || !c.onLattice || c.row !== inRow) return;
+            anyRow = true;
+            const off = (c.col - m.col) * sign;
+            if (off >= arrOff.lo && off <= arrOff.hi && (best === null || windows[i].c3 < best)) best = windows[i].c3;
+          });
+          if (anyRow) s.anyInwardRow += 1;
+          if (best !== null) s.arrival.push(best - windows[min].c3);
+        }
       }
       basinRules.forEach((rule, ri) => {
         const b = basins(windows, lat, rule);
         basinHist[ri][Math.min(b.count, 5)] += 1;
-      });
-      if (flags.any) {
-        // an interior alternative: a stored window outside the minimum's basin that is itself on no edge
-        const b = basins(windows, lat, DEFAULT_BASIN_RULE);
-        let bestAlt = null;
-        windows.forEach((w, i) => {
-          if (b.labels[i] === b.labels[min]) return;
-          if (!cells[i].onLattice || edgeFlags(cells[i], lat).any) return;
-          if (bestAlt === null || w.c3 < bestAlt) bestAlt = w.c3;
-        });
-        if (bestAlt === null) altWithout += 1;
-        else {
-          altWith += 1;
-          altGaps.push(bestAlt - windows[min].c3);
+        if (flags.any) {
+          // another stored window outside the minimum's basin (under this rule) that is itself on no edge
+          let bestAlt = null;
+          windows.forEach((w, i) => {
+            if (b.labels[i] === b.labels[min]) return;
+            if (!cells[i].onLattice || edgeFlags(cells[i], lat).any) return;
+            if (bestAlt === null || w.c3 < bestAlt) bestAlt = w.c3;
+          });
+          if (bestAlt === null) alt[ri].without += 1;
+          else {
+            alt[ri].withAlternative += 1;
+            alt[ri].gaps.push(bestAlt - windows[min].c3);
+          }
         }
-      }
+      });
       // catalog join
       if (asteroids) {
         const a = asteroids[body.bodyId];
@@ -473,41 +558,78 @@
       bump(tables.byCoOrbital, body.isCoOrbital ? 'co-orbital (cache flag)' : 'not co-orbital', flags);
     }
 
-    // interior baseline: columns outside the first and last calendar years
+    // interior baseline: columns outside the first and last calendar years (refused when the lattice
+    // spans fewer than three calendar years, so that no interior year exists)
     const firstY = lat.years[0], lastY = lat.years[lat.years.length - 1];
-    const interiorCols = perColMin.slice(firstY.cols, lat.nCols - lastY.cols);
-    const interiorYears = yearMin.slice(1, -1);
-    const interior = {
-      excludedYears: [firstY.year, lastY.year],
-      cols: interiorCols.length,
-      medianPerCol: median(interiorCols),
-      meanPerCol: mean(interiorCols),
-      minPerCol: interiorCols.length ? Math.min.apply(null, interiorCols) : null,
-      maxPerCol: interiorCols.length ? Math.max.apply(null, interiorCols) : null,
-      medianPerYear: median(interiorYears),
-      // how many times the interior per-column median the two edge columns and the two edge years carry
-      firstColRatio: interiorCols.length ? perColMin[0] / median(interiorCols) : null,
-      lastColRatio: interiorCols.length ? perColMin[lat.nCols - 1] / median(interiorCols) : null,
-      firstYearRatio: interiorYears.length ? yearMin[0] / (median(interiorYears) * firstY.cols / median(lat.years.slice(1, -1).map((y) => y.cols))) : null,
-      lastYearRatio: interiorYears.length ? yearMin[yearMin.length - 1] / (median(interiorYears) * lastY.cols / median(lat.years.slice(1, -1).map((y) => y.cols))) : null,
-    };
+    let interior;
+    if (lat.years.length < 3) {
+      interior = refuse('insufficient_data', `the lattice spans ${lat.years.length} calendar year${lat.years.length === 1 ? '' : 's'}, so no interior year exists to compare the edges with`, 'a screening window covering at least three calendar years');
+    } else {
+      const interiorCols = perColMin.slice(firstY.cols, lat.nCols - lastY.cols);
+      const interiorYears = yearMin.slice(1, -1);
+      const medCols = median(lat.years.slice(1, -1).map((y) => y.cols));
+      interior = {
+        excludedYears: [firstY.year, lastY.year],
+        cols: interiorCols.length,
+        medianPerCol: median(interiorCols),
+        meanPerCol: mean(interiorCols),
+        minPerCol: Math.min.apply(null, interiorCols),
+        maxPerCol: Math.max.apply(null, interiorCols),
+        medianPerYear: median(interiorYears),
+        // how many times the interior per-column median the two edge columns and the two edge years carry
+        firstColRatio: ratio(perColMin[0], median(interiorCols)),
+        lastColRatio: ratio(perColMin[lat.nCols - 1], median(interiorCols)),
+        firstYearRatio: ratio(yearMin[0], (median(interiorYears) * firstY.cols) / medCols),
+        lastYearRatio: ratio(yearMin[yearMin.length - 1], (median(interiorYears) * lastY.cols) / medCols),
+      };
+    }
 
+    // Each edge against the lines just inside it. The edges differ in length (a departure edge is one
+    // column of nRows cells, a flight-time edge one row of nCols cells), so raw counts do not compare;
+    // minima per edge cell and the counts on the next three lines inward do.
+    const lineCounts = (k) => {
+      const out = [];
+      for (let d = 0; d < 4; d++) {
+        if (k === 'first') out.push(d < lat.nCols ? perColMin[d] : null);
+        else if (k === 'last') out.push(lat.nCols - 1 - d >= 0 ? perColMin[lat.nCols - 1 - d] : null);
+        else if (k === 'tofMin') out.push(d < lat.nRows ? perRowMin[d] : null);
+        else out.push(lat.nRows - 1 - d >= 0 ? perRowMin[lat.nRows - 1 - d] : null);
+      }
+      return out;
+    };
     const edgeOut = {};
     for (const k of EDGE_KEYS) {
       const s = edges[k];
+      const cellsOnEdge = k === 'first' || k === 'last' ? lat.nRows : lat.nCols;
+      const lines = lineCounts(k);
       edgeOut[k] = {
         cell: k === 'first' ? `column 0, ${lat.firstDepartureUtc}` : k === 'last' ? `column ${lat.nCols - 1}, ${lat.lastDepartureUtc}` : k === 'tofMin' ? `row 0, ${lat.tofMinDays} days` : `row ${lat.nRows - 1}, ${lat.lastTofDays} days`,
         touched: s.touched,
         shareOfBodies: share(s.touched, withWindows),
-        likelyClipped: s.touched - s.undetermined,
-        undetermined: s.undetermined,
+        cellsOnEdge,
+        minimaPerEdgeCell: s.touched / cellsOnEdge,
+        // minima on the edge line and on the next three lines inward (same orientation)
+        inwardLines: lines,
+        // > 1: more minima on the edge than on the next line in (a pile-up); < 1: fewer
+        edgeOverNextLine: lines[1] ? lines[0] / lines[1] : null,
         neighbourPresent: s.neighbourPresent,
+        riseRecorded: stats(s.recorded, 'km²/s² from the edge minimum to the stored inward neighbour'),
+        riseBound: stats(s.bounds, 'km²/s²; the inward neighbour is not among the stored windows, so its rise is at least the spread of the stored windows'),
+        riseNone: s.riseNone,
         chains: s.chains,
         chains3plus: s.chains3plus,
         monotone3plus: s.monotone3plus,
         nonMonotone3plus: s.nonMonotone3plus,
-        slopeC3PerCell: s.slopes.length ? { n: s.slopes.length, median: median(s.slopes), min: Math.min.apply(null, s.slopes), max: Math.max.apply(null, s.slopes), unit: 'km²/s² per lattice step inward' } : null,
+        vertex: s.vertex,
+        arrivalLine: k === 'tofMin' || k === 'tofMax'
+          ? { columnsPerRow: arrOff.columnsPerRow, offsets: [arrOff.lo, arrOff.hi], direction: k === 'tofMin' ? 'earlier departures one row up' : 'later departures one row down', anyInwardRow: s.anyInwardRow, withWindow: s.arrival.length, rise: stats(s.arrival, 'km²/s² from the edge minimum to the cheapest stored window on that line') }
+          : null,
       };
+    }
+    const allRec = [], allBound = [];
+    for (const k of EDGE_KEYS) {
+      allRec.push(...edges[k].recorded);
+      allBound.push(...edges[k].bounds);
     }
 
     const tableOut = (map, order) => {
@@ -523,7 +645,7 @@
       const why = typeof sampleWhy[id] === 'string' ? sampleWhy[id] : null;
       const body = cache.bodies.find((b) => b.bodyId === id);
       if (!body) return { bodyId: id, why, refusal: refuse('not_found', `no body ${id} in the cache`, 'a bodyId present in bodies[]').refusal };
-      return Object.assign(sampleBody(body, lat, asteroids ? asteroids[id] : null, auKm), { why });
+      return Object.assign(sampleBody(body, lat, asteroids ? asteroids[id] : null, auKm, topN), { why });
     });
 
     return {
@@ -550,7 +672,8 @@
         cheapestIsFirstWindowViolations: minimumNotFirst,
         minC3SummaryMismatches: summaryMismatch,
         windowsNotAscendingViolations: unsorted,
-        bodiesWithOtherThanFiveWindows: windowCountOther,
+        windowsKeptPerBody: topN,
+        bodiesWithFullList: topN === null ? null : listFull,
         catalogMisses,
       },
       bodies: { total: cache.bodies.length, withWindows, withoutWindows, byStatus, coOrbital },
@@ -559,9 +682,17 @@
       perRow: { tofDays: perRowMin.map((_, r) => rowTof(lat, r)), minima: perRowMin, allWindows: perRowAll },
       heat: { years: lat.years.map((y) => y.year), tofDays: perRowMin.map((_, r) => rowTof(lat, r)), minima: heatMin, allWindows: heatAll },
       interior,
-      edges: { byEdge: edgeOut, any: anyEdge, anyShare: share(anyEdge, withWindows), multiple: multipleEdges },
-      interiorAlternative: { ofEdgeBodies: anyEdge, withAlternative: altWith, without: altWithout, gapC3: altGaps.length ? { median: median(altGaps), min: Math.min.apply(null, altGaps), max: Math.max.apply(null, altGaps), unit: 'km²/s² above the edge minimum' } : null },
-      basins: basinRules.map((rule, i) => ({ rule, histogram: basinHist[i] })),
+      edges: {
+        byEdge: edgeOut, any: anyEdge, anyShare: share(anyEdge, withWindows), multiple: multipleEdges,
+        riseRecorded: stats(allRec, 'km²/s²'), riseBound: stats(allBound, 'km²/s² (lower bounds)'),
+        vertex: EDGE_KEYS.reduce((o, k) => ({ beyond: o.beyond + edges[k].vertex.beyond, inside: o.inside + edges[k].vertex.inside, none: o.none + edges[k].vertex.none }), { beyond: 0, inside: 0, none: 0 }),
+        chains3plus: EDGE_KEYS.reduce((n, k) => n + edges[k].chains3plus, 0),
+      },
+      interiorAlternative: {
+        ofEdgeBodies: anyEdge,
+        byRule: basinRules.map((rule, i) => ({ rule: ruleOf(rule), withAlternative: alt[i].withAlternative, without: alt[i].without, gapC3: stats(alt[i].gaps, 'km²/s² above the edge minimum') })),
+      },
+      basins: basinRules.map((rule, i) => ({ rule: ruleOf(rule), histogram: basinHist[i] })),
       viewTail: viewEnd
         ? { depEndUtc: viewEnd, source: opts.viewGrid, minimaAfter: tailAfter, minimaOn: tailOn, anyWindowAfter: tailAnyAfter, shareOfBodies: share(tailAfter, withWindows) }
         : refuse('insufficient_data', 'the porkchop view\'s last departure date was not supplied', 'GRID_PARAMS.depEndJD from src/v2/app/porkchop/main.ts, read from the checkout'),
@@ -577,7 +708,7 @@
   }
 
   // Everything the page's inspector and the tests need about one body, recomputed from its windows.
-  function sampleBody(body, lat, catalogEntry, auKm) {
+  function sampleBody(body, lat, catalogEntry, auKm, topN) {
     const windows = Array.isArray(body.bestWindows) ? body.bestWindows : [];
     const out = {
       bodyId: body.bodyId,
@@ -601,7 +732,11 @@
       out.synodicYears = isRefusal(S) ? null : S;
     }
     if (!windows.length) {
-      out.refusal = refuse('insufficient_data', `${body.bodyId} has no stored windows (status ${body.status})`, 'a body the precompute could propagate; this one is excluded from every count').refusal;
+      const el = catalogEntry && catalogEntry.elements;
+      const hyperbolic = el && ((Number.isFinite(el.e) && el.e >= 1) || (Number.isFinite(el.aKm) && el.aKm <= 0));
+      out.refusal = hyperbolic
+        ? refuse('insufficient_data', `${body.bodyId} has no stored windows (status ${body.status}): the catalog gives e ${el.e.toFixed(4)} and a ${el.aKm.toExponential(4)} km, an open (hyperbolic) orbit, and the elliptic Kepler propagator the screen uses requires a > 0 and e < 1`, 'a hyperbolic or universal-variable propagator, or an explicit "not screened: hyperbolic orbit" state wherever the catalog shows a status; this body is excluded from every count').refusal
+        : refuse('insufficient_data', `${body.bodyId} has no stored windows (status ${body.status})`, 'a body the precompute could propagate; this one is excluded from every count').refusal;
       return out;
     }
     const b = basins(windows, lat, DEFAULT_BASIN_RULE);
@@ -619,12 +754,25 @@
         basin: b.labels[i],
       };
     });
-    out.evidence = edgeEvidence(windows, lat);
+    out.evidence = edgeEvidence(windows, lat, topN);
     return out;
   }
 
-  // Short labels for the verdicts (shared by page and CLI so wording cannot drift).
+  // Short labels (shared by page and CLI so wording cannot drift).
   const EDGE_NAMES = { first: 'first departure date', last: 'last departure date', tofMin: 'flight-time floor', tofMax: 'flight-time ceiling' };
+  function describeRule(r, lat) {
+    if (r.arrival) return `arrival dates within ${r.maxColGap} departure steps${lat ? ` (${r.maxColGap * lat.departureSpacingDays} days)` : ''} and ${r.maxRowGap} row${r.maxRowGap === 1 ? '' : 's'}`;
+    return `within ${r.maxColGap} column${r.maxColGap === 1 ? '' : 's'} and ${r.maxRowGap} row${r.maxRowGap === 1 ? '' : 's'}`;
+  }
+  // One line about a single edge's rise, for the page's inspector and the CLI's sample list.
+  function describeRise(e) {
+    if (!e.rise) return '';
+    const v = e.vertex;
+    const vText = v ? (v.position === 'none' ? '; the three-cell quadratic has no minimum on the inward side' : `; three-cell quadratic vertex ${Math.abs(v.xSteps).toFixed(2)} step ${v.position === 'beyond' ? 'beyond the edge' : 'inside the lattice'}`) : '';
+    if (e.rise.kind === 'recorded') return `inward rise +${e.rise.value.toFixed(3)} km²/s² (neighbour stored; chain of ${e.chainLength}${e.chainLength >= 3 ? (e.monotone ? ', rising at every step' : ', not rising at every step') : ''}${vText})`;
+    if (e.rise.kind === 'bound') return `inward neighbour not among the stored windows: rise ≥ ${e.rise.atLeast.toFixed(3)} km²/s²`;
+    return `no rise recorded or bounded (${e.rise.reason})`;
+  }
 
   return {
     SCHEMA,
@@ -650,7 +798,13 @@
     edgeFlags,
     argminC3,
     basins,
+    sameBasin,
+    quadraticVertex,
     edgeEvidence,
+    arrivalOffsets,
+    floorProbe,
+    describeRule,
+    describeRise,
     hBand,
     synodicYears,
     synodicBand,

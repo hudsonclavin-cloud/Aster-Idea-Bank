@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nhats-validation-targets/2001_GP2.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "6619ba3babdf3f73c5f24e65c189369e7e7308ee",
+  "readBlob": "6619ba3babdf3f73c5f24e65c189369e7e7308ee",
+  "sourceSha256": "b0dd4c245459d73ba43e01b6e1a208455e6d3d5241d5cd293a77501e8f5dc2ca",
+  "sourceBytes": 1093,
+  "copiedAt": "2026-10-26T16:29:20.075Z",
+  "mode": "copy",
+  "note": "",
+  "readMatchesCommitted": true,
+  "writtenSha256": "b0dd4c245459d73ba43e01b6e1a208455e6d3d5241d5cd293a77501e8f5dc2ca",
+  "writtenBytes": 1093
+}

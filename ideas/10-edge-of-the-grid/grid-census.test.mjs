@@ -1,10 +1,12 @@
 // Tests for Edge of the Grid. From the bank root: node --test ideas/10-edge-of-the-grid/grid-census.test.mjs
 // Node built-ins only. Pins (outside this folder's own code): the cache metadata's totalSolves and
 // catalogSize; the catalog's classDistribution and missingAbsoluteMagnitudeCount; the precompute
-// script's asserted co-orbital count and grid constants; GRID_PARAMS in the porkchop page source;
-// the three judges' independently reproduced year counts; hand-worked lattice arithmetic for 433 Eros;
-// closed-form synodic periods; snapshot sidecars; and, when /home/user/asteroid-mining-planner is
-// present, a full re-run of the census against the live cache compared with the snapshot.
+// script's asserted co-orbital count, grid constants and five-window insertion bound; GRID_PARAMS in
+// the porkchop page source; Slice 18's independent re-solve of five bodies' lattice neighbours
+// (tools/slice18-research/c3-drift-sensitivity-results.json, snapshotted); the three judges' and the
+// round-1 reviewer's independently reproduced counts; hand-worked lattice arithmetic for 433 Eros;
+// closed-form synodic periods and quadratic vertices; snapshot sidecars; and, when
+// /home/user/asteroid-mining-planner is present, a full re-run of the census against the live cache.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -125,7 +127,10 @@ test('verification: every stored window sits on the derived lattice; the cache\'
   const V = C.verification;
   assert.equal(V.violations, 0);
   assert.deepEqual(V.violationExamples, []);
-  assert.equal(V.windowsChecked, 5 * C.bodies.withWindows);
+  assert.equal(V.windowsKeptPerBody, C.inputs.windowsKept.value, 'the precompute\'s insertion bound, read from the script');
+  assert.equal(C.inputs.windowsKept.source, 'tools/build/precompute-lambert-screen.mjs');
+  assert.equal(V.bodiesWithFullList, C.bodies.withWindows, 'every body with windows stores the full list, so every list is its cheapest cells of the whole lattice');
+  assert.equal(V.windowsChecked, V.windowsKeptPerBody * C.bodies.withWindows);
   assert.equal(V.distinctLaunchDates, L.nCols, 'every column is used by at least one stored window');
   assert.equal(V.everyColumnUsed, true);
   assert.ok(V.distinctTofDays <= L.nRows);
@@ -136,7 +141,6 @@ test('verification: every stored window sits on the derived lattice; the cache\'
   assert.equal(V.cheapestIsFirstWindowViolations, 0);
   assert.equal(V.minC3SummaryMismatches, 0);
   assert.equal(V.windowsNotAscendingViolations, 0);
-  assert.equal(V.bodiesWithOtherThanFiveWindows, 0);
   assert.equal(V.catalogMisses, 0);
   assert.equal(V.catalogSizeMetadata, C.bodies.total);
   assert.equal(C.bodies.total, M.catalogSize, 'metadata.catalogSize');
@@ -177,8 +181,9 @@ test('hand-worked: 433 Eros — column 336, row 3, three basins (two under the l
   assert.equal(eros.minC3, w0.c3);
 });
 
-test('hand-worked: every sample body\'s cells, edge flags and neighbour evidence recomputed without the module', () => {
-  let checked = 0;
+test('hand-worked: every sample body\'s cells, edge flags and inward-rise evidence recomputed without the module', () => {
+  let checked = 0, edgesChecked = 0;
+  const withWindows = C.sample.filter((s) => !s.refusal);
   for (const s of C.sample) {
     if (s.refusal) {
       assert.equal(s.bodyId, 'asteroid-2015 D1');
@@ -202,33 +207,113 @@ test('hand-worked: every sample body\'s cells, edge flags and neighbour evidence
     assert.deepEqual(s.evidence.cell, cells[0]);
     assert.equal(s.evidence.flags.count, s.windows[0].edges.length);
     const has = (c, r) => cells.findIndex((x) => x.col === c && x.row === r);
+    const spread = Math.max(...s.windows.map((w) => w.c3)) - s.windows[0].c3;
     for (const e of s.evidence.edges) {
       const [dc, dr] = e.edge === 'first' ? [1, 0] : e.edge === 'last' ? [-1, 0] : e.edge === 'tofMin' ? [0, 1] : [0, -1];
-      const j = has(cells[0].col + dc, cells[0].row + dr);
-      assert.equal(e.neighbourPresent, j >= 0, `${s.bodyId} ${e.edge} neighbour`);
-      if (j >= 0) {
-        assert.ok(Math.abs(e.slopeC3PerCell - (s.windows[j].c3 - s.windows[0].c3)) < 1e-12);
-        assert.ok(e.slopeC3PerCell > 0, 'the neighbour costs more than the minimum');
+      // the chain of stored cells walking inward, by hand
+      const chain = [s.windows[0].c3];
+      for (let k = 1; ; k++) {
+        const j = has(cells[0].col + k * dc, cells[0].row + k * dr);
+        if (j < 0) break;
+        chain.push(s.windows[j].c3);
       }
-      assert.equal(e.verdict, j >= 0 && e.monotone ? 'likely_clipped' : 'undetermined');
-      assert.equal(e.label, e.verdict === 'likely_clipped' ? 'Likely' : 'Speculative');
+      assert.deepEqual(e.chain, chain, `${s.bodyId} ${e.edge} chain`);
+      assert.equal(e.neighbourPresent, chain.length >= 2, `${s.bodyId} ${e.edge} neighbour`);
+      if (chain.length >= 2) {
+        assert.equal(e.rise.kind, 'recorded');
+        assert.ok(Math.abs(e.rise.value - (chain[1] - chain[0])) < 1e-12);
+        assert.ok(e.rise.value > 0, 'the neighbour costs more than the minimum');
+      } else {
+        assert.equal(s.windows.length, C.inputs.windowsKept.value, 'a full list, so the bound applies');
+        assert.equal(e.rise.kind, 'bound');
+        assert.ok(Math.abs(e.rise.atLeast - spread) < 1e-12, `${s.bodyId}: bound = dearest stored − cheapest`);
+      }
+      if (chain.length >= 3) {
+        // vertex of the parabola through (0, c0), (1, c1), (2, c2), solved here by Cramer's rule
+        const [c0, c1, c2] = chain;
+        const A2 = (c2 - 2 * c1 + c0) / 2, B = c1 - c0 - A2;
+        if (A2 > 0) {
+          assert.ok(Math.abs(e.vertex.xSteps - -B / (2 * A2)) < 1e-9, `${s.bodyId} vertex`);
+          assert.equal(e.vertex.position, -B / (2 * A2) < 0 ? 'beyond' : 'inside');
+        } else assert.equal(e.vertex.position, 'none');
+      } else assert.equal(e.vertex, null);
+      edgesChecked++;
     }
   }
-  assert.equal(checked, 14 * 5);
+  assert.equal(checked, withWindows.length * C.inputs.windowsKept.value);
+  assert.ok(edgesChecked >= 14, `every demonstrated edge checked (${edgesChecked})`);
   // the demonstrations the sample was chosen for
   const by = (id) => C.sample.find((s) => s.bodyId === id);
-  assert.deepEqual(by('asteroid-190166').evidence.edges.map((e) => [e.edge, e.verdict, e.chainLength]), [['first', 'likely_clipped', 3]]);
-  assert.deepEqual(by('asteroid-21088').evidence.edges.map((e) => [e.edge, e.verdict, e.chainLength]), [['first', 'undetermined', 1]]);
-  assert.deepEqual(by('asteroid-2368').evidence.edges.map((e) => [e.edge, e.verdict]), [['last', 'likely_clipped']]);
-  assert.deepEqual(by('asteroid-66063').evidence.edges.map((e) => [e.edge, e.verdict]), [['last', 'undetermined']]);
+  const sig = (id) => by(id).evidence.edges.map((e) => [e.edge, e.rise.kind, e.chainLength, e.vertex ? e.vertex.position : null]);
+  assert.deepEqual(sig('asteroid-190166'), [['first', 'recorded', 3, 'beyond']]);
+  assert.deepEqual(sig('asteroid-190491'), [['first', 'recorded', 3, 'inside']]);
+  // the round-1 reviewer's worked example: chain 2.1873, 2.3360, 2.9514 puts the vertex 0.18 step inside
+  assert.ok(Math.abs(by('asteroid-190491').evidence.edges[0].vertex.xSteps - 0.18) < 0.005);
+  assert.deepEqual(sig('asteroid-21088'), [['first', 'bound', 1, null]]);
+  assert.deepEqual(sig('asteroid-2368'), [['last', 'recorded', 2, null]]);
+  assert.deepEqual(sig('asteroid-66063'), [['last', 'bound', 1, null]]);
+  assert.deepEqual(sig('asteroid-2014 QV295'), [['last', 'recorded', 3, 'none']]);
   assert.deepEqual(by('asteroid-2006 KD40').evidence.edges.map((e) => e.edge), ['first', 'tofMin']);
   assert.equal(by('asteroid-2006 KD40').evidence.flags.count, 2);
-  assert.deepEqual(by('asteroid-1999 XS35').evidence.edges.map((e) => e.edge), ['tofMax']);
-  assert.deepEqual(by('asteroid-2021 UO20').evidence.edges.map((e) => [e.edge, e.verdict]), [['tofMin', 'likely_clipped']]);
+  assert.deepEqual(sig('asteroid-1999 XS35'), [['tofMax', 'bound', 1, null]]);
+  assert.deepEqual(sig('asteroid-2017 UR52'), [['tofMax', 'recorded', 2, null]]);
+  assert.deepEqual(sig('asteroid-2021 UO20'), [['tofMin', 'recorded', 2, null]]);
+  const t = by('asteroid-17274').windows;
+  assert.ok(t.some((w) => w.row === 1 && t[0].col - w.col >= 3 && t[0].col - w.col <= 6), '17274: a stored window one row up, 3–6 dates earlier');
+  assert.deepEqual(by('asteroid-1979 XB').evidence.edges, []);
   assert.equal(by('asteroid-2059').basins, 1);
   assert.equal(by('asteroid-1566').basins, 5);
   assert.ok(by('asteroid-163693').windows.every((w) => w.row === 0), 'Atira: all five on the floor');
-  assert.equal(by('asteroid-2004 RZ164').evidence.edges[0].slopeC3PerCell, C.edges.byEdge.last.slopeC3PerCell.max, 'the steepest recorded inward slope at the last column');
+  assert.equal(by('asteroid-2004 RZ164').evidence.edges[0].rise.value, C.edges.byEdge.last.riseRecorded.max, 'the steepest recorded inward rise at the last column');
+});
+
+// ------------------------------------------------------------------------------ 3b. Slice 18's independent neighbours
+test('Slice 18 re-solved the four neighbours of five best cells: stored ones match, unstored ones cost at least the dearest stored window', () => {
+  const S18 = readJson(snap('slice18-neighbours.json'));
+  const sc = sidecar('slice18-neighbours.json');
+  assert.equal(sha256(fs.readFileSync(snap('slice18-neighbours.json'))), sc.writtenSha256);
+  assert.equal(sc.path, 'tools/slice18-research/c3-drift-sensitivity-results.json');
+  assert.equal(sc.commit, C.inputs.commit);
+  assert.deepEqual(S18.convergenceFailures, [], 'Slice 18 reports no solver failures');
+  const ids = Object.keys(S18.bodies);
+  assert.equal(ids.length, 5);
+  let stored = 0, unstored = 0, offGrid = 0;
+  for (const id of ids) {
+    const s = C.sample.find((x) => x.bodyId === id);
+    assert.ok(s && !s.refusal, `${id} is a sample body`);
+    const best = S18.bodies[id].bestCell;
+    assert.equal(best.date, s.windows[0].launchDate, `${id}: Slice 18's best cell is the cache's minimum`);
+    assert.equal(best.tofDays, s.windows[0].tofDays);
+    assert.ok(Math.abs(best.c3 - s.windows[0].c3) <= 1e-12 * Math.max(1, best.c3));
+    const dearest = Math.max(...s.windows.map((w) => w.c3));
+    const at = { 'dep-7d': [-1, 0], 'dep+7d': [1, 0], 'tof-30d': [0, -1], 'tof+30d': [0, 1] };
+    for (const [label, nb] of Object.entries(S18.bodies[id].neighbors)) {
+      const [dc, dr] = at[label];
+      const col = s.windows[0].col + dc, row = s.windows[0].row + dr;
+      if (nb === 'off-grid') {
+        offGrid++;
+        const edge = dr === -1 ? 'tofMin' : dr === 1 ? 'tofMax' : dc === -1 ? 'first' : 'last';
+        assert.ok(s.evidence.edges.some((e) => e.edge === edge), `${id} ${label} off-grid ⇔ the census flags the ${edge} edge`);
+        continue;
+      }
+      const w = s.windows.find((x) => x.col === col && x.row === row);
+      if (w) {
+        stored++;
+        assert.ok(Math.abs(w.c3 - nb.c3) <= 1e-9 * Math.max(1, nb.c3), `${id} ${label}: stored C3 equals Slice 18's`);
+      } else {
+        unstored++;
+        assert.ok(nb.c3 >= dearest, `${id} ${label}: ${nb.c3} ≥ the dearest stored window ${dearest} (the top-five premise of the bound)`);
+      }
+    }
+    // the census's rise at an edge against Slice 18's measured one-step rise
+    for (const e of s.evidence.edges) {
+      const label = e.edge === 'tofMin' ? 'tof+30d' : e.edge === 'tofMax' ? 'tof-30d' : e.edge === 'first' ? 'dep+7d' : 'dep-7d';
+      const measured = S18.bodies[id].neighbors[label].dC3_from_best;
+      if (e.rise.kind === 'recorded') assert.ok(Math.abs(e.rise.value - measured) < 1e-9, `${id}: recorded rise = Slice 18's`);
+      else assert.ok(e.rise.atLeast <= measured, `${id}: bound ${e.rise.atLeast} ≤ Slice 18's measured rise ${measured}`);
+    }
+  }
+  assert.deepEqual([stored, unstored, offGrid], [5, 13, 2], 'five neighbours stored (Eros one, Atira one, 2017 UR52 three), thirteen not, two off the lattice');
 });
 
 // ------------------------------------------------------------------------------ 4. the counts
@@ -261,21 +346,45 @@ test('counts: per-column and per-row vectors, the heatmap and the edge table are
   assert.equal(C.edges.anyShare, C.edges.any / C.bodies.withWindows);
   for (const k of G.EDGE_KEYS) {
     const e = E[k];
-    assert.equal(e.likelyClipped + e.undetermined, e.touched, `${k} verdicts partition`);
+    const nRec = e.riseRecorded ? e.riseRecorded.n : 0, nBound = e.riseBound ? e.riseBound.n : 0;
+    assert.equal(nRec + nBound + e.riseNone, e.touched, `${k}: recorded + bounded + neither partition the edge`);
+    assert.equal(e.riseNone, 0, `${k}: every list is full, so every unstored neighbour is bounded`);
+    assert.equal(nRec, e.neighbourPresent);
     assert.equal(sum(Object.values(e.chains)), e.touched, `${k} chains partition`);
     assert.equal(e.chains3plus, e.chains[3] + e.chains[4] + e.chains[5]);
     assert.equal(e.monotone3plus + e.nonMonotone3plus, e.chains3plus);
+    assert.equal(e.vertex.beyond + e.vertex.inside + e.vertex.none, e.chains3plus, `${k}: one vertex reading per chain of three or more`);
     assert.equal(e.neighbourPresent, e.touched - e.chains[1]);
-    if (e.slopeC3PerCell) {
-      assert.equal(e.slopeC3PerCell.n, e.neighbourPresent);
-      assert.ok(e.slopeC3PerCell.min > 0, 'every recorded inward step costs more than the edge minimum');
-      assert.ok(e.slopeC3PerCell.min <= e.slopeC3PerCell.median && e.slopeC3PerCell.median <= e.slopeC3PerCell.max);
+    for (const st of [e.riseRecorded, e.riseBound]) {
+      if (!st) continue;
+      assert.ok(st.min > 0, 'every rise or bound is positive: the minimum is the cheapest solved cell');
+      assert.ok(st.min <= st.median && st.median <= st.max);
     }
+    // the split sorts edges by steepness: where both groups exist, the bounds sit above the recorded rises
+    if (e.riseRecorded && e.riseBound) assert.ok(e.riseBound.median > e.riseRecorded.median, `${k}: median bound above median recorded rise`);
     assert.equal(e.shareOfBodies, e.touched / C.bodies.withWindows);
+    // each edge against the lines inside it, recounted from the per-column and per-row vectors
+    const line = (d) => (k === 'first' ? PC[d] : k === 'last' ? PC[L.nCols - 1 - d] : k === 'tofMin' ? PR[d] : PR[L.nRows - 1 - d]);
+    assert.deepEqual(e.inwardLines, [0, 1, 2, 3].map(line));
+    assert.equal(e.cellsOnEdge, k === 'first' || k === 'last' ? L.nRows : L.nCols);
+    assert.equal(e.minimaPerEdgeCell, e.touched / e.cellsOnEdge);
   }
   assert.equal(E.first.nonMonotone3plus + E.last.nonMonotone3plus + E.tofMax.nonMonotone3plus + E.tofMin.nonMonotone3plus, 0, 'every stored chain of three or more rises inward');
-  assert.ok(E.tofMin.touched > E.first.touched + E.last.touched + E.tofMax.touched, 'the flight-time floor is the binding edge');
-  assert.equal(E.tofMin.neighbourPresent, 1, 'the floor\'s slope is recorded for exactly one body');
+  assert.equal(E.tofMin.neighbourPresent, 1, 'the floor\'s next-row neighbour is stored for exactly one body');
+  // the floor holds the most edge minima but shows no pile-up against the next row; the other three do
+  assert.ok(E.tofMin.touched > E.first.touched + E.last.touched + E.tofMax.touched, 'raw count: the floor holds the most');
+  assert.ok(E.tofMin.edgeOverNextLine < 1 && E.tofMin.inwardLines[0] < E.tofMin.inwardLines[1] && E.tofMin.inwardLines[1] < E.tofMin.inwardLines[2] && E.tofMin.inwardLines[2] < E.tofMin.inwardLines[3], 'the counts fall toward the floor');
+  assert.ok(E.first.edgeOverNextLine > 1 && E.last.edgeOverNextLine > 1 && E.tofMax.inwardLines[0] > E.tofMax.inwardLines[1], 'the departure edges and the ceiling pile up');
+  assert.ok(E.tofMin.minimaPerEdgeCell < E.first.minimaPerEdgeCell, 'per edge cell the floor is below the first date');
+  // numbers the round-1 reviewer recomputed with an independent script (python3 -I on the live cache)
+  assert.deepEqual([E.first.riseBound.n, E.last.riseBound.n, E.tofMin.riseBound.n, E.tofMax.riseBound.n], [105, 78, 2529, 6]);
+  assert.deepEqual([E.first.riseBound.median, E.last.riseBound.median, E.tofMin.riseBound.median, E.tofMax.riseBound.median].map((x) => Number(x.toFixed(3))), [0.719, 1.075, 1.754, 17.655]);
+  assert.deepEqual([E.first.riseRecorded.median, E.last.riseRecorded.median, E.tofMin.riseRecorded.median, E.tofMax.riseRecorded.median].map((x) => Number(x.toFixed(3))), [0.386, 0.519, 0.751, 7.111]);
+  assert.deepEqual(C.edges.vertex, { beyond: 41, inside: 44, none: 6 }, 'quadratic vertices over the 91 chains');
+  assert.equal(C.edges.chains3plus, 91);
+  const fa = E.tofMin.arrivalLine;
+  assert.deepEqual(fa.offsets, [3, 6], 'one row is 30/7 ≈ 4.3 dates; floor − 1 … ceil + 1');
+  assert.deepEqual([fa.withWindow, fa.anyInwardRow, Number(fa.rise.median.toFixed(3))], [1137, 1316, 0.862], 'floor bodies with a window on the constant-arrival-date line');
   // heatmap marginals
   const H = C.heat;
   assert.equal(H.minima.length, L.nRows);
@@ -293,11 +402,19 @@ test('counts: per-column and per-row vectors, the heatmap and the edge table are
   assert.equal(C.interior.firstColRatio, PC[0] / G.median(interiorCols));
   assert.equal(C.interior.lastColRatio, PC[L.nCols - 1] / G.median(interiorCols));
   assert.ok(C.interior.firstColRatio > 3 && C.interior.lastColRatio > 3, 'both edge columns carry more than three times the interior median');
-  // interior alternative partitions the edge bodies
+  // interior alternative partitions the edge bodies under every rule; looser boxes leave fewer
   const A = C.interiorAlternative;
-  assert.equal(A.withAlternative + A.without, C.edges.any);
   assert.equal(A.ofEdgeBodies, C.edges.any);
-  assert.ok(A.gapC3.min > 0 && A.gapC3.median > A.gapC3.min);
+  assert.equal(A.byRule.length, C.basins.length);
+  for (const r of A.byRule) {
+    assert.equal(r.withAlternative + r.without, C.edges.any);
+    assert.ok(r.gapC3.min > 0 && r.gapC3.median > r.gapC3.min);
+  }
+  const boxes = A.byRule.filter((r) => !r.rule.arrival);
+  for (let i = 1; i < boxes.length; i++) assert.ok(boxes[i].withAlternative <= boxes[i - 1].withAlternative, 'a looser box joins more windows to the minimum\'s basin');
+  // the round-1 reviewer's independent recount: 2,616 / 320 under (2, 1), median gap 0.6227; 2,004 under (8, 2)
+  assert.deepEqual([A.byRule[0].withAlternative, A.byRule[0].without, Number(A.byRule[0].gapC3.median.toFixed(4))], [2616, 320, 0.6227]);
+  assert.equal(A.byRule.find((r) => r.rule.maxColGap === 8).withAlternative, 2004);
 });
 
 test('counts: the porkchop view tail is a recount over the lattice columns after the view\'s last departure', () => {
@@ -323,14 +440,21 @@ test('counts: the porkchop view tail is a recount over the lattice columns after
 });
 
 test('counts: basin histograms partition the bodies and loosen monotonically', () => {
-  assert.equal(C.basins.length, 3);
+  assert.equal(C.basins.length, 4, 'the proposal\'s box, two looser boxes and the arrival-aware rule');
   assert.deepEqual(C.basins[0].rule, G.DEFAULT_BASIN_RULE);
   for (const b of C.basins) assert.equal(sum(Object.values(b.histogram)), C.bodies.withWindows);
-  for (let i = 1; i < C.basins.length; i++) {
-    assert.ok(C.basins[i].histogram[1] >= C.basins[i - 1].histogram[1], 'a looser rule never splits a basin');
-    assert.ok(C.basins[i].histogram[5] <= C.basins[i - 1].histogram[5]);
+  const boxes = C.basins.filter((b) => !b.rule.arrival);
+  for (let i = 1; i < boxes.length; i++) {
+    assert.ok(boxes[i].histogram[1] >= boxes[i - 1].histogram[1], 'a looser box never splits a basin');
+    assert.ok(boxes[i].histogram[5] <= boxes[i - 1].histogram[5]);
   }
-  assert.ok(C.basins[0].histogram[3] + C.basins[0].histogram[4] + C.basins[0].histogram[5] > C.bodies.withWindows / 2, 'most bodies spread their five windows over three or more basins under the proposal\'s rule');
+  const h = (b) => b.histogram;
+  assert.ok(h(C.basins[0])[3] + h(C.basins[0])[4] + h(C.basins[0])[5] > C.bodies.withWindows / 2, 'most bodies spread their five windows over three or more basins under the proposal\'s box');
+  const arr = C.basins.find((b) => b.rule.arrival);
+  assert.deepEqual(arr.rule, { maxColGap: 2, maxRowGap: 1, arrival: true }, 'the same reach, sheared along arrival dates');
+  assert.ok(h(arr)[1] + h(arr)[2] > C.bodies.withWindows * 0.75, 'along arrival dates, more than three quarters have one or two basins: the box\'s spread is mostly the lattice\'s aspect ratio');
+  // the round-1 reviewer's independent BFS reproduced the three box histograms
+  assert.deepEqual([1, 2, 3, 4, 5].map((k) => h(C.basins[0])[k]), [3848, 6464, 10155, 10601, 10837]);
 });
 
 test('tables: per-class totals reconcile with the catalog\'s own classDistribution, H with its missing count, co-orbital with the precompute\'s asserted 130', () => {
@@ -388,38 +512,99 @@ test('basins: invariant under every ordering of the five windows; cheapest windo
   assert.equal(G.basins(mk([10, 12, 14, 16, 18], 3, [1, 2, 3, 4, 5]), L).count, 1);
   assert.equal(G.basins(mk([10, 13, 16, 19, 22], 3, [1, 2, 3, 4, 5]), L).count, 5);
   assert.equal(G.basins(mk([10, 13, 16, 19, 22], 3, [1, 2, 3, 4, 5]), L, { maxColGap: 3, maxRowGap: 1 }).count, 1);
+  // a constant-arrival-date diagonal: each row up departs 30 days (4.3 columns) earlier. Arrival offsets
+  // 10·7+3·30 = 160, 6·7+4·30 = 162, 2·7+5·30 = 164 days: one basin along arrival dates, three as boxes.
+  const diag = [{ c: 10, r: 3 }, { c: 6, r: 4 }, { c: 2, r: 5 }].map((x, i) => ({ launchDate: G.addDays(L.startUtc, x.c * L.departureSpacingDays), tofDays: L.tofMinDays + x.r * L.tofSpacingDays, c3: i + 1 }));
+  const ARR = { maxColGap: 2, maxRowGap: 1, arrival: true };
+  assert.equal(G.basins(diag, L).count, 3);
+  assert.equal(G.basins(diag, L, ARR).count, 1);
+  assert.deepEqual(G.basins(diag, L, ARR).rule, ARR);
+  // same departure date one row apart arrives 30 days later: apart along arrival dates, together as a box
+  const vert = [{ c: 10, r: 3 }, { c: 10, r: 4 }].map((x, i) => ({ launchDate: G.addDays(L.startUtc, x.c * L.departureSpacingDays), tofDays: L.tofMinDays + x.r * L.tofSpacingDays, c3: i + 1 }));
+  assert.equal(G.basins(vert, L).count, 1);
+  assert.equal(G.basins(vert, L, ARR).count, 2);
+  // the boundary: arrival 14 days apart is in, 16 days is out (two columns of 7 days)
+  const pair = (dc, dr) => [{ c: 100, r: 5 }, { c: 100 + dc, r: 5 + dr }].map((x, i) => ({ launchDate: G.addDays(L.startUtc, x.c * L.departureSpacingDays), tofDays: L.tofMinDays + x.r * L.tofSpacingDays, c3: i + 1 }));
+  assert.equal(G.basins(pair(-2, 0), L, ARR).count, 1, '14 days');
+  assert.equal(G.basins(pair(-3, 0), L, ARR).count, 2, '21 days');
+  assert.equal(G.basins(pair(-6, 1), L, ARR).count, 1, '−42 + 30 = −12 days');
+  assert.equal(G.basins(pair(-2, 1), L, ARR).count, 2, '−14 + 30 = 16 days');
+  assert.equal(G.basins(pair(-9, 2), L, ARR).count, 2, 'two rows apart: outside maxRowGap 1');
 });
 
-test('edge evidence on synthetic windows: verdicts, chains, two edges at once, order independence', () => {
+test('quadratic vertex: closed forms, a parabola round trip, and the three positions', () => {
+  // f(x) = (x − x0)² + 3 sampled at x = 0, 1, 2 returns x0 exactly
+  for (const x0 of [-2.5, -0.7, 0, 0.18, 0.49]) {
+    const fx = (x) => (x - x0) * (x - x0) + 3;
+    const v = G.quadraticVertex(fx(0), fx(1), fx(2));
+    assert.ok(Math.abs(v.xSteps - x0) < 1e-12, `vertex ${x0}`);
+    assert.ok(Math.abs(v.curvature - 2) < 1e-12, 'k = c2 − 2c1 + c0 = 2a');
+    assert.equal(v.position, x0 < 0 ? 'beyond' : 'inside');
+  }
+  // 7.5, 7.9, 8.6: k = 0.3, x* = 1/2 − 0.4/0.3 = −5/6
+  assert.ok(Math.abs(G.quadraticVertex(7.5, 7.9, 8.6).xSteps - -5 / 6) < 1e-12);
+  assert.deepEqual(G.quadraticVertex(1, 2, 3), { curvature: 0, xSteps: null, position: 'none' }, 'a straight line has no vertex');
+  assert.equal(G.quadraticVertex(1, 2, 2.5).position, 'none', 'concave');
+  assert.equal(G.quadraticVertex(1, NaN, 2), null);
+});
+
+test('arrival offsets and the floor probe follow the lattice spacings', () => {
+  const a = G.arrivalOffsets(L);
+  assert.equal(a.columnsPerRow, L.tofSpacingDays / L.departureSpacingDays);
+  assert.deepEqual([a.lo, a.hi], [3, 6], '30/7 = 4.29 → 3 … 6');
+  const lat14 = G.lattice({ ...M, departureGridSpacingDays: 14 });
+  assert.deepEqual([G.arrivalOffsets(lat14).lo, G.arrivalOffsets(lat14).hi], [1, 4], '30/14 = 2.14 → 1 … 4');
+  // two rows below the 182-day floor: 152 and 122 days; ceil(2 · 30/7) = 9 dates ahead, ten departures
+  const p = G.floorProbe(L, 2530, 2);
+  assert.deepEqual(p.tofs, [L.tofMinDays - L.tofSpacingDays, L.tofMinDays - 2 * L.tofSpacingDays]);
+  assert.deepEqual([p.colsAhead, p.departures, p.perBody, p.total], [9, 10, 20, 50600]);
+  assert.equal(G.floorProbe(L, 1, 7).refusal.code, 'out_of_envelope', 'seven rows below 182 days is a negative flight time');
+});
+
+test('edge evidence on synthetic windows: recorded and bounded rises, chains, vertices, two edges at once, order independence', () => {
   const W = (col, row, c3) => ({ launchDate: G.addDays(L.startUtc, col * L.departureSpacingDays), tofDays: L.tofMinDays + row * L.tofSpacingDays, c3 });
   const far = [W(300, 10, 20), W(301, 10, 21)];
-  // rising chain of three inward from the first column
-  let ev = G.edgeEvidence([W(0, 5, 7.5), W(1, 5, 7.9), W(2, 5, 8.6), ...far], L);
-  assert.deepEqual(ev.edges.map((e) => [e.edge, e.verdict, e.chainLength, e.monotone]), [['first', 'likely_clipped', 3, true]]);
-  assert.ok(Math.abs(ev.edges[0].slopeC3PerCell - 0.4) < 1e-12);
-  assert.equal(ev.edges[0].label, 'Likely');
-  // a chain that dips is not monotone → undetermined even though the neighbour is stored
-  ev = G.edgeEvidence([W(0, 5, 7.5), W(1, 5, 7.9), W(2, 5, 7.7), ...far], L);
-  assert.deepEqual(ev.edges.map((e) => [e.verdict, e.chainLength, e.monotone]), [['undetermined', 3, false]]);
-  // neighbour absent → undetermined, chain 1
-  ev = G.edgeEvidence([W(0, 5, 7.5), W(2, 5, 7.9), ...far, W(400, 2, 30)], L);
-  assert.deepEqual(ev.edges.map((e) => [e.verdict, e.chainLength, e.neighbourPresent]), [['undetermined', 1, false]]);
+  const N = 5;
+  // rising chain of three inward from the first column: rise recorded, vertex −5/6 step (beyond)
+  let ev = G.edgeEvidence([W(0, 5, 7.5), W(1, 5, 7.9), W(2, 5, 8.6), ...far], L, N);
+  assert.deepEqual(ev.edges.map((e) => [e.edge, e.rise.kind, e.chainLength, e.monotone, e.vertex.position]), [['first', 'recorded', 3, true, 'beyond']]);
+  assert.ok(Math.abs(ev.edges[0].rise.value - 0.4) < 1e-12);
+  assert.ok(Math.abs(ev.edges[0].vertex.xSteps - -5 / 6) < 1e-12);
+  // a chain that dips is not monotone; the rise is still the first step
+  ev = G.edgeEvidence([W(0, 5, 7.5), W(1, 5, 7.9), W(2, 5, 7.7), ...far], L, N);
+  assert.deepEqual(ev.edges.map((e) => [e.rise.kind, e.chainLength, e.monotone, e.vertex.position]), [['recorded', 3, false, 'none']]);
+  // neighbour absent, list full: bounded below by the spread of the five (30 − 7.5)
+  ev = G.edgeEvidence([W(0, 5, 7.5), W(2, 5, 7.9), ...far, W(400, 2, 30)], L, N);
+  assert.deepEqual(ev.edges.map((e) => [e.rise.kind, e.chainLength, e.neighbourPresent, e.vertex]), [['bound', 1, false, null]]);
+  assert.ok(Math.abs(ev.edges[0].rise.atLeast - 22.5) < 1e-12);
+  assert.equal(ev.listFull, true);
+  // neighbour absent and the list short, or the list length unknown: neither recorded nor bounded
+  ev = G.edgeEvidence([W(0, 5, 7.5), W(2, 5, 7.9), ...far], L, N);
+  assert.equal(ev.edges[0].rise.kind, 'none');
+  assert.match(ev.edges[0].rise.reason, /4 windows, not the full 5/);
+  assert.match(G.edgeEvidence([W(0, 5, 7.5), W(2, 5, 7.9), ...far, W(400, 2, 30)], L).edges[0].rise.reason, /not supplied/);
   // last column, floor and ceiling
-  assert.deepEqual(G.edgeEvidence([W(L.nCols - 1, 4, 1), W(L.nCols - 2, 4, 2), ...far], L).edges.map((e) => [e.edge, e.verdict]), [['last', 'likely_clipped']]);
-  assert.deepEqual(G.edgeEvidence([W(50, 0, 1), W(50, 1, 2), ...far], L).edges.map((e) => [e.edge, e.verdict]), [['tofMin', 'likely_clipped']]);
-  assert.deepEqual(G.edgeEvidence([W(50, L.nRows - 1, 1), W(50, L.nRows - 2, 2), ...far], L).edges.map((e) => [e.edge, e.verdict]), [['tofMax', 'likely_clipped']]);
+  assert.deepEqual(G.edgeEvidence([W(L.nCols - 1, 4, 1), W(L.nCols - 2, 4, 2), ...far], L, N).edges.map((e) => [e.edge, e.rise.kind]), [['last', 'recorded']]);
+  assert.deepEqual(G.edgeEvidence([W(50, 0, 1), W(50, 1, 2), ...far], L, N).edges.map((e) => [e.edge, e.rise.kind]), [['tofMin', 'recorded']]);
+  assert.deepEqual(G.edgeEvidence([W(50, L.nRows - 1, 1), W(50, L.nRows - 2, 2), ...far], L, N).edges.map((e) => [e.edge, e.rise.kind]), [['tofMax', 'recorded']]);
+  // the floor's inward step is up one row (a step along the date would fail this)
+  assert.deepEqual(G.edgeEvidence([W(50, 0, 1), W(51, 0, 2), ...far, W(9, 9, 9)], L, N).edges.map((e) => [e.edge, e.rise.kind]), [['tofMin', 'bound']]);
   // two edges at once
-  ev = G.edgeEvidence([W(0, 0, 1), W(1, 0, 2), W(0, 1, 3), ...far], L);
-  assert.deepEqual(ev.edges.map((e) => [e.edge, e.verdict]), [['first', 'likely_clipped'], ['tofMin', 'likely_clipped']]);
+  ev = G.edgeEvidence([W(0, 0, 1), W(1, 0, 2), W(0, 1, 3), ...far], L, N);
+  assert.deepEqual(ev.edges.map((e) => [e.edge, e.rise.kind, e.rise.value]), [['first', 'recorded', 1], ['tofMin', 'recorded', 2]]);
   assert.equal(ev.flags.count, 2);
   // interior minimum: no edges
-  assert.deepEqual(G.edgeEvidence([W(100, 10, 1), W(0, 0, 2), W(L.nCols - 1, L.nRows - 1, 3)], L).edges, []);
+  assert.deepEqual(G.edgeEvidence([W(100, 10, 1), W(0, 0, 2), W(L.nCols - 1, L.nRows - 1, 3)], L, N).edges, []);
   // the minimum is found by c3, not position
   const shuffled = [W(2, 5, 8.6), ...far, W(0, 5, 7.5), W(1, 5, 7.9)];
-  ev = G.edgeEvidence(shuffled, L);
+  ev = G.edgeEvidence(shuffled, L, N);
   assert.equal(ev.minIndex, 3);
-  assert.deepEqual(ev.edges.map((e) => [e.edge, e.verdict, e.chainLength]), [['first', 'likely_clipped', 3]]);
-  assert.deepEqual(G.edgeEvidence([], L), { hasMinimum: false, edges: [] });
+  assert.deepEqual(ev.edges.map((e) => [e.edge, e.rise.kind, e.chainLength]), [['first', 'recorded', 3]]);
+  assert.deepEqual(G.edgeEvidence([], L, N), { hasMinimum: false, edges: [] });
+  // the shared wording never calls a minimum clipped
+  for (const e of [...G.edgeEvidence([W(0, 5, 7.5), W(1, 5, 7.9), W(2, 5, 8.6), ...far], L, N).edges, ...G.edgeEvidence([W(0, 5, 7.5), W(2, 5, 7.9), ...far, W(400, 2, 30)], L, N).edges]) {
+    assert.doesNotMatch(G.describeRise(e), /clipped/i);
+  }
 });
 
 test('cellOf names every off-lattice window instead of rounding it', () => {
@@ -467,10 +652,11 @@ test('a synthetic three-body cache: every aggregate hand-checked, missing inputs
   const au = C.inputs.auKm.value;
   const catalog = { asteroids: { A: { orbitClass: 'AMO', H: 17.26, pha: false, elements: { aKm: 1.8 * au } }, B: { orbitClass: 'AMO', H: 10.39, pha: false, elements: { aKm: 1.458 * au } }, C: { orbitClass: 'ATE', H: 18.15, pha: true, elements: { aKm: 0.99 * au } }, D: { orbitClass: 'APO', H: null, pha: false, elements: { aKm: 1.2 * au } } } };
   const viewEnd = G.addDays(L.startUtc, 731 * L.departureSpacingDays); // a column date, so one window of C lands exactly on it
-  const c = G.census(cache, catalog, { viewGrid: { depEndUtc: viewEnd, source: 'synthetic' }, auKm: au, sampleIds: ['B', 'D', 'nope'] });
+  const c = G.census(cache, catalog, { viewGrid: { depEndUtc: viewEnd, source: 'synthetic' }, auKm: au, topN: 5, sampleIds: ['B', 'D', 'nope'] });
   assert.ok(!G.isRefusal(c));
   assert.equal(c.bodies.withWindows, 3);
   assert.deepEqual(c.bodies.withoutWindows.map((b) => [b.bodyId, b.orbitClass, b.hBand]), [['D', 'APO', 'H missing']]);
+  assert.deepEqual(c.bodies.withoutWindows[0].elements, { aKm: 1.2 * au, e: null, maRad: null }, 'the catalog\'s elements as recorded, null where absent');
   assert.equal(c.verification.totalSolvesMatch, true);
   assert.equal(c.verification.windowsChecked, 15);
   assert.equal(c.verification.distinctLaunchDates, 15);
@@ -481,12 +667,18 @@ test('a synthetic three-body cache: every aggregate hand-checked, missing inputs
   assert.equal(c.perColumn.minima[0] + c.perColumn.minima[336] + c.perColumn.minima[L.nCols - 1], 3);
   assert.equal(c.edges.any, 2);
   assert.equal(c.edges.multiple, 0);
-  assert.deepEqual([c.edges.byEdge.first.touched, c.edges.byEdge.first.likelyClipped, c.edges.byEdge.first.chains[3]], [1, 1, 1]);
-  assert.deepEqual([c.edges.byEdge.last.touched, c.edges.byEdge.last.undetermined, c.edges.byEdge.last.slopeC3PerCell], [1, 1, null]);
-  assert.ok(Math.abs(c.edges.byEdge.first.slopeC3PerCell.median - 0.4) < 1e-12);
+  assert.deepEqual([c.edges.byEdge.first.touched, c.edges.byEdge.first.riseRecorded.n, c.edges.byEdge.first.chains[3], c.edges.byEdge.first.riseBound], [1, 1, 1, null]);
+  assert.ok(Math.abs(c.edges.byEdge.first.riseRecorded.median - 0.4) < 1e-12);
+  assert.deepEqual(c.edges.byEdge.first.vertex, { beyond: 1, inside: 0, none: 0 }, 'A: 7.5, 7.9, 8.6 → vertex −5/6 step');
+  assert.deepEqual([c.edges.byEdge.last.touched, c.edges.byEdge.last.riseRecorded, c.edges.byEdge.last.riseBound.n], [1, null, 1]);
+  assert.ok(Math.abs(c.edges.byEdge.last.riseBound.median - 1.0) < 1e-12, 'C: dearest stored 11.5 − 10.5');
+  assert.deepEqual(c.edges.byEdge.last.inwardLines, [1, 0, 0, 0]);
+  assert.equal(c.edges.byEdge.first.cellsOnEdge, L.nRows);
+  assert.equal(c.edges.byEdge.tofMin.cellsOnEdge, L.nCols);
   assert.deepEqual(c.basins[0].histogram, { 1: 0, 2: 1, 3: 2, 4: 0, 5: 0 });
-  assert.equal(c.interiorAlternative.withAlternative, 2, 'A has its 2029 basin, C its 2039 basin');
-  assert.ok(Math.abs(c.interiorAlternative.gapC3.min - 0.4) < 1e-12, 'C: 10.9 − 10.5');
+  assert.equal(c.interiorAlternative.byRule[0].withAlternative, 2, 'A has its 2029 basin, C its 2039 basin');
+  assert.ok(Math.abs(c.interiorAlternative.byRule[0].gapC3.min - 0.4) < 1e-12, 'C: 10.9 − 10.5');
+  assert.equal(c.verification.bodiesWithFullList, 3);
   assert.deepEqual([c.viewTail.minimaAfter, c.viewTail.minimaOn, c.viewTail.anyWindowAfter], [1, 0, 1]);
   assert.deepEqual(c.tables.byClass.map((r) => [r.key, r.n, r.any]), [['AMO', 2, 1], ['ATE', 1, 1]]);
   assert.deepEqual(c.tables.byH.filter((r) => r.n).map((r) => [r.key, r.n]), [['H < 18', 2], ['18 ≤ H < 22', 1]]);
@@ -498,8 +690,35 @@ test('a synthetic three-body cache: every aggregate hand-checked, missing inputs
   assert.equal(c.sample[0].basins, 3);
   assert.equal(c.sample[1].refusal.code, 'insufficient_data');
   assert.equal(c.sample[2].refusal.code, 'not_found');
+  // the interior alternative skips windows on an edge: E's only window outside the minimum's basin is on
+  // the floor or the last column, so E has none; F's is interior, so F has one
+  const E1 = body('E', [W(0, 5, 3), W(1, 5, 3.2), W(2, 5, 3.3), W(400, 0, 3.4), W(L.nCols - 1, 10, 3.5)]);
+  const F1 = body('F', [W(0, 5, 3), W(1, 5, 3.2), W(2, 5, 3.3), W(400, 0, 3.4), W(500, 10, 3.5)]);
+  const ef = G.census({ metadata: { ...M, totalSolves: 2 * L.cellsPerBody }, bodies: [E1, F1] }, null, { topN: 5, basinRules: [{ maxColGap: 2, maxRowGap: 1, arrival: true }] });
+  for (const r of ef.interiorAlternative.byRule) {
+    assert.deepEqual([r.withAlternative, r.without], [1, 1], `edge windows are not alternatives (${G.describeRule(r.rule)})`);
+    assert.ok(Math.abs(r.gapC3.median - 0.5) < 1e-12, 'F: 3.5 − 3, not the floor window at 3.4');
+  }
+  // the floor's constant-arrival-date line: G at the floor with a window one row up four dates earlier
+  const G1 = body('G', [W(100, 0, 2), W(96, 1, 2.3), W(101, 0, 2.4), W(300, 9, 2.5), W(100, 1, 2.6)]);
+  const Hh = body('H', [W(100, 0, 2), W(100, 1, 2.3), W(99, 1, 2.4), W(300, 9, 2.5), W(108, 1, 2.6)]);
+  const gh = G.census({ metadata: { ...M, totalSolves: 2 * L.cellsPerBody }, bodies: [G1, Hh] }, null, { topN: 5 }).edges.byEdge.tofMin;
+  assert.deepEqual([gh.touched, gh.arrivalLine.withWindow, gh.arrivalLine.anyInwardRow], [2, 1, 2], 'G\'s window 4 dates earlier is on the line; H\'s at −1 and +8 are not');
+  assert.ok(Math.abs(gh.arrivalLine.rise.median - 0.3) < 1e-12);
+  assert.deepEqual([gh.riseRecorded.n, Number(gh.riseRecorded.median.toFixed(12))], [2, 0.45], 'G 0.6, H 0.3');
+  // H bands at their boundaries, through the census table
+  const hb = [17.99, 18, 21.99, 22, 24.99, 25, 27.99, 28].map((H, i) => body(`h${i}`, [W(200 + 10 * i, 5, 1), W(201 + 10 * i, 5, 2), W(202 + 10 * i, 5, 3), W(203 + 10 * i, 5, 4), W(204 + 10 * i, 5, 5)]));
+  const hcat = { asteroids: Object.fromEntries([17.99, 18, 21.99, 22, 24.99, 25, 27.99, 28].map((H, i) => [`h${i}`, { orbitClass: 'APO', H, pha: false, elements: { aKm: 1.5 * au } }])) };
+  const hc = G.census({ metadata: { ...M, totalSolves: 8 * L.cellsPerBody }, bodies: hb }, hcat, {});
+  assert.deepEqual(hc.tables.byH.map((r) => [r.key, r.n]), G.H_BANDS.filter((k) => k !== 'H missing').map((k) => [k, k === 'H < 18' || k === 'H ≥ 28' ? 1 : 2]), 'two bodies in each inner band, one at each end');
+  // a lattice spanning fewer than three calendar years has no interior baseline: refused, not NaN
+  const short = G.census({ metadata: { ...M, screeningWindow: { startUtc: M.screeningWindow.startUtc, endUtc: G.addDays(M.screeningWindow.startUtc, 400) }, totalSolves: null }, bodies: [body('S', [W(0, 3, 1), W(10, 3, 2), W(20, 3, 3), W(30, 3, 4), W(40, 3, 5)])] }, null, {});
+  assert.equal(short.interior.refusal.code, 'insufficient_data');
+  assert.match(short.interior.refusal.reason, /2 calendar years/);
   // without the view grid, the catalog or the AU, the dependent outputs are refusals, not numbers
   const bare = G.census(cache, null, {});
+  assert.equal(bare.edges.byEdge.last.riseNone, 1, 'without the list length, an unstored neighbour is neither recorded nor bounded');
+  assert.equal(bare.verification.bodiesWithFullList, null);
   assert.equal(bare.viewTail.refusal.code, 'insufficient_data');
   assert.match(bare.viewTail.refusal.what_would_help, /depEndJD/);
   assert.equal(bare.tables.byClass.refusal.code, 'insufficient_data');
@@ -539,6 +758,11 @@ test('synodic periods: closed forms and bands', () => {
   assert.equal(G.hBand(17.99), 'H < 18');
   assert.equal(G.hBand(18), '18 ≤ H < 22');
   assert.equal(G.hBand(28), 'H ≥ 28');
+  assert.equal(G.hBand(21.99), '18 ≤ H < 22');
+  assert.equal(G.hBand(22), '22 ≤ H < 25');
+  assert.equal(G.hBand(24.99), '22 ≤ H < 25');
+  assert.equal(G.hBand(25), '25 ≤ H < 28');
+  assert.equal(G.hBand(27.99), '25 ≤ H < 28');
   assert.equal(G.hBand(null), 'H missing');
   assert.equal(G.hBand(NaN), 'H missing');
   assert.equal(G.daysBetween('2026-01-01', '2026-03-01'), 59);
@@ -602,7 +826,25 @@ test('cli: --help exits 0, bad usage exits 2, a missing cache exits 1', () => {
     assert.equal(out.edges.multiple, 1, 'T touches the first column and the floor');
     assert.equal(out.inputs.viewGrid, null);
     assert.equal(out.inputs.catalog, null);
-    assert.equal(out.sample.filter((s) => s.refusal && s.refusal.code === 'not_found').length, 15, 'none of the sample ids exist in the tiny cache');
+    assert.equal(out.sample.filter((s) => s.refusal && s.refusal.code === 'not_found').length, out.sample.length, 'none of the sample ids exist in the tiny cache');
+    assert.match(r.stdout, /windows kept per body: not supplied/);
+    assert.doesNotMatch(r.stdout, /undefined|NaN|null–null|Infinity/);
+    // metadata without provenance, generatedAt, catalogSize or totalSolves, on a one-year lattice:
+    // "not recorded" and a refused interior baseline, not a crash or "undefined"
+    const bareMeta = { schemaVersion: 1, screeningWindow: { startUtc: L.startUtc, endUtc: G.addDays(L.startUtc, 60) }, departureGridSpacingDays: 7, tofGridSpacingDays: 30, tofMinDays: 182, tofMaxDays: 242 };
+    fs.writeFileSync(path.join(dir, 'bare.json'), JSON.stringify({ metadata: bareMeta, bodies: [{ bodyId: 'x', status: 'low_departure_c3', bestWindows: [W(0, 0, 3)] }] }));
+    const r2 = spawnSync('node', [CLI, '--aster', dir, '--cache', path.join(dir, 'bare.json'), '--no-catalog'], { encoding: 'utf8' });
+    assert.equal(r2.status, 0, r2.stderr);
+    assert.match(r2.stdout, /generatedAt not recorded/);
+    assert.match(r2.stdout, /solverCommit not recorded/);
+    assert.match(r2.stdout, /totalSolves not recorded in metadata/);
+    assert.match(r2.stdout, /interior baseline refused \(insufficient_data\)/);
+    assert.doesNotMatch(r2.stdout, /undefined|NaN|null–null|Infinity|columns outside (\d{4}) and \1/);
+    // no metadata at all: a structured message and exit 1
+    fs.writeFileSync(path.join(dir, 'nometa.json'), JSON.stringify({ bodies: [] }));
+    const r3 = spawnSync('node', [CLI, '--cache', path.join(dir, 'nometa.json'), '--no-catalog'], { encoding: 'utf8' });
+    assert.equal(r3.status, 1);
+    assert.match(r3.stderr, /no metadata object; what would help/);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -640,7 +882,11 @@ test('live checkout: the snapshot describes the files in the Aster checkout; the
   assert.equal(k(/coOrbitalCount !== (\d+)/), C.bodies.coOrbital, 'the script\'s asserted co-orbital count');
   assert.match(pre, /for \(let t = startTdb; t <= endTdb; t \+= DEPARTURE_GRID_SPACING_DAYS \* SECONDS_PER_DAY\)/, 'inclusive departure loop, as the lattice assumes');
   assert.match(pre, /for \(let d = TOF_MIN_DAYS; d <= TOF_MAX_DAYS; d \+= TOF_GRID_SPACING_DAYS\)/, 'inclusive flight-time loop');
-  assert.match(pre, /if \(insertAt >= 5\)/, 'five best windows per body');
+  assert.match(pre.split('\n')[C.inputs.windowsKept.line - 1], new RegExp(`if \\(insertAt >= ${C.inputs.windowsKept.value}\\)`), 'the insertion bound at the recorded line');
+  assert.match(pre, new RegExp(`if \\(bestWindows\\.length > ${C.inputs.windowsKept.value}\\)`), 'and the list is trimmed to the same length');
+  assert.match(pre, /maybeInsertBestWindow\(bestWindows, \{/, 'every solved cell is offered to the list, so it is the cheapest cells of the whole lattice');
+  // Slice 18's results file in the checkout is the one snapshotted
+  assert.equal(sha256(fs.readFileSync(path.join(ASTER, sidecar('slice18-neighbours.json').path))), sidecar('slice18-neighbours.json').sourceSha256);
 });
 
 test('live checkout: re-running the census reproduces the snapshot and example.txt byte for byte (skipped when absent)', (t) => {

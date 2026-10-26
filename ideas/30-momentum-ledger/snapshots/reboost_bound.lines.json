@@ -1,0 +1,16 @@
+{
+  "path": "finance/reboost_bound.py",
+  "lines": {
+    "28": "R_GEO_KM = 42_164.0  # [FLAGGED] GEO radius convention inherited from in-space fork solver.",
+    "29": "ENERGY_CROSSCHECK_J = 1.06e11",
+    "30": "INSTALLED_POWER_KW = (50.0, 100.0, 250.0, 500.0)",
+    "31": "ETA_CHAIN = (0.3, 0.5, 0.7)",
+    "32": "DUTY_FACTORS = (0.3, 0.5)",
+    "33": "SPECIFIC_POWER_WKG = (50.0, 100.0)",
+    "36": "    \"this is an ENERGY bound, not a Lorentz-force thrust model. Plasma density, \"",
+    "118": "    e_in_jkg = -MU_EARTH / (2.0 * r_catch_km * 1000.0)",
+    "119": "    e_out_jkg = -MU_EARTH / (2.0 * a_transfer_km * 1000.0)",
+    "120": "    dE_throw_j = ref.payload_t * 1000.0 * (e_out_jkg - e_in_jkg)",
+    "147": "    return dE_throw_j / (power_kw * 1000.0 * eta * duty) / 86400.0"
+  }
+}

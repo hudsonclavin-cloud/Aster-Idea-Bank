@@ -2,6 +2,7 @@ $ python3 ideas/13-the-null-input/fiber_sweep.py
 THE NULL INPUT — fiber purchase price on the Skyhook Rev A finance chain
 rev_a.json economics.fiber_cost_per_kg = null   ("WEAKEST INPUT — no vendor quote; obtain from Toyobo/Avient/Toray")
 inputs: rev_a.excerpt.json (orbital, kinematics, materials, mass_ratio, economics) and ladder.json (workbook Assumptions rows 3-16, three columns) @ 34935cb
+fiber: Zylon PBO (rev_a materials.primary_fiber): every fiber mass is its EQ-6 mass at σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5; a quote for another fiber (FibrXL's is Dyneema SK78, UHMWPE) does not price this mass (--material refuses it)
 finished-tether multiplier: 1.00  [unsourced; 1.0 reads the quoted $/kg as the finished-tether $/kg]
 purchase line: $/kg × multiplier × fiber kg, added to total capex, spread 15/30/35/20% over Y1-4; hardware mass factor not applied (it scales launched mass, not fiber bought)
 
@@ -88,6 +89,7 @@ CONSERVATIVE THRESHOLDS vs fiber price — the value of each input ALONE that br
         $300         $560       $1,508    1.125/day     5,939 kg        19.6%       1.086x      $4,912M       cannot
       $1,000         $584       $1,119    1.174/day     6,411 kg        16.0%       0.806x      $4,486M       cannot
       $3,000         $651       cannot    1.314/day     8,294 kg         6.8%       cannot      $3,267M       cannot
+  'cannot' from this fiber price up (exact, by bisection on price; x1.00): price beyond $20,000, launch $2,114, cadence beyond $20,000, payload $7,550, derate $4,606, hw factor $2,114, prog capex $6,394, fixed ops never
   (conservative values: price $500, launch $2,500, cadence 1.000/day, payload 5,000 kg, derate 30.0%, hw factor 1.800x, prog capex $6,000M, fixed ops $80M; 'cannot' = no value within a 5x stretch, or none physical, closes the case. The launch threshold falls by multiplier ÷ hardware mass factor $/kg per $/kg of fiber; the up-thresholds rise. A hw factor below the optimistic column's 1.4x is implausible and below 1.0x unphysical: printed as the arithmetic says, as sensitivity.py does.)
 
 BASELINE-VALUE SINGLES — each conservative input swapped alone to its baseline-column value; the fiber price at which it stops closing the case
@@ -123,22 +125,54 @@ MARKERS the repository already carries — not quotes, not defaults here; what t
     Optimistic 2.5 km/s (0% derate)                  201.6        34      4,260       Y7     7,306      91/kg
     Cislunar 2.8 km/s @ Conservative column        1,476.3       251     12,895     Y22*    -7,143     781/kg
     Phase 3 3.5 km/s @ Conservative column        15,429.8     2,623     78,057     >Y40   -58,232   4,389/kg
-  inspace_fork.py SURFACE_FIBER_PRICE_PER_KG [placeholder] $1,000/kg — finance/inspace_fork.py:55
-    placeholder for the DRAFT, non-canonical MXER in-space fork's v2 surface, used there only when rev_a economics.fiber_cost_per_kg is null (require_non_null); flagged 'no vendor quote' in its own findings; a marker, never a default
+  inspace_fork.py fiber-price bracket [bracket low] $200/kg — finance/inspace_fork.py:54
+    the DRAFT, non-canonical MXER in-space fork's explicit fiber-price bracket and the placeholder its v2 surface uses because rev_a economics.fiber_cost_per_kg is null (require_non_null), flagged 'no vendor quote' in its own output; params/service_mxer_draft.json capex_inputs carries the same bracket as that fork's written result; markers, never defaults
+    row                                            fiber t  added $M   capex $M  payback   NPV@10%  Y15 b/e
+    Conservative 2.5 km/s (30% derate)               609.1       122      8,863     Y17*    -3,978     557/kg
+    Baseline 2.5 km/s (15% derate)                   321.5        64      5,836       Y9     2,108     187/kg
+    Optimistic 2.5 km/s (0% derate)                  201.6        40      4,266       Y7     7,301      91/kg
+    Cislunar 2.8 km/s @ Conservative column        1,476.3       295     12,939     Y22*    -7,178     783/kg
+    Phase 3 3.5 km/s @ Conservative column        15,429.8     3,086     78,520     >Y40   -58,595   4,414/kg
+  inspace_fork.py fiber-price bracket [bracket mid] $500/kg — finance/inspace_fork.py:54
+    the DRAFT, non-canonical MXER in-space fork's explicit fiber-price bracket and the placeholder its v2 surface uses because rev_a economics.fiber_cost_per_kg is null (require_non_null), flagged 'no vendor quote' in its own output; params/service_mxer_draft.json capex_inputs carries the same bracket as that fork's written result; markers, never defaults
+    row                                            fiber t  added $M   capex $M  payback   NPV@10%  Y15 b/e
+    Conservative 2.5 km/s (30% derate)               609.1       305      9,046     Y17*    -4,121     567/kg
+    Baseline 2.5 km/s (15% derate)                   321.5       161      5,932       Y9     2,032     190/kg
+    Optimistic 2.5 km/s (0% derate)                  201.6       101      4,327       Y7     7,254      92/kg
+    Cislunar 2.8 km/s @ Conservative column        1,476.3       738     13,382     Y22*    -7,525     808/kg
+    Phase 3 3.5 km/s @ Conservative column        15,429.8     7,715     83,149     >Y40   -62,223   4,671/kg
+  inspace_fork.py fiber-price bracket [bracket high / surface] $1,000/kg — finance/inspace_fork.py:55
+    the DRAFT, non-canonical MXER in-space fork's explicit fiber-price bracket and the placeholder its v2 surface uses because rev_a economics.fiber_cost_per_kg is null (require_non_null), flagged 'no vendor quote' in its own output; params/service_mxer_draft.json capex_inputs carries the same bracket as that fork's written result; markers, never defaults
     row                                            fiber t  added $M   capex $M  payback   NPV@10%  Y15 b/e
     Conservative 2.5 km/s (30% derate)               609.1       609      9,350     Y17*    -4,360     584/kg
     Baseline 2.5 km/s (15% derate)                   321.5       322      6,093       Y9     1,906     194/kg
     Optimistic 2.5 km/s (0% derate)                  201.6       202      4,427       Y7     7,175      94/kg
     Cislunar 2.8 km/s @ Conservative column        1,476.3     1,476     14,120     Y23*    -8,103     848/kg
     Phase 3 3.5 km/s @ Conservative column        15,429.8    15,430     90,864     >Y40   -68,271   5,098/kg
+  skyhook_no_leo_stress_test.jsx fiberPriceKg [cons. preset] $400/kg — tools/sims/skyhook_no_leo_stress_test.jsx:325
+    the React strategy simulator's slider default, labelled [Speculative] 'needs quote' on its own line, and its conservative and optimistic preset values; fiberCost_M is never read (README finding 1), so none of them changes what the simulator reports; markers, never defaults here
+    row                                            fiber t  added $M   capex $M  payback   NPV@10%  Y15 b/e
+    Conservative 2.5 km/s (30% derate)               609.1       244      8,985     Y17*    -4,074     564/kg
+    Baseline 2.5 km/s (15% derate)                   321.5       129      5,900       Y9     2,058     189/kg
+    Optimistic 2.5 km/s (0% derate)                  201.6        81      4,306       Y7     7,269      92/kg
+    Cislunar 2.8 km/s @ Conservative column        1,476.3       591     13,234     Y22*    -7,409     799/kg
+    Phase 3 3.5 km/s @ Conservative column        15,429.8     6,172     81,606     >Y40   -61,014   4,585/kg
   skyhook_no_leo_stress_test.jsx fiberPriceKg [default] $250/kg — tools/sims/skyhook_no_leo_stress_test.jsx:54
-    the React strategy simulator's hardcoded slider default, labelled [Speculative] 'needs quote' on its own line; a marker, never a default here
+    the React strategy simulator's slider default, labelled [Speculative] 'needs quote' on its own line, and its conservative and optimistic preset values; fiberCost_M is never read (README finding 1), so none of them changes what the simulator reports; markers, never defaults here
     row                                            fiber t  added $M   capex $M  payback   NPV@10%  Y15 b/e
     Conservative 2.5 km/s (30% derate)               609.1       152      8,893     Y17*    -4,002     559/kg
     Baseline 2.5 km/s (15% derate)                   321.5        80      5,852       Y9     2,095     188/kg
     Optimistic 2.5 km/s (0% derate)                  201.6        50      4,276       Y7     7,293      91/kg
     Cislunar 2.8 km/s @ Conservative column        1,476.3       369     13,013     Y22*    -7,235     787/kg
     Phase 3 3.5 km/s @ Conservative column        15,429.8     3,857     79,291     >Y40   -59,200   4,457/kg
+  skyhook_no_leo_stress_test.jsx fiberPriceKg [opt. preset] $150/kg — tools/sims/skyhook_no_leo_stress_test.jsx:327
+    the React strategy simulator's slider default, labelled [Speculative] 'needs quote' on its own line, and its conservative and optimistic preset values; fiberCost_M is never read (README finding 1), so none of them changes what the simulator reports; markers, never defaults here
+    row                                            fiber t  added $M   capex $M  payback   NPV@10%  Y15 b/e
+    Conservative 2.5 km/s (30% derate)               609.1        91      8,832     Y17*    -3,954     555/kg
+    Baseline 2.5 km/s (15% derate)                   321.5        48      5,820       Y9     2,121     187/kg
+    Optimistic 2.5 km/s (0% derate)                  201.6        30      4,256       Y7     7,309      91/kg
+    Cislunar 2.8 km/s @ Conservative column        1,476.3       221     12,865     Y22*    -7,120     779/kg
+    Phase 3 3.5 km/s @ Conservative column        15,429.8     2,314     77,748     >Y40   -57,990   4,372/kg
 
 QUOTE CARD: not printed. No fiber price is set (rev_a.json economics.fiber_cost_per_kg is null) and no --quote P was given; every row above is a hypothetical price, labelled as such. Pass --quote P ($/kg) for the quote-day card.
 [exit 0]
@@ -147,6 +181,7 @@ $ python3 ideas/13-the-null-input/fiber_sweep.py --quote --no-sweep
 THE NULL INPUT — fiber purchase price on the Skyhook Rev A finance chain
 rev_a.json economics.fiber_cost_per_kg = null   ("WEAKEST INPUT — no vendor quote; obtain from Toyobo/Avient/Toray")
 inputs: rev_a.excerpt.json (orbital, kinematics, materials, mass_ratio, economics) and ladder.json (workbook Assumptions rows 3-16, three columns) @ 34935cb
+fiber: Zylon PBO (rev_a materials.primary_fiber): every fiber mass is its EQ-6 mass at σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5; a quote for another fiber (FibrXL's is Dyneema SK78, UHMWPE) does not price this mass (--material refuses it)
 finished-tether multiplier: 1.00  [unsourced; 1.0 reads the quoted $/kg as the finished-tether $/kg]
 purchase line: $/kg × multiplier × fiber kg, added to total capex, spread 15/30/35/20% over Y1-4; hardware mass factor not applied (it scales launched mass, not fiber bought)
 
@@ -172,14 +207,15 @@ GATE at $0/kg — the chain must reproduce the published figures before any fibe
   ok  phase3_growth_option fiber mass t (rev_a phase3_3p5kms_30pct_fiber_mass_t) got    15429.8  published 15429.8
   gate: 19 of 19 anchors reproduced
 
-refused: no fiber price: rev_a.json economics.fiber_cost_per_kg is null and no --quote P was given
-  what would help: pass --quote P with the vendor's $/kg (Toyobo / Avient / Toray; state yarn vs finished rope, MOQ, date), or fill economics.fiber_cost_per_kg in params/rev_a.json with its source in _fiber_cost_note. This tool prints no fiber line without a price (mirrors finance/inspace_fork.py require_non_null).
+refused (null_input): no fiber price: rev_a.json economics.fiber_cost_per_kg is null and no --quote P was given
+  what would help: pass --quote P with the vendor's $/kg for Zylon PBO (the Toyobo and Avient asks are pending; state yarn vs finished rope, MOQ, currency, date), or fill economics.fiber_cost_per_kg in params/rev_a.json with its source in _fiber_cost_note. A FibrXL reply is for Dyneema SK78, a different fiber: --material uhmwpe refuses it. This tool prints no fiber line without a price (mirrors finance/inspace_fork.py require_non_null).
 [exit 2]
 
 $ python3 ideas/13-the-null-input/fiber_sweep.py --quote 300 --no-sweep
 THE NULL INPUT — fiber purchase price on the Skyhook Rev A finance chain
 rev_a.json economics.fiber_cost_per_kg = null   ("WEAKEST INPUT — no vendor quote; obtain from Toyobo/Avient/Toray")
 inputs: rev_a.excerpt.json (orbital, kinematics, materials, mass_ratio, economics) and ladder.json (workbook Assumptions rows 3-16, three columns) @ 34935cb
+fiber: Zylon PBO (rev_a materials.primary_fiber): every fiber mass is its EQ-6 mass at σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5; a quote for another fiber (FibrXL's is Dyneema SK78, UHMWPE) does not price this mass (--material refuses it)
 finished-tether multiplier: 1.00  [unsourced; 1.0 reads the quoted $/kg as the finished-tether $/kg]
 purchase line: $/kg × multiplier × fiber kg, added to total capex, spread 15/30/35/20% over Y1-4; hardware mass factor not applied (it scales launched mass, not fiber bought)
 
@@ -207,6 +243,7 @@ GATE at $0/kg — the chain must reproduce the published figures before any fibe
 
 QUOTE-DAY CARD — fiber at $300/kg × 1.00 (finished-tether multiplier, unsourced) = $300/kg of tether mass
   price source: --quote flag (rev_a.json economics.fiber_cost_per_kg is still null)
+  material: Zylon PBO, priced against its EQ-6 mass (σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5); a quote for another fiber does not apply
   Conservative 2.5 km/s (30% derate), 609.1 t fiber:
     adds $183M capex ($8,741M -> $8,924M, +2.1%) | payback Y17* -> Y17* | NPV@10% -$3,883M -> -$4,026M | Y15 breakeven price $550 -> $560/kg
   Baseline 2.5 km/s (15% derate), 321.5 t fiber:
@@ -227,6 +264,7 @@ $ python3 ideas/13-the-null-input/fiber_sweep.py --quote 300 --multiplier 1.3 --
 THE NULL INPUT — fiber purchase price on the Skyhook Rev A finance chain
 rev_a.json economics.fiber_cost_per_kg = null   ("WEAKEST INPUT — no vendor quote; obtain from Toyobo/Avient/Toray")
 inputs: rev_a.excerpt.json (orbital, kinematics, materials, mass_ratio, economics) and ladder.json (workbook Assumptions rows 3-16, three columns) @ 34935cb
+fiber: Zylon PBO (rev_a materials.primary_fiber): every fiber mass is its EQ-6 mass at σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5; a quote for another fiber (FibrXL's is Dyneema SK78, UHMWPE) does not price this mass (--material refuses it)
 finished-tether multiplier: 1.30  [unsourced; 1.0 reads the quoted $/kg as the finished-tether $/kg]
 purchase line: $/kg × multiplier × fiber kg, added to total capex, spread 15/30/35/20% over Y1-4; hardware mass factor not applied (it scales launched mass, not fiber bought)
 
@@ -254,6 +292,7 @@ GATE at $0/kg — the chain must reproduce the published figures before any fibe
 
 QUOTE-DAY CARD — fiber at $300/kg × 1.30 (finished-tether multiplier, unsourced) = $390/kg of tether mass
   price source: --quote flag (rev_a.json economics.fiber_cost_per_kg is still null)
+  material: Zylon PBO, priced against its EQ-6 mass (σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5); a quote for another fiber does not apply
   Conservative 2.5 km/s (30% derate), 609.1 t fiber:
     adds $238M capex ($8,741M -> $8,979M, +2.7%) | payback Y17* -> Y17* | NPV@10% -$3,883M -> -$4,069M | Y15 breakeven price $550 -> $563/kg
   Baseline 2.5 km/s (15% derate), 321.5 t fiber:
@@ -269,3 +308,37 @@ QUOTE-DAY CARD — fiber at $300/kg × 1.30 (finished-tether multiplier, unsourc
   to fill: rev_a.json economics.fiber_cost_per_kg = 300 and _fiber_cost_note with vendor, date, currency, yarn-or-finished-rope, MOQ; then finance/skyhook_finance.py needs this purchase line (it has none) and the workbook's Assumptions sheet a row for it.
   (* beyond the 15-year window, extrapolated; option-tier rows are the partial tier model)
 [exit 0]
+
+$ python3 ideas/13-the-null-input/fiber_sweep.py --quote 300 --material uhmwpe --no-sweep
+THE NULL INPUT — fiber purchase price on the Skyhook Rev A finance chain
+rev_a.json economics.fiber_cost_per_kg = null   ("WEAKEST INPUT — no vendor quote; obtain from Toyobo/Avient/Toray")
+inputs: rev_a.excerpt.json (orbital, kinematics, materials, mass_ratio, economics) and ladder.json (workbook Assumptions rows 3-16, three columns) @ 34935cb
+fiber: Zylon PBO (rev_a materials.primary_fiber): every fiber mass is its EQ-6 mass at σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5; a quote for another fiber (FibrXL's is Dyneema SK78, UHMWPE) does not price this mass (--material refuses it)
+finished-tether multiplier: 1.00  [unsourced; 1.0 reads the quoted $/kg as the finished-tether $/kg]
+purchase line: $/kg × multiplier × fiber kg, added to total capex, spread 15/30/35/20% over Y1-4; hardware mass factor not applied (it scales launched mass, not fiber bought)
+
+GATE at $0/kg — the chain must reproduce the published figures before any fiber line is printed
+  ok  Conservative total capex $M                                    got       8741  published 8741
+  ok  Conservative payback year                                      got         17  published 17
+  ok  Conservative NPV@10% $M                                        got      -3883  published -3883
+  ok  Conservative mass ratio (rev_a conservative_30pct_derate)      got     121.83  published 121.83
+  ok  Conservative fiber mass t (rev_a conservative_30pct_fiber_mass_t) got      609.1  published 609.1
+  ok  Baseline total capex $M                                        got       5772  published 5772
+  ok  Baseline payback year                                          got          9  published 9
+  ok  Baseline mass ratio (rev_a baseline_15pct_derate)              got       64.3  published 64.3
+  ok  Baseline fiber mass t (rev_a baseline_15pct_fiber_mass_t)      got      321.5  published 321.5
+  ok  Optimistic total capex $M                                      got       4226  published 4226
+  ok  Optimistic payback year                                        got          7  published 7
+  ok  Optimistic mass ratio (rev_a optimistic_0pct_derate)           got      40.32  published 40.32
+  ok  Optimistic fiber mass t (rev_a optimistic_0pct_fiber_mass_t)   got      201.6  published 201.6
+  ok  variant total capex $M                                         got       6877  published 6877
+  ok  variant payback year                                           got         14  published 14
+  ok  cislunar_revenue_gated_option mass ratio (rev_a cislunar_2p8kms_30pct_derate) got     295.27  published 295.27
+  ok  cislunar_revenue_gated_option fiber mass t (rev_a cislunar_2p8kms_30pct_fiber_mass_t) got     1476.3  published 1476.3
+  ok  phase3_growth_option mass ratio (rev_a phase3_3p5kms_30pct_derate) got    3085.95  published 3085.95
+  ok  phase3_growth_option fiber mass t (rev_a phase3_3p5kms_30pct_fiber_mass_t) got    15429.8  published 15429.8
+  gate: 19 of 19 anchors reproduced
+
+refused (material_not_in_canon): the quote is for UHMWPE / Dyneema (the FibrXL SK78 ask), but every fiber mass here is rev_a.json's EQ-6 mass for materials.primary_fiber = Zylon PBO (σ 5.8 GPa, ρ 1,560 kg/m³). materials.alternative_fibers = {"Dyneema_SK99_GPa": 3.6, "_sk99_note": "Corrected from 3.9 GPa per VM-001", "T1100G_carbon_GPa": 7, "_t1100g_note": "Verified per VM-001; density 1790 kg/m3"} gives strengths, with a density only in a free-text note, so there is no canonical tether mass to multiply this price by
+  what would help: a VM-verified strength and density for that fiber in params/rev_a.json materials, and the tether's mass in it (materials.construction_baseline is a UHMWPE-core / Zylon-arm hybrid whose split rev_a does not give); until then this tool prints no fiber line for it
+[exit 2]
