@@ -1,0 +1,170 @@
+#!/usr/bin/env node
+// Checks every idea folder (or the ones named): README shape (including the Aster Idea Bank's
+// **For:** field and "Where it would land" section), size budget, snapshot provenance sidecars,
+// the idea's own tests, and — for browser ideas — the headless smoke test. Exits non-zero on any failure.
+//
+// Usage: node tools/check.mjs [ideas/NN-slug ...] [--no-smoke]
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const IDEAS = path.join(ROOT, 'ideas');
+const SIZE_WARN = 500 * 1024;
+const SIZE_FAIL = 650 * 1024;
+const HEADER_FIELDS = ['Kind', 'For', 'Run', 'Made by'];
+const PROJECTS = ['Aster', 'PartForge', 'Skyhook'];
+const REQUIRED_SECTIONS = ['What it is', 'Why I made it', 'How it works', 'Honest assessment', 'Where it would land'];
+
+function ideaDirs(args) {
+  const named = args.filter((a) => !a.startsWith('--'));
+  if (named.length) return named.map((a) => path.resolve(a));
+  return fs
+    .readdirSync(IDEAS, { withFileTypes: true })
+    .filter((d) => d.isDirectory() && /^\d{2,}-/.test(d.name))
+    .map((d) => path.join(IDEAS, d.name))
+    .sort();
+}
+
+function walk(dir) {
+  const out = [];
+  for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (d.name === 'node_modules' || d.name === '__pycache__' || d.name.startsWith('.')) continue;
+    const p = path.join(dir, d.name);
+    if (d.isDirectory()) out.push(...walk(p));
+    else out.push(p);
+  }
+  return out;
+}
+
+function checkReadme(dir, errors, warnings) {
+  const file = path.join(dir, 'README.md');
+  if (!fs.existsSync(file)) {
+    errors.push('missing README.md');
+    return;
+  }
+  const md = fs.readFileSync(file, 'utf8');
+  if (!/^# .+/m.test(md)) errors.push('README has no "# Title" line');
+  if (!/^> .+/m.test(md)) errors.push('README has no "> tagline" line');
+  for (const f of HEADER_FIELDS) {
+    if (!new RegExp(`^\\*\\*${f}:\\*\\*\\s*\\S`, 'm').test(md)) errors.push(`README is missing **${f}:**`);
+  }
+  for (const s of REQUIRED_SECTIONS) {
+    if (!new RegExp(`^## ${s}`, 'm').test(md)) warnings.push(`README has no "## ${s}" section`);
+  }
+  // The bank serves three named projects; every idea says which one(s) it is for.
+  const forLine = md.match(/^\*\*For:\*\*\s*(.+)$/m);
+  if (forLine && !PROJECTS.some((pName) => forLine[1].includes(pName))) {
+    errors.push(`**For:** must name at least one of ${PROJECTS.join(' / ')} (got "${forLine[1].trim()}")`);
+  }
+  // Claims are labelled; a README with no label at all has skipped the honest assessment.
+  if (!/\[(Certain|Likely|Speculative)\]/.test(md)) warnings.push('README has no [Certain]/[Likely]/[Speculative] labels');
+}
+
+// Data copied out of a source repository carries a provenance sidecar (tools/snapshot.mjs writes
+// one). Any file under a snapshots/ directory without <file>.provenance.json is flagged.
+function checkSnapshots(files, errors, warnings) {
+  const sidecars = new Set(files.filter((f) => f.endsWith('.provenance.json')));
+  for (const f of files) {
+    if (!/(^|\/)snapshots\//.test(f) || f.endsWith('.provenance.json')) continue;
+    if (!sidecars.has(`${f}.provenance.json`)) warnings.push(`snapshot without provenance sidecar: ${path.basename(f)}`);
+  }
+  for (const f of sidecars) {
+    try {
+      const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+      for (const k of ['repo', 'path', 'commit']) if (!j[k]) errors.push(`${path.basename(f)} is missing "${k}"`);
+    } catch (e) {
+      errors.push(`${path.basename(f)} is not valid JSON: ${e.message}`);
+    }
+  }
+}
+
+function run(cmd, args, cwd) {
+  const r = spawnSync(cmd, args, { cwd, encoding: 'utf8', timeout: 300000 });
+  return { ok: r.status === 0, out: `${r.stdout || ''}${r.stderr || ''}`.trim() };
+}
+
+function runTests(dir, files, errors, notes) {
+  const nodeTests = files.filter((f) => /\.test\.(c|m)?js$/.test(f));
+  const pyTests = files.filter((f) => /(^|\/)test_[^/]*\.py$/.test(f));
+  if (nodeTests.length) {
+    const r = run('node', ['--test', ...nodeTests], ROOT);
+    notes.push(`node tests (${nodeTests.length} file${nodeTests.length > 1 ? 's' : ''}): ${r.ok ? 'pass' : 'FAIL'}`);
+    if (!r.ok) errors.push(`node tests failed:\n${r.out.split('\n').slice(-25).join('\n')}`);
+  }
+  if (pyTests.length) {
+    const startDirs = [...new Set(pyTests.map((f) => path.dirname(f)))];
+    for (const s of startDirs) {
+      const r = run('python3', ['-m', 'unittest', 'discover', '-s', s, '-p', 'test_*.py'], ROOT);
+      notes.push(`python tests (${path.relative(dir, s) || '.'}): ${r.ok ? 'pass' : 'FAIL'}`);
+      if (!r.ok) errors.push(`python tests failed:\n${r.out.split('\n').slice(-25).join('\n')}`);
+    }
+  }
+  const ownCheck = path.join(dir, 'check.mjs');
+  if (fs.existsSync(ownCheck)) {
+    const r = run('node', [ownCheck], ROOT);
+    notes.push(`check.mjs: ${r.ok ? 'pass' : 'FAIL'}`);
+    if (!r.ok) errors.push(`check.mjs failed:\n${r.out.split('\n').slice(-25).join('\n')}`);
+  }
+  if (!nodeTests.length && !pyTests.length && !fs.existsSync(ownCheck)) notes.push('no automated tests found');
+  // Printable ideas: every STL must be a closed solid that sits on and fits a small printer's
+  // bed and slices (tools/printcheck.py; it skips itself if trimesh is not installed).
+  if (files.some((f) => /\.stl$/i.test(f))) {
+    const r = run('python3', [path.join(ROOT, 'tools', 'printcheck.py'), dir], ROOT);
+    notes.push(`printcheck: ${r.ok ? (/skipped/.test(r.out) ? 'skipped' : 'pass') : 'FAIL'}`);
+    if (!r.ok) errors.push(`printcheck failed:\n${r.out.split('\n').slice(-25).join('\n')}`);
+  }
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const smoke = !args.includes('--no-smoke');
+  const dirs = ideaDirs(args);
+  const browserIdeas = [];
+  let failed = 0;
+
+  for (const dir of dirs) {
+    const errors = [];
+    const warnings = [];
+    const notes = [];
+    const files = walk(dir);
+    checkReadme(dir, errors, warnings);
+    checkSnapshots(files, errors, warnings);
+
+    // Gallery previews are generated by tools/gallery.mjs, so they don't count against the idea's budget.
+    const bytes = files
+      .filter((f) => !/^preview\.(jpg|png)$/.test(path.basename(f)))
+      .reduce((n, f) => n + fs.statSync(f).size, 0);
+    const kb = (bytes / 1024).toFixed(0);
+    if (bytes > SIZE_FAIL) errors.push(`folder is ${kb} KB (limit ${SIZE_FAIL / 1024} KB)`);
+    else if (bytes > SIZE_WARN) warnings.push(`folder is ${kb} KB (budget ${SIZE_WARN / 1024} KB)`);
+    notes.push(`${files.length} files, ${kb} KB`);
+
+    runTests(dir, files, errors, notes);
+    if (fs.existsSync(path.join(dir, 'index.html'))) browserIdeas.push(dir);
+
+    const label = path.relative(ROOT, dir);
+    console.log(`${errors.length ? 'FAIL' : 'ok  '} ${label}  (${notes.join('; ')})`);
+    for (const e of errors) console.log(`       error: ${e.replace(/\n/g, '\n              ')}`);
+    for (const w of warnings) console.log(`       warn:  ${w}`);
+    if (errors.length) failed++;
+  }
+
+  if (smoke && browserIdeas.length) {
+    console.log(`\nsmoke-testing ${browserIdeas.length} browser idea(s)…`);
+    const r = spawnSync('node', [path.join(ROOT, 'tools', 'smoke.mjs'), ...browserIdeas], { stdio: 'inherit' });
+    if (r.status !== 0) failed++;
+  }
+
+  if (smoke && !args.some((a) => !a.startsWith('--'))) {
+    console.log('\nchecking every gallery image over HTTP and file://…');
+    const r = spawnSync('node', [path.join(ROOT, 'tools', 'gallery-check.mjs')], { stdio: 'inherit' });
+    if (r.status !== 0) failed++;
+  }
+
+  console.log(failed ? `\ncheck failed (${failed} problem area${failed > 1 ? 's' : ''})` : '\nall ideas pass');
+  process.exit(failed ? 1 : 0);
+}
+
+main();
