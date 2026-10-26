@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Torque Receipt</title>
+<meta name="description" content="What a tightening torque promises for one bolt: the preload band with NASA-STD-5020B's ±25 / 35 % scatter, bolt stress against proof, the two-pitch protrusion rule and PartForge's own thread check, worked from PartForge's tables. Every line is COMPUTED, never PASS.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Torque Receipt</h1>
+  <p class="lede">What a tightening torque actually promises for one bolt, worked from PartForge's own tables: the preload band with NASA-STD-5020B's ±25 % (lubricated) or ±35 % (as received) scatter, bolt stress at the top of that band against proof, yield and UTS, the two-pitch protrusion rule, and PartForge's own thread check. Every line is <strong>computed</strong>, never passed: a torque is not a measurement of preload.</p>
+  <nav class="presets" aria-label="Worked examples">
+    <span class="presets-label">Examples</span>
+    <button type="button" data-preset="endcap">End cap as written</button>
+    <button type="button" data-preset="endcap-dry">Same torque, dry</button>
+    <button type="button" data-preset="m6-through">M6 through-bolt</button>
+    <button type="button" data-preset="by-feel">Tightened by feel</button>
+    <button type="button" data-preset="quarter-20">1/4-20 grade 5</button>
+  </nav>
+</header>
+
+<main class="layout">
+  <form id="form" class="inputs" autocomplete="off" novalidate>
+    <fieldset>
+      <legend>Fastener</legend>
+      <label class="field"><span>Size</span><select id="size" name="size"></select></label>
+      <label class="field"><span>Grade</span><select id="grade" name="grade"></select></label>
+      <div id="declaredGrade" class="sub" hidden>
+        <label class="field third"><span>Proof, MPa</span><input id="dProof" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field third"><span>Yield, MPa</span><input id="dYield" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field third"><span>UTS, MPa</span><input id="dUts" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field"><span>Source of these strengths</span><input id="dSource" type="text" placeholder="standard, certificate or test"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Tightening</legend>
+      <label class="field half"><span>Torque, N·m</span><input id="torque" type="number" inputmode="decimal" min="0" step="any"></label>
+      <label class="check half"><input id="byFeel" type="checkbox"> <span>Tightened by feel (no torque)</span></label>
+      <label class="field"><span>Thread condition</span><select id="condition"></select></label>
+      <div id="kPickRow" class="seg" role="radiogroup" aria-label="Nut factor within the table's range">
+        <span class="seg-label">K within the table's range</span>
+        <label><input type="radio" name="kpick" value="low"><span>low</span></label>
+        <label><input type="radio" name="kpick" value="mid" checked><span>mid</span></label>
+        <label><input type="radio" name="kpick" value="high"><span>high</span></label>
+      </div>
+      <div id="declaredK" class="sub" hidden>
+        <label class="field half"><span>Nut factor K</span><input id="kVal" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="check half"><input id="kLub" type="checkbox"> <span>Lubricated at assembly</span></label>
+        <label class="field"><span>Source of K</span><input id="kSource" type="text" placeholder="e.g. torque-tension test of this batch"></label>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Load per bolt</legend>
+      <label class="field half"><span>Axial tension, N</span><input id="fext" type="number" inputmode="decimal" min="0" step="any" placeholder="0 if none"></label>
+      <label class="field half"><span>Where it came from</span><input id="fextSrc" type="text" placeholder="load case"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Joint</legend>
+      <div class="seg" role="radiogroup" aria-label="Joint type">
+        <label><input type="radio" name="joint" value="nut" checked><span>Through, with a nut</span></label>
+        <label><input type="radio" name="joint" value="tapped"><span>Into a tapped part</span></label>
+      </div>
+      <div id="nutFields" class="sub">
+        <label class="field"><span>Nut</span><select id="nut"></select></label>
+        <div id="declaredNut" class="sub" hidden>
+          <label class="field half"><span>Nut height, mm</span><input id="nutH" type="number" inputmode="decimal" min="0" step="any"></label>
+          <label class="field half"><span>Source</span><input id="nutSrc" type="text"></label>
+        </div>
+        <label class="check half"><input id="wHead" type="checkbox"> <span>Washer under head</span></label>
+        <label class="check half"><input id="wNut" type="checkbox"> <span>Washer under nut</span></label>
+      </div>
+      <div id="tapFields" class="sub" hidden>
+        <label class="field half"><span>Thread engagement, mm</span><input id="engage" type="number" inputmode="decimal" min="0" step="any"></label>
+        <label class="field half"><span>Tapped material</span><select id="material"></select></label>
+        <label class="check"><input id="wHeadTap" type="checkbox"> <span>Washer under head</span></label>
+      </div>
+      <label class="field half"><span>Screw length under head, mm</span><input id="len" type="number" inputmode="decimal" min="0" step="any"></label>
+      <label class="field half"><span>Clamped stack, mm</span><input id="stack" type="number" inputmode="decimal" min="0" step="any"></label>
+      <p class="hint" id="jointHint"></p>
+    </fieldset>
+  </form>
+
+  <section class="out" aria-label="Receipt">
+    <div id="headline" class="headline" role="status" aria-live="polite"></div>
+    <figure class="chart-card">
+      <figcaption id="chartCap">Force on one bolt, kN</figcaption>
+      <div id="chart" class="chart"></div>
+      <ul class="legend" id="legend"></ul>
+      <div id="tip" class="tip" hidden></div>
+    </figure>
+    <div id="receipt" class="receipt"></div>
+    <div id="sweep" class="card"></div>
+    <div id="today" class="card" hidden></div>
+    <div class="card notes">
+      <h2>What this does not check</h2>
+      <ul>
+        <li><strong>Joint separation and slip.</strong> Both need joint stiffness (the bolt's share of an external load, C). PartForge's evaluation dropped separation for its one pressure fixture, a radial piston seal; NASA TM-106943 is the source the table names for building it next. The in-service line therefore uses C = 1, an upper bound.</li>
+        <li><strong>Torque tolerance, preload loss and temperature.</strong> The PartForge table carries only the ±25 / 35 % scatter, so nothing else is applied.</li>
+        <li><strong>The part itself.</strong> The stack and engagement are what you type or what the fixture declares; no mesh is measured here.</li>
+        <li><strong>Fatigue, prying, bending, or the head and nut bearing faces.</strong></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p id="prov"></p>
+  <p>An Aster Idea Bank prototype for PartForge, not a release: it has not been through PartForge's geometry gate, its data-provenance pipeline or a skeptic review. Spaceflight factors from NASA-STD-5020B are used as the table uses them, a citable floor, not a requirement an amateur rocket must meet.</p>
+</footer>
+
+<script src="snapshots/fasteners_metric.js"></script>
+<script src="snapshots/design_factors_nasa.js"></script>
+<script src="snapshots/fasteners_un_excerpt.js"></script>
+<script src="snapshots/endcap.js"></script>
+<script src="snapshots/partforge-code.js"></script>
+<script src="snapshots/evaluation-excerpt.js"></script>
+<script src="torque.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

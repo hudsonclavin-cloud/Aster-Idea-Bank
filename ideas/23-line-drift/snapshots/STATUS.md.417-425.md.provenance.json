@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "STATUS.md",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "c185c33 2026-10-12T15:32:46-04:00",
+  "committedBlob": "7b1baf317884f96c6b68449fd67429c6148cdef1",
+  "readBlob": "7b1baf317884f96c6b68449fd67429c6148cdef1",
+  "sourceSha256": "41f51a709e39709e058c44fe15ca667a6acb6edd8dc5b7362f520d53e2a0b243",
+  "sourceBytes": 83134,
+  "copiedAt": "2026-10-26T16:33:49.786Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: lines 417-425 verbatim after a one-line header; Slice 19 item 1: the porkchop \"Grid spans\" literal with citations :637, :646, :187-194, :189",
+  "readMatchesCommitted": true,
+  "writtenSha256": "8b173e3c65fdac67ca9ba45f21c308be2a325021031c7bbb15791da57d84ae0b",
+  "writtenBytes": 1073
+}

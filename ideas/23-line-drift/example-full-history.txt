@@ -1,0 +1,305 @@
+Line Drift: 1316 references in 26 documents
+checkout <full clone> (worktree)
+at 62ddb17 (2026-10-25T19:36:43-04:00); 983 commits reachable; working tree clean
+
+status              line   path   commit  total
+OK                  22     516    577     1115
+PARTIAL             2      0      0       2
+MOVED               13     0      0       13
+GONE                8      0      0       8
+IN-RANGE            53     0      0       53
+MISSING-PATH        2      71     0       73
+IGNORED             0      2      0       2
+UNCHECKABLE         8      32     10      50
+all                 108    621    587     1316
+
+document                                           refs  OK        PARTIAL   MOVED     GONE      IN-RANGE  MISSING   IGNORED   UNCHECK   
+STATUS.md                                          333   284       0         5         6         16        17        0         5         
+INVARIANTS.md                                      65    60        0         1         0         3         0         0         1         
+AGENTS.md                                          14    11        0         0         0         0         0         1         2         
+README.md                                          20    20        0         0         0         0         0         0         0         
+mcp/README.md                                      5     1         0         3         0         1         0         0         0         
+SLICE_17_FOUNDING.md                               48    37        1         0         0         8         0         0         2         
+src/v2/SLICE_10_FOUNDING.md                        30    27        0         0         0         0         3         0         0         
+src/v2/SLICE_11_FOUNDING.md                        58    56        0         0         0         0         0         0         2         
+src/v2/SLICE_12_FOUNDING.md                        23    20        0         1         0         2         0         0         0         
+src/v2/SLICE_13_FOUNDING.md                        24    14        0         0         0         2         5         0         3         
+src/v2/SLICE_14_FOUNDING.md                        65    61        0         0         0         4         0         0         0         
+src/v2/SLICE_15_FOUNDING.md                        90    84        0         0         0         0         5         0         1         
+src/v2/SLICE_16_FOUNDING.md                        160   142       0         1         1         3         1         0         12        
+src/v2/SLICE_18_FOUNDING.md                        144   125       0         0         0         1         17        0         1         
+src/v2/SLICE_19_5_FOUNDING.md                      54    44        1         0         1         0         6         0         2         
+src/v2/SLICE_19_FOUNDING.md                        44    34        0         1         0         3         6         0         0         
+src/v2/SLICE_8_5_FOUNDING.md                       0     0         0         0         0         0         0         0         0         
+src/v2/SLICE_9_FOUNDING.md                         27    25        0         1         0         0         0         1         0         
+src/v2/SLICE_V1_FOUNDING.md                        42    22        0         0         0         0         3         0         17        
+strategy/ASTER_FAMILY_CHARTERS.md                  0     0         0         0         0         0         0         0         0         
+strategy/ASTER_FAMILY_MASTER_PLAN.md               4     4         0         0         0         0         0         0         0         
+strategy/ASTER_ROADMAP_2026-08.md                  1     1         0         0         0         0         0         0         0         
+strategy/IDEA_KERNELS_2026-09.md                   12    11        0         0         0         0         1         0         0         
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md  48    30        0         0         0         9         9         0         0         
+strategy/RESEARCH_LEDGER_2026-08.md                1     0         0         0         0         0         0         0         1         
+strategy/SLICE21_QOL_BACKLOG_TRIAGED.md            4     2         0         0         0         1         0         0         1         
+
+Drift (96; 96 not allowlisted):
+INVARIANTS.md:178  line  SLICE_9_FOUNDING.md:202  MOVED  -> src/v2/SLICE_9_FOUNDING.md; snippet now at :426-427
+    snippet: "the committed 162-body set"
+    history: first appeared and last edited 331d089, 2026-07-12: MOVED (snippet now at :426-427)
+mcp/README.md:59  line  src/tools/compute-shared.ts:130-136  MOVED  -> mcp/src/tools/compute-shared.ts; snippet now at :141, :150, :151
+    snippet: `jdTdbToUtcDateString`
+    history: first appeared and last edited 2032b9e, 2026-09-22: held
+mcp/README.md:73  line  src/tools/compute-shared.ts:146-148  MOVED  -> mcp/src/tools/compute-shared.ts; snippet now at :179
+    snippet: `earthSpanHelp`
+    history: first appeared 2032b9e, 2026-09-22: held; line last edited 0052ecb, 2026-09-23: MOVED (snippet now at :179)
+mcp/README.md:75  line  src/tools/compute-shared.ts:139-144  MOVED  -> mcp/src/tools/compute-shared.ts; snippet now at :226
+    snippet: `out_of_envelope`
+    history: first appeared and last edited 2032b9e, 2026-09-22: MOVED (snippet now at :193)
+src/v2/SLICE_12_FOUNDING.md:45  line  src/v2/core/propagators/keplerian.ts:146-158, 249-251  MOVED  snippet now at :195, :266
+    snippet: `propagateKeplerianStateVectors`
+    history: first appeared and last edited 113e4b3, 2026-07-01: MOVED (snippet now at :195, :266)
+src/v2/SLICE_16_FOUNDING.md:247  line  mcp/src/tools/compute-shared.ts:237-267  MOVED  snippet now at :270
+    snippet: `siteVerdictRows`
+    history: first appeared and last edited 5a99c13, 2026-07-27: held
+src/v2/SLICE_19_FOUNDING.md:85  line  src/v2/app/catalog-list/honesty-disclosure.ts:74-82  MOVED  snippet now at :83
+    snippet: "a flag to inspect the geometry, not a real planning number,"
+    history: first appeared and last edited dc1762d, 2026-10-07: held
+src/v2/SLICE_9_FOUNDING.md:427  line  .gitignore:17  MOVED  snippet now at :19
+    snippet: `tools/slice9-research/data/*`
+    history: first appeared and last edited ac24663, 2026-07-12: held
+STATUS.md:213  line  app/porkchop/main.ts:916  MOVED  -> src/v2/app/porkchop/main.ts; snippet now at :996
+    snippet: `M: 1`
+    history: first appeared and last edited 22774cc, 2026-08-26: held
+STATUS.md:253  line  porkchop-view.ts:468  MOVED  -> src/v2/porkchop/porkchop-view.ts; snippet now at :537, :897, :1078
+    snippet: `findGlobalMinimumCell`
+    history: first appeared and last edited 01494ee, 2026-09-02: MOVED (snippet now at :508, :765, :928)
+STATUS.md:345  line  compare-data.ts:303-308  MOVED  -> src/v2/porkchop/compare-data.ts; snippet now at :18, :108, :113, :114, :326, :327 (+5 more)
+    snippet: `liveMin`
+    history: first appeared and last edited 352fd06, 2026-08-10: held; at the commit its paragraph names 88b9133, 2026-08-10: held
+STATUS.md:421  line  :189  MOVED  (src/v2/app/porkchop/main.ts); snippet now at :196
+    snippet: `depEndJD: utcMidnightToJdTdb('2040-01-01')`
+    history: line last edited d5cdbf6, 2026-09-22: held
+STATUS.md:448  line  precompute-lambert-screen.mjs:132  MOVED  -> tools/build/precompute-lambert-screen.mjs; snippet now at :10, :127, :129, :129, :135, :136 (+4 more)
+    snippet: `bestWindows`
+    history: first appeared and last edited d5cdbf6, 2026-09-22: MOVED (snippet now at :10, :127, :129, :129, :135, :136 (+4 more))
+src/v2/SLICE_16_FOUNDING.md:153  line  mcp/src/tools/get-body.ts:48  GONE  snippet not found anywhere in the file
+    snippet: `confidence:"assumed"`
+    history: first appeared and last edited 34ca5f7, 2026-07-27: GONE
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:57  line  fk3-guided-tour.ts:36  GONE  -> src/v2/app/porkchop/fk3-guided-tour.ts; snippet not found anywhere in the file
+    snippet: "flies only with a dogleg"
+    history: first appeared and last edited 6575d0d, 2026-10-13: MOVED (snippet now at :37); at the commit its paragraph names fe61ef9, 2026-10-12: MOVED (snippet now at :37)
+STATUS.md:239  line  app/ui-overlay/overlay.ts:339  GONE  -> src/v2/app/ui-overlay/overlay.ts; snippet not found anywhere in the file
+    snippet: `M: 1`
+    history: first appeared and last edited 22774cc, 2026-08-26: held
+STATUS.md:256  line  app/ui-overlay/overlay.ts:339  GONE  -> src/v2/app/ui-overlay/overlay.ts; snippet not found anywhere in the file
+    snippet: `M: 1`
+    history: first appeared 22774cc, 2026-08-26: held; line last edited 01494ee, 2026-09-02: held
+STATUS.md:418  line  src/v2/app/porkchop/main.ts:637  GONE  snippet not found anywhere in the file
+    snippet: "Grid spans 2026-2040 departures and 182.5-1826.25 day flight times."
+    history: first appeared and last edited d5cdbf6, 2026-09-22: held
+STATUS.md:420  line  :646  GONE  (src/v2/app/porkchop/main.ts); snippet not found anywhere in the file
+    snippet: `Grid: ${GRID_PARAMS.nDep}x${GRID_PARAMS.nTof}`
+    history: line last edited d5cdbf6, 2026-09-22: held
+STATUS.md:429  line  src/v2/app/solar-system/loader.ts:8-9  GONE  snippet not found anywhere in the file
+    snippet: `docs/assets/asteroid-catalog-slice7-*.json`
+    history: first appeared and last edited d5cdbf6, 2026-09-22: GONE
+STATUS.md:535  line  .githooks/pre-commit:53  GONE  snippet not found anywhere in the file
+    snippet: `git diff --cached -- "$doc" | grep -c '^-[^-]'`
+    history: first appeared and last edited 0c41607, 2026-09-22: held; at the commit its paragraph names 2032b9e, 2026-09-22: held
+src/v2/SLICE_10_FOUNDING.md:83  path  core/iod.py  MISSING-PATH
+    history: first appeared 7446d31, 2026-05-24: MISSING-PATH; line last edited 3d5f1cd, 2026-06-18: MISSING-PATH
+    context: names poliastro
+src/v2/SLICE_10_FOUNDING.md:99  path  tests/v2-lambert-izzo.test.mjs  MISSING-PATH
+    history: first appeared 7446d31, 2026-05-24: MISSING-PATH; line last edited 3d5f1cd, 2026-06-18: MISSING-PATH
+    context: names poliastro
+src/v2/SLICE_10_FOUNDING.md:99  path  tests/test_iod.py  MISSING-PATH
+    history: first appeared 7446d31, 2026-05-24: MISSING-PATH; line last edited 3d5f1cd, 2026-06-18: MISSING-PATH
+    context: names poliastro
+src/v2/SLICE_13_FOUNDING.md:19  line  view.ts:974  MISSING-PATH
+    history: first appeared and last edited 3be2ae4, 2026-07-02: MISSING-PATH
+src/v2/SLICE_13_FOUNDING.md:39  path  aster-audit-reports/slice13-showcase-recon.md  MISSING-PATH
+    history: first appeared and last edited 65fe39c, 2026-07-03: MISSING-PATH
+    context: annotated at :112
+src/v2/SLICE_13_FOUNDING.md:61  line  view.ts:974  MISSING-PATH
+    history: first appeared and last edited 3be2ae4, 2026-07-02: MISSING-PATH
+src/v2/SLICE_13_FOUNDING.md:98  path  aster-audit-reports/slice13-phaseF-audit.md  MISSING-PATH
+    history: first appeared and last edited 47a4d10, 2026-07-03: MISSING-PATH
+src/v2/SLICE_13_FOUNDING.md:112  path  aster-audit-reports/slice13-showcase-recon.md  MISSING-PATH
+    history: first appeared 65fe39c, 2026-07-03: MISSING-PATH; line last edited de33377, 2026-08-01: MISSING-PATH
+    context: its own sentence says so
+src/v2/SLICE_15_FOUNDING.md:62  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared and last edited dc1b1c6, 2026-07-07: MISSING-PATH; at the commit its sentence names bcf1738, 2026-07-04: MISSING-PATH
+    context: annotated at :212
+src/v2/SLICE_15_FOUNDING.md:134  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared and last edited dc1b1c6, 2026-07-07: MISSING-PATH
+    context: reads as a plan or proposal; annotated at :212
+src/v2/SLICE_15_FOUNDING.md:212  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared dc1b1c6, 2026-07-07: MISSING-PATH; line last edited de33377, 2026-08-01: MISSING-PATH; at the commit its sentence names bcf1738, 2026-07-04: MISSING-PATH
+    context: its own sentence says so
+src/v2/SLICE_15_FOUNDING.md:212  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared dc1b1c6, 2026-07-07: MISSING-PATH; line last edited de33377, 2026-08-01: MISSING-PATH; at the commit its sentence names bcf1738, 2026-07-04: MISSING-PATH
+    context: its own sentence says so
+src/v2/SLICE_15_FOUNDING.md:212  path  src/v2/launch-vehicles.ts  MISSING-PATH  same name at src/v2/porkchop/launch-vehicles.ts
+    history: first appeared dc1b1c6, 2026-07-07: MISSING-PATH; line last edited de33377, 2026-08-01: MISSING-PATH; at the commit its sentence names bcf1738, 2026-07-04: MISSING-PATH
+    context: its own sentence says so
+src/v2/SLICE_16_FOUNDING.md:16  path  evals/honesty-study/REPORT.md  MISSING-PATH
+    history: first appeared and last edited 7cd761b, 2026-07-07: MISSING-PATH
+src/v2/SLICE_18_FOUNDING.md:194  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited 2eaf936, 2026-09-09: held
+    context: annotated at :207
+src/v2/SLICE_18_FOUNDING.md:207  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared b56ca84, 2026-09-10: held; line last edited 4d3267c, 2026-09-21: held; at the commit its paragraph names cba6e6a, 2026-09-21: held
+    context: its own sentence says so; annotated at :219
+src/v2/SLICE_18_FOUNDING.md:211  path  porkchopV2-DPwWKoPv.js  MISSING-PATH
+    history: first appeared and last edited 4d3267c, 2026-09-21: held; at the commit its paragraph names 4d3bae2, 2026-09-21: held
+src/v2/SLICE_18_FOUNDING.md:211  path  solarSystemV2-BM6ai_je.js  MISSING-PATH
+    history: first appeared and last edited 4d3267c, 2026-09-21: held; at the commit its paragraph names 4d3bae2, 2026-09-21: held
+src/v2/SLICE_18_FOUNDING.md:211  path  compareV2-Br2FOkFz.js  MISSING-PATH
+    history: first appeared and last edited 4d3267c, 2026-09-21: held; at the commit its paragraph names 4d3bae2, 2026-09-21: held
+src/v2/SLICE_18_FOUNDING.md:211  path  porkchopV2-Ci6r-fmN.js  MISSING-PATH
+    history: first appeared and last edited 4d3267c, 2026-09-21: MISSING-PATH; at the commit its paragraph names 4d3bae2, 2026-09-21: MISSING-PATH
+src/v2/SLICE_18_FOUNDING.md:211  path  solarSystemV2-DFJ0f0Yh.js  MISSING-PATH
+    history: first appeared and last edited 4d3267c, 2026-09-21: MISSING-PATH; at the commit its paragraph names 4d3bae2, 2026-09-21: MISSING-PATH
+src/v2/SLICE_18_FOUNDING.md:211  path  compareV2-CEg78aFw.js  MISSING-PATH
+    history: first appeared and last edited 4d3267c, 2026-09-21: MISSING-PATH; at the commit its paragraph names 4d3bae2, 2026-09-21: MISSING-PATH
+src/v2/SLICE_18_FOUNDING.md:219  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared b56ca84, 2026-09-10: held; line last edited 4d3267c, 2026-09-21: held; at the commit its paragraph names cba6e6a, 2026-09-21: held
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:245  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared 2eaf936, 2026-09-09: held; line last edited 3d395fb, 2026-09-21: MISSING-PATH
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:245  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared b56ca84, 2026-09-10: held; line last edited 3d395fb, 2026-09-21: MISSING-PATH
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:255  path  porkchopV2-z3nhVK2W.js  MISSING-PATH
+    history: first appeared and last edited 3d395fb, 2026-09-21: held; at the commit its sentence names c6dc7dd, 2026-09-21: held
+src/v2/SLICE_18_FOUNDING.md:255  path  solarSystemV2-Z_zaFg6C.js  MISSING-PATH
+    history: first appeared and last edited 3d395fb, 2026-09-21: held; at the commit its sentence names c6dc7dd, 2026-09-21: held
+src/v2/SLICE_18_FOUNDING.md:255  path  compareV2-BbpSakkn.js  MISSING-PATH
+    history: first appeared and last edited 3d395fb, 2026-09-21: held; at the commit its sentence names c6dc7dd, 2026-09-21: held
+src/v2/SLICE_18_FOUNDING.md:298  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared and last edited b56ca84, 2026-09-10: held; at the commit its paragraph names 2eaf936, 2026-09-09: held
+    context: annotated at :207
+src/v2/SLICE_18_FOUNDING.md:345  path  tools/slice18-research/tier-sizing-results.json  MISSING-PATH
+    history: first appeared b56ca84, 2026-09-10: held; line last edited ca2208d, 2026-09-13: held; at the commit its paragraph names 355fa5f, 2026-09-13: held
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_18_FOUNDING.md:347  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared 2eaf936, 2026-09-09: held; line last edited ca2208d, 2026-09-13: held
+    context: its own sentence says so; annotated at :207
+src/v2/SLICE_19_5_FOUNDING.md:136  path  tokens.json  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:136  path  src/v2/app/design/tokens.json  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:138  path  src/v2/app/design/tokens.ts  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:138  path  tools/design/gen-tokens.mjs  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:147  path  src/v2/app/design/components/  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+    context: reads as a plan or proposal
+src/v2/SLICE_19_5_FOUNDING.md:329  path  tokens.ts  MISSING-PATH
+    history: first appeared and last edited 6575d0d, 2026-10-13: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:309  path  porkchop-view-DIQWyODm.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: MISSING-PATH; at the commit its sentence names 03e2ba4, 2026-10-12: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:309  path  porkchop-view-BUTSEuRs.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: held; at the commit its sentence names 03e2ba4, 2026-10-12: held
+src/v2/SLICE_19_FOUNDING.md:310  path  porkchopV2-CqMV94y9.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: MISSING-PATH; at the commit its sentence names 03e2ba4, 2026-10-12: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:310  path  porkchopV2-C402DrAR.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: held; at the commit its sentence names 03e2ba4, 2026-10-12: held
+src/v2/SLICE_19_FOUNDING.md:311  path  solarSystemV2-CJ3pA1d9.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: MISSING-PATH; at the commit its sentence names 03e2ba4, 2026-10-12: MISSING-PATH
+src/v2/SLICE_19_FOUNDING.md:311  path  solarSystemV2-MvRu-sdm.js  MISSING-PATH
+    history: first appeared and last edited cb18cc3, 2026-10-12: held; at the commit its sentence names 03e2ba4, 2026-10-12: held
+src/v2/SLICE_V1_FOUNDING.md:73  path  night-lights-fallback.ts  MISSING-PATH
+    history: first appeared and last edited 4ccad2f, 2026-06-22: MISSING-PATH
+    context: its own sentence says so; annotated at :483
+src/v2/SLICE_V1_FOUNDING.md:386  path  src/v2/render/planet-textures.ts  MISSING-PATH
+    history: first appeared and last edited 4ccad2f, 2026-06-22: MISSING-PATH
+src/v2/SLICE_V1_FOUNDING.md:483  path  night-lights-fallback.ts  MISSING-PATH
+    history: first appeared and last edited 4ccad2f, 2026-06-22: MISSING-PATH
+    context: its own sentence says so; annotated at :73
+STATUS.md:28  path  porkchopV2-Ci6r-fmN.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: MISSING-PATH; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH; at the commit its sentence names 81252f2, 2026-09-20: held
+STATUS.md:28  path  solarSystemV2-DFJ0f0Yh.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: MISSING-PATH; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH; at the commit its sentence names 81252f2, 2026-09-20: held
+STATUS.md:28  path  compareV2-CEg78aFw.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: MISSING-PATH; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH; at the commit its sentence names 81252f2, 2026-09-20: held
+STATUS.md:28  path  porkchopV2-z3nhVK2W.js  MISSING-PATH
+    history: first appeared and last edited 6e5f5d3, 2026-09-21: held
+STATUS.md:28  path  solarSystemV2-Z_zaFg6C.js  MISSING-PATH
+    history: first appeared and last edited 6e5f5d3, 2026-09-21: held
+STATUS.md:28  path  compareV2-BbpSakkn.js  MISSING-PATH
+    history: first appeared and last edited 6e5f5d3, 2026-09-21: held
+STATUS.md:28  path  porkchop-view-BTebVubw.js  MISSING-PATH
+    history: first appeared and last edited 6e5f5d3, 2026-09-21: held
+STATUS.md:28  path  tier-assignments-C-5EqJQL.js  MISSING-PATH
+    history: first appeared and last edited 6e5f5d3, 2026-09-21: held
+STATUS.md:28  path  resolve-catalog-body-pmopDgKo.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: held; line last edited 6e5f5d3, 2026-09-21: held
+STATUS.md:28  path  store-CkJiJhKO.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: held; line last edited 6e5f5d3, 2026-09-21: held
+STATUS.md:28  path  porkchopV2-DPwWKoPv.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: held; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH
+    context: its own sentence says so
+STATUS.md:28  path  solarSystemV2-BM6ai_je.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: held; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH
+    context: its own sentence says so
+STATUS.md:28  path  compareV2-Br2FOkFz.js  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: held; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH
+    context: its own sentence says so
+STATUS.md:312  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: held; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH; at the commit its sentence names cba6e6a, 2026-09-21: held
+STATUS.md:312  path  tier-sizing-results.json  MISSING-PATH
+    history: first appeared 63841cc, 2026-09-21: held; line last edited 6e5f5d3, 2026-09-21: MISSING-PATH
+    context: its own sentence says so
+STATUS.md:425  path  docs/assets/porkchopV2-z3nhVK2W.js  MISSING-PATH
+    history: first appeared and last edited d5cdbf6, 2026-09-22: held
+STATUS.md:557  path  tools/slice16-harness/FULL_RUN_REPORT.md  MISSING-PATH
+    history: first appeared 8e4c22c, 2026-08-01: MISSING-PATH; line last edited 6bbb520, 2026-08-04: MISSING-PATH
+    context: its own sentence says so
+strategy/IDEA_KERNELS_2026-09.md:35  path  params/rev_a.json  MISSING-PATH
+    history: first appeared and last edited 9bf7627, 2026-09-21: MISSING-PATH
+    context: names Skyhook
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:11  path  Aster_V2_Full_Chat_Log.txt  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:11  path  Aster_V2_Full_Chat_Log.pdf  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:12  path  Aster_V2_Grand_Vision_Blueprint.pdf  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:47  path  src/v2/core/ephemeris/chebyshev.ts  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:58  path  src/v2/core/dynamics/lowThrustPropagator.ts  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:70  path  fetch_horizons.py  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:70  path  tools/ephemeris-compressor/  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+    context: reads as a plan or proposal
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:82  path  compress.py  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:156  path  dispatches/RECON-HORIZON-2060-2026-09-11.txt  MISSING-PATH
+    history: first appeared and last edited b78435c, 2026-09-21: MISSING-PATH
+AGENTS.md:142  path  mcp/dist/mcp/src/index.js  IGNORED  absent here, and git ignores this location (mcp/.gitignore:2 `dist/`); same name at proxy/index.js, worker/index.js
+    history: first appeared and last edited 4d3782e, 2026-07-09: MISSING-PATH
+src/v2/SLICE_9_FOUNDING.md:426  path  tools/slice9-research/data/slice9-cutover-sample.json  IGNORED  absent here, and git ignores this location (.gitignore:19 `tools/slice9-research/data/*`)
+    history: first appeared and last edited ac24663, 2026-07-12: MISSING-PATH
+    context: its own sentence says so
+
+Not fully checkable (50), by reason:
+  30    path: several files share this name
+  10    commit: reads as a content hash, not a commit
+  7     line: several files share this name
+  2     path: reads as a placeholder name, not a file the document says exists
+  1     line: a bare :N with no path earlier in its paragraph
+
+IN-RANGE (53): the cited line exists, but no snippet sits in the sentence to check it against; --only IN-RANGE lists them.
+
+exit 1: 96 drift findings not allowlisted

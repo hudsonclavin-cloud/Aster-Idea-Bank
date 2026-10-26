@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T16:31:27.283Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: verbatim excerpts of index.html (DECL-BEGIN..DECL-END, parseSpec, lint, parseManifest, mainPlainUnion, topLevelIsOnlyMain, PARAM_RE, the gate's defined-modules statement) wrapped as a classic script; line ranges in the file header and SOURCE.pieces",
+  "readMatchesCommitted": true,
+  "writtenSha256": "c504e0b71280cf2d3496e22cef4eff0ef6337885f25570021f27bbd2086d76cc",
+  "writtenBytes": 25595
+}

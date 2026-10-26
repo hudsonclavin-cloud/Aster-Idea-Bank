@@ -1,0 +1,509 @@
+{
+ "about": "Hand adjudication of every drift and PARTIAL finding Line Drift reports on Aster at 62ddb17 (98 findings; identical in the shallow checkout and in a full-history clone at the same commit). Each 'why' was checked by reading the cited file at 62ddb17 and at the commits the history column names, in a full-history clone. linedrift.test.mjs fails if the set of keys stops matching a fresh run.",
+ "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+ "classes": {
+  "stale-line": "The snippet is still in the file, at another line: only the line number is stale.",
+  "stale-claim": "The cited content changed or was removed since the sentence was written, and the document does not say so.",
+  "off-when-written": "Already off when the citation first appeared in the document.",
+  "history": "A record of a named past commit that was right at that commit; nothing to fix.",
+  "acknowledged": "The document itself says the reference is gone or wrong (the same sentence, the next one, or an annotation).",
+  "plan": "Names a file to be made (a plan or proposal); never made at that path.",
+  "not-in-repo": "Names a file of another project, a folder outside the repository, a vault file or build output.",
+  "misquote": "PARTIAL: the cited line holds most of the quote, which is not verbatim.",
+  "shorthand": "A file name no file has, which a reader resolves by hand.",
+  "tool-error": "The tool paired a snippet that is not a quote of the cited line, so the verdict is a false alarm."
+ },
+ "findings": [
+  {
+   "key": "STATUS.md:28 porkchopV2-Ci6r-fmN.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "STATUS's 'Deploy boundary' names these as the live bundles of docs/ at 81252f2 (true there: the commit its sentence names); docs/ at 62ddb17 ships porkchopV2-CeMrUCV7.js, solarSystemV2-eFven3Lq.js, compareV2-BS2LahKC.js."
+  },
+  {
+   "key": "STATUS.md:28 solarSystemV2-DFJ0f0Yh.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "STATUS's 'Deploy boundary' names these as the live bundles of docs/ at 81252f2 (true there: the commit its sentence names); docs/ at 62ddb17 ships porkchopV2-CeMrUCV7.js, solarSystemV2-eFven3Lq.js, compareV2-BS2LahKC.js."
+  },
+  {
+   "key": "STATUS.md:28 compareV2-CEg78aFw.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "STATUS's 'Deploy boundary' names these as the live bundles of docs/ at 81252f2 (true there: the commit its sentence names); docs/ at 62ddb17 ships porkchopV2-CeMrUCV7.js, solarSystemV2-eFven3Lq.js, compareV2-BS2LahKC.js."
+  },
+  {
+   "key": "STATUS.md:28 porkchopV2-z3nhVK2W.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "Present in the branch rebuild when the paragraph was written (held at 6e5f5d3); docs/ has been rebuilt since and none of these bundles exists at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:28 solarSystemV2-Z_zaFg6C.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "Present in the branch rebuild when the paragraph was written (held at 6e5f5d3); docs/ has been rebuilt since and none of these bundles exists at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:28 compareV2-BbpSakkn.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "Present in the branch rebuild when the paragraph was written (held at 6e5f5d3); docs/ has been rebuilt since and none of these bundles exists at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:28 porkchop-view-BTebVubw.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "Present in the branch rebuild when the paragraph was written (held at 6e5f5d3); docs/ has been rebuilt since and none of these bundles exists at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:28 tier-assignments-C-5EqJQL.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "Present in the branch rebuild when the paragraph was written (held at 6e5f5d3); docs/ has been rebuilt since and none of these bundles exists at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:28 resolve-catalog-body-pmopDgKo.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "Present in the branch rebuild when the paragraph was written (held at 6e5f5d3); docs/ has been rebuilt since and none of these bundles exists at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:28 store-CkJiJhKO.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "Present in the branch rebuild when the paragraph was written (held at 6e5f5d3); docs/ has been rebuilt since and none of these bundles exists at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:28 porkchopV2-DPwWKoPv.js MISSING-PATH",
+   "class": "acknowledged",
+   "why": "The same sentence says these earlier branch bundles 'were never live and are gone'."
+  },
+  {
+   "key": "STATUS.md:28 solarSystemV2-BM6ai_je.js MISSING-PATH",
+   "class": "acknowledged",
+   "why": "The same sentence says these earlier branch bundles 'were never live and are gone'."
+  },
+  {
+   "key": "STATUS.md:28 compareV2-Br2FOkFz.js MISSING-PATH",
+   "class": "acknowledged",
+   "why": "The same sentence says these earlier branch bundles 'were never live and are gone'."
+  },
+  {
+   "key": "STATUS.md:213 app/porkchop/main.ts:916 MOVED",
+   "class": "stale-line",
+   "why": "`M: 1` still stands in src/v2/app/porkchop/main.ts, now at :996; held at 22774cc when written. Only the line number is stale."
+  },
+  {
+   "key": "STATUS.md:239 app/ui-overlay/overlay.ts:339 GONE",
+   "class": "stale-claim",
+   "why": "The ui-overlay porkchop no longer passes `M: 1`: overlay.ts:341 now reads `M: 0` under a comment for the M=1 contour toggle (DEC-5 ruling implemented). Held when written (22774cc)."
+  },
+  {
+   "key": "STATUS.md:253 porkchop-view.ts:468 MOVED",
+   "class": "off-when-written",
+   "why": "findGlobalMinimumCell was at porkchop-view.ts:468 at a7670c4 (2026-08-31) but at :508 when the citation first appeared at 01494ee (2026-09-02); it is at :537 now."
+  },
+  {
+   "key": "STATUS.md:256 app/ui-overlay/overlay.ts:339 GONE",
+   "class": "stale-claim",
+   "why": "The ui-overlay porkchop no longer passes `M: 1`: overlay.ts:341 now reads `M: 0` under a comment for the M=1 contour toggle (DEC-5 ruling implemented). Held when written (22774cc)."
+  },
+  {
+   "key": "STATUS.md:312 tier-sizing-results.json MISSING-PATH",
+   "class": "history",
+   "why": "Record of commit cba6e6a ('committed for the first time'); the file existed at cba6e6a and was removed later (0a8bbac), as the same STATUS line records."
+  },
+  {
+   "key": "STATUS.md:312 tier-sizing-results.json MISSING-PATH #2",
+   "class": "acknowledged",
+   "why": "The same sentence records the re-add as REVERSED and the file's deletion history."
+  },
+  {
+   "key": "STATUS.md:345 compare-data.ts:303-308 MOVED",
+   "class": "history",
+   "why": "Past-tense record of an adjudication against compare-data.ts:303-308; held at 88b9133 (named in the paragraph) and when written; the code has moved since."
+  },
+  {
+   "key": "STATUS.md:418 src/v2/app/porkchop/main.ts:637 GONE",
+   "class": "stale-claim",
+   "why": "The 'Grid spans 2026-2040 ...' literal was replaced by the derived ${PORKCHOP_DEPARTURE_SPAN_LABEL} at 446e3a7 (2026-10-14, now main.ts:647); STATUS still lists the item as open and 'NOT fixed'."
+  },
+  {
+   "key": "STATUS.md:420 :646 GONE",
+   "class": "stale-claim",
+   "why": "main.ts:646 held `Grid: ${GRID_PARAMS.nDep}×${GRID_PARAMS.nTof}` when written (STATUS types x for ×); no 'Grid:' line exists in main.ts at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:421 :189 MOVED",
+   "class": "stale-line",
+   "why": "`depEndJD: utcMidnightToJdTdb('2040-01-01')` is unchanged, now at main.ts:196 instead of :189."
+  },
+  {
+   "key": "STATUS.md:425 docs/assets/porkchopV2-z3nhVK2W.js MISSING-PATH",
+   "class": "stale-claim",
+   "why": "The bundle the sentence says ships the literal no longer exists; docs/assets has porkchopV2-CeMrUCV7.js at 62ddb17."
+  },
+  {
+   "key": "STATUS.md:429 src/v2/app/solar-system/loader.ts:8-9 GONE",
+   "class": "stale-claim",
+   "why": "Lines 8-9 re-exported the Slice 7 and 8 catalog loaders at d5cdbf6; at 62ddb17 line 8 re-exports the Slice 9 loader and line 9 is a type import. The claim is stale, but the tool's evidence is a mispaired snippet: the asset glob was never in loader.ts.",
+   "mispaired": true
+  },
+  {
+   "key": "STATUS.md:448 precompute-lambert-screen.mjs:132 MOVED",
+   "class": "tool-error",
+   "why": "`bestWindows` is the sentence's subject, not a quote of :132; line 132 is `if (insertAt >= 5) {`, the cap the sentence describes, unchanged since d5cdbf6."
+  },
+  {
+   "key": "STATUS.md:535 .githooks/pre-commit:53 GONE",
+   "class": "stale-claim",
+   "why": "The hook line `dels=$(git diff --cached -- \"$doc\" | grep -c '^-[^-]')` held at :53 when C17 was written; f7b19e7 (2026-09-22) replaced it with --numstat counting, and the pattern survives only in a comment at :51. STATUS still carries C17 as open."
+  },
+  {
+   "key": "STATUS.md:557 tools/slice16-harness/FULL_RUN_REPORT.md MISSING-PATH",
+   "class": "acknowledged",
+   "why": "The sentence lists it as a known-dirty, never-staged local file."
+  },
+  {
+   "key": "INVARIANTS.md:178 SLICE_9_FOUNDING.md:202 MOVED",
+   "class": "off-when-written",
+   "why": "At 331d089, when INVARIANTS first cited it, SLICE_9_FOUNDING.md:202 read '162-body stratified sample (commit 8c33760 fixture)'; the phrase 'the committed 162-body set' is the cutover harness's, quoted in the SLICE_9 amendment at :426-427."
+  },
+  {
+   "key": "AGENTS.md:142 mcp/dist/mcp/src/index.js IGNORED",
+   "class": "not-in-repo",
+   "why": "Build output under mcp/dist/, ignored by mcp/.gitignore:2; the sentence describes the compiled layout, not a tracked file."
+  },
+  {
+   "key": "mcp/README.md:59 src/tools/compute-shared.ts:130-136 MOVED",
+   "class": "stale-line",
+   "why": "jdTdbToUtcDateString was at compute-shared.ts:130 when written (2032b9e); now at :141."
+  },
+  {
+   "key": "mcp/README.md:73 src/tools/compute-shared.ts:146-148 MOVED",
+   "class": "stale-line",
+   "why": "earthSpanHelp was at :146 when written (2032b9e); now at :179. The line's later edit (0052ecb) already post-dated the move."
+  },
+  {
+   "key": "mcp/README.md:75 src/tools/compute-shared.ts:139-144 MOVED",
+   "class": "stale-line",
+   "why": "At 2032b9e lines 139-144 were the body of withinEarthSpan (its name on :138, so the tool's strict check reads MOVED even then); the function is at :167 now."
+  },
+  {
+   "key": "SLICE_17_FOUNDING.md:617 tools/slice17-research/literature/V6_H_TO_DIAMETER_VERIFIED.md:33 PARTIAL",
+   "class": "misquote",
+   "why": "Line 33 holds the quoted start verbatim, but the quote drops the clause '\"for which an H magnitude of 17.8 ± 0.1 translates to a diameter of 1 km\"' without an ellipsis and changes the paper title's quote marks."
+  },
+  {
+   "key": "src/v2/SLICE_10_FOUNDING.md:83 core/iod.py MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "poliastro's core/iod.py, the validation oracle; never a file of this repository."
+  },
+  {
+   "key": "src/v2/SLICE_10_FOUNDING.md:99 tests/v2-lambert-izzo.test.mjs MISSING-PATH",
+   "class": "plan",
+   "why": "'will live at ... with tests at tests/v2-lambert-izzo.test.mjs' (a plan); no file of that name exists in any commit."
+  },
+  {
+   "key": "src/v2/SLICE_10_FOUNDING.md:99 tests/test_iod.py MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "poliastro's tests/test_iod.py."
+  },
+  {
+   "key": "src/v2/SLICE_12_FOUNDING.md:45 src/v2/core/propagators/keplerian.ts:146-158, 249-251 MOVED",
+   "class": "tool-error",
+   "why": "`propagateKeplerianStateVectors` is the function named in the sentence; the cited lines 146-158 and 249-251 were the rotation code inside it at 113e4b3, which is what the sentence cites."
+  },
+  {
+   "key": "src/v2/SLICE_13_FOUNDING.md:19 view.ts:974 MISSING-PATH",
+   "class": "shorthand",
+   "why": "No file named view.ts exists in any commit; at 3be2ae4 src/v2/porkchop/porkchop-view.ts:974 held the dogleg advisory string the sentence means."
+  },
+  {
+   "key": "src/v2/SLICE_13_FOUNDING.md:39 aster-audit-reports/slice13-showcase-recon.md MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_13_FOUNDING.md:112 records that this report is not tracked in the repository and its figures are unreproducible from it."
+  },
+  {
+   "key": "src/v2/SLICE_13_FOUNDING.md:61 view.ts:974 MISSING-PATH",
+   "class": "shorthand",
+   "why": "No file named view.ts exists in any commit; at 3be2ae4 src/v2/porkchop/porkchop-view.ts:974 held the dogleg advisory string the sentence means."
+  },
+  {
+   "key": "src/v2/SLICE_13_FOUNDING.md:98 aster-audit-reports/slice13-phaseF-audit.md MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "A report in a folder outside the repository, cited as the record that closed the Phase F gates; unlike the showcase recon (:112) no annotation records that it is untracked."
+  },
+  {
+   "key": "src/v2/SLICE_13_FOUNDING.md:112 aster-audit-reports/slice13-showcase-recon.md MISSING-PATH",
+   "class": "acknowledged",
+   "why": "This sentence is the annotation: 'That report is not tracked in this repository'."
+  },
+  {
+   "key": "src/v2/SLICE_15_FOUNDING.md:62 src/v2/launch-vehicles.ts MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_15_FOUNDING.md:212 records that src/v2/launch-vehicles.ts never existed (the module is src/v2/porkchop/launch-vehicles.ts); it was already missing at bcf1738, the commit :62 names."
+  },
+  {
+   "key": "src/v2/SLICE_15_FOUNDING.md:134 src/v2/launch-vehicles.ts MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_15_FOUNDING.md:212 records that src/v2/launch-vehicles.ts never existed (the module is src/v2/porkchop/launch-vehicles.ts); it was already missing at bcf1738, the commit :62 names."
+  },
+  {
+   "key": "src/v2/SLICE_15_FOUNDING.md:212 src/v2/launch-vehicles.ts MISSING-PATH",
+   "class": "acknowledged",
+   "why": "This sentence is the correction itself ('That path has never existed in this repository')."
+  },
+  {
+   "key": "src/v2/SLICE_15_FOUNDING.md:212 src/v2/launch-vehicles.ts MISSING-PATH #2",
+   "class": "acknowledged",
+   "why": "This sentence is the correction itself ('That path has never existed in this repository')."
+  },
+  {
+   "key": "src/v2/SLICE_15_FOUNDING.md:212 src/v2/launch-vehicles.ts MISSING-PATH #3",
+   "class": "acknowledged",
+   "why": "This sentence is the correction itself ('That path has never existed in this repository')."
+  },
+  {
+   "key": "src/v2/SLICE_16_FOUNDING.md:16 evals/honesty-study/REPORT.md MISSING-PATH",
+   "class": "plan",
+   "why": "A deliverable path for the study write-up; no evals/ folder exists in any commit."
+  },
+  {
+   "key": "src/v2/SLICE_16_FOUNDING.md:153 mcp/src/tools/get-body.ts:48 GONE",
+   "class": "tool-error",
+   "why": "`confidence:\"assumed\"` paraphrases an envelope value; get-body.ts:48 holds the message 'Physical-parameter confidence is assumed ...' the citation points at."
+  },
+  {
+   "key": "src/v2/SLICE_16_FOUNDING.md:247 mcp/src/tools/compute-shared.ts:237-267 MOVED",
+   "class": "stale-line",
+   "why": "siteVerdictRows began the cited range when written (5a99c13); it is at :270 now."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:194 tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:207 tools/slice18-research/tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:211 porkchopV2-DPwWKoPv.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles commit 4d3bae2 built (named in the paragraph); present there, rebuilt away since."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:211 solarSystemV2-BM6ai_je.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles commit 4d3bae2 built (named in the paragraph); present there, rebuilt away since."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:211 compareV2-Br2FOkFz.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles commit 4d3bae2 built (named in the paragraph); present there, rebuilt away since."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:211 porkchopV2-Ci6r-fmN.js MISSING-PATH",
+   "class": "history",
+   "why": "The 'previously' bundles that 4d3bae2 replaced; the sentence says so, and they are absent at 4d3bae2 by design."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:211 solarSystemV2-DFJ0f0Yh.js MISSING-PATH",
+   "class": "history",
+   "why": "The 'previously' bundles that 4d3bae2 replaced; the sentence says so, and they are absent at 4d3bae2 by design."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:211 compareV2-CEg78aFw.js MISSING-PATH",
+   "class": "history",
+   "why": "The 'previously' bundles that 4d3bae2 replaced; the sentence says so, and they are absent at 4d3bae2 by design."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:219 tools/slice18-research/tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:245 tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:245 tools/slice18-research/tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:255 porkchopV2-z3nhVK2W.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles docs/ held at c6dc7dd, the commit the sentence names; rebuilt since."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:255 solarSystemV2-Z_zaFg6C.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles docs/ held at c6dc7dd, the commit the sentence names; rebuilt since."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:255 compareV2-BbpSakkn.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles docs/ held at c6dc7dd, the commit the sentence names; rebuilt since."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:298 tools/slice18-research/tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:345 tools/slice18-research/tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_18_FOUNDING.md:347 tier-sizing-results.json MISSING-PATH",
+   "class": "acknowledged",
+   "why": "SLICE_18_FOUNDING.md:245 records the file's real history (committed 2eaf936, deleted 1cd5124, re-added cba6e6a, removed 0a8bbac) and redirects these citations to tier-sizing-per-body.json."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:57 fk3-guided-tour.ts:36 GONE",
+   "class": "stale-claim",
+   "why": "'flies only with a dogleg' was on fk3-guided-tour.ts:37 (not :36) when written; e6d4f7f (2026-10-14) replaced the AMBER tour copy, and the locked document still says the tour 'still says' it."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:136 tokens.json MISSING-PATH",
+   "class": "plan",
+   "why": "DEC-19.5-4/5 are headed PROPOSED; the design-token files and components folder do not exist yet."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:136 src/v2/app/design/tokens.json MISSING-PATH",
+   "class": "plan",
+   "why": "DEC-19.5-4/5 are headed PROPOSED; the design-token files and components folder do not exist yet."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:138 src/v2/app/design/tokens.ts MISSING-PATH",
+   "class": "plan",
+   "why": "DEC-19.5-4/5 are headed PROPOSED; the design-token files and components folder do not exist yet."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:138 tools/design/gen-tokens.mjs MISSING-PATH",
+   "class": "plan",
+   "why": "DEC-19.5-4/5 are headed PROPOSED; the design-token files and components folder do not exist yet."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:147 src/v2/app/design/components/ MISSING-PATH",
+   "class": "plan",
+   "why": "DEC-19.5-4/5 are headed PROPOSED; the design-token files and components folder do not exist yet."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:329 tokens.ts MISSING-PATH",
+   "class": "plan",
+   "why": "DEC-19.5-4/5 are headed PROPOSED; the design-token files and components folder do not exist yet."
+  },
+  {
+   "key": "src/v2/SLICE_19_5_FOUNDING.md:413 tools/slice13-research/literature/3d-verification-record.md:22 PARTIAL",
+   "class": "misquote",
+   "why": "Line 22 reads 'not as a liftable formula for interplanetary DLA pricing'; the quote drops 'as'."
+  },
+  {
+   "key": "src/v2/SLICE_19_FOUNDING.md:85 src/v2/app/catalog-list/honesty-disclosure.ts:74-82 MOVED",
+   "class": "stale-line",
+   "why": "The quoted disclosure was inside 74-82 when written (dc1762d); it is at :83 now."
+  },
+  {
+   "key": "src/v2/SLICE_19_FOUNDING.md:309 porkchop-view-DIQWyODm.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundle names 03e2ba4 replaced (left of the arrow); absent at 03e2ba4 by design."
+  },
+  {
+   "key": "src/v2/SLICE_19_FOUNDING.md:309 porkchop-view-BUTSEuRs.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles 03e2ba4 built; present there, rebuilt away since."
+  },
+  {
+   "key": "src/v2/SLICE_19_FOUNDING.md:310 porkchopV2-CqMV94y9.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundle names 03e2ba4 replaced (left of the arrow); absent at 03e2ba4 by design."
+  },
+  {
+   "key": "src/v2/SLICE_19_FOUNDING.md:310 porkchopV2-C402DrAR.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles 03e2ba4 built; present there, rebuilt away since."
+  },
+  {
+   "key": "src/v2/SLICE_19_FOUNDING.md:311 solarSystemV2-CJ3pA1d9.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundle names 03e2ba4 replaced (left of the arrow); absent at 03e2ba4 by design."
+  },
+  {
+   "key": "src/v2/SLICE_19_FOUNDING.md:311 solarSystemV2-MvRu-sdm.js MISSING-PATH",
+   "class": "history",
+   "why": "The bundles 03e2ba4 built; present there, rebuilt away since."
+  },
+  {
+   "key": "src/v2/SLICE_9_FOUNDING.md:426 tools/slice9-research/data/slice9-cutover-sample.json IGNORED",
+   "class": "acknowledged",
+   "why": "The amendment itself records that the cutover sample was never committed and that .gitignore excluded it: INV-034's origin."
+  },
+  {
+   "key": "src/v2/SLICE_9_FOUNDING.md:427 .gitignore:17 MOVED",
+   "class": "stale-line",
+   "why": "Line 17 held the glob tools/slice9-research/data/* when written (ac24663); two comment lines were inserted above it and it is at :19 now. Same finding as the audit's A2-F13/C1-F10."
+  },
+  {
+   "key": "src/v2/SLICE_V1_FOUNDING.md:73 night-lights-fallback.ts MISSING-PATH",
+   "class": "acknowledged",
+   "why": "The document says the file was deleted before any commit."
+  },
+  {
+   "key": "src/v2/SLICE_V1_FOUNDING.md:386 src/v2/render/planet-textures.ts MISSING-PATH",
+   "class": "plan",
+   "why": "'New file: src/v2/render/planet-textures.ts' in a plan section; no file of that name exists in any commit."
+  },
+  {
+   "key": "src/v2/SLICE_V1_FOUNDING.md:483 night-lights-fallback.ts MISSING-PATH",
+   "class": "acknowledged",
+   "why": "The document says the file was deleted before any commit."
+  },
+  {
+   "key": "strategy/IDEA_KERNELS_2026-09.md:35 params/rev_a.json MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "Skyhook's params/rev_a.json, in the sibling repository."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:11 Aster_V2_Full_Chat_Log.txt MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "Attachments of the external session; the same document's disposition table says 'Vault only. Not committed.' without naming the files, so the tool cannot see it."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:11 Aster_V2_Full_Chat_Log.pdf MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "Attachments of the external session; the same document's disposition table says 'Vault only. Not committed.' without naming the files, so the tool cannot see it."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:12 Aster_V2_Grand_Vision_Blueprint.pdf MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "Attachments of the external session; the same document's disposition table says 'Vault only. Not committed.' without naming the files, so the tool cannot see it."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:47 src/v2/core/ephemeris/chebyshev.ts MISSING-PATH",
+   "class": "plan",
+   "why": "Files proposed by the external AI session ('proposed ...'); the document's table keeps them as reference sketches."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:58 src/v2/core/dynamics/lowThrustPropagator.ts MISSING-PATH",
+   "class": "plan",
+   "why": "Files proposed by the external AI session ('proposed ...'); the document's table keeps them as reference sketches."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:70 fetch_horizons.py MISSING-PATH",
+   "class": "plan",
+   "why": "Proposed by the external AI session; the document's disposition table marks fetch_horizons.py / compress.py 'Discarded'."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:70 tools/ephemeris-compressor/ MISSING-PATH",
+   "class": "plan",
+   "why": "Proposed by the external AI session; the document's disposition table marks fetch_horizons.py / compress.py 'Discarded'."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:82 compress.py MISSING-PATH",
+   "class": "plan",
+   "why": "Proposed by the external AI session; the document's disposition table marks fetch_horizons.py / compress.py 'Discarded'."
+  },
+  {
+   "key": "strategy/INTAKE_2026-09-11_EXTERNAL_AI_SESSION.md:156 dispatches/RECON-HORIZON-2060-2026-09-11.txt MISSING-PATH",
+   "class": "not-in-repo",
+   "why": "A dispatch file kept outside the repository; no dispatches/ folder exists in any commit."
+  }
+ ]
+}

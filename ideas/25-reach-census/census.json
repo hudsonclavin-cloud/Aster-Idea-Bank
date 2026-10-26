@@ -1,0 +1,1459 @@
+{
+ "tool": "reach-census",
+ "failOn": "orphan",
+ "exit": 1,
+ "failing": [
+  {
+   "repo": "skyhook",
+   "path": "tools/twin/verify.mjs",
+   "class": "orphan"
+  }
+ ],
+ "repos": [
+  {
+   "id": "asteroid-mining-planner",
+   "label": "Aster",
+   "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+   "localNode": {
+    "version": 24,
+    "known": true,
+    "source": "STATUS.md:339 records the local suite run on Node v24.18.0"
+   },
+   "workflows": [
+    ".github/workflows/ci.yml"
+   ],
+   "counts": {
+    "candidates": 106,
+    "ci": 97,
+    "ci-less": 9,
+    "manual": 0,
+    "orphan": 0,
+    "conditional": 0,
+    "allowed": 0,
+    "skippedWhole": 0
+   },
+   "ciReach": 97,
+   "classes": {
+    "ci": [
+     "src/v2/app/catalog-list/row.test.mjs",
+     "src/v2/boundary/c3-grid.test.mjs",
+     "src/v2/porkchop/colormap.test.mjs",
+     "src/v2/porkchop/composite-grid.test.mjs",
+     "src/v2/porkchop/delta-v.test.mjs",
+     "src/v2/porkchop/dual-m-compute.test.mjs",
+     "src/v2/porkchop/grid-compute.test.mjs",
+     "src/v2/porkchop/launch-vehicles.test.mjs",
+     "src/v2/porkchop/propagation-guard.test.mjs",
+     "src/v2/porkchop/support-boundary.test.mjs",
+     "tests/phase6-contract-smoke.test.mjs",
+     "tests/v2-about-evidence.test.mjs",
+     "tests/v2-architecture.test.mjs",
+     "tests/v2-boundary-horizons.test.mjs",
+     "tests/v2-boundary-slice2.test.mjs",
+     "tests/v2-boundary-slice4.test.mjs",
+     "tests/v2-boundary-slice6.test.mjs",
+     "tests/v2-boundary-slice7.test.mjs",
+     "tests/v2-boundary-slice8.test.mjs",
+     "tests/v2-boundary-slice9.test.mjs",
+     "tests/v2-boundary-star-catalog.test.mjs",
+     "tests/v2-catalog-count-binding.test.mjs",
+     "tests/v2-catalog-empty.test.mjs",
+     "tests/v2-compare-data.test.mjs",
+     "tests/v2-compare-honesty.test.mjs",
+     "tests/v2-compare-url.test.mjs",
+     "tests/v2-coorbital-disclosure.test.mjs",
+     "tests/v2-core-constants.test.mjs",
+     "tests/v2-core-frames-jupiter.test.mjs",
+     "tests/v2-core-frames-mars.test.mjs",
+     "tests/v2-core-frames-saturn.test.mjs",
+     "tests/v2-core-hermite-jupiter.test.mjs",
+     "tests/v2-core-hermite-mars.test.mjs",
+     "tests/v2-core-hermite-saturn.test.mjs",
+     "tests/v2-core-hermite.test.mjs",
+     "tests/v2-core-keplerian.test.mjs",
+     "tests/v2-core-orbit-sampling.test.mjs",
+     "tests/v2-derived-span-labels.test.mjs",
+     "tests/v2-dla-display.test.mjs",
+     "tests/v2-dla-render.test.mjs",
+     "tests/v2-fk3-guided-tour.test.mjs",
+     "tests/v2-golden/launch-vehicles.golden.test.mjs",
+     "tests/v2-lambert/dla.test.mjs",
+     "tests/v2-lambert/feasibility.test.mjs",
+     "tests/v2-lambert/householder.test.mjs",
+     "tests/v2-lambert/hyp2f1b.test.mjs",
+     "tests/v2-lambert/initial-guess.test.mjs",
+     "tests/v2-lambert/lambert-endtoend.test.mjs",
+     "tests/v2-lambert/lambert-multi-rev-rejection.test.mjs",
+     "tests/v2-lambert/lambert-multi-rev.test.mjs",
+     "tests/v2-lambert/stumpff.test.mjs",
+     "tests/v2-lambert/tof.test.mjs",
+     "tests/v2-lambert/utc-to-tdb.test.mjs",
+     "tests/v2-lambert/vec3.test.mjs",
+     "tests/v2-near-zero-c3.test.mjs",
+     "tests/v2-porkchop-honesty.test.mjs",
+     "tests/v2-public-copy.test.mjs",
+     "tests/v2-render-asteroid-cell-renderer.test.mjs",
+     "tests/v2-render-asteroid-orbits.test.mjs",
+     "tests/v2-render-asteroid-points-shader.test.mjs",
+     "tests/v2-render-asteroid-renderer.test.mjs",
+     "tests/v2-render-halos.test.mjs",
+     "tests/v2-render-jupiter-oblate.test.mjs",
+     "tests/v2-render-mars-oblate.test.mjs",
+     "tests/v2-render-mars-system.test.mjs",
+     "tests/v2-render-saturn-oblate.test.mjs",
+     "tests/v2-render-saturn-rings.test.mjs",
+     "tests/v2-render-spatial-grid.test.mjs",
+     "tests/v2-render-star-catalog.test.mjs",
+     "tests/v2-render-star-renderer.test.mjs",
+     "tests/v2-resolve-catalog-body.test.mjs",
+     "tests/v2-runtime-camera-presets.test.mjs",
+     "tests/v2-runtime-date-hud.test.mjs",
+     "tests/v2-runtime-display-integrity.test.mjs",
+     "tests/v2-runtime-focus.test.mjs",
+     "tests/v2-runtime-hover-tooltips.test.mjs",
+     "tests/v2-segment-windows.test.mjs",
+     "tests/v2-shortcut-and-method.test.mjs",
+     "tests/v2-slice1-cutover.test.mjs",
+     "tests/v2-slice1-integration.test.mjs",
+     "tests/v2-slice2-cutover.test.mjs",
+     "tests/v2-slice3-cutover.test.mjs",
+     "tests/v2-slice4-cutover.test.mjs",
+     "tests/v2-slice5-cutover.test.mjs",
+     "tests/v2-slice6-cutover.test.mjs",
+     "tests/v2-slice7-cutover.test.mjs",
+     "tests/v2-slice8-cutover.test.mjs",
+     "tests/v2-slice8-performance.test.mjs",
+     "tests/v2-slice9-cutover.test.mjs",
+     "tests/v2-slice9-live-runtime-integration.test.mjs",
+     "tests/v2-slice9-perf-config.test.mjs",
+     "tests/v2-slice9-reanchor-derived.test.mjs",
+     "tests/v2-slice9-spatial-index-harness.test.mjs",
+     "tests/v2-tier-disclosure.test.mjs",
+     "tests/v2-ui-overlay.test.mjs",
+     "tests/v2-ui-store.test.mjs",
+     "tests/v2-validation-provenance.test.mjs"
+    ],
+    "ci-less": [
+     "mcp/test/compute-tools.test.ts",
+     "mcp/test/envelope.test.ts",
+     "mcp/test/provenance-bake.test.ts",
+     "tools/slice16-harness/test/dd-rulings.test.mjs",
+     "tools/slice16-harness/test/grade.test.mjs",
+     "tools/slice16-harness/test/grader.test.mjs",
+     "tools/slice16-harness/test/pipeline.test.mjs",
+     "tools/slice16-harness/test/remediation.test.mjs",
+     "tools/slice16-harness/test/runtime-guards.test.mjs"
+    ],
+    "manual": [],
+    "orphan": []
+   },
+   "conditional": [],
+   "declared": [],
+   "entries": [
+    {
+     "kind": "ci",
+     "command": "node --test tests/v2-golden/launch-vehicles.golden.test.mjs",
+     "sources": [
+      ".github/workflows/ci.yml:72"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "ci",
+     "command": "node tools/run-tests.mjs",
+     "sources": [
+      ".github/workflows/ci.yml:93"
+     ],
+     "reach": 97,
+     "conditional": 0
+    },
+    {
+     "kind": "script",
+     "command": "npm test",
+     "sources": [
+      "mcp/package.json:37"
+     ],
+     "reach": 3,
+     "conditional": 0
+    },
+    {
+     "kind": "script",
+     "command": "npm test",
+     "sources": [
+      "package.json:11"
+     ],
+     "reach": 74,
+     "conditional": 0
+    },
+    {
+     "kind": "script",
+     "command": "npm run test:all",
+     "sources": [
+      "package.json:12"
+     ],
+     "reach": 97,
+     "conditional": 0
+    },
+    {
+     "kind": "script",
+     "command": "npm run verify",
+     "sources": [
+      "package.json:14"
+     ],
+     "reach": 97,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "npm test",
+     "sources": [
+      ".claude/skills/dispatch-writer/SKILL.md:108",
+      "AGENTS.md:163",
+      "STATUS.md:348",
+      "STATUS.md:400",
+      "V2_FOUNDING_DOCUMENT.md:850",
+      "src/v2/SLICE_14_FOUNDING.md:98",
+      "src/v2/SLICE_14_FOUNDING.md:102",
+      "src/v2/SLICE_14_FOUNDING.md:142",
+      "src/v2/SLICE_14_FOUNDING.md:143",
+      "src/v2/SLICE_14_FOUNDING.md:176",
+      "src/v2/SLICE_9_A2B_FENCE.md:21",
+      "src/v2/SLICE_9_A2B_FENCE.md:39",
+      "tools/context-audit-2026-08-07/CONTEXT_INFRASTRUCTURE.md:50",
+      "tools/context-audit-2026-08-07/CONTRADICTIONS.md:83",
+      "tools/context-audit-2026-08-07/CONTRADICTIONS.md:84",
+      "tools/slice16-harness/CLOSE_REPORT.md:62",
+      "tools/slice16-harness/CLOSE_REPORT.md:105"
+     ],
+     "reach": 74,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node --test tests/*.test.mjs",
+     "sources": [
+      "AGENTS.md:32",
+      "AGENTS.md:177",
+      "DEVLOG.md:43",
+      "QA.md:11",
+      "UPDATES.md:893",
+      "UPDATES.md:939",
+      "proxy/README.md:119",
+      "worker/README.md:119"
+     ],
+     "reach": 74,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "npm --prefix mcp pack",
+     "sources": [
+      "HANDOFF.md:49",
+      "STATUS.md:524"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "npm option --prefix is not modelled"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "npx aster-mission-mcp",
+     "sources": [
+      "README.md:28",
+      "mcp/README.md:8"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "npx aster-mission-mcp is not modelled"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node tools/run-tests.mjs",
+     "sources": [
+      "STATUS.md:316",
+      "STATUS.md:339",
+      "tools/audit/sanity-69472a3/ASTER_AUDIT_REPORT.md:86",
+      "tools/audit/sanity-69472a3/ASTER_AUDIT_REPORT.md:579",
+      "tools/batch2-2026-08-12/RUN_REPORT.md:24",
+      "tools/context-audit-2026-08-07/CONTEXT_INFRASTRUCTURE.md:50",
+      "tools/frontb-2026-08-11/RUN_REPORT.md:97"
+     ],
+     "reach": 97,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node --test tests/v2-compare-data.test.mjs",
+     "sources": [
+      "STATUS.md:340"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node --test tools/slice16-harness/test/*.test.mjs",
+     "sources": [
+      "STATUS.md:341",
+      "tools/slice16-harness/ARCHIVE_REPORT.md:127",
+      "tools/slice16-harness/CLOSE_REPORT.md:99",
+      "tools/slice16-harness/CLOSE_REPORT.md:105"
+     ],
+     "reach": 6,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node --check physics.worker.js",
+     "sources": [
+      "UPDATES.md:843",
+      "UPDATES.md:894",
+      "UPDATES.md:940",
+      "UPDATES.md:973"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "npm --prefix mcp run build",
+     "sources": [
+      "mcp/INSPECTOR_CHECKLIST_C1.md:3",
+      "mcp/eval/slice15-eval-verification.md:7"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "npm option --prefix is not modelled"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "npx @modelcontextprotocol/inspector node mcp/dist/mcp/src/index.js",
+     "sources": [
+      "mcp/INSPECTOR_CHECKLIST_C1.md:6"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "npx @modelcontextprotocol/inspector is not modelled"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "npx @modelcontextprotocol/inspector",
+     "sources": [
+      "src/v2/SLICE_15_FOUNDING.md:90"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "npx @modelcontextprotocol/inspector is not modelled"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "npx aster-mcp",
+     "sources": [
+      "src/v2/SLICE_15_FOUNDING.md:182"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "npx aster-mcp is not modelled"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "npm run verify",
+     "sources": [
+      "src/v2/SLICE_19_5_FOUNDING.md:355",
+      "src/v2/SLICE_19_FOUNDING.md:172",
+      "src/v2/SLICE_19_FOUNDING.md:299",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix1-LOG.md:11",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix1-LOG.md:33",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix1-REPORT.md:19",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix1-REPORT.md:22",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix2-LOG.md:14",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix2-LOG.md:54",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix2-REPORT.md:131"
+     ],
+     "reach": 97,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "npm run test",
+     "sources": [
+      "src/v2/SLICE_19_FOUNDING.md:172"
+     ],
+     "reach": 74,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node node_modules/typescript/bin/tsc --noEmit",
+     "sources": [
+      "tools/audit/sanity-69472a3/ASTER_AUDIT_REPORT.md:85",
+      "tools/audit/sanity-69472a3/ASTER_AUDIT_REPORT.md:578"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node --test --test-timeout=120000 tests/v2-dla-display.test.mjs",
+     "sources": [
+      "tools/audit/sanity-69472a3/s19-5-runs/fix1-LOG.md:17",
+      "tools/audit/sanity-69472a3/s19-5-runs/fix2-COPY_DIFF.md:16"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node --test --test-timeout=120000 tests/v2-public-copy.test.mjs",
+     "sources": [
+      "tools/audit/sanity-69472a3/s19-5-runs/fix1-LOG.md:27"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node -e '",
+     "sources": [
+      "tools/s17-ga12-audit-2026-08-07/L2_ADVERSARIAL.md:492",
+      "tools/s17-ga12-audit-2026-08-07/L2_ADVERSARIAL.md:560",
+      "tools/s17-ga12-audit-2026-08-07/L2_ADVERSARIAL.md:599",
+      "tools/s17-ga12-audit-2026-08-07/L2_ADVERSARIAL.md:629",
+      "tools/s17-ga12-audit-2026-08-07/L2_ADVERSARIAL.md:656",
+      "tools/s17-ga12-audit-2026-08-07/L2_ADVERSARIAL.md:701"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "shell syntax not modelled (unterminated single quote)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node --test",
+     "sources": [
+      "tools/s17-ga12-audit-2026-08-07/L3_ARCHITECT.md:8"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "node --test with no file arguments (default discovery is not modelled)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node scripts/bake-provenance.mjs",
+     "sources": [
+      "tools/slice16-harness/MCPLIVE_REPORT.md:39"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node --test tools/slice16-harness/test/",
+     "sources": [
+      "tools/slice16-harness/PRE_RUN_GATE.md:56",
+      "tools/slice16-harness/RUNBOOK.md:41",
+      "tools/slice16-harness/RUNBOOK.md:217"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "\"tools/slice16-harness/test/\" matches the directory tools/slice16-harness/test: Node ≥21 hands it to the loader, which fails (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node --test tools/slice16-harness/test/runtime-guards.test.mjs",
+     "sources": [
+      "tools/slice16-harness/PRE_RUN_GATE.md:73",
+      "tools/slice16-harness/PRE_RUN_GATE.md:89"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node -e \"",
+     "sources": [
+      "tools/slice16-harness/PRE_RUN_GATE.md:100"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "shell syntax not modelled (unterminated double quote)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node C:UsershudsoDocumentsaster-slice18c3-drift-sensitivity.mjs",
+     "sources": [
+      "tools/slice18-research/C3_DRIFT_SENSITIVITY.md:5"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node C:UsershudsoDocumentsaster-slice18multirev-consistency.mjs",
+     "sources": [
+      "tools/slice18-research/MULTIREV_CACHE_CONSISTENCY.md:5"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node C:UsershudsoDocumentsaster-slice18nea-drift-measure.mjs",
+     "sources": [
+      "tools/slice18-research/NEA_DRIFT_MEASUREMENT.md:6"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node C:UsershudsoDocumentsaster-slice18nea-argmin-consequence.mjs",
+     "sources": [
+      "tools/slice18-research/NEA_DRIFT_MEASUREMENT.md:7"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node C:UsershudsoDocumentsaster-slice18measure-two-body-drift.mjs",
+     "sources": [
+      "tools/slice18-research/TWO_BODY_DRIFT_MEASUREMENT.md:5"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    }
+   ],
+   "drift": [
+    {
+     "command": "node --test tests/*.test.mjs",
+     "reach": 74,
+     "ciReach": 97,
+     "missing": [
+      "src/v2/app/catalog-list/row.test.mjs",
+      "src/v2/boundary/c3-grid.test.mjs",
+      "src/v2/porkchop/colormap.test.mjs",
+      "src/v2/porkchop/composite-grid.test.mjs",
+      "src/v2/porkchop/delta-v.test.mjs",
+      "src/v2/porkchop/dual-m-compute.test.mjs",
+      "src/v2/porkchop/grid-compute.test.mjs",
+      "src/v2/porkchop/launch-vehicles.test.mjs",
+      "src/v2/porkchop/propagation-guard.test.mjs",
+      "src/v2/porkchop/support-boundary.test.mjs",
+      "tests/v2-golden/launch-vehicles.golden.test.mjs",
+      "tests/v2-lambert/dla.test.mjs",
+      "tests/v2-lambert/feasibility.test.mjs",
+      "tests/v2-lambert/householder.test.mjs",
+      "tests/v2-lambert/hyp2f1b.test.mjs",
+      "tests/v2-lambert/initial-guess.test.mjs",
+      "tests/v2-lambert/lambert-endtoend.test.mjs",
+      "tests/v2-lambert/lambert-multi-rev-rejection.test.mjs",
+      "tests/v2-lambert/lambert-multi-rev.test.mjs",
+      "tests/v2-lambert/stumpff.test.mjs",
+      "tests/v2-lambert/tof.test.mjs",
+      "tests/v2-lambert/utc-to-tdb.test.mjs",
+      "tests/v2-lambert/vec3.test.mjs"
+     ],
+     "claimSources": [
+      "AGENTS.md:32",
+      "AGENTS.md:177"
+     ],
+     "sources": [
+      "AGENTS.md:32",
+      "AGENTS.md:177",
+      "DEVLOG.md:43",
+      "QA.md:11",
+      "UPDATES.md:893",
+      "UPDATES.md:939",
+      "proxy/README.md:119",
+      "worker/README.md:119"
+     ]
+    },
+    {
+     "command": "npm test",
+     "reach": 74,
+     "ciReach": 97,
+     "missing": [
+      "src/v2/app/catalog-list/row.test.mjs",
+      "src/v2/boundary/c3-grid.test.mjs",
+      "src/v2/porkchop/colormap.test.mjs",
+      "src/v2/porkchop/composite-grid.test.mjs",
+      "src/v2/porkchop/delta-v.test.mjs",
+      "src/v2/porkchop/dual-m-compute.test.mjs",
+      "src/v2/porkchop/grid-compute.test.mjs",
+      "src/v2/porkchop/launch-vehicles.test.mjs",
+      "src/v2/porkchop/propagation-guard.test.mjs",
+      "src/v2/porkchop/support-boundary.test.mjs",
+      "tests/v2-golden/launch-vehicles.golden.test.mjs",
+      "tests/v2-lambert/dla.test.mjs",
+      "tests/v2-lambert/feasibility.test.mjs",
+      "tests/v2-lambert/householder.test.mjs",
+      "tests/v2-lambert/hyp2f1b.test.mjs",
+      "tests/v2-lambert/initial-guess.test.mjs",
+      "tests/v2-lambert/lambert-endtoend.test.mjs",
+      "tests/v2-lambert/lambert-multi-rev-rejection.test.mjs",
+      "tests/v2-lambert/lambert-multi-rev.test.mjs",
+      "tests/v2-lambert/stumpff.test.mjs",
+      "tests/v2-lambert/tof.test.mjs",
+      "tests/v2-lambert/utc-to-tdb.test.mjs",
+      "tests/v2-lambert/vec3.test.mjs"
+     ],
+     "claimSources": [],
+     "sources": [
+      ".claude/skills/dispatch-writer/SKILL.md:108",
+      "AGENTS.md:163",
+      "STATUS.md:348",
+      "STATUS.md:400",
+      "V2_FOUNDING_DOCUMENT.md:850",
+      "src/v2/SLICE_14_FOUNDING.md:98",
+      "src/v2/SLICE_14_FOUNDING.md:102",
+      "src/v2/SLICE_14_FOUNDING.md:142",
+      "src/v2/SLICE_14_FOUNDING.md:143",
+      "src/v2/SLICE_14_FOUNDING.md:176",
+      "src/v2/SLICE_9_A2B_FENCE.md:21",
+      "src/v2/SLICE_9_A2B_FENCE.md:39",
+      "tools/context-audit-2026-08-07/CONTEXT_INFRASTRUCTURE.md:50",
+      "tools/context-audit-2026-08-07/CONTRADICTIONS.md:83",
+      "tools/context-audit-2026-08-07/CONTRADICTIONS.md:84",
+      "tools/slice16-harness/CLOSE_REPORT.md:62",
+      "tools/slice16-harness/CLOSE_REPORT.md:105"
+     ]
+    },
+    {
+     "command": "npm run test",
+     "reach": 74,
+     "ciReach": 97,
+     "missing": [
+      "src/v2/app/catalog-list/row.test.mjs",
+      "src/v2/boundary/c3-grid.test.mjs",
+      "src/v2/porkchop/colormap.test.mjs",
+      "src/v2/porkchop/composite-grid.test.mjs",
+      "src/v2/porkchop/delta-v.test.mjs",
+      "src/v2/porkchop/dual-m-compute.test.mjs",
+      "src/v2/porkchop/grid-compute.test.mjs",
+      "src/v2/porkchop/launch-vehicles.test.mjs",
+      "src/v2/porkchop/propagation-guard.test.mjs",
+      "src/v2/porkchop/support-boundary.test.mjs",
+      "tests/v2-golden/launch-vehicles.golden.test.mjs",
+      "tests/v2-lambert/dla.test.mjs",
+      "tests/v2-lambert/feasibility.test.mjs",
+      "tests/v2-lambert/householder.test.mjs",
+      "tests/v2-lambert/hyp2f1b.test.mjs",
+      "tests/v2-lambert/initial-guess.test.mjs",
+      "tests/v2-lambert/lambert-endtoend.test.mjs",
+      "tests/v2-lambert/lambert-multi-rev-rejection.test.mjs",
+      "tests/v2-lambert/lambert-multi-rev.test.mjs",
+      "tests/v2-lambert/stumpff.test.mjs",
+      "tests/v2-lambert/tof.test.mjs",
+      "tests/v2-lambert/utc-to-tdb.test.mjs",
+      "tests/v2-lambert/vec3.test.mjs"
+     ],
+     "claimSources": [],
+     "sources": [
+      "src/v2/SLICE_19_FOUNDING.md:172"
+     ]
+    }
+   ],
+   "docBroken": [
+    {
+     "command": "node --test tools/slice16-harness/test/",
+     "sources": [
+      "tools/slice16-harness/PRE_RUN_GATE.md:56",
+      "tools/slice16-harness/RUNBOOK.md:41",
+      "tools/slice16-harness/RUNBOOK.md:217"
+     ],
+     "why": [
+      "\"tools/slice16-harness/test/\" matches the directory tools/slice16-harness/test: Node ≥21 hands it to the loader, which fails (Cannot find module)",
+      "Node 20 would reach 6 file(s)"
+     ]
+    }
+   ],
+   "fileSkips": [],
+   "mentions": {},
+   "fatal": []
+  },
+  {
+   "id": "Partforge",
+   "label": "PartForge",
+   "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+   "localNode": {
+    "version": 22,
+    "known": false,
+    "source": null
+   },
+   "workflows": [],
+   "counts": {
+    "candidates": 28,
+    "ci": 0,
+    "ci-less": 15,
+    "manual": 13,
+    "orphan": 0,
+    "conditional": 0,
+    "allowed": 0,
+    "skippedWhole": 0
+   },
+   "ciReach": 0,
+   "classes": {
+    "ci": [],
+    "ci-less": [
+     "headless/test/api.test.mjs",
+     "headless/test/eval-truth.test.mjs",
+     "headless/test/http.test.mjs",
+     "headless/test/llm.test.mjs",
+     "headless/test/parity.test.mjs",
+     "tests/engine-study.test.mjs",
+     "tests/flight-cmm.test.mjs",
+     "tests/flight-db-embed.test.mjs",
+     "tests/flight-db.test.mjs",
+     "tests/flight-decl.test.mjs",
+     "tests/flight-dxf.test.mjs",
+     "tests/flight-eng.test.mjs",
+     "tests/local-server.test.mjs",
+     "tests/provider-auth.test.mjs",
+     "tests/worker-proxy.test.mjs"
+    ],
+    "manual": [
+     "tests/harness/cache.mjs",
+     "tests/harness/dxf-render.mjs",
+     "tests/harness/engine-study.mjs",
+     "tests/harness/floor.mjs",
+     "tests/harness/loop.mjs",
+     "tests/harness/probe.mjs",
+     "tests/harness/provider-400.mjs",
+     "tests/harness/provider-body.mjs",
+     "tests/harness/qr.mjs",
+     "tests/harness/run.mjs",
+     "tests/harness/server.mjs",
+     "tests/harness/share-link.mjs",
+     "tests/harness/template-drawing.mjs"
+    ],
+    "orphan": []
+   },
+   "conditional": [],
+   "declared": [
+    {
+     "path": "tests/harness/cache.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/dxf-render.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/engine-study.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/floor.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/loop.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/probe.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/provider-400.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/provider-body.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/qr.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/run.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/server.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/share-link.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    },
+    {
+     "path": "tests/harness/template-drawing.mjs",
+     "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+    }
+   ],
+   "entries": [
+    {
+     "kind": "script",
+     "command": "npm test",
+     "sources": [
+      "headless/package.json:18"
+     ],
+     "reach": 3,
+     "conditional": 0
+    },
+    {
+     "kind": "script",
+     "command": "npm run test:parity",
+     "sources": [
+      "headless/package.json:19"
+     ],
+     "reach": 2,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node tests/run.mjs",
+     "sources": [
+      "README.md:676",
+      "README.md:821",
+      "README.md:873",
+      "README.md:880",
+      "data/README.md:12",
+      "data/README.md:56",
+      "docs/MCP-STUDY.md:60",
+      "docs/STATUS.md:11",
+      "docs/STATUS.md:19",
+      "docs/STATUS.md:20",
+      "docs/STATUS.md:22",
+      "docs/STATUS.md:23",
+      "docs/STATUS.md:27",
+      "docs/STATUS.md:28",
+      "docs/STATUS.md:32",
+      "docs/STATUS.md:33",
+      "docs/STATUS.md:157",
+      "docs/STATUS.md:174",
+      "docs/STATUS.md:310",
+      "headless/README.md:23",
+      "tests/harness/README.md:32"
+     ],
+     "reach": 13,
+     "conditional": 3
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs check part.scad --human",
+     "sources": [
+      "README.md:772"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs check part.scad",
+     "sources": [
+      "README.md:773"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "npm run test:parity",
+     "sources": [
+      "docs/MCP-STUDY.md:61",
+      "docs/MCP-STUDY.md:62",
+      "docs/STATUS.md:25",
+      "headless/README.md:25"
+     ],
+     "reach": 2,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "npx @modelcontextprotocol/inspector node headless/mcp.mjs",
+     "sources": [
+      "docs/MCP-STUDY.md:275",
+      "headless/README.md:111"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "npx @modelcontextprotocol/inspector is not modelled"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs provider-check --all --human",
+     "sources": [
+      "docs/PROVIDER-TESTS.md:32"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs provider-check --endpoint groq --model qwen/qwen3.8-27b --human",
+     "sources": [
+      "docs/PROVIDER-TESTS.md:51"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs provider-check --endpoint gemini --grade flight --human",
+     "sources": [
+      "docs/PROVIDER-TESTS.md:52"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs provider-check --all",
+     "sources": [
+      "docs/PROVIDER-TESTS.md:54"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs design 'a 40 x 40 x 5 mm spacer plate with a 6.6 mm centre hole' ",
+     "sources": [
+      "docs/PROVIDER-TESTS.md:70"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs design 'a 6 in centering ring for a 54 mm motor, 8 mm thick' ",
+     "sources": [
+      "docs/PROVIDER-TESTS.md:72"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "cd headless && npm run test:parity",
+     "sources": [
+      "docs/STATUS.md:21",
+      "docs/STATUS.md:312"
+     ],
+     "reach": 2,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "cd tests/harness && node dxf-render.mjs",
+     "sources": [
+      "docs/STATUS.md:29"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "cd tests/harness && node provider-body.mjs",
+     "sources": [
+      "docs/STATUS.md:30"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "cd tests/harness && node provider-400.mjs",
+     "sources": [
+      "docs/STATUS.md:31"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "cd tests/harness && node engine-study.mjs",
+     "sources": [
+      "docs/STATUS.md:34",
+      "docs/STATUS.md:315"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node --test",
+     "sources": [
+      "docs/STATUS.md:82"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "notUnderstood": [
+      "node --test with no file arguments (default discovery is not modelled)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node build.mjs",
+     "sources": [
+      "docs/STATUS.md:311"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "cd tests/harness && npm i playwright && node server.mjs 8765",
+     "sources": [
+      "docs/STATUS.md:314"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs provider-check --endpoint gemini --model gemini-3.6-flash --human",
+     "sources": [
+      "docs/runs/2026-10-05-gemini/README.md:71"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs design 'a 40 x 40 x 5 mm spacer plate with a 6.6 mm centre hole' --endpoint gemini --model gemini-3.6-flash --human",
+     "sources": [
+      "docs/runs/2026-10-05-gemini/README.md:72"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs design 'a 6 in centering ring for a 54 mm motor, 8 mm thick' --endpoint gemini --model gemini-3.6-flash --grade flight --human",
+     "sources": [
+      "docs/runs/2026-10-05-gemini/README.md:73"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node cli.mjs check centering-ring-54mm.scad",
+     "sources": [
+      "docs/runs/2026-10-05-gemini/README.md:76"
+     ],
+     "reach": 0,
+     "conditional": 0,
+     "broken": [
+      "script not in the tracked tree (Cannot find module)"
+     ]
+    },
+    {
+     "kind": "doc",
+     "command": "node tests/harness/run.mjs tests/fixtures/fixture-cases.json out.json --settings '{\"bed\":[1000,1000,1000]}' --dump-stl tests/fixtures",
+     "sources": [
+      "tests/fixtures/README.md:7"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node server.mjs 8765",
+     "sources": [
+      "tests/harness/README.md:15"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node run.mjs cases.json out.json --settings '{\"grade\":\"flight\"}' [--phone] [--dump-stl dir] [--timeout ms]",
+     "sources": [
+      "tests/harness/README.md:16"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node probe.mjs probes.json",
+     "sources": [
+      "tests/harness/README.md:17",
+      "tests/harness/README.md:126"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node provider-body.mjs",
+     "sources": [
+      "tests/harness/README.md:37"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node provider-400.mjs",
+     "sources": [
+      "tests/harness/README.md:38"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node cache.mjs",
+     "sources": [
+      "tests/harness/README.md:52"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node floor.mjs",
+     "sources": [
+      "tests/harness/README.md:65"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node share-link.mjs",
+     "sources": [
+      "tests/harness/README.md:76"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node qr.mjs",
+     "sources": [
+      "tests/harness/README.md:86"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node loop.mjs ../dryrun/cases.json out/",
+     "sources": [
+      "tests/harness/README.md:105"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node template-drawing.mjs [retainer]",
+     "sources": [
+      "tests/harness/README.md:115"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node dxf-render.mjs",
+     "sources": [
+      "tests/harness/README.md:142"
+     ],
+     "reach": 1,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "node engine-study.mjs",
+     "sources": [
+      "tests/harness/README.md:154"
+     ],
+     "reach": 1,
+     "conditional": 0
+    }
+   ],
+   "drift": [],
+   "docBroken": [],
+   "fileSkips": [],
+   "mentions": {
+    "tests/harness/cache.mjs": [
+     "docs/STATUS.md:14"
+    ],
+    "tests/harness/engine-study.mjs": [
+     "README.md:844",
+     "docs/STATUS.md:250"
+    ],
+    "tests/harness/floor.mjs": [
+     "docs/STATUS.md:15"
+    ],
+    "tests/harness/loop.mjs": [
+     "README.md:495",
+     "docs/dry-run.md:154",
+     "docs/dry-run.md:174"
+    ],
+    "tests/harness/probe.mjs": [
+     "docs/STATUS.md:18"
+    ],
+    "tests/harness/qr.mjs": [
+     "docs/STATUS.md:16"
+    ],
+    "tests/harness/run.mjs": [
+     "docs/dry-run.md:177",
+     "docs/roadmap-evaluation.md:716",
+     "docs/roadmap-evaluation.md:881",
+     "docs/roadmap-evaluation.md:884",
+     "tests/fixtures/README.md:7"
+    ],
+    "tests/harness/share-link.mjs": [
+     "docs/MCP-STUDY.md:63",
+     "docs/MCP-STUDY.md:230",
+     "docs/STATUS.md:26"
+    ],
+    "tests/harness/template-drawing.mjs": [
+     "docs/STATUS.md:17"
+    ]
+   },
+   "fatal": []
+  },
+  {
+   "id": "skyhook",
+   "label": "Skyhook",
+   "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+   "localNode": {
+    "version": 22,
+    "known": false,
+    "source": null
+   },
+   "workflows": [
+    ".github/workflows/ci.yml"
+   ],
+   "counts": {
+    "candidates": 7,
+    "ci": 6,
+    "ci-less": 0,
+    "manual": 0,
+    "orphan": 1,
+    "conditional": 0,
+    "allowed": 0,
+    "skippedWhole": 0
+   },
+   "ciReach": 6,
+   "classes": {
+    "ci": [
+     "tests/test_analysis_layer.py",
+     "tests/test_export_grid.py",
+     "tests/test_finance.py",
+     "tests/test_finance_tiers.py",
+     "tests/test_rev_a_physics.py",
+     "tests/test_tether_dynamics.py"
+    ],
+    "ci-less": [],
+    "manual": [],
+    "orphan": [
+     "tools/twin/verify.mjs"
+    ]
+   },
+   "conditional": [],
+   "declared": [
+    {
+     "path": "tools/twin/verify.mjs",
+     "why": "its header (tools/twin/verify.mjs:3) calls it the cross-language verification gate, and it exits non-zero on failure"
+    }
+   ],
+   "entries": [
+    {
+     "kind": "ci",
+     "command": "pytest tests/ -v --tb=short",
+     "sources": [
+      ".github/workflows/ci.yml:26"
+     ],
+     "reach": 6,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "pytest tests/ -v",
+     "sources": [
+      "CLAUDE.md:19"
+     ],
+     "reach": 6,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "pytest tests/",
+     "sources": [
+      "README.md:32"
+     ],
+     "reach": 6,
+     "conditional": 0
+    },
+    {
+     "kind": "doc",
+     "command": "pytest tests/ -v",
+     "sources": [
+      "README.md:70"
+     ],
+     "reach": 6,
+     "conditional": 0
+    }
+   ],
+   "drift": [],
+   "docBroken": [],
+   "fileSkips": [
+    {
+     "path": "tests/test_export_grid.py",
+     "conditions": [
+      "tests/test_export_grid.py:18 pytest.importorskip(\"openpyxl\") skips the whole file unless openpyxl is importable"
+     ],
+     "routes": [
+      {
+       "entry": ".github/workflows/ci.yml:26",
+       "satisfied": [
+        true
+       ]
+      },
+      {
+       "entry": "CLAUDE.md:19",
+       "satisfied": [
+        null
+       ]
+      },
+      {
+       "entry": "README.md:32",
+       "satisfied": [
+        null
+       ]
+      },
+      {
+       "entry": "README.md:70",
+       "satisfied": [
+        false
+       ]
+      }
+     ]
+    },
+    {
+     "path": "tests/test_finance.py",
+     "conditions": [
+      "tests/test_finance.py:24 pytest.importorskip(\"openpyxl\") skips the whole file unless openpyxl is importable"
+     ],
+     "routes": [
+      {
+       "entry": ".github/workflows/ci.yml:26",
+       "satisfied": [
+        true
+       ]
+      },
+      {
+       "entry": "CLAUDE.md:19",
+       "satisfied": [
+        null
+       ]
+      },
+      {
+       "entry": "README.md:32",
+       "satisfied": [
+        null
+       ]
+      },
+      {
+       "entry": "README.md:70",
+       "satisfied": [
+        false
+       ]
+      }
+     ]
+    }
+   ],
+   "mentions": {
+    "tools/twin/verify.mjs": [
+     "materials/core.md:96",
+     "tools/sims/skyhook_program_site.html:948"
+    ]
+   },
+   "fatal": []
+  }
+ ]
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/project_instructions.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "4d4072b 2026-09-02T14:02:59-04:00",
+  "committedBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "readBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "sourceSha256": "4f89e168ee9450d9d9530bf0ff7818919d63dcd3c3dab5998759326cbc086db4",
+  "sourceBytes": 43975,
+  "copiedAt": "2026-10-26T16:31:08.690Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 42, 44, 118, 143, 145, 193, 218",
+  "readMatchesCommitted": true,
+  "writtenSha256": "92dd808c77f6691d1b4ebba1c45ce97f3b9d8420bb25adbeec46648358abd043",
+  "writtenBytes": 3251
+}

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Near Field Guide</title>
+<meta name="description" content="Every distribution Aster's committed NEA catalog fixture can show about itself, binned over all of its records, with its nulls and its missing fields on the page.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="main">
+  <header class="masthead">
+    <p class="eyebrow">Aster Idea Bank · No. 28 · a catalog study</p>
+    <h1>Near Field Guide</h1>
+    <p class="lede" id="lede">Loading the bins…</p>
+    <p class="sub" id="identity"></p>
+  </header>
+
+  <div id="refusal-root"></div>
+
+  <div id="guide" hidden>
+    <section class="filters" id="filters" aria-label="Choose which bodies the panels count">
+      <div class="filter-row" role="group" aria-labelledby="f-cls-label">
+        <span class="filter-label" id="f-cls-label">Orbit class</span>
+        <div class="chips" id="f-cls"></div>
+      </div>
+      <div class="filter-row" role="group" aria-labelledby="f-tier-label">
+        <span class="filter-label" id="f-tier-label">inv014Tier</span>
+        <div class="chips" id="f-tier"></div>
+      </div>
+      <div class="filter-row" role="group" aria-labelledby="f-fid-label">
+        <span class="filter-label" id="f-fid-label">Slice 18 tier</span>
+        <div class="chips" id="f-fid"></div>
+      </div>
+      <div class="filter-row filter-tools">
+        <label class="tool">Landmark
+          <select id="landmark"><option value="">none</option></select>
+        </label>
+        <span class="tool" role="group" aria-label="Count axis">
+          <span class="tool-label">Count axis</span>
+          <button type="button" class="seg" id="scale-lin" aria-pressed="true">linear</button><button type="button" class="seg" id="scale-log" aria-pressed="false">log</button>
+        </span>
+      </div>
+      <p class="selection" id="selection" aria-live="polite"></p>
+    </section>
+
+    <div id="empty-root"></div>
+
+    <section class="block" id="sec-missing" aria-labelledby="h-missing">
+      <h2 id="h-missing">What the catalog does not carry</h2>
+      <p class="sub" id="missing-intro"></p>
+      <div class="cards" id="missing-cards"></div>
+      <details class="census">
+        <summary id="census-summary">Every key path, with its nulls in this selection</summary>
+        <div class="table-wrap"><table id="census-table"></table></div>
+      </details>
+    </section>
+
+    <section class="block" aria-labelledby="h-orbits">
+      <h2 id="h-orbits">Orbits</h2>
+      <p class="sub" id="orbits-intro"></p>
+      <div class="panels" id="panels-orbits"></div>
+      <figure class="panel panel-wide" id="grid-panel">
+        <figcaption>
+          <span class="p-title">Where the bodies sit in a and e</span>
+          <span class="p-meta" id="grid-meta"></span>
+        </figcaption>
+        <div class="grid-wrap"><canvas id="grid-canvas" tabindex="0" role="img" aria-label="Density of bodies over semi-major axis and eccentricity"></canvas></div>
+        <div class="grid-legend" id="grid-legend"></div>
+        <p class="p-note" id="grid-note"></p>
+      </figure>
+    </section>
+
+    <section class="block" aria-labelledby="h-size">
+      <h2 id="h-size">Brightness and size</h2>
+      <div class="panels" id="panels-size"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-quality">
+      <h2 id="h-quality">How well each orbit is known</h2>
+      <div class="panels" id="panels-quality"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-labels">
+      <h2 id="h-labels">The labels the catalog carries</h2>
+      <div class="panels" id="panels-labels"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-disagree">
+      <h2 id="h-disagree">Where the labels and the elements disagree</h2>
+      <p class="sub" id="disagree-intro"></p>
+      <div id="disagree"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-prereport">
+      <h2 id="h-prereport">The committed fixture is not the pre-research pull</h2>
+      <p class="sub" id="prereport-intro"></p>
+      <div id="prereport"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-landmarks">
+      <h2 id="h-landmarks">Landmarks</h2>
+      <p class="sub" id="landmarks-intro"></p>
+      <div class="cards" id="landmark-cards"></div>
+    </section>
+
+    <section class="block" aria-labelledby="h-prov">
+      <h2 id="h-prov">Where every number comes from</h2>
+      <div id="provenance"></div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <p>An Aster Idea Bank prototype. It has not been through Aster's founding-document process, its multi-agent math audit or its oracle validation; it describes one committed fixture, not the near-Earth population.</p>
+  </footer>
+</main>
+<div class="tip" id="tip" role="status" aria-live="polite" hidden></div>
+<script src="guide.js"></script>
+<script src="snapshots/bins.data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

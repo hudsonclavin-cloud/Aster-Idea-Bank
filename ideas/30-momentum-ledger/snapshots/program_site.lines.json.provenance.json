@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tools/sims/skyhook_program_site.html",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "e282d28 2026-07-06T00:57:17-04:00",
+  "committedBlob": "356f23badc700197bdff5cf99ba9e0bd86ee583b",
+  "readBlob": "356f23badc700197bdff5cf99ba9e0bd86ee583b",
+  "sourceSha256": "5be29a26f0ff42937196c13bb06a40165a825f30295aac2c3e21ec05f0b5d7da",
+  "sourceBytes": 120509,
+  "copiedAt": "2026-10-26T16:31:09.331Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 847",
+  "readMatchesCommitted": true,
+  "writtenSha256": "748508179ed03457597d84b3df097283ce1070a641cc905af95b530cc969bac7",
+  "writtenBytes": 185
+}

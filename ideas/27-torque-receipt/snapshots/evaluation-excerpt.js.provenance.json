@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/roadmap-evaluation.md",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "680546e 2026-09-18T20:25:08+00:00",
+  "committedBlob": "af106574e66847e74de4bc8255d3c7ce301576c1",
+  "readBlob": "af106574e66847e74de4bc8255d3c7ce301576c1",
+  "sourceSha256": "6b2ab2ad5e8487a1d3115b625cdad3f637ed880e2d65d468591f5dfc16fcc9f2",
+  "sourceBytes": 239889,
+  "copiedAt": "2026-10-26T16:43:22.429Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: exact lines 79, 396, 398, 399, 400, 401, 402, 403, 404, 405 of docs/roadmap-evaluation.md (the ranking row and the appendix entry for idea 4, \"Bolt preload & flange separation\")",
+  "readMatchesCommitted": true,
+  "writtenSha256": "26af61d3f3096785d3c38de23f3a9622081f552085fd4ed215ac817aef751773",
+  "writtenBytes": 5576
+}

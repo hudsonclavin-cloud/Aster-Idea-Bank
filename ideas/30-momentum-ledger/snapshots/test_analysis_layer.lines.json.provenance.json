@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tests/test_analysis_layer.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "4114510 2026-07-14T23:06:15-04:00",
+  "committedBlob": "33117804733cd6df8594bd1e5ea8503fac2076ea",
+  "readBlob": "33117804733cd6df8594bd1e5ea8503fac2076ea",
+  "sourceSha256": "cd218c86059edd6caf4cf5ba5208a20b3c6edf27dcf2654129e662c3c670f038",
+  "sourceBytes": 3551,
+  "copiedAt": "2026-10-26T16:31:08.976Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 77, 78, 79",
+  "readMatchesCommitted": true,
+  "writtenSha256": "c40711c1474a2ed25dcce0bd7fd32549f1a97ca34771d5e637dbfcd92a75d9f4",
+  "writtenBytes": 372
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nea-catalog-slice9.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "readBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "sourceSha256": "f88028d2839842299b7aae20644d15fef265b19e3bbca576c5dd0faf7d231418",
+  "sourceBytes": 52969826,
+  "copiedAt": "2026-10-26T16:32:30.397Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --write: all 41,906 records binned with guide.js into 18 atoms (orbitClass x inv014Tier x Slice 18 tier joined by designation from docs/tier-sizing-per-body.json), 12 histograms + 7 categorical counts + a 60x50 a-e grid + a per-path null census per atom, the stored-class check, the 25 NEA-class bodies with T_J < 2, the pre-research comparison, 11 landmark records copied verbatim, constants and quoted passages with path:line; Jupiter's a_J and orbit pole from tests/fixtures/v2/horizons-jupiter-system-90d.json; every input's sha256 is under source.inputs; no other per-body record is copied",
+  "readMatchesCommitted": true,
+  "writtenSha256": "8bdfcf67885259a063fb18d452cf56315706c9438d93d489345d40990b143c56",
+  "writtenBytes": 101332
+}

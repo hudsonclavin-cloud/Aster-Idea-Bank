@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tools/slice18-research/tier-sizing.mjs",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "b25acdc 2026-10-14T10:25:45-04:00",
+  "committedBlob": "95c7c2d1fe83f650017316e68daa44d25a92aa6b",
+  "readBlob": "95c7c2d1fe83f650017316e68daa44d25a92aa6b",
+  "sourceSha256": "98e3ce2313e0c5156d8f9e065be96f7406b49bd30405f3134771c385da42c560",
+  "sourceBytes": 14239,
+  "copiedAt": "2026-10-26T16:32:21.900Z",
+  "mode": "copy",
+  "note": "",
+  "readMatchesCommitted": true,
+  "writtenSha256": "98e3ce2313e0c5156d8f9e065be96f7406b49bd30405f3134771c385da42c560",
+  "writtenBytes": 14239
+}

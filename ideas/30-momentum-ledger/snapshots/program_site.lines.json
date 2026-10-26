@@ -1,0 +1,6 @@
+{
+  "path": "tools/sims/skyhook_program_site.html",
+  "lines": {
+    "847": "      if(boost){ var sp=Math.hypot(st.vx[i],st.vy[i]); ax+=2e-6*st.vx[i]/sp; ay+=2e-6*st.vy[i]/sp; }"
+  }
+}

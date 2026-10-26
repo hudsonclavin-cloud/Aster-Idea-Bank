@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/fasteners_un.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "c04006aa5032f3dee05a3933b03d0d2e74454049",
+  "readBlob": "c04006aa5032f3dee05a3933b03d0d2e74454049",
+  "sourceSha256": "4d60ab9a0a7e8d84a4cc2a700bc792928b5b3ca50828bcd317bed75799b0f616",
+  "sourceBytes": 108390,
+  "copiedAt": "2026-10-26T16:43:22.226Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: all 16 rows of data/tables/fasteners_un.json cut to key, series, major_in, major_mm, tpi, pitch_mm, tensile_stress_area_in2, tensile_stress_area_mm2, confidence + field_confidence for those fields + related_hardware nut and Type A narrow washer entries (each with its own confidence) + column descriptions + notes paragraphs (4), (6), (7) verbatim",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4846385b548009532965048cae8f8bd099b6c1637bed7f5ecdc7b81dc2dc11ee",
+  "writtenBytes": 19698
+}

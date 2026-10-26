@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/dryrun/cases.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "8a17260 2026-09-17T16:48:28+00:00",
+  "committedBlob": "7c901e2ad936f5b0b977bb53fd4a59bee8dbebf0",
+  "readBlob": "7c901e2ad936f5b0b977bb53fd4a59bee8dbebf0",
+  "sourceSha256": "a06828bf900fd1f6460e5842108821f575a89f73ca1e8795daf18d317ee9a596",
+  "sourceBytes": 2355,
+  "copiedAt": "2026-10-26T16:31:26.976Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ca0000d099bc0bff0d903c28d4eed7cf930b5d76efb9ab032bf44dc3cb1bee97",
+  "writtenBytes": 5364
+}

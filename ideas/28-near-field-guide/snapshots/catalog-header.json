@@ -1,0 +1,59 @@
+{
+ "selectionSource": "JPL SBDB Query API (sb-group=neo)",
+ "anchorSource": "Hybrid SBDB/Horizons: SBDB elements for fresh bodies, Horizons re-anchor at common epoch for stale subsets",
+ "frame": "ICRF/J2000",
+ "timeScale": "TDB",
+ "units": {
+  "anchorPosition": "km",
+  "anchorVelocity": "km/s",
+  "anchorTime": "TDB JD",
+  "semiMajorAxis": "km",
+  "estimatedRadius": "m",
+  "angles": "rad",
+  "dataArc": "days",
+  "sigmaA": "au",
+  "sigmaE": "unitless"
+ },
+ "propagation": {
+  "method": "keplerian-two-body",
+  "epochPolicy": "hybrid-per-body-sbdb-or-horizons-reanchor"
+ },
+ "closeApproachWindow": {
+  "start": "2026-05-01",
+  "stop": "2026-07-30",
+  "distMaxAu": "0.05",
+  "bodies": [
+   "Earth",
+   "Venus"
+  ]
+ },
+ "catalog": {
+  "totalBodies": 41906,
+  "includedClasses": [
+   "AMO",
+   "APO",
+   "ATE",
+   "ETC",
+   "HTC",
+   "IEO",
+   "JFC"
+  ],
+  "classDistribution": {
+   "AMO": 14516,
+   "APO": 23757,
+   "ATE": 3387,
+   "ETC": 6,
+   "HTC": 36,
+   "IEO": 38,
+   "JFC": 166
+  },
+  "inv014TierDistribution": {
+   "visualization-tier": 41558,
+   "planning-tier": 0,
+   "not-kepler-safe": 348
+  },
+  "missingAbsoluteMagnitudeCount": 210,
+  "anomalyTailCount": 208,
+  "qualityRankFormula": "qualityRank = clamp01(0.6 * (condition_code == null ? 0 : 1 - condition_code / 9) + 0.4 * (data_arc_days == null ? 0 : log10(1 + data_arc_days) / log10(1001)))"
+ }
+}

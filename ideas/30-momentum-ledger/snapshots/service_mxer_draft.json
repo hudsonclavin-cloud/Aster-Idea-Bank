@@ -1,0 +1,33 @@
+{
+ "status": "DRAFT — non-canonical; do not cite as design",
+ "confidence": "[Speculative] draft fork analysis; Rev A remains canonical",
+ "catch_origin": {
+  "type": "circular LEO",
+  "catch_altitude_km": 450,
+  "confidence": "[Likely] geometry solve; ops/capture envelope not modeled"
+ },
+ "tether_com_orbit": {
+  "perigee_altitude_km": 600,
+  "apogee_altitude_km": 7418.213,
+  "semi_major_axis_km": 10380.107,
+  "period_min": 175.413,
+  "v_perigee_kms": 8.715453,
+  "confidence": "[Likely] two-body vis-viva solve"
+ },
+ "tether": {
+  "L_half_km": 150,
+  "v_tip_kms": 1.071031,
+  "tip_acceleration_g": 0.7798,
+  "safety_factor": 2.5,
+  "derate_fraction_reference": 0.3,
+  "mass_ratio_30pct_derate": 3.223544
+ },
+ "payload_class": {
+  "reference_payload_t": 5,
+  "fiber_mass_t_at_30pct_derate": 16.118
+ },
+ "capex_inputs": {
+  "hub_mass_t": 30,
+  "hub_mass_note": "[FLAGGED] 200 t x fiber_mass/609 t, floored at 30 t"
+ }
+}

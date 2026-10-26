@@ -1,0 +1,30 @@
+{
+  "about": "Per-repository settings for reach-census.mjs. extraCandidates adds files that are checks but do not carry a test-file name; localNode is the Node major the maintainers run package scripts and documented commands under (CI steps use their own setup-node version).",
+  "repos": {
+    "asteroid-mining-planner": {
+      "label": "Aster",
+      "localNode": 24,
+      "localNodeSource": "STATUS.md:339 records the local suite run on Node v24.18.0"
+    },
+    "Partforge": {
+      "label": "PartForge",
+      "extraCandidates": [
+        {
+          "glob": "tests/harness/*.mjs",
+          "kind": "browser harness script",
+          "why": "tests/harness/README.md:1-4 says these drive the real app in headless Chromium and are used for every number quoted in the README"
+        }
+      ]
+    },
+    "skyhook": {
+      "label": "Skyhook",
+      "extraCandidates": [
+        {
+          "glob": "tools/twin/verify.mjs",
+          "kind": "verification gate",
+          "why": "its header (tools/twin/verify.mjs:3) calls it the cross-language verification gate, and it exits non-zero on failure"
+        }
+      ]
+    }
+  }
+}

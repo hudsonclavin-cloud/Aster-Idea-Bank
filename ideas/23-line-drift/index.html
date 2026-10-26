@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Line Drift</title>
+<meta name="description" content="Every file:line citation, backticked path and commit hash in Aster's control-plane Markdown, checked against the checkout, with each drift finding's history and a hand adjudication.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header class="top">
+    <p class="kicker">Aster Idea Bank · No. 23 · linter for Aster</p>
+    <h1>Line Drift</h1>
+    <p class="lede">Aster tells every agent to trust <code>STATUS.md</code> first, and its Markdown is full of <code>path:line</code> citations, backticked paths and commit hashes. <code>line-drift.mjs</code> reads 26 of those documents and checks each reference against the checkout: does the path exist and is it tracked and not ignored (the INV-034 test), is the cited line inside the file, and does the code or quote the same sentence pairs with it still sit on that line? It never edits anything. This page is one saved run, with every finding it flagged checked by hand.</p>
+    <ul class="tiles" id="tiles" aria-label="Headline numbers from the saved run"></ul>
+    <p class="note" id="run-note"></p>
+  </header>
+
+  <section aria-labelledby="h-where">
+    <h2 id="h-where">Where the drift is</h2>
+    <p class="sub">Every finding the tool calls drift (MOVED, GONE, MISSING-PATH, IGNORED) plus the two PARTIAL quotes, by document and by what a hand check found it to be. Tap a bar segment to list those findings below.</p>
+    <ul class="legend" id="legend" aria-label="Legend"></ul>
+    <div id="chart" class="chart"></div>
+    <div id="tip" class="tip" role="status" hidden></div>
+  </section>
+
+  <section aria-labelledby="h-find">
+    <h2 id="h-find">The findings</h2>
+    <p class="sub">The status is the tool's; the history line re-judges the same reference at the commit it first appeared in the document, at the commit that last edited its line, and at a commit its sentence names (from a full-history clone, since the checkout itself is shallow); the verdict under it is mine, from reading the files at those commits.</p>
+    <div class="filters" role="group" aria-label="Filter findings">
+      <div class="chips" id="chips" role="group" aria-label="Status"></div>
+      <div class="selects">
+        <label>What it is <select id="f-group"></select></label>
+        <label>Document <select id="f-doc"></select></label>
+        <label class="grow">Search <input id="f-text" type="search" placeholder="path, commit, words" autocomplete="off" spellcheck="false"></label>
+      </div>
+    </div>
+    <p class="count" id="count" aria-live="polite"></p>
+    <ol class="cards" id="cards"></ol>
+  </section>
+
+  <section aria-labelledby="h-counts">
+    <h2 id="h-counts">Every reference, counted</h2>
+    <p class="sub" id="counts-sub"></p>
+    <div class="scroll" tabindex="0" role="region" aria-label="Counts by status"><table class="num" id="t-status"></table></div>
+    <h3>By document</h3>
+    <div class="scroll" tabindex="0" role="region" aria-label="Counts by document"><table class="num" id="t-docs"></table></div>
+    <h3>Not fully checkable, and why</h3>
+    <div class="scroll" tabindex="0" role="region" aria-label="Uncheckable reasons"><table class="num" id="t-unch"></table></div>
+  </section>
+
+  <section aria-labelledby="h-try" id="try">
+    <h2 id="h-try">Try it on a passage</h2>
+    <p class="sub">The same <code>linedrift.js</code> the command line uses, run here on text you paste. It starts on the real thing: the Slice 9 amendment (<code>src/v2/SLICE_9_FOUNDING.md</code> lines 423-428) and Aster's <code>.gitignore</code>, both copied at 62ddb17 with provenance under <code>snapshots/</code>. A browser has no git, so tracking, ignore rules and commits are not checked here; only the one file you load can be.</p>
+    <div class="try-grid">
+      <div>
+        <label for="try-doc">Markdown passage</label>
+        <textarea id="try-doc" rows="9" spellcheck="false"></textarea>
+        <div class="row">
+          <label for="try-doc-path">Its path</label>
+          <input id="try-doc-path" type="text" spellcheck="false" autocomplete="off">
+          <label for="try-from">first line</label>
+          <input id="try-from" type="number" min="1" step="1" inputmode="numeric">
+        </div>
+      </div>
+      <div>
+        <label for="try-file">A file it cites</label>
+        <textarea id="try-file" rows="9" spellcheck="false"></textarea>
+        <div class="row">
+          <label for="try-file-path">Its path</label>
+          <input id="try-file-path" type="text" spellcheck="false" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="row buttons">
+      <button type="button" id="try-run">Check the passage</button>
+      <button type="button" id="try-reset" class="quiet">Back to the Aster example</button>
+    </div>
+    <div id="try-out" aria-live="polite"></div>
+  </section>
+
+  <section aria-labelledby="h-run">
+    <h2 id="h-run">Run it on a checkout</h2>
+    <pre class="cmd"><code>node ideas/23-line-drift/line-drift.mjs /path/to/asteroid-mining-planner
+node ideas/23-line-drift/line-drift.mjs /path/to/checkout --markdown --allow allow.json --accept-annotated</code></pre>
+    <p class="sub">Exit 0 when no drift is left un-allowlisted, 1 when some is, 2 when it refuses (no such directory, no documents, an unknown <code>--rev</code>, an allowlist entry without a reason), 3 on a usage error. <code>example.txt</code> is the saved output behind this page; the README says what every number traces to.</p>
+  </section>
+</main>
+<script src="linedrift.js"></script>
+<script src="report-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

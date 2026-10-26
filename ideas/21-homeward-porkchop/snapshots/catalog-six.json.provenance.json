@@ -1,0 +1,31 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nea-catalog-slice9.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "readBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "sourceSha256": "f88028d2839842299b7aae20644d15fef265b19e3bbca576c5dd0faf7d231418",
+  "sourceBytes": 52969826,
+  "copiedAt": "2026-10-26T16:29:17.598Z",
+  "mode": "excerpt",
+  "note": "Six bodies of 41,906: the five NHATS validation targets and 433 Eros. Elements, anchor state and catalog metadata verbatim.",
+  "readMatchesCommitted": true,
+  "picked": [
+    "selectionSource",
+    "anchorSource",
+    "frame",
+    "timeScale",
+    "units",
+    "propagation",
+    "asteroids.asteroid-1999 AO10",
+    "asteroids.asteroid-101955",
+    "asteroids.asteroid-2000 SG344",
+    "asteroids.asteroid-99942",
+    "asteroids.asteroid-2001 GP2",
+    "asteroids.asteroid-433"
+  ],
+  "writtenSha256": "563c46885d6c44496f69cfd9fba46a6306c1d33d43fdd8a10d78550e889d6a9a",
+  "writtenBytes": 7250
+}

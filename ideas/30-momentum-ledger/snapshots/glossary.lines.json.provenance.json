@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/glossary.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "a28b70e 2026-07-06T00:48:06-04:00",
+  "committedBlob": "f35c9e6a2cfd80dbf3b6e137198615cac1d7d6f6",
+  "readBlob": "f35c9e6a2cfd80dbf3b6e137198615cac1d7d6f6",
+  "sourceSha256": "119e560cf6d30f30e6fe0279f7d42b96bc55f4eecfe18f28516967966db8f604",
+  "sourceBytes": 7257,
+  "copiedAt": "2026-10-26T16:31:09.106Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 35, 36",
+  "readMatchesCommitted": true,
+  "writtenSha256": "5def1afc79533720d51020e6230041f2c2cf32687672c4640cc4cab1f52a104a",
+  "writtenBytes": 526
+}

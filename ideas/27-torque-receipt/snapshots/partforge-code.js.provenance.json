@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T16:43:22.330Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: verbatim cuts of index.html — 780-899 (thread tables, parseThreadSize, tensileStressArea_mm2, ENGAGEMENT_RULE, threadCheck, boltShear); 935-999 (FLIGHT_MATERIALS); 5744 (matClass (a local of the loads evaluator)); 5804 (GRADE_SY (a local of the bolt_shear branch)) — inside a classic-script wrapper",
+  "readMatchesCommitted": true,
+  "writtenSha256": "188ded6d876e57926ed6934da96c45b292214030760a7e4e669dd93d0f3105f9",
+  "writtenBytes": 15032
+}

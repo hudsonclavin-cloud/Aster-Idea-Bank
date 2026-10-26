@@ -1,0 +1,28 @@
+$ node ideas/24-cold-read/cold-read.mjs ../Partforge/tests/dryrun/endcap.scad
+../Partforge/tests/dryrun/endcap.scad:29:68: error CONTRADICTION: Critical dimension "o-ring groove width": you say shoulder() measures 4.750 mm along z, but your SPEC gives shoulder a size of 101.500 × 101.500 × 20.000 mm. A critical dimension is a module's full extent; a groove, pocket or step inside it is a bore, an od or a helper module. The app finds this only after the render (flightCheck, index.html:5620), although its doctrine says such a nominal "is rejected before anything is rendered" (index.html:1455)
+      29 | //    {"name":"o-ring groove width","module":"shoulder","axis":"z","nominal_mm":4.750,"tol_mm":0.050,"tol_src":"source","tol_ref":"Parker ORD 5700 Table 4-2 pis
+../Partforge/tests/dryrun/endcap.scad:30:68: error CONTRADICTION: Critical dimension "lightening pocket depth": you say body() measures 8.000 mm along z, but your SPEC gives body a size of 127.000 × 127.000 × 25.400 mm. A critical dimension is a module's full extent; a groove, pocket or step inside it is a bore, an od or a helper module. The app finds this only after the render (flightCheck, index.html:5620), although its doctrine says such a nominal "is rejected before anything is rendered" (index.html:1455)
+      30 | //    {"name":"lightening pocket depth","module":"body","axis":"z","nominal_mm":8.000,"tol_mm":0.130,"tol_src":"default"},
+../Partforge/tests/dryrun/endcap.scad:80:1: info PARAM_HIDDEN: groove_z0 is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      80 | groove_z0     = flange_z + 5.750; // groove near edge z from inner face (mm) = 11.150
+../Partforge/tests/dryrun/endcap.scad:82:1: info PARAM_HIDDEN: groove_bot_od is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      82 | groove_bot_od = shoulder_od - 2 * groove_depth; // = 95.960 mm
+../Partforge/tests/dryrun/endcap.scad:92:1: info PARAM_HIDDEN: total_z is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      92 | total_z       = flange_z + shoulder_z + boss_z; // 28.4 mm
+../Partforge/tests/dryrun/endcap.scad:94:1: info PARAM_HIDDEN: outer_face_z is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      94 | outer_face_z  = flange_z + shoulder_z; // 25.4 mm
+../Partforge/tests/dryrun/endcap.scad: 2 errors, 0 warnings, 4 notes — flight grade; SPEC parsed (3 parts); FLIGHT parsed (17 entries kept, 0 dropped, 0 demoted, 0 never counted); 8 modules, 7 drawn from the top level
+text checks only; geometry not checked
+(exit 1)
+
+$ node ideas/24-cold-read/cold-read.mjs --no-info ../Partforge/tests/dryrun/retainer.scad ../Partforge/tests/templates/fin.scad
+../Partforge/tests/dryrun/retainer.scad: 0 errors, 0 warnings, 0 notes — flight grade; SPEC parsed (2 parts); FLIGHT parsed (10 entries kept, 0 dropped, 0 demoted, 0 never counted); 4 modules, 4 drawn from the top level
+../Partforge/tests/dryrun/retainer.scad: no textual errors or warnings. That is not a pass: nothing here was rendered or measured.
+text checks only; geometry not checked
+
+../Partforge/tests/templates/fin.scad: 0 errors, 0 warnings, 1 note (hidden) — flight grade; SPEC parsed (2 parts); FLIGHT parsed (11 entries kept, 0 dropped, 0 demoted, 0 never counted); 7 modules, 3 drawn from the top level
+../Partforge/tests/templates/fin.scad: no textual errors or warnings. That is not a pass: nothing here was rendered or measured.
+text checks only; geometry not checked
+
+(exit 0)
+

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T16:31:27.171Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: TEMPLATES and TEMPLATES_FLIGHT evaluated from their array literals; flight templates identical to a tests/templates fixture stored as a sha256 reference",
+  "readMatchesCommitted": true,
+  "writtenSha256": "650b94c6681f27f8766449557a57df82ed5539d6d51072d54275bde744c43a17",
+  "writtenBytes": 29626
+}

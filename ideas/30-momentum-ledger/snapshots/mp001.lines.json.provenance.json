@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/research/mp001_market_pricing.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5160f88 2026-09-02T13:35:47-04:00",
+  "committedBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "readBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "sourceSha256": "e7347cc6bba62c13f37427364883e973578e62c687740995bc7b61904378b712",
+  "sourceBytes": 9033,
+  "copiedAt": "2026-10-26T16:31:08.788Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the exact text of the cited lines 37",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e81666c823689e5fb9d9e5d2b36c011623c6ef4f4fcb7376929bf137a1aeb043",
+  "writtenBytes": 540
+}
