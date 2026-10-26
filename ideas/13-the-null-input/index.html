@@ -20,7 +20,7 @@
 <main class="wrap">
   <section class="card" aria-labelledby="h-quote" id="sec-quote">
     <h2 id="h-quote">Quote-day card</h2>
-    <p class="lead">Type the vendor's price in $/kg. Until you do, this card prints no fiber number at all: the only honest value of this input today is <code>null</code>. The multiplier turns a <em>yarn</em> price into a <em>finished-tether</em> price (weaving, jackets, splices, waste); it is unsourced and defaults to 1.00.</p>
+    <p class="lead">Type the vendor's price in $/kg. Until you do, this card prints no fiber number at all: the only honest value of this input today is <code>null</code>. The multiplier turns a <em>yarn</em> price into a <em>finished-tether</em> price (weaving, jackets, splices, waste); it is unsourced and defaults to 1.00. Every fiber mass here is the Zylon PBO mass from EQ-6, so the card prices PBO quotes only: the outstanding FibrXL ask is for Dyneema SK78 (UHMWPE), and the card refuses it.</p>
     <div class="controls">
       <div class="field">
         <label for="price">Fiber price, $/kg</label>
@@ -29,6 +29,15 @@
       <div class="field">
         <label for="mult">Finished-tether multiplier</label>
         <input id="mult" type="number" min="0.01" step="0.01" value="1.00" inputmode="decimal" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="material">Fiber the quote is for</label>
+        <select id="material">
+          <option value="pbo" selected>Zylon PBO (Toyobo, Avient)</option>
+          <option value="uhmwpe">UHMWPE / Dyneema SK78 (FibrXL)</option>
+          <option value="carbon">Carbon T1100G (Toray, retired)</option>
+          <option value="other">Another fiber</option>
+        </select>
       </div>
       <button type="button" id="clear" class="secondary">Clear</button>
     </div>
@@ -87,7 +96,7 @@
 
   <section class="card" aria-labelledby="h-markers">
     <h2 id="h-markers">Markers, not defaults</h2>
-    <p class="lead">Three fiber prices already live in the Skyhook repository. None is a vendor quote; this page never uses one unless you tap it, and then says so.</p>
+    <p class="lead" id="markers-lead">Fiber prices from three sources already live in the Skyhook repository. None is a vendor quote; this page never uses one unless you tap it, and then says so.</p>
     <ul id="marker-list" class="plain"></ul>
   </section>
 

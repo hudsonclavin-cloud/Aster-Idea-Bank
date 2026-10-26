@@ -103,16 +103,21 @@ test('reconciles with the Python model: every row of the sweep in reference.json
     else assert.equal(study.single_stop_prices[f], v, `stop price ${f}`);
     compared++;
   }
-  assert.equal(study.markers.length, ref.study.markers.length);
-  for (let i = 0; i < study.markers.length; i++) {
-    assert.equal(study.markers[i].price_per_kg, ref.study.markers[i].price_per_kg);
-    for (let j = 0; j < study.markers[i].rows.length; j++) {
-      close(study.markers[i].rows[j].total_capex_M, ref.study.markers[i].rows[j].total_capex_M, 1e-9, 'marker capex');
-      assert.equal(study.markers[i].rows[j].payback_year, ref.study.markers[i].rows[j].payback_year);
-      compared++;
-    }
+  for (const [f, v] of Object.entries(ref.study.threshold_vanish_prices)) {
+    if (typeof v === 'number') close(study.threshold_vanish_prices[f], v, 1e-6, `vanish price ${f}`);
+    else assert.equal(study.threshold_vanish_prices[f], v, `vanish price ${f}`);
+    compared++;
   }
+  for (const f of Object.keys(M.INPUTS)) close(study.at_zero.conservative_thresholds[f], ref.study.at_zero.conservative_thresholds[f], 1e-6, `at_zero ${f}`);
+  assert.deepEqual(study.at_zero.baseline_singles.map((s) => [s.field, s.payback_year, s.closes]), ref.study.at_zero.baseline_singles.map((s) => [s.field, s.payback_year, s.closes]));
+  assert.equal(ref.study.markers.length, 0, 'reference.json is written with --markers - (the marker rows are summarize() at nine more prices)');
   assert.ok(compared > 350, `compared ${compared} numbers`);
+  // The marker rows: one per price in markers.json, in file order, each with the line of its own price.
+  const want = [];
+  for (const mk of markers.markers) for (const [k, v] of Object.entries(mk.prices_per_kg)) want.push([mk.id, k, v, (mk.lines_per_key || {})[k] || mk.line]);
+  assert.equal(want.length, 9);
+  assert.deepEqual(study.markers.map((r) => [r.id, r.key, r.price_per_kg, r.line]), want);
+  for (const r of study.markers) assert.deepEqual(r.rows, M.tierRows(model, ladder).map((s) => model.summarize(s, r.price_per_kg, ref.study.fiber_multiplier)));
 });
 
 test('reconciles with the Python quote card at $300/kg', () => {
@@ -154,15 +159,52 @@ test('closed forms: launch threshold slope −m/hmf, price threshold = breakeven
   assert.equal(model.relaxationThreshold(cons, 'construction_launch_per_kg', 3000, 1), null);
   for (const p of [0, 100, 300, 3000]) close(model.relaxationThreshold(cons, 'customer_price_per_kg', p, 1), model.breakevenCustomerPriceY15(cons, p, 1), 1e-6, `price thr ${p}`);
   for (const f of ['construction_launch_per_kg', 'derate_fraction', 'program_fleet_capex_M', 'catches_per_day']) {
-    const s = M.Model.setInput(cons, f, M.Model.getInput(base, f));
-    const cum15 = model.netCashFlowsM(s, 0, 1, 15).reduce((a, b) => a + b, 0);
-    const pStar = cum15 * 1000 / model.fiberMassT(s);
-    close(model.singleStopPrice(cons, base, f, 1), pStar, 1e-6, `stop ${f}`);
-    assert.ok(model.closes(s, pStar * (1 - 1e-6), 1) && !model.closes(s, pStar * (1 + 1e-6), 1), f);
+    for (const m of [1, 1.3]) {
+      const s = M.Model.setInput(cons, f, M.Model.getInput(base, f));
+      const cum15 = model.netCashFlowsM(s, 0, m, 15).reduce((a, b) => a + b, 0);
+      const pStar = cum15 * 1000 / (model.fiberMassT(s) * m);
+      close(model.singleStopPrice(cons, base, f, m), pStar, 1e-6, `stop ${f} ×${m}`);
+      assert.ok(model.closes(s, pStar * (1 - 1e-6), m) && !model.closes(s, pStar * (1 + 1e-6), m), `${f} ×${m}`);
+    }
   }
+  // a finished-tether multiplier m divides every stop price by m (p* ∝ 1/m): launch $313.82 -> $241.40 at ×1.3
+  close(model.singleStopPrice(cons, base, 'construction_launch_per_kg', 1.3), model.singleStopPrice(cons, base, 'construction_launch_per_kg', 1) / 1.3, 1e-9, 'stop ∝ 1/m');
+  assert.equal(Math.round(model.singleStopPrice(cons, base, 'construction_launch_per_kg', 1.3)), 241);
   assert.equal(Math.round(model.singleStopPrice(cons, base, 'construction_launch_per_kg', 1)), 314);
   assert.equal(Math.round(model.singleStopPrice(cons, base, 'program_fleet_capex_M', 1)), 156);
   assert.equal(model.singleStopPrice(cons, base, 'fixed_ops_M', 1), null);
+});
+
+test('the launch threshold vanishes at (L*(0) − L0/5)·hmf/m = $2,113.82/kg, exactly, not at a grid point', () => {
+  const L0 = model.relaxationThreshold(cons, 'construction_launch_per_kg', 0, 1);
+  for (const m of [1, 1.3]) {
+    const pv = model.thresholdVanishPrice(cons, 'construction_launch_per_kg', m);
+    close(pv, (L0 - cons.construction_launch_per_kg / M.MAX_STRETCH) * cons.hardware_mass_factor / m, 1e-6, `vanish ×${m}`);
+    close(model.thresholdVanishPrice(cons, 'hardware_mass_factor', m), pv, 1e-6, `hw vanish ×${m}`);
+    assert.notEqual(model.relaxationThreshold(cons, 'construction_launch_per_kg', pv * (1 - 1e-6), m), null);
+    assert.equal(model.relaxationThreshold(cons, 'construction_launch_per_kg', pv * (1 + 1e-6), m), null);
+  }
+  assert.equal(M.roundTo(model.thresholdVanishPrice(cons, 'construction_launch_per_kg', 1), 2), 2113.82);
+  assert.equal(model.thresholdVanishPrice(cons, 'fixed_ops_M', 1), null);
+  assert.equal(model.thresholdVanishPrice(cons, 'customer_price_per_kg', 1), Infinity);
+});
+
+test('refusals: other fibers, overflow; formatting stays exact above 1e21', () => {
+  assert.equal(M.materialRefusal(params, 'pbo'), null);
+  for (const k of ['uhmwpe', 'carbon', 'other']) {
+    const r = M.materialRefusal(params, k);
+    assert.equal(r.code, 'material_not_in_canon');
+    assert.match(r.what, /materials\.primary_fiber = Zylon PBO/);
+  }
+  assert.match(M.materialRefusal(params, 'uhmwpe').what, /SK78/);
+  assert.equal(M.firstNonFinite(M.quoteCard(model, ladder, 300, 1, 't')), null);
+  assert.match(M.firstNonFinite(M.quoteCard(model, ladder, 1e308, 1, 't')), /fiber_purchase_M|effective|total_capex/);
+  assert.notEqual(M.firstNonFinite(M.quoteCard(model, ladder, 300, 1e308, 't')), null);
+  const big = 6.0913e299;
+  assert.equal(M.thousands(big).replace(/,/g, ''), BigInt(big).toString());
+  assert.ok(!/e/.test(M.thousands(big)) && !/e/.test(M.fixed(big, 1)));
+  assert.equal(M.numberStr(-0), '0');
+  assert.equal(M.money(-0.4), '$0M');
 });
 
 test('rev_a.json\'s cislunar breakeven keys (686, 517) fall out of the chain', () => {

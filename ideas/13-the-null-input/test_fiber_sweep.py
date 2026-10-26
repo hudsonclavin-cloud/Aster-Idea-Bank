@@ -8,8 +8,10 @@ What is pinned to something outside this folder's own code:
     rev_a.json's mass-ratio ladder and its two cislunar breakeven keys), reproduced at fiber price 0;
   * a hand-worked purchase line (609.13 t × $300/kg = $182.74M) from EQ-6 written out in the test;
   * closed forms: the launch threshold falls by m/hardware_mass_factor $/kg per $/kg of fiber, the
-    customer-price threshold equals the Y15 breakeven price, and a single's stop price is
-    cum15(0) × 1000 / (fiber_t × m);
+    customer-price threshold equals the Y15 breakeven price, a single's stop price is
+    cum15(0) × 1000 / (fiber_t × m), and the launch threshold vanishes (no launch price within the
+    5x stretch closes the case) above (L*(0) − L0/5) × hmf / m = $2,113.82/kg;
+  * docs/outreach_log.md (snapshotted) for which fiber each outstanding vendor ask is for;
   * the saved outputs (reference.json, example.txt) against fresh runs, and the workbook itself
     (re-derived by build_data.py when the Skyhook checkout is present).
 """
@@ -288,6 +290,54 @@ class TestThresholds(Base):
         self.assertIsNone(m.single_stop_price(self.cons, self.base, "hardware_mass_factor"))
         self.assertIsNone(m.single_stop_price(self.cons, self.base, "fixed_ops_M"))
 
+    def test_threshold_vanish_price_closed_form(self):
+        """The launch threshold L*(p) = L*(0) − p·m/hmf hits the 5x floor L0/5 at p = (L*(0) − L0/5)·hmf/m = $2,113.82/kg,
+        not at $2,365 (the first point of the page's 49-point drawing grid past it, which round 1 printed). The hardware
+        factor vanishes at the same price, since both thresholds hold launch × factor fixed. Every lever's vanish price is the
+        stop price of its far end: cum15(far, 0) × 1000 / (fiber_t(far) × m)."""
+        m = self.model
+        c = self.cons
+        L0 = m.relaxation_threshold(c, "construction_launch_per_kg")
+        H0 = m.relaxation_threshold(c, "hardware_mass_factor")
+        for mult in (1.0, 1.3):
+            pv = m.threshold_vanish_price(c, "construction_launch_per_kg", mult)
+            want = (L0 - c.construction_launch_per_kg / fs.MAX_STRETCH) * c.hardware_mass_factor / mult
+            self.assertAlmostEqual(pv, want, delta=1e-6 * want, msg=f"m={mult}")
+            want_h = (H0 - c.hardware_mass_factor / fs.MAX_STRETCH) * c.construction_launch_per_kg / mult
+            self.assertAlmostEqual(m.threshold_vanish_price(c, "hardware_mass_factor", mult), want_h, delta=1e-6 * want_h)
+            self.assertAlmostEqual(want, want_h, delta=1e-6 * want)
+            self.assertIsNotNone(m.relaxation_threshold(c, "construction_launch_per_kg", pv * (1 - 1e-6), mult))
+            self.assertIsNone(m.relaxation_threshold(c, "construction_launch_per_kg", pv * (1 + 1e-6), mult))
+        self.assertEqual(round(m.threshold_vanish_price(c, "construction_launch_per_kg"), 2), 2113.82)
+        self.assertEqual(round((1674.35 - 2500 / 5) * 1.8, 1), 2113.8, "the closed form on SENSITIVITY_FINDINGS' rounded $1,674 threshold")
+        self.assertIsNotNone(m.relaxation_threshold(c, "construction_launch_per_kg", 2113.0))
+        self.assertIsNone(m.relaxation_threshold(c, "construction_launch_per_kg", 2114.0))
+        for f in fs.INPUTS:
+            far = m.set_input(c, f, m.relaxation_far(c, f))
+            pv = m.threshold_vanish_price(c, f)
+            if f == "fixed_ops_M":
+                self.assertIsNone(pv, "fixed ops at 0 does not close the case at any fiber price")
+                continue
+            p_star = sum(m.net_cash_flows_M(far, 0.0, 1.0, years=15)) * 1000 / m.fiber_mass_t(far)
+            if p_star > fs.STOP_PRICE_CAP:
+                self.assertEqual(pv, math.inf, f)
+            else:
+                self.assertAlmostEqual(pv, p_star, delta=1e-6 * p_star, msg=f)
+        study = fs.compute_study(m, self.ladder, (0.0, 300.0), 1.0, None)
+        self.assertEqual(round(study["threshold_vanish_prices"]["construction_launch_per_kg"], 2), 2113.82)
+        self.assertEqual(study["threshold_vanish_prices"]["customer_price_per_kg"], "> cap")
+        self.assertIsNone(study["threshold_vanish_prices"]["fixed_ops_M"])
+
+    def test_singles_at_zero_do_not_depend_on_the_grid(self):
+        """Round 1 labelled the first grid price's singles '$0'; at_zero is computed at $0 whatever the grid."""
+        m = self.model
+        study = fs.compute_study(m, self.ladder, (300.0, 1000.0), 1.0, None)
+        at0 = {sg["field"]: sg for sg in study["at_zero"]["baseline_singles"]}
+        self.assertTrue(at0["program_fleet_capex_M"]["closes"])
+        self.assertEqual(at0["program_fleet_capex_M"]["payback_year"], 15)
+        self.assertEqual(study["at_zero"]["baseline_singles"], m.baseline_singles(self.cons, self.base, 0.0))
+        self.assertEqual(study["at_zero"]["conservative_thresholds"], m.thresholds(self.cons, 0.0))
+
     def test_singles_at_300(self):
         m = self.model
         singles = {s["field"]: s for s in m.baseline_singles(self.cons, self.base, 300.0)}
@@ -350,14 +400,86 @@ class TestCLI(unittest.TestCase):
         self.assertIn("QUOTE CARD: not printed", r.stdout)
         self.assertNotIn("QUOTE-DAY CARD", r.stdout)
         self.assertIn("stops closing at $314/kg", r.stdout)
+        self.assertIn("launch $2,114", r.stdout)
+        self.assertNotIn("2,365", r.stdout)
         self.assertIn("MARKERS", r.stdout)
         self.assertIn("mp001_market_pricing.md:24", r.stdout)
 
     def test_bad_arguments(self):
-        for args in (["--quote", "abc"], ["--quote", "-5"], ["--quote", "nan"], ["--multiplier", "0", "--quote", "300"],
-                     ["--prices", "-1,5"]):
+        for args in (["--quote", "abc"], ["--quote", "-5"], ["--quote", "nan"], ["--quote", "inf"], ["--multiplier", "0", "--quote", "300"],
+                     ["--multiplier", "nan"], ["--prices", "-1,5"], ["--prices", "nan"], ["--prices", "inf"], ["--prices", "300,abc"]):
             r = run(*args, "--no-sweep")
             self.assertEqual(r.returncode, 2, args)
+            self.assertNotIn("Traceback", r.stderr, args)
+
+    def test_overflowing_inputs_are_refused_not_crashed(self):
+        """1e308 $/kg (or a 1e308 multiplier) overflows price × fiber kg to infinity: refused with exit 2, never 'inf' or a traceback."""
+        for args in (["--quote", "1e308", "--no-sweep"], ["--multiplier", "1e308", "--quote", "300", "--no-sweep"],
+                     ["--prices", "0,1e308"], ["--multiplier", "1e308"]):
+            r = run(*args)
+            self.assertEqual(r.returncode, 2, args)
+            self.assertIn("invalid_input", r.stderr, args)
+            self.assertNotIn("Traceback", r.stderr, args)
+            self.assertNotRegex(r.stdout, r"\b(inf|nan|Infinity|NaN)\b", args)
+            self.assertNotIn("adds $", r.stdout, args)
+        r = run("--json", "--quote", "1e308")
+        self.assertEqual(r.returncode, 2)
+        self.assertNotIn("Infinity", r.stdout)
+        d = json.loads(r.stdout)
+        self.assertIsNone(d["quote_card"])
+        self.assertEqual(d["refusal"]["code"], "invalid_input")
+
+    def test_minus_zero_is_zero(self):
+        r = run("--quote", "-0", "--no-sweep")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("economics.fiber_cost_per_kg = 0 and", r.stdout)
+        self.assertNotIn("-0", r.stdout.split("QUOTE-DAY CARD")[1].split("\n")[0])
+        self.assertEqual(fs.parse_prices("-0,300"), (0.0, 300.0))
+        self.assertEqual(math.copysign(1.0, fs.parse_prices("-0")[0]), 1.0)
+
+    def test_markers_can_be_omitted_or_refused(self):
+        for empty in ("", "-"):
+            r = run("--markers", empty)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertNotIn("MARKERS", r.stdout)
+            self.assertIn("SWEEP", r.stdout)
+        with tempfile.TemporaryDirectory() as td:
+            for bad in (td, str(Path(td) / "missing.json")):
+                r = run("--markers", bad, "--no-sweep")
+                self.assertEqual(r.returncode, 2, bad)
+                self.assertIn("cannot read inputs", r.stderr)
+                self.assertNotIn("Traceback", r.stderr)
+            p = Path(td) / "m.json"
+            p.write_text(json.dumps({"markers": [{"id": "x", "label": "x", "file": "f", "line": 1, "status": "s",
+                                                  "prices_per_kg": {"k": float("nan")}}]}), encoding="utf-8")
+            r = run("--markers", str(p))
+            self.assertEqual(r.returncode, 2)
+            self.assertIn("not a finite", r.stderr)
+
+    def test_singles_section_is_at_zero_whatever_the_grid(self):
+        r = run("--prices", "300,1000")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        sec = r.stdout.split("BASELINE-VALUE SINGLES")[1].split("MARKERS")[0]
+        line = next(l for l in sec.splitlines() if l.strip().startswith("Program+fleet capex"))
+        self.assertIn("Y15 at $0", line)
+        self.assertIn("stops closing at $156/kg", line)
+        self.assertNotIn("does not close at $0", line)
+
+    def test_card_names_the_material_and_refuses_other_fibers(self):
+        r = run("--quote", "300", "--no-sweep")
+        self.assertIn("material: Zylon PBO, priced against its EQ-6 mass (σ 5.8 GPa, ρ 1,560 kg/m³, SF 2.5)", r.stdout)
+        for mat in ("uhmwpe", "carbon", "other"):
+            r = run("--quote", "300", "--material", mat)
+            self.assertEqual(r.returncode, 2, mat)
+            self.assertIn("refused (material_not_in_canon)", r.stderr)
+            self.assertIn("materials.primary_fiber = Zylon PBO", r.stderr)
+            self.assertNotIn("adds $", r.stdout)
+            self.assertNotIn("SWEEP", r.stdout)
+            self.assertIn("gate: 19 of 19", r.stdout)
+        d = json.loads(run("--json", "--quote", "300", "--material", "uhmwpe").stdout)
+        self.assertEqual(d["refusal"]["code"], "material_not_in_canon")
+        self.assertIsNone(d["quote_card"])
+        self.assertIsNone(d["study"])
 
     def test_output_is_byte_identical_across_runs(self):
         a, b = run("--quote", "300"), run("--quote", "300")
@@ -374,7 +496,9 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(len(d["study"]["sweep"]), 7)
         self.assertEqual([step["fiber_price_per_kg"] for step in d["study"]["sweep"]], [0, 10, 30, 100, 300, 1000, 3000])
         self.assertEqual(len(d["study"]["sweep"][0]["rows"]), 5)
-        self.assertEqual(len(d["study"]["markers"]), 5)
+        self.assertEqual(len(d["study"]["markers"]), 9)
+        self.assertEqual(round(d["study"]["threshold_vanish_prices"]["construction_launch_per_kg"], 2), 2113.82)
+        self.assertEqual(d["quote_card"]["material"]["name"], "Zylon PBO")
         self.assertEqual(d["quote_card"]["rev_a_key_to_fill"], "economics.fiber_cost_per_kg")
         self.assertIsNone(d["refusal"])
         r2 = run("--json", "--quote")
@@ -382,11 +506,18 @@ class TestCLI(unittest.TestCase):
         d2 = json.loads(r2.stdout)
         self.assertIsNone(d2["quote_card"])
         self.assertIn("null", d2["refusal"]["what"])
+        self.assertEqual(d2["refusal"]["code"], "null_input")
 
     def test_reference_json_is_current(self):
-        """reference.json (the fixture model.test.mjs reconciles the JS port against) equals a fresh run."""
-        r = run("--json", "--quote", "300")
-        self.assertEqual(r.stdout, (HERE / "reference.json").read_text(encoding="utf-8"))
+        """reference.json (the fixture model.test.mjs reconciles the JS port against) holds exactly what a fresh
+        `--json --quote 300 --markers -` prints, stored without indentation to save space: parsed, every value is
+        equal (floats compare exactly, since json round-trips them). The marker rows are left out: they are the
+        same summarize() at nine more prices, and the sweep's 35 rows already reconcile it."""
+        r = run("--json", "--quote", "300", "--markers", "-")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        saved = (HERE / "reference.json").read_text(encoding="utf-8")
+        self.assertEqual(json.loads(r.stdout), json.loads(saved))
+        self.assertEqual(saved, json.dumps(json.loads(r.stdout), sort_keys=True, separators=(",", ":")) + "\n")
 
     def test_gate_failure_exits_2_before_any_sweep(self):
         ladder = json.loads((SNAP / "ladder.json").read_text(encoding="utf-8"))
@@ -449,15 +580,39 @@ class TestData(Base):
         self.assertEqual(self.mp001.splitlines()[mp["line"] - 1], mp["text"])
         self.assertIn("not** a Toyobo quote", mp["text"])
         ids = {m["id"]: m for m in markers}
-        self.assertEqual(ids["inspace_fork_surface_placeholder"]["prices_per_kg"], {"placeholder": 1000.0})
-        self.assertEqual(ids["stress_test_sim_default"]["prices_per_kg"], {"default": 250.0})
+        self.assertEqual(len(markers), 3, "three sources")
+        self.assertEqual(sum(len(m["prices_per_kg"]) for m in markers), 9)
+        self.assertEqual(ids["inspace_fork_bracket"]["prices_per_kg"],
+                         {"bracket low": 200.0, "bracket mid": 500.0, "bracket high / surface": 1000.0})
+        self.assertEqual(ids["inspace_fork_bracket"]["texts"],
+                         ["FIBER_PRICE_BRACKET_PER_KG = (200.0, 500.0, 1000.0)", "SURFACE_FIBER_PRICE_PER_KG = 1000.0"])
+        self.assertEqual(ids["stress_test_sim_prices"]["prices_per_kg"], {"cons. preset": 400.0, "default": 250.0, "opt. preset": 150.0})
+        self.assertEqual(ids["stress_test_sim_prices"]["lines_per_key"], {"cons. preset": 325, "default": 54, "opt. preset": 327})
+        self.assertIn("[Speculative]", ids["stress_test_sim_prices"]["text"])
         self.assertEqual(fs.PUBLISHED["cislunar"]["construction_launch_break_even_for_500_per_kg_customer_price"], 686)
 
     def test_markers_are_never_defaults(self):
         self.assertEqual(fs.DEFAULT_PRICES[0], 0.0)
         src = (HERE / "fiber_sweep.py").read_text(encoding="utf-8")
-        self.assertNotRegex(src, r"default\s*=\s*(300|259|170|250|1000)\b")
+        self.assertNotRegex(src, r"default\s*=\s*(300|259|170|250|1000|400|150|200|500)\b")
         self.assertIsNone(fs.build_parser().get_default("quote"))
+
+    def test_outreach_log_says_which_fiber_each_ask_is_for(self):
+        """The card's material line and --material rest on docs/outreach_log.md @ 34935cb: the July asks (Toyobo and Avient,
+        Zylon PBO, a 1 t / 100 t / 600 t ladder; Toray, T1100G, '1t qualification') and the 31-Aug reconciliation (Toyobo
+        second touch; FibrXL asked about Dyneema SK78, UHMWPE not PBO; Toray retired)."""
+        log = (SNAP / "outreach_log.md").read_text(encoding="utf-8").splitlines()
+        self.assertIn("Toyobo (Zylon PBO), web form — second touch", log[10])
+        self.assertIn("FibrXL (Dyneema SK78)", log[11])
+        self.assertIn("(UHMWPE, not PBO)", log[11])
+        self.assertIn("Toray (T1100G carbon) dropped", log[16])
+        self.assertIn("Reclassify as retired, not pending", log[16])
+        self.assertTrue(log[26].startswith("| 2026-07-02 | Toyobo USA") and "1t/100t/600t ladder" in log[26])
+        self.assertTrue(log[27].startswith("| 2026-07-02 | Avient") and "1t/100t/600t ladder" in log[27])
+        self.assertTrue(log[28].startswith("| 2026-07-02 | Toray") and "1t qualification" in log[28] and "ladder" not in log[28])
+        self.assertEqual(self.params["materials"]["primary_fiber"], "Zylon PBO")
+        self.assertIn("SK78", fs.MATERIALS["uhmwpe"])
+        self.assertIn("retired", fs.MATERIALS["carbon"])
 
     def test_every_snapshot_has_a_sidecar_at_the_commit(self):
         for f in SNAP.iterdir():

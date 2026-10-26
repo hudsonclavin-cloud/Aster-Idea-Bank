@@ -14,12 +14,17 @@ What it writes, and from what:
                           The row map is the one finance/skyhook_finance.py uses (_LADDER_ROWS, rows
                           3-16, columns B/C/D), copied here with the same key names so a reader can
                           diff them. Column A's label and column E's "Source / note" are kept per row.
-  snapshots/markers.json  Three fiber prices the repository already carries that are NOT a quote and
-                          are NEVER used as a default here: the MP-001 Zylon marketplace proxy
-                          (docs/research/mp001_market_pricing.md, the table row beginning
-                          "| Zylon (PBO) marketplace proxy"), finance/inspace_fork.py's
-                          SURFACE_FIBER_PRICE_PER_KG, and tools/sims/skyhook_no_leo_stress_test.jsx's
-                          fiberPriceKg. Each marker records file, line, the matched text and the commit.
+  snapshots/markers.json  The fiber prices the repository already carries, none a quote and none
+                          EVER used as a default here, from three sources: the MP-001 Zylon
+                          marketplace proxy (docs/research/mp001_market_pricing.md, the table row
+                          beginning "| Zylon (PBO) marketplace proxy": 300 / 259 / 170),
+                          finance/inspace_fork.py's FIBER_PRICE_BRACKET_PER_KG and
+                          SURFACE_FIBER_PRICE_PER_KG (200 / 500 / 1,000), and
+                          tools/sims/skyhook_no_leo_stress_test.jsx's fiberPriceKg default and its
+                          conservative / optimistic presets (250; 400 / 150). Each marker records
+                          file, the line of each price, the matched text and the commit.
+                          (params/service_mxer_draft.json:34-39 repeats the inspace_fork bracket as
+                          that script's written output; it is not a separate source.)
   data.js                 The page's data: the two snapshots above, the rev_a.json excerpt
                           (snapshots/rev_a.excerpt.json, made with the bank's snapshot.mjs), the
                           published anchors fiber_sweep.py gates on, and every sidecar's commit and
@@ -182,6 +187,7 @@ def derive_markers(repo: Path) -> dict:
     markers.append({
         "id": "mp001_marketplace_proxy",
         "label": "MP-001 Zylon (PBO) marketplace proxy",
+        "short": "MP-001",
         "prices_per_kg": {"conservative": float(cols[1]), "baseline": float(cols[2]), "optimistic": float(cols[3])},
         "unit": cols[4],
         "source_class": cols[5],
@@ -191,27 +197,48 @@ def derive_markers(repo: Path) -> dict:
     })
 
     p = "finance/inspace_fork.py"
-    n, line = find_line((repo / p).read_text(encoding="utf-8"), r"^SURFACE_FIBER_PRICE_PER_KG\s*=")
+    text = (repo / p).read_text(encoding="utf-8")
+    nb, bline = find_line(text, r"^FIBER_PRICE_BRACKET_PER_KG\s*=")
+    bracket = [float(x) for x in re.findall(r"[\d.]+", bline.split("=", 1)[1])]
+    if len(bracket) != 3:
+        raise ValueError(f"{p}:{nb} does not hold a three-price bracket: {bline!r}")
+    ns, sline = find_line(text, r"^SURFACE_FIBER_PRICE_PER_KG\s*=")
+    surface = float(sline.split("=")[1].strip().split()[0])
+    if surface != bracket[2]:
+        raise ValueError(f"{p}: the surface placeholder {surface} is no longer the bracket's top {bracket[2]}; re-key the marker")
     markers.append({
-        "id": "inspace_fork_surface_placeholder",
-        "label": "inspace_fork.py SURFACE_FIBER_PRICE_PER_KG",
-        "prices_per_kg": {"placeholder": float(line.split("=")[1].strip().split()[0])},
-        "file": p, "line": n, "text": line.strip(), "commit": commit,
-        "status": "placeholder for the DRAFT, non-canonical MXER in-space fork's v2 surface, used there only when rev_a economics.fiber_cost_per_kg is null (require_non_null); flagged 'no vendor quote' in its own findings; a marker, never a default",
+        "id": "inspace_fork_bracket",
+        "label": "inspace_fork.py fiber-price bracket",
+        "short": "inspace_fork",
+        "prices_per_kg": {"bracket low": bracket[0], "bracket mid": bracket[1], "bracket high / surface": surface},
+        "lines_per_key": {"bracket low": nb, "bracket mid": nb, "bracket high / surface": ns},
+        "file": p, "line": nb, "text": bline.strip(), "commit": commit,
+        "texts": [bline.strip(), sline.strip()],
+        "status": "the DRAFT, non-canonical MXER in-space fork's explicit fiber-price bracket and the placeholder its v2 surface uses "
+                  "because rev_a economics.fiber_cost_per_kg is null (require_non_null), flagged 'no vendor quote' in its own output; "
+                  "params/service_mxer_draft.json capex_inputs carries the same bracket as that fork's written result; markers, never defaults",
     })
 
     p = "tools/sims/skyhook_no_leo_stress_test.jsx"
-    n, line = find_line((repo / p).read_text(encoding="utf-8"), r"^\s*fiberPriceKg:\s*\d")
-    m = re.search(r"fiberPriceKg:\s*([\d.]+)", line)
+    text = (repo / p).read_text(encoding="utf-8")
+    n, line = find_line(text, r"^\s*fiberPriceKg:\s*\d")
+    nc, cline = find_line(text, r'preset === "conservative".*fiberPriceKg:\s*\d')
+    no, oline = find_line(text, r'preset === "optimistic".*fiberPriceKg:\s*\d')
+    val = lambda ln: float(re.search(r"fiberPriceKg:\s*([\d.]+)", ln).group(1))  # noqa: E731
     markers.append({
-        "id": "stress_test_sim_default",
+        "id": "stress_test_sim_prices",
         "label": "skyhook_no_leo_stress_test.jsx fiberPriceKg",
-        "prices_per_kg": {"default": float(m.group(1))},
+        "short": "stress-test sim",
+        "prices_per_kg": {"cons. preset": val(cline), "default": val(line), "opt. preset": val(oline)},
+        "lines_per_key": {"cons. preset": nc, "default": n, "opt. preset": no},
         "file": p, "line": n, "text": line.strip(), "commit": commit,
-        "status": "the React strategy simulator's hardcoded slider default, labelled [Speculative] 'needs quote' on its own line; a marker, never a default here",
+        "texts": [line.strip(), cline.strip(), oline.strip()],
+        "status": "the React strategy simulator's slider default, labelled [Speculative] 'needs quote' on its own line, and its "
+                  "conservative and optimistic preset values; fiberCost_M is never read (README finding 1), so none of them "
+                  "changes what the simulator reports; markers, never defaults here",
     })
     return {"_meta": {"commit": commit, "derived_by": "ideas/13-the-null-input/build_data.py",
-                      "note": "fiber prices the repository already carries; none is a vendor quote and none is used as a default by fiber_sweep.py or the page"},
+                      "note": "fiber prices the repository already carries, from three sources; none is a vendor quote and none is used as a default by fiber_sweep.py or the page"},
             "markers": markers}
 
 
@@ -253,6 +280,7 @@ def build_page_data() -> tuple[str, list[str]]:
             "SENSITIVITY_FINDINGS.md": sidecar_summary(SNAP / "SENSITIVITY_FINDINGS.md"),
             "DECISION_LOG.md": sidecar_summary(SNAP / "DECISION_LOG.md"),
             "mp001_market_pricing.md": sidecar_summary(SNAP / "mp001_market_pricing.md"),
+            "outreach_log.md": sidecar_summary(SNAP / "outreach_log.md"),
         },
         "snapshot_sha256": {
             "rev_a.excerpt.json": sha256((SNAP / "rev_a.excerpt.json").read_bytes()),
@@ -261,7 +289,7 @@ def build_page_data() -> tuple[str, list[str]]:
         },
     }
     missing = [k for k, v in data["provenance"].items() if v is None]
-    body = json.dumps(data, indent=1, ensure_ascii=False, sort_keys=True)
+    body = json.dumps(data, indent=1, ensure_ascii=False)  # file order kept, as the CLI reads it
     return ("// Generated by build_data.py from the snapshots in ./snapshots (do not edit by hand).\n"
             "// Classic script so index.html works from file://; the page computes everything from this with model.js.\n"
             f"window.NullInputData = {body};\n"), missing

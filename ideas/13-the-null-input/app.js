@@ -28,7 +28,9 @@
   $('meta').innerHTML = '';
   $('meta').append('rev_a.json economics.fiber_cost_per_kg = ');
   $('meta').append(el('b', null, JSON.stringify(fc)));
-  $('meta').append(` · "${D.rev_a.economics._fiber_cost_note || ''}" · snapshots @ ${commit} · ladder: workbook Assumptions rows 3–16 · V_c ${model.Vc_kms.toFixed(4)} km/s · v_orb ${model.v_orb_kms.toFixed(4)} km/s`);
+  const mat = D.rev_a.materials;
+  const materialText = `${mat.primary_fiber}, priced against its EQ-6 mass (σ ${mat.tensile_strength_GPa} GPa, ρ ${M.thousands(mat.density_kgm3)} kg/m³, SF ${mat.safety_factor}); a quote for another fiber does not apply`;
+  $('meta').append(` · "${D.rev_a.economics._fiber_cost_note || ''}" · snapshots @ ${commit} · ladder: workbook Assumptions rows 3–16 · fiber masses: ${mat.primary_fiber} EQ-6 · V_c ${model.Vc_kms.toFixed(4)} km/s · v_orb ${model.v_orb_kms.toFixed(4)} km/s`);
 
   // ── gate ──────────────────────────────────────────────────────────────────────────────────
   const gate = M.runGate(model, ladder, D.published);
@@ -104,7 +106,14 @@
       for (const f of fields) row.append(el('td', { class: 'num' }, M.thrStr(f, step.conservative_thresholds[f])));
       tb.append(row);
     }
+    const vanishStr = (f) => {
+      const v = study.threshold_vanish_prices[f];
+      if (v === null) return `${M.SHORT[f]} never`;
+      if (v === '> cap') return `${M.SHORT[f]} beyond $${M.thousands(study.single_stop_cap_per_kg)}`;
+      return `${M.SHORT[f]} $${M.thousands(v)}`;
+    };
     $('thresholds-note').textContent = 'conservative values: ' + fields.map((f) => `${M.SHORT[f]} ${M.thrStr(f, M.Model.getInput(cons, f))}`).join(', ')
+      + '. "cannot" from this fiber price up (exact, by bisection on price, not read off the grid): ' + fields.map(vanishStr).join(', ')
       + `. "cannot" = no value within a 5× stretch, or none physical, closes the case. The launch threshold falls by multiplier ÷ hardware mass factor (${(1 / cons.hardware_mass_factor).toFixed(3)} $/kg per $/kg of fiber at ×1.00); a hardware factor below the optimistic 1.4× is implausible and below 1.0× unphysical, printed as the arithmetic says.`;
   }
 
@@ -121,16 +130,26 @@
   const relaxFields = Object.keys(M.INPUTS).filter((f) => f !== 'fixed_ops_M');
   const relaxGrid = [0];
   for (let i = 0; i <= 48; i++) relaxGrid.push(PMIN * Math.pow(PMAX / PMIN, i / 48));
+  // Each series ends at the exact fiber price above which the lever alone cannot close the case
+  // (study.threshold_vanish_prices, a bisection on price), not at the next point of the drawing grid.
   const relaxSeries = relaxFields.map((f) => {
     const v0 = M.Model.getInput(cons, f);
-    const pts = [];
-    let cannotPast = null;
-    for (const p of relaxGrid) {
+    const vanish = study.threshold_vanish_prices[f];
+    const pv = typeof vanish === 'number' ? vanish : null;
+    const relax = (p) => {
       const thr = model.relaxationThreshold(cons, f, p, 1.0);
-      if (thr === null) { cannotPast = p; break; }
-      pts.push([p, Math.abs(thr - v0) / v0 * 100]);
+      return thr === null ? null : Math.abs(thr - v0) / v0 * 100;
+    };
+    const pts = [];
+    for (const p of relaxGrid) {
+      if (pv !== null && p >= pv) break;
+      const r = relax(p);
+      if (r === null) break;
+      pts.push([p, r]);
     }
-    return { field: f, pts, cannotPast };
+    const ends = pv !== null && pv <= PMAX;
+    if (ends && relax(pv) !== null) pts.push([pv, relax(pv)]);
+    return { field: f, pts, vanish, cannotAbove: ends ? pv : null };
   });
 
   function drawRelax() {
@@ -165,8 +184,8 @@
     for (const mk of markerPrices) svg.append(svgEl('line', { x1: xOf(mk.p), x2: xOf(mk.p), y1: y1, y2: y0, class: 'marker' }));
     relaxSeries.forEach((s, i) => {
       const d = s.pts.filter((q) => q[1] <= YMAX).map((q, k) => `${k ? 'L' : 'M'}${xOf(q[0]).toFixed(1)},${yOf(q[1]).toFixed(1)}`).join('');
-      svg.append(svgEl('path', { d, class: `series s${i + 1}`, 'data-field': s.field }));
-      if (s.cannotPast !== null) {
+      svg.append(svgEl('path', { d, class: `series s${i + 1}`, 'data-field': s.field, 'data-end': s.pts.length ? s.pts[s.pts.length - 1][0] : '' }));
+      if (s.cannotAbove !== null) {
         const last = s.pts[s.pts.length - 1];
         svg.append(svgEl('text', { x: Math.min(xOf(last[0]) + 4, x1 - 40), y: yOf(last[1]) - 4, class: 'lbl soft' }, 'cannot →'));
       }
@@ -176,14 +195,17 @@
     relaxSeries.forEach((s, i) => {
       const li = el('li');
       li.append(el('span', { class: 'sw', style: `--c: var(${SERIES_COLOURS[i]})`, 'aria-hidden': 'true' }));
-      li.append(M.INPUTS[s.field][0]);
-      if (s.cannotPast !== null) li.append(' ', el('span', { class: 'note' }, `(cannot close past $${M.thousands(s.cannotPast)}/kg)`));
+      const lab = el('span', null, M.INPUTS[s.field][0]);
+      if (typeof s.vanish === 'number') lab.append(' ', el('span', { class: 'note' }, `(cannot close above $${M.thousands(s.vanish)}/kg)`));
+      else if (s.vanish === '> cap') lab.append(' ', el('span', { class: 'note' }, `(can still close at $${M.thousands(study.single_stop_cap_per_kg)}/kg)`));
+      li.append(lab);
       legend.append(li);
     });
-    const t0 = study.sweep[0].conservative_thresholds;
+    const t0 = study.at_zero.conservative_thresholds;
     const t300 = study.sweep.find((st) => st.fiber_price_per_kg === 300);
     $('chart-relax-caption').textContent = `At $0/kg the cheapest fixes are price (+${(Math.abs(t0.customer_price_per_kg / cons.customer_price_per_kg - 1) * 100).toFixed(1)}%) and cadence (+${(Math.abs(t0.catches_per_day / cons.catches_per_day - 1) * 100).toFixed(1)}%), as SENSITIVITY_FINDINGS says; construction launch must fall ${(Math.abs(t0.construction_launch_per_kg / cons.construction_launch_per_kg - 1) * 100).toFixed(0)}% to $${M.thousands(t0.construction_launch_per_kg)}`
-      + (t300 ? `, and at $300/kg of fiber it must fall to $${M.thousands(t300.conservative_thresholds.construction_launch_per_kg)}.` : '.');
+      + (t300 ? `, and at $300/kg of fiber it must fall to $${M.thousands(t300.conservative_thresholds.construction_launch_per_kg)}.` : '.')
+      + ' The construction-launch and hardware-factor lines coincide: both thresholds hold launch price × hardware factor fixed.';
   }
 
   function drawSingles() {
@@ -191,7 +213,7 @@
     clear(svg);
     const W = chartWidth(svg);
     const narrow = W < 560;
-    const singles = study.sweep[0].baseline_singles;
+    const singles = study.at_zero.baseline_singles;
     const ROW = 46;
     const T = 8; const B = 40; const L = 12; const R = 12;
     const H = T + singles.length * ROW + B;
@@ -240,16 +262,19 @@
     for (const mk of D.markers.markers) {
       const li = el('li');
       li.append(el('b', null, mk.label), ': ');
-      li.append(Object.entries(mk.prices_per_kg).map(([k, v]) => `${k} ${M.priceStr(v)}/kg`).join(', '));
-      li.append(` — ${mk.file}:${mk.line} @ ${mk.commit.slice(0, 7)}. `);
+      const lines = mk.lines_per_key || {};
+      li.append(Object.entries(mk.prices_per_kg).map(([k, v]) => `${k} ${M.priceStr(v)}/kg (:${k in lines ? lines[k] : mk.line})`).join(', '));
+      li.append(` — ${mk.file} @ ${mk.commit.slice(0, 7)}. `);
       li.append(el('span', { class: 'small' }, mk.status));
       ul.append(li);
     }
+    const nPrices = D.markers.markers.reduce((n, mk) => n + Object.keys(mk.prices_per_kg).length, 0);
+    $('markers-lead').textContent = `${nPrices} fiber prices from ${D.markers.markers.length} sources already live in the Skyhook repository. None is a vendor quote; this page never uses one unless you tap it, and then says so.`;
     const chips = $('chips');
     for (const mk of D.markers.markers) {
       for (const [key, v] of Object.entries(mk.prices_per_kg)) {
         const b = el('button', { type: 'button', class: 'chip', 'data-price': v, 'data-label': `${mk.label} (${key}) — not a quote` });
-        b.append(`${mk.label.split(' ')[0]} ${key} `, el('b', null, `$${M.thousands(v)}`));
+        b.append(`${mk.short || mk.label.split(' ')[0]} ${key} `, el('b', null, `$${M.thousands(v)}`));
         b.addEventListener('click', () => {
           $('price').value = String(v);
           markerNote = `${mk.label} (${key}): ${mk.status}`;
@@ -277,14 +302,19 @@
   function update() {
     const raw = $('price').value.trim();
     const mraw = $('mult').value.trim();
-    const mult = Number(mraw);
+    const mult = Number(mraw) + 0;
+    const mr = M.materialRefusal(D.rev_a, $('material').value);
+    if (mr) {
+      showRefusal(mr.code, `${mr.what}.`, mr.what_would_help);
+      return;
+    }
     if (raw === '') {
       const r = M.refusal(D.rev_a);
       showRefusal(r.code, `${r.what}. The file's own note: "${r.note}".`, r.what_would_help);
       markerNote = null;
       return;
     }
-    const price = Number(raw);
+    const price = Number(raw) + 0; // + 0 turns -0 into 0
     if (!Number.isFinite(price) || price < 0) {
       showRefusal('invalid_input', `"${raw}" is not a finite, non-negative $/kg.`, 'a vendor price in $/kg, for example 300.');
       return;
@@ -296,10 +326,16 @@
     $('refusal').innerHTML = '';
     const source = markerNote ? `marker, not a quote — ${markerNote}` : (urlPrice !== null && String(urlPrice) === raw && !touched ? 'the page URL (not a quote)' : 'typed on this page (rev_a.json economics.fiber_cost_per_kg is still null)');
     const card = M.quoteCard(model, ladder, price, mult, source);
+    const bad = M.firstNonFinite(card);
+    if (bad) {
+      showRefusal('invalid_input', `a computed value is not finite (${bad}): price × multiplier × fiber mass overflows a double.`, 'a $/kg and a multiplier of the size a vendor quote has.');
+      return;
+    }
     const box = $('card');
     box.innerHTML = '';
     box.append(el('h3', null, `QUOTE-DAY CARD — fiber at ${M.priceStr(price)}/kg × ${mult.toFixed(2)} (finished-tether multiplier, unsourced) = ${M.priceStr(price * mult)}/kg of tether mass`));
     box.append(el('p', { class: `src${markerNote ? ' marker' : ''}`, id: 'card-source' }, `price source: ${source}`));
+    box.append(el('p', { class: 'src', id: 'card-material' }, `material: ${materialText}`));
     for (const r of card.rows) {
       const b = r.before; const a = r.after;
       const line = el('p', { class: 'rowline' });
@@ -317,7 +353,7 @@
     sg.append(card.baseline_singles_after.map((s) => `${M.SHORT[s.field]} -> ${M.thrStr(s.field, s.baseline_value)} ${s.closes ? 'closes' : 'does not close'} (${M.pbStr(s.payback_year)})`).join('; '));
     box.append(sg);
     const fill = el('p', { class: 'fill' });
-    fill.append('To fill: ', el('code', null, `rev_a.json ${card.rev_a_key_to_fill} = ${price}`), ` and ${card.rev_a_note_key} with vendor, date, currency, yarn-or-finished-rope, MOQ; then finance/skyhook_finance.py needs this purchase line (it has none) and the workbook's Assumptions sheet a row for it.`);
+    fill.append('To fill: ', el('code', null, `rev_a.json ${card.rev_a_key_to_fill} = ${M.numberStr(price)}`), ` and ${card.rev_a_note_key} with vendor, date, currency, yarn-or-finished-rope, MOQ; then finance/skyhook_finance.py needs this purchase line (it has none) and the workbook's Assumptions sheet a row for it.`);
     box.append(fill);
     box.append(el('p', { class: 'small' }, '* beyond the 15-year window, extrapolated; option-tier rows are the partial tier model: only tip speed is tier-specific.'));
     box.hidden = false;
@@ -330,6 +366,7 @@
   if (q.has('m') && q.get('m') !== '') $('mult').value = q.get('m');
   $('price').addEventListener('input', () => { touched = true; markerNote = null; update(); });
   $('mult').addEventListener('input', () => { touched = true; update(); });
-  $('clear').addEventListener('click', () => { $('price').value = ''; $('mult').value = '1.00'; markerNote = null; touched = true; update(); $('price').focus(); });
+  $('material').addEventListener('change', () => { update(); });
+  $('clear').addEventListener('click', () => { $('price').value = ''; $('mult').value = '1.00'; $('material').value = 'pbo'; markerNote = null; touched = true; update(); $('price').focus(); });
   update();
 })();
