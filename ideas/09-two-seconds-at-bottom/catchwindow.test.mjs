@@ -5,7 +5,8 @@
 // from the physics-module snapshot; the canon's stated tip accelerations, ground-relative speeds,
 // rotation period and release speed; the twin's golden t = 0 state (r = 6661 km, 5056.311 m/s);
 // hand-worked closed forms computed here from the raw constants without calling the kernel; and an
-// exact two-body integration of the same scene. README › Tests lists what each sabotage breaks.
+// exact two-body integration of the same scene; and the twin's golden run against the libration
+// model. README › Tests lists what each sabotage breaks.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -93,7 +94,7 @@ test('reproduces the canon’s stated tip accelerations, ground-relative speeds,
     const decimals = String(stated).includes('.') ? String(stated).split('.')[1].length : 0;
     assert.equal(Number(g.toFixed(decimals)), stated, `${r.key} tip acceleration ${g} rounds to the file’s ${stated}`);
     if (r.stated.groundrelKms !== null) {
-      assert.equal(Number((r.kin.groundTrack.speed / 1e3).toFixed(2)), r.stated.groundrelKms, `${r.key} ground-relative speed`);
+      assert.equal(Number((r.kin.eq3a.speed / 1e3).toFixed(2)), r.stated.groundrelKms, `${r.key} ground-relative speed (EQ-3a)`);
     }
   }
   assert.equal(Number(ref.kin.periodMin.toFixed(1)), REV.geometry.rotation_period_min, 'rotation period 13.4 min');
@@ -131,7 +132,7 @@ test('two Earth radii in the canon change a_rel by less than 0.02 % (this deposi
   assert.equal(Number((alt.kin.vOrb / 1e3).toFixed(2)), REV.orbital.v_orb_kms);
   assert.equal(Number((ref.kin.vOrb / 1e3).toFixed(2)), 7.56);
   // both round the reference ground-relative speed to the file's 4.59
-  assert.equal(Number((alt.kin.groundTrack.speed / 1e3).toFixed(2)), REV.kinematics.v_lower_tip_groundrel_kms);
+  assert.equal(Number((alt.kin.eq3a.speed / 1e3).toFixed(2)), REV.kinematics.v_lower_tip_groundrel_kms);
 });
 
 // ------------------------------------------------------------------ hand-worked closed forms
@@ -147,6 +148,9 @@ test('a_rel at Rev A is the hand-worked sum v^2/L - mu/R^2 + mu/(R-L)^2, 20.34 m
   within(ref.kin.gTip, 8.9838, 1e-4, 'g at the tip, mu / (6661 km)^2');
   within(ref.kin.aRel, 20.34, 0.005, 'a_rel 20.34 to two decimals');
   within(ref.kin.aRelG, 2.07, 0.005, '2.07 g');
+  // g is the module's G_STD exactly, not a retyped 9.81
+  assert.equal(ref.kin.aRelG, ref.kin.aRel / CANON.physicsModule.G_STD.value, 'aRelG = aRel / G_STD');
+  assert.equal(ref.kin.aCentripetalG, ref.kin.aCentripetal / CANON.physicsModule.G_STD.value, 'aCentripetalG = v^2/L / G_STD');
   // the proposal's 20.3 (judges recomputed 20.34) within 0.1 %
   close(ref.kin.aRel, 20.34, 1e-3, 'proposal figure');
   // the tip itself accelerates outward at omega^2 L - g_hub, and the gradient term is ~0.80
@@ -190,7 +194,15 @@ test('held window: 2.07 g for the whole window, 61 m/s for 3 s and 203 m/s for 1
   within(h.deltaV, 10 * ref.kin.aRel, 1e-9, 'dv = a T');
   within(h.deltaV, 203.4, 0.05, '203 m/s for 10 s');
   within(ref.requirement[0].held.deltaV, 61.0, 0.05, '61 m/s for 3 s');
-  within(h.fractionOfCatchSpeed, 0.0443, 2e-4, 'fraction of the 4.59 km/s ground-relative catch speed');
+  // against EQ-3a's catch speed, hand-worked from the raw constants: 203.36 / 4591.31
+  const mu = REV.orbital.mu_earth_m3s2;
+  const R = (6371 + REV.orbital.com_altitude_km) * 1e3;
+  const L = REV.geometry.tether_half_length_km * 1e3;
+  const v = REV.kinematics.v_tip_kms * 1e3;
+  const aByHand = (v * v) / L - mu / (R * R) + mu / ((R - L) * (R - L));
+  const catchByHand = Math.sqrt(mu / R) - v - 465;
+  close(h.fractionOfCatchSpeed, (10 * aByHand) / catchByHand, 1e-6, 'fraction of the EQ-3a catch speed');
+  close(h.fractionOfCatchSpeed, 203.36 / 4591.31, 1e-5, '203.36 / 4591.31');
   within(h.reelExcursionM, 0.5 * ref.kin.aRel * 25, 1e-9, 'reel excursion over +-5 s');
   within(h.reelPeakSpeedMps, 101.7, 0.05, 'reel peak line speed');
 });
@@ -238,17 +250,22 @@ test('tiers: a_rel and hold dv rise with tip speed, windows shrink; stated speed
   }
   within(rows[2].kin.aRel, 39.09, 0.01, 'Phase 3 a_rel');
   within(rows[2].held.deltaV, 390.9, 0.1, 'Phase 3 hold dv for 10 s');
-  within(rows[1].kin.groundTrack.speed / 1e3, 4.29, 0.005, 'cislunar ground-relative, which the file does not state');
+  within(rows[1].kin.eq3a.speed / 1e3, 4.29, 0.005, 'cislunar ground-relative, which the file does not state');
 });
 
 // ------------------------------------------------------------------ Earth rotation convention
-test('EQ-3a’s 0.465 km/s is the equatorial surface speed; the tip-radius co-rotation is 0.486 km/s; the two conventions differ by 21 m/s', () => {
+test('EQ-3a’s 0.465 km/s is the equatorial surface speed; the Earth-fixed velocity at the tip is 21 m/s lower; the ground track is a third, slower quantity', () => {
   within(CW.OMEGA_EARTH, 7.2921e-5, 1e-9, 'omega_E from the 23.9345 h sidereal day');
   close(ref.kin.coRotationEquatorSurface / 1e3, C.earthRotKmsEq3a, 2e-3, 'omega_E x 6378.137 km = 465.1 m/s vs the 0.465 literal');
-  within(ref.kin.airspeed.coRotation, 485.7, 0.3, 'co-rotation at 6661 km');
-  within(ref.kin.groundTrack.speed / 1e3, 4.5913, 5e-4, 'ground-track speed');
-  within(ref.kin.airspeed.speed / 1e3, 4.5706, 5e-4, 'airspeed at the tip radius');
-  within(ref.kin.groundTrack.speed - ref.kin.airspeed.speed, 20.7, 0.3, 'the gap');
+  within(ref.kin.earthFixed.coRotation, 485.7, 0.3, 'co-rotation at 6661 km');
+  within(ref.kin.eq3a.speed / 1e3, 4.5913, 5e-4, 'EQ-3a: inertial minus the equatorial surface speed');
+  within(ref.kin.earthFixed.speed / 1e3, 4.5706, 5e-4, 'velocity relative to the rotating Earth at the tip (= co-rotating airspeed)');
+  within(ref.kin.eq3a.speed - ref.kin.earthFixed.speed, 20.7, 0.3, 'the gap');
+  // the sub-point (ground-track) speed, hand-worked: (v / r_tip - omega_E) * R_E with the module's 6371 km
+  const vIn = ref.kin.vTipInertialBottom;
+  within(ref.kin.subPoint.speed, (vIn / 6661e3 - CW.OMEGA_EARTH) * 6371e3, 1e-9, 'sub-point speed formula');
+  within(ref.kin.subPoint.speed / 1e3, 4.3716, 5e-4, 'ground track about 4.37 km/s, not the 4.59 of EQ-3a');
+  assert.ok(ref.kin.subPoint.speed < ref.kin.earthFixed.speed - 150, 'the ground track is well below both');
   assert.equal(CW.EARTH_REF.volumetricMeanRadiusKm, C.earthRadiusKm, 'the module’s 6371 is the volumetric mean radius');
 });
 
@@ -278,19 +295,85 @@ test('exact hold delta-v over a symmetric window matches a_rel T to 1e-4 at 10 s
   }
 });
 
-// ------------------------------------------------------------------ modulation caveat
-test('the golden run’s mean tip speed is 1.5 % below v_tip; if 2.5 km/s were the mean, a_rel would be about 3 % higher', () => {
-  const m = K.modulationCaveat();
+// ------------------------------------------------------------------ spin modulation and the meaning of v_tip
+test('the libration model reproduces the twin’s golden run: 600 s mean tip speed to 1e-4, checkpoint speeds to 2e-3, phase to 0.1 degree', () => {
+  const m = K.modulation();
   assert.ok(m.ok);
-  within(m.goldenMeanTipSpeedMps, 2462.64, 0.01, 'golden mean tip speed');
-  assert.equal(m.goldenVTipMps, 2500);
-  assert.ok(m.meanBelowVTipFraction > 0.01 && m.meanBelowVTipFraction < 0.02, `${m.meanBelowVTipFraction}`);
-  assert.ok(m.aRelIncreaseFraction > 0.02 && m.aRelIncreaseFraction < 0.04, `${m.aRelIncreaseFraction}`);
-  within(m.aRelIfVTipWereMean, 20.93, 0.01, 'a_rel if the canon tip speed were the rotation mean');
-  // the rigid-dumbbell estimate of the peak-to-trough spin modulation, 3 Omega^2 / (2 omega^2), is the same few percent
-  const ex = K.exact(ref.kin);
-  const est = (3 * ex.orbitalRate * ex.orbitalRate) / (2 * ref.kin.omega * ref.kin.omega);
-  assert.ok(est > 0.02 && est < 0.04, `${est}`);
+  assert.equal(m.golden.applicable, true, 'reference tier at the canon L is the golden configuration');
+  const G = readJson('snapshots/golden.json');
+  close(m.golden.model.meanSpeed, G.mean_tip_speed_mps, 1e-4, 'model 600 s mean vs the golden 2462.64 m/s');
+  close(m.golden.model.meanCentripetal, G.mean_tip_centripetal_accel_mps2, 3e-4, 'model 600 s mean centripetal vs the golden 18.956 m/s^2');
+  const n = G.meta.config.n_nodes;
+  for (const s of m.golden.model.samples) {
+    const c = G.checkpoints[String(s.t)];
+    close(s.speed, c.tip_speed_rel_com, 2e-3, `tip speed at ${s.t} s`);
+    if (s.t === 0) continue;
+    const st = c.state;
+    const hub = st.slice((4 * (n - 1)) / 2, (4 * (n - 1)) / 2 + 4);
+    const ang = Math.atan2(st[1] - hub[1], st[0] - hub[0]) - Math.atan2(-hub[1], -hub[0]);
+    const twinDeg = (((ang * 180) / Math.PI) % 360 + 360) % 360;
+    within(((s.thetaDeg % 360) + 360) % 360, twinDeg, 0.1, `pitch angle from the local vertical at ${s.t} s`);
+  }
+});
+
+test('the 600 s golden mean is not a rotation mean; the rotation mean (closed form) is 1.71 % below the vertical speed, inside the glossary’s 1.5-2 %', () => {
+  const m = K.modulation();
+  // the closed-form AGM mean equals the numerically integrated mean over exactly one orbit-frame rotation
+  const thdA = ref.kin.omega - m.orbitalRate;
+  const one = m.libration.integrate(thdA, m.orbitFrameRotationS, m.orbitFrameRotationS / 20000, []);
+  close(one.meanSpeed, m.vertical.rotationMeanMps, 1e-6, 'rotation mean: closed form vs integration');
+  within(m.meanBelowVerticalFraction, 0.01714, 5e-5, 'rotation mean 1.71 % below the vertical speed');
+  assert.ok(m.meanBelowVerticalFraction > 0.015 && m.meanBelowVerticalFraction < 0.02, 'docs/glossary.md: ~1.5-2 %');
+  within(m.peakToTroughFraction, 0.0341, 1e-4, 'peak to trough 3.4 % of the vertical speed');
+  // 600 s is 0.746 inertial rotations and 1.26 modulation cycles, so the golden mean is a 600 s mean
+  within(m.golden.rotationsCovered, 0.746, 1e-3, 'rotations covered by the golden run');
+  within(m.golden.modulationCyclesCovered, 1.26, 5e-3, 'modulation cycles covered');
+  assert.ok(m.golden.model.meanSpeed / m.vertical.rotationMeanMps - 1 > 2e-3, 'the 600 s mean sits above the rotation mean by more than 0.2 %');
+});
+
+test('if v_tip is the rotation mean, a_rel at Rev A is 21.00 m/s^2 (+3.25 %); the range is 20.34 to 21.00', () => {
+  const m = K.modulation();
+  close(m.mean.rotationMeanMps, 2500, 1e-9, 'the solved spin has a rotation mean of exactly v_tip');
+  within(m.mean.vAtVerticalMps, 2541.98, 0.01, 'the tip then passes the vertical at 2542 m/s');
+  assert.equal(m.vertical.aRel, ref.kin.aRel, 'read at the vertical, a_rel is the page’s');
+  within(m.mean.aRel, (2541.979 ** 2) / 320e3 - ref.kin.gHub + ref.kin.gTip, 1e-3, 'a_rel at the vertical speed, by hand');
+  within(m.mean.aRel, 20.997, 1e-3, '21.00 m/s^2');
+  within(m.aRelIncreaseFraction, 0.03253, 5e-5, '+3.25 %');
+  within(m.envelopeWindowShorteningFraction, 0.01588, 5e-5, 'envelope windows 1.59 % shorter');
+  assert.deepEqual(m.aRelRange, [m.vertical.aRel, m.mean.aRel]);
+  // the ratio of the golden 600 s mean would have given 20.93: inside the range, but not a rotation mean
+  const via600 = (2500 * 2500) / 2462.640694087045;
+  const aVia600 = (via600 * via600) / 320e3 - ref.kin.gHub + ref.kin.gTip;
+  within(aVia600, 20.933, 1e-3, 'the 600 s ratio gives 20.93');
+  assert.ok(aVia600 > m.vertical.aRel && aVia600 < m.mean.aRel);
+});
+
+test('away from the golden configuration the modulation scales with Omega^2/omega^2 and no golden check is claimed', () => {
+  const base = K.modulation();
+  const cases = [
+    { name: 'Phase 3 at the canon L', opts: { vTipKms: C.tiers.phase3.vTipKms }, maxIncrease: 0.02 },
+    { name: 'reference at L = 100 km', opts: { halfLengthKm: 100 }, maxIncrease: 0.005 },
+  ];
+  for (const c of cases) {
+    const m = K.modulation(c.opts);
+    assert.ok(m.ok, c.name);
+    assert.equal(m.golden.applicable, false, `${c.name}: not the twin's configuration`);
+    assert.equal(m.golden.model, undefined, `${c.name}: no model-vs-twin line`);
+    assert.ok(m.aRelIncreaseFraction > 0 && m.aRelIncreaseFraction < c.maxIncrease, `${c.name}: +${m.aRelIncreaseFraction}`);
+    // small-modulation limit: the mean depression goes as (3/4) Omega^2 / theta_v'^2 times theta_v'/omega
+    const kin = K.kinematics({ vTipKms: m.vTipKms, halfLengthKm: m.halfLengthKm });
+    const thd = kin.omega - m.orbitalRate;
+    const approx = ((0.75 * m.orbitalRate * m.orbitalRate) / (thd * thd)) * (thd / kin.omega);
+    close(m.meanBelowVerticalFraction, approx, 0.06, `${c.name}: depression vs its small-k limit`);
+    assert.ok(m.meanBelowVerticalFraction < base.meanBelowVerticalFraction, `${c.name}: less modulation than the reference`);
+  }
+  // the reviewer's figures for the page's old, unscaled caveat: +2.99 % and +3.05 %; scaled, they are about +1.6 % and +0.3 %
+  within(K.modulation({ vTipKms: C.tiers.phase3.vTipKms }).aRelIncreaseFraction, 0.0161, 5e-4, 'Phase 3');
+  within(K.modulation({ halfLengthKm: 100 }).aRelIncreaseFraction, 0.00293, 5e-5, 'L = 100 km');
+  // the canon's own com_radius_km is not the twin's configuration either
+  assert.equal(K.modulation({ rComKm: C.comRadiusKmStated }).golden.applicable, false);
+  // a spin too slow to pass the horizontal librates and has no rotation mean
+  assert.equal(K.modulation({ vTipKms: 0.3 }).refusal.code, 'out_of_envelope');
 });
 
 // ------------------------------------------------------------------ refusals
@@ -337,11 +420,63 @@ test('validity: the tip altitude flag flips at the stated 150 km, and the ground
   assert.equal(CW.ATMOSPHERE_CLEAR_KM, 150);
 });
 
+test('closed-form validity: half-windows past 4 % of a rotation are refused, and at that bound the exact scene agrees to 0.3 %', () => {
+  assert.equal(CW.CLOSED_FORM_MAX_ROTATION_FRACTION, 0.04);
+  const bound = ref.kin.validity.closedFormMaxHalfWindowS;
+  within(bound, 0.04 * 804.25, 0.01, 'Rev A: 32.2 s');
+  const ok64 = K.evaluate({ tier: 'reference', envelopeM: E, velTolMps: VT, holdS: 64 });
+  assert.ok(ok64.ok, 'a 64 s hold is inside');
+  const no65 = K.evaluate({ tier: 'reference', envelopeM: E, velTolMps: VT, holdS: 65 });
+  assert.equal(no65.refusal.code, 'out_of_envelope');
+  assert.match(no65.refusal.reason, /rotation/);
+  // the reviewer's extrapolations are now refusals, with no numbers riding along
+  for (const bad of [{ envelopeM: 1e7 }, { velTolMps: 1e6 }, { holdS: 1e3 }]) {
+    const r = K.evaluate(Object.assign({ tier: 'reference', envelopeM: E, velTolMps: VT, holdS: 10 }, bad));
+    assert.equal(r.ok, false, JSON.stringify(bad));
+    assert.equal(r.refusal.code, 'out_of_envelope');
+    assert.equal(r.kin, undefined);
+  }
+  // a requirement window past the bound is refused in its own slot while the rest is computed
+  const short = K.evaluate({ tier: 'phase3', halfLengthKm: 50, envelopeM: E, velTolMps: VT, holdS: 3, requirementWindowsS: [3, 10] });
+  assert.ok(short.ok, 'L = 50 km at 3.5 km/s with a 3 s hold');
+  assert.ok(short.requirement[0].passive.ok && short.requirement[0].held.ok, '3 s fits a 90 s rotation');
+  assert.equal(short.requirement[1].passive.refusal.code, 'out_of_envelope', '10 s does not');
+  assert.equal(short.requirement[1].held.refusal.code, 'out_of_envelope');
+  // at the bound the closed forms still hold to 0.3 % (exact two-body integration)
+  for (const v of [2.5, 3.5]) {
+    for (const LKm of [10, 100, 320, 600]) {
+      const kin = K.kinematics({ vTipKms: v, halfLengthKm: LKm });
+      const th = kin.validity.closedFormMaxHalfWindowS;
+      const ex = K.exact(kin);
+      const r = ex.passiveAt(th, Math.min(0.002, th / 200));
+      close(r.sepM, 0.5 * kin.aRel * th * th, 3e-3, `separation at the bound, ${v} km/s, L ${LKm} km`);
+      close(r.relSpeedMps, kin.aRel * th, 3e-3, `relative speed at the bound, ${v} km/s, L ${LKm} km`);
+      close(ex.holdDeltaV(2 * th, 2000).deltaV, kin.aRel * 2 * th, 3e-3, `hold dv at the bound, ${v} km/s, L ${LKm} km`);
+    }
+  }
+});
+
+test('half-length below the kernel’s 1 km minimum is refused; the file’s tip g is offered only at the file’s own L', () => {
+  assert.equal(CW.MIN_HALF_LENGTH_KM, 1);
+  const tiny = K.evaluate({ tier: 'reference', halfLengthKm: 0.001, envelopeM: E, velTolMps: VT, holdS: 0.01 });
+  assert.equal(tiny.refusal.code, 'out_of_envelope');
+  assert.match(tiny.refusal.reason, /1 km minimum/);
+  assert.match(tiny.refusal.what_would_help, /between 1 km and the CoM altitude/);
+  assert.ok(K.kinematics({ vTipKms: 2.5, halfLengthKm: 1 }).ok, '1 km itself is accepted');
+  const at100 = K.tierTable({ halfLengthKm: 100, envelopeM: E, velTolMps: VT, holdS: 10 });
+  for (const row of at100) {
+    assert.equal(row.stated.tipAccelG, null, `${row.key}: the file's tip g is for 320 km, withheld at 100 km`);
+    assert.equal(row.statedTipAccelAtCanonLOnly, true);
+  }
+  const atCanon = K.tierTable({ envelopeM: E, velTolMps: VT, holdS: 10 });
+  assert.deepEqual(atCanon.map((r) => r.stated.tipAccelG), [REV.kinematics.tip_acceleration_g, REV.kinematics.cislunar_revenue_gated_option.tip_acceleration_g, REV.kinematics.phase3_growth_option.tip_acceleration_g]);
+});
+
 // ------------------------------------------------------------------ the page carries no retyped tether constant
 test('index.html and app.js carry no tether constant as literal text; the canon values reach the page only through the kernel', () => {
   const html = fs.readFileSync(path.join(here, 'index.html'), 'utf8');
   const app = fs.readFileSync(path.join(here, 'app.js'), 'utf8');
-  for (const s of ['6371', '6378', '6981', '6988', '6661', '7556', '5056', '320 km', '610 km', '290 km', '2.5 km/s', '2.8 km/s', '3.5 km/s', '20.3', '203 m/s', '0.99 s', '4.59', '0.465', '0.486', '3.986', '398600']) {
+  for (const s of ['6371', '6378', '6981', '6988', '6661', '7556', '5056', '320 km', '610 km', '290 km', '2.5 km/s', '2.8 km/s', '3.5 km/s', '20.3', '203 m/s', '0.99 s', '4.59', '0.465', '0.486', '3.986', '398600', '2462', '20.9', '21.0', '4371', '4570', '2541']) {
     assert.ok(!html.includes(s), `index.html contains "${s}"`);
     assert.ok(!app.includes(s), `app.js contains "${s}"`);
   }

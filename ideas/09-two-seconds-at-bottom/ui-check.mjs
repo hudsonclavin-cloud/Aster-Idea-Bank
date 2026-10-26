@@ -55,7 +55,36 @@ async function open(opts, init) {
   await page.waitForTimeout(200);
   return { context, page, errors };
 }
-const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+// Overflow is measured against clientWidth, not innerWidth: under mobile emulation Chromium widens
+// the layout viewport to fit overflowing content, so innerWidth grows with the bug it should catch.
+const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+// Element rectangles do not see text that overflows its box, so measure every text node's own
+// rectangles: none may pass the viewport's right edge or its card's right edge. Text inside a
+// horizontally scrolling table wrapper and SVG text are excluded (the charts are checked separately).
+const textOverflow = (page) =>
+  page.evaluate(() => {
+    const cw = document.documentElement.clientWidth;
+    const out = [];
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const host = n.parentElement;
+      if (!host || !n.textContent.trim() || host.closest('svg')) continue;
+      if (host.closest('[hidden]') || getComputedStyle(host).display === 'none') continue;
+      const scroller = host.closest('.table-scroll');
+      if (scroller && scroller.scrollWidth > scroller.clientWidth) continue;
+      range.selectNodeContents(n);
+      const card = host.closest('.card') || document.body;
+      const cardRight = card.getBoundingClientRect().right;
+      for (const r of range.getClientRects()) {
+        if (r.width > 0 && (r.right > cw + 0.5 || r.right > cardRight + 0.5)) {
+          out.push(`${n.textContent.trim().slice(0, 40)} → ${r.right.toFixed(0)} (card ${cardRight.toFixed(0)}, page ${cw})`);
+          break;
+        }
+      }
+    }
+    return out;
+  });
 const text = (page, sel) => page.locator(sel).first().textContent();
 const nums = (s) => (s.match(/[-−]?\d+(?:\.\d+)?/g) || []).map((x) => Number(x.replace('−', '-')));
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
@@ -111,9 +140,22 @@ const REF = K.evaluate({ tier: 'reference', envelopeM: 10, velTolMps: 1, holdS: 
   ok(numRows.some((r) => /Exact two-body check/.test(r) && /exit at 0\.9917 s \(closed form 0\.9917 s\)/.test(r)), `exact check line: ${numRows.find((r) => /Exact/.test(r))}`);
   // convention and modulation
   const conv = await text(page, '#convention-body');
-  ok(/4\.591 km\/s/.test(conv) && /4\.571 km\/s/.test(conv) && /465\.1 m\/s/.test(conv) && /485\.7 m\/s/.test(conv) && /21 m\/s less/.test(conv), `convention card: ${conv.slice(0, 200)}`);
+  ok(/4\.591 km\/s/.test(conv) && /4\.571 km\/s/.test(conv) && /465\.1 m\/s/.test(conv) && /485\.7 m\/s/.test(conv) && /21 m\/s below/.test(conv), `convention card: ${conv.slice(0, 200)}`);
+  ok(/launch-site bookkeeping/.test(conv) && /also its airspeed/.test(conv) && new RegExp(`${(REF.kin.subPoint.speed / 1e3).toFixed(3)} km/s`).test(conv) && !/ground-track speed 4/.test(conv), 'convention card names EQ-3a as bookkeeping and gives the true ground-track speed');
+  const MOD = K.modulation();
   const mod = await text(page, '#modulation-body');
-  ok(/2462\.6 m\/s/.test(mod) && /1\.5 % below/.test(mod) && /20\.93 m\/s²/.test(mod), `modulation card: ${mod.slice(0, 200)}`);
+  ok(new RegExp(`a_rel ${MOD.vertical.aRel.toFixed(2)} m/s²`).test(mod) && new RegExp(`a_rel ${MOD.mean.aRel.toFixed(2)} m/s² \\(\\+${(100 * MOD.aRelIncreaseFraction).toFixed(1)} %\\)`).test(mod), `modulation card gives both readings of v_tip: ${mod.slice(0, 160)}`);
+  ok(/does not settle it/.test(mod) && !/consistent ones/.test(mod) && !/the canon tip speed is the bottom-of-swing value/.test(mod), 'modulation card leaves the convention open');
+  ok(new RegExp(`${MOD.golden.meanTipSpeedMps.toFixed(2)} m/s`).test(mod) && new RegExp(`${MOD.golden.model.meanSpeed.toFixed(2)} m/s`).test(mod) && /0\.75 of a rotation/.test(mod) && /not a rotation mean/.test(mod), 'golden check line: 600 s mean, model over the same 600 s');
+  ok(statuses.some((s) => /open convention/.test(s) && s.includes(MOD.mean.aRel.toFixed(2))), 'a status carries the other reading of v_tip');
+  const envNote = await text(page, '#req-env-note');
+  ok(/±22\.9 m/.test(envNote) && /30\.5 m\/s/.test(envNote) && /tens of meters wide/.test(envNote), `§5.2(d) reconciliation: ${envNote}`);
+  // the sketch runs left to right like the timeline: −t on the left, +t on the right
+  const marks = await page.locator('#sketch text.lab.halo').evaluateAll((ns) => ns.map((n) => ({ t: n.textContent, x: n.getBoundingClientRect().x })));
+  const minusMark = marks.find((m) => m.t.startsWith('−'));
+  const plusMark = marks.find((m) => m.t.startsWith('+'));
+  ok(minusMark && plusMark && minusMark.x < plusMark.x, `sketch: −t left of +t (${JSON.stringify(marks)})`);
+  ok(/tip moves →/.test(await page.locator('#sketch').textContent()), 'sketch axis says which way the tip moves');
   ok(/34935cb/.test(await text(page, '#prov')) && /NASA NSSDC/.test(await text(page, '#prov')), 'footer carries the commit and the Earth-rotation source');
   // hover tooltip lists both series
   await page.locator('#timeline').scrollIntoViewIfNeeded();
@@ -162,6 +204,27 @@ const REF = K.evaluate({ tier: 'reference', envelopeM: 10, velTolMps: 1, holdS: 
   head = await text(page, '#headline');
   ok(new RegExp(`${p3.kin.aRel.toFixed(2)} m/s² = ${p3.kin.aRelG.toFixed(2)} g`).test(head), `phase 3 a_rel ${p3.kin.aRel.toFixed(2)} on the page`);
   ok(/Phase 3/.test(await text(page, '#tiers-table tr.canon-row')), 'the tier table highlights the selected tier');
+  const p3mod = K.modulation({ vTipKms: K.constants.tiers.phase3.vTipKms });
+  const modP3 = await text(page, '#modulation-body');
+  ok(/covers only/.test(modP3) && !/Check against the twin/.test(modP3) && modP3.includes(p3mod.mean.aRel.toFixed(2)), `Phase 3: the golden run is not claimed and the scaled figure is shown (${modP3.slice(-220)})`);
+  // L = 100 km: the file's tip g (stated at 320 km) is withheld, and the golden run is not claimed
+  await setNumber(page, 'L-num', 100);
+  const rows100 = await page.locator('#tiers-table tbody tr').allTextContents();
+  ok(rows100.length === 3 && rows100.every((r) => /\d\.\d\d \(—\)/.test(r)), `L = 100 km: tip g shows a dash for the file (${rows100[0]})`);
+  ok(/covers only/.test(await text(page, '#modulation-body')), 'L = 100 km: no golden check claimed');
+  ok(/only at its own half-length/.test(await text(page, '#tiers-cap-L')), 'tier caption says why the dash');
+  // typed values past the input boxes' ranges are refused, not extrapolated
+  for (const [id, v, back] of [['env-num', 1e7, 40], ['hold-num', 1000, 3.5], ['L-num', 0.001, 500]]) {
+    await setNumber(page, id, v);
+    const rt = await text(page, '#refusal-card');
+    ok((await page.locator('#refusal-card').isVisible()) && /outside this page's input range/.test(rt) && (await page.locator('#results').isHidden()), `${id} = ${v} refused: ${rt.slice(0, 120)}`);
+    await setNumber(page, id, back);
+  }
+  // inside the box's range but past 4 % of a rotation: the kernel refuses
+  await setNumber(page, 'hold-num', 100);
+  ok(/rotation/.test(await text(page, '#refusal-card')) && (await page.locator('#results').isHidden()), 'a 100 s hold at Phase 3 is past the closed forms’ range and refused');
+  await setNumber(page, 'hold-num', 3.5);
+  ok(await page.locator('#refusal-card').isHidden(), 'back inside the range clears it');
   // low tip: warning, not refusal
   await setNumber(page, 'L-num', 500);
   const st = await page.locator('#statuses .status').allTextContents();
@@ -217,6 +280,9 @@ const REF = K.evaluate({ tier: 'reference', envelopeM: 10, velTolMps: 1, holdS: 
     return w;
   });
   ok(worst <= 390 + 1, `widest element reaches ${worst}px (the tier table stacks into cards on a phone)`);
+  const spill = await textOverflow(page);
+  ok(spill.length === 0, `phone dark: no text passes its card or the page: ${spill.slice(0, 3).join(' | ')}`);
+  ok((await page.evaluate(() => window.innerWidth)) === 390, 'phone dark: the layout viewport was not widened by overflow');
   ok((await page.evaluate(() => getComputedStyle(document.querySelector('#tiers-table tr')).display)) === 'block', 'tier rows are stacked blocks on a phone');
   // tap the 10 s button, then the chart
   await page.locator('button[data-hold="10"]').tap();
@@ -258,7 +324,19 @@ const REF = K.evaluate({ tier: 'reference', envelopeM: 10, velTolMps: 1, holdS: 
   await setNumber(page, 'L-num', 700);
   ok(await page.locator('#refusal-card').isVisible(), 'phone: refusal shows');
   ok(!(await overflow(page)), 'phone: refusal state has no overflow');
+  ok((await textOverflow(page)).length === 0, 'phone: refusal text stays inside its card');
   ok(errors.length === 0, `phone light console clean: ${errors.join('; ')}`);
+  await context.close();
+}
+
+// 6. A plain 390 px desktop window (no mobile emulation, so nothing can widen the layout viewport).
+{
+  const { context, page, errors } = await open({ viewport: { width: 390, height: 844 }, colorScheme: 'light' });
+  const dims = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);
+  ok(dims[0] <= dims[1], `plain 390 px window: scrollWidth ${dims[0]} <= clientWidth ${dims[1]}`);
+  const spill = await textOverflow(page);
+  ok(spill.length === 0, `plain 390 px window: no text passes its card or the page: ${spill.slice(0, 3).join(' | ')}`);
+  ok(errors.length === 0, `plain 390 px console clean: ${errors.join('; ')}`);
   await context.close();
 }
 

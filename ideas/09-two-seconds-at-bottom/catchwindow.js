@@ -16,21 +16,28 @@
 //   Passive window inside a velocity tolerance +-v_tol:       |t| <= v_tol / a_rel
 //   To track the tip instead, the vehicle must thrust at a_rel for the whole window: dv = a_rel T.
 //
-// What the model leaves out (stated, not computed): the gravity-gradient modulation of the spin
-// (~+-1.5 % in tip speed per the twin's golden run; see modulationCaveat), tether elasticity,
-// atmosphere at the tip altitude, grapple reach and reel dynamics, and any vehicle not at apex.
+// Validity [Certain, checked by the exact integration below]: the closed forms are the t -> 0
+// limit. Every half-window the kernel returns is held to at most 4 % of a rotation (omega t <=
+// 0.25 rad), where they agree with the exact two-body scene to 0.3 %; beyond that it refuses.
+//
+// What the rigid rotor leaves out, and where it is handled: the gravity-gradient modulation of the
+// spin is computed separately (kernel.modulation, a rigid line body librating on a circular orbit,
+// checked against the twin's golden run); it does not change the scene at the catch, only which
+// speed the tip has at the vertical, which is an open convention question about v_tip. Tether
+// elasticity, atmosphere at the tip altitude, grapple reach, reel dynamics and any vehicle not at
+// apex are stated, not computed.
 //
 // Every tether number comes from the SKYHOOK_CANON object that build-data.mjs derives from the
 // snapshots (params/rev_a.json, physics/skyhook_physics.py, tools/twin/golden.json). The only
 // constants typed here are Earth's rotation period and radii from a cited NASA reference, used
-// solely for the Earth-rotation convention comparison.
+// solely for the Earth-rotation convention comparison, and the two scope bounds named below.
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.CatchWindow = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const KERNEL_VERSION = '1.0.0';
+  const KERNEL_VERSION = '1.1.0';
 
   // External reference values, NOT from Skyhook's canon. Source: NASA NSSDC Earth Fact Sheet,
   // https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html (rows quoted verbatim), read
@@ -39,6 +46,8 @@
     siderealRotationPeriodHours: 23.9345, // "Sidereal rotation period (hrs)"
     equatorialRadiusKm: 6378.137, // "Equatorial radius (km)"
     volumetricMeanRadiusKm: 6371.0, // "Volumetric mean radius (km)"
+    reference: 'NASA NSSDC Earth Fact Sheet',
+    read: '2026-10-26',
     source: 'NASA NSSDC Earth Fact Sheet, nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html, read 2026-10-26',
   });
   const OMEGA_EARTH = (2 * Math.PI) / (EARTH_REF.siderealRotationPeriodHours * 3600); // rad/s
@@ -47,6 +56,13 @@
   // 4.6 km/s is not ballistic (drag), and the page says so instead of extrapolating. The 150 km
   // figure is a scope choice of this prototype, not a Skyhook number.
   const ATMOSPHERE_CLEAR_KM = 150;
+
+  // Scope bounds of the closed forms, both choices of this prototype (not Skyhook numbers):
+  // a half-length of at least 1 km, and no half-window longer than 4 % of a rotation. At 4 % the
+  // exact two-body integration and the closed forms differ by at most 0.3 % (tested for 2.5 and
+  // 3.5 km/s at L = 10 to 600 km), an order of magnitude below the v_tip convention question.
+  const MIN_HALF_LENGTH_KM = 1;
+  const CLOSED_FORM_MAX_ROTATION_FRACTION = 0.04;
 
   // ------------------------------------------------------------------ refusals
   function refusal(code, reason, whatWouldHelp) {
@@ -169,7 +185,8 @@
     const halfLengthKm = o.halfLengthKm === undefined ? C.halfLengthKm : o.halfLengthKm;
     const rComKm = o.rComKm === undefined ? C.rComKm : o.rComKm;
     if (!isNum(vTipKms) || vTipKms <= 0) return refusal('out_of_envelope', `Tip speed must be a positive number of km/s (got ${String(vTipKms)}).`, 'Pick a tier from the canon or give a positive tip speed.');
-    if (!isNum(halfLengthKm) || halfLengthKm <= 0) return refusal('out_of_envelope', `Half-length must be a positive number of km (got ${String(halfLengthKm)}).`, 'Set the half-length between 1 km and the CoM altitude.');
+    if (!isNum(halfLengthKm) || halfLengthKm <= 0) return refusal('out_of_envelope', `Half-length must be a positive number of km (got ${String(halfLengthKm)}).`, `Set the half-length between ${MIN_HALF_LENGTH_KM} km and the CoM altitude.`);
+    if (halfLengthKm < MIN_HALF_LENGTH_KM) return refusal('out_of_envelope', `A half-length of ${halfLengthKm} km is below this kernel's ${MIN_HALF_LENGTH_KM} km minimum: a tether that short is not a catch geometry the closed forms were checked for.`, `Set the half-length between ${MIN_HALF_LENGTH_KM} km and the CoM altitude.`);
     if (!isNum(rComKm) || rComKm <= C.earthRadiusKm) return refusal('out_of_envelope', 'The CoM radius must be above the Earth radius.', 'Check orbital.com_altitude_km.');
     const comAltKm = rComKm - C.earthRadiusKm;
     if (halfLengthKm >= comAltKm) {
@@ -191,8 +208,13 @@
     const aTipInertial = aCentripetal - gHub; // outward positive
     const aRel = aCentripetal - gHub + gTip;
     const tipAltitudeKm = rTip / 1e3 - C.earthRadiusKm;
-    const coRotTip = C.omegaEarth * rTip; // co-rotation speed at the tip radius (airspeed convention)
+    const periodS = (2 * Math.PI * L) / vTip;
+    const vInertial = vOrb - vTip; // lower tip at the bottom, prograde equatorial orbit assumed
+    // Three Earth-relative speeds, all for a prograde equatorial orbit (rev_a.json states no
+    // inclination; EQ-3a's subtraction of the full equatorial speed assumes the same):
+    const coRotTip = C.omegaEarth * rTip; // co-rotation speed of the Earth-fixed frame at the tip radius
     const coRotEq = C.omegaEarth * C.earthRef.equatorialRadiusKm * 1e3; // equatorial surface speed
+    const rEarth = C.earthRadiusKm * 1e3;
     return {
       ok: true,
       vTipKms,
@@ -201,7 +223,8 @@
       rTipKm: rTip / 1e3,
       tipAltitudeKm,
       omega, // rad/s, inertial spin rate
-      periodMin: (2 * Math.PI * L) / vTip / 60,
+      periodS,
+      periodMin: periodS / 60,
       vOrb, // m/s at the CoM radius
       gHub,
       gTip,
@@ -212,17 +235,25 @@
       aTipInertial,
       aRel,
       aRelG: aRel / C.g0,
-      vTipInertialBottom: vOrb - vTip, // m/s, inertial speed of the lower tip at the bottom
+      vTipInertialBottom: vInertial, // m/s, inertial speed of the lower tip at the bottom
       vUpperInertialTop: vOrb + vTip,
-      groundTrack: { speed: vOrb - vTip - C.earthRotKmsEq3a * 1e3, coRotation: C.earthRotKmsEq3a * 1e3, convention: 'EQ-3a: equatorial surface co-rotation subtracted (physics/skyhook_physics.py v_earth_rot)' },
-      airspeed: { speed: vOrb - vTip - coRotTip, coRotation: coRotTip, convention: 'co-rotating atmosphere at the tip radius, omega_E * r_tip' },
+      // EQ-3a (the file's v_lower_tip_groundrel_kms): inertial speed minus the equatorial SURFACE
+      // speed. Launch-site bookkeeping: what a vehicle launched from the equator still has to add.
+      eq3a: { speed: vInertial - C.earthRotKmsEq3a * 1e3, coRotation: C.earthRotKmsEq3a * 1e3, convention: 'EQ-3a: inertial speed minus the equatorial surface speed (physics/skyhook_physics.py v_earth_rot), launch-site bookkeeping' },
+      // The tip's velocity relative to the rotating Earth at its own radius: the physically
+      // ground-relative velocity, and also its airspeed in a co-rotating atmosphere.
+      earthFixed: { speed: vInertial - coRotTip, coRotation: coRotTip, convention: 'velocity in the Earth-fixed frame at the tip radius (= airspeed in a co-rotating atmosphere), omega_E * r_tip subtracted' },
+      // The speed of the point beneath the tip across the ground (ground track), on the module's R_EARTH_KM.
+      subPoint: { speed: (vInertial / rTip - C.omegaEarth) * rEarth, radiusKm: C.earthRadiusKm, convention: 'ground-track (sub-point) speed, (v / r_tip - omega_E) * R_E' },
       coRotationEquatorSurface: coRotEq,
       validity: {
         tipAboveGround: tipAltitudeKm > 0,
         atmosphereClear: tipAltitudeKm >= C.atmosphereClearKm,
         atmosphereClearKm: C.atmosphereClearKm,
+        closedFormMaxHalfWindowS: CLOSED_FORM_MAX_ROTATION_FRACTION * periodS,
+        closedFormMaxRotationFraction: CLOSED_FORM_MAX_ROTATION_FRACTION,
         notes: [
-          'rigid rotor: no gravity-gradient spin modulation, no elasticity (see modulationCaveat)',
+          'rigid rotor at the catch: the spin modulation only sets which speed the tip has at the vertical (see modulation)',
           'vehicle exactly at apex, matched at t = 0; off-apex and climbing arcs are out of scope',
           'no atmosphere, no grapple reach, no reel dynamics',
         ],
@@ -230,14 +261,29 @@
     };
   }
 
+  // The closed forms hold only while the half-window is a small part of a rotation. When the caller
+  // passes the bound (kin.validity.closedFormMaxHalfWindowS), a longer half-window is refused.
+  function beyondClosedForm(halfS, maxHalfS, what) {
+    if (!isNum(maxHalfS) || halfS <= maxHalfS) return null;
+    const pct = Math.round(CLOSED_FORM_MAX_ROTATION_FRACTION * 100);
+    return refusal(
+      'out_of_envelope',
+      `${what} is ±${halfS.toPrecision(3)} s, longer than ±${maxHalfS.toPrecision(3)} s (${pct} % of this tether's ${((maxHalfS / CLOSED_FORM_MAX_ROTATION_FRACTION)).toFixed(0)} s rotation). There the tip has swung far enough from the vertical that a_rel t²/2 is no longer the motion, and this page does not extrapolate.`,
+      'Use a smaller envelope, tolerance or held window, or a longer tether (a slower rotation).'
+    );
+  }
+
   function passive(args) {
-    const { aRel, envelopeM, velTolMps } = args || {};
+    const { aRel, envelopeM, velTolMps, maxHalfWindowS } = args || {};
     if (!isNum(aRel) || aRel <= 0) return refusal('out_of_envelope', 'Relative acceleration must be positive.', 'Compute kinematics first.');
     if (!isNum(envelopeM) || envelopeM <= 0) return refusal('out_of_envelope', `The capture envelope must be a positive number of metres (got ${String(envelopeM)}).`, 'Set the envelope half-width, for example the founding document’s ±10 m.');
     if (!isNum(velTolMps) || velTolMps <= 0) return refusal('out_of_envelope', `The velocity tolerance must be a positive number of m/s (got ${String(velTolMps)}).`, 'Set the tolerance, for example the founding document’s ~1 m/s.');
     const tPos = Math.sqrt((2 * envelopeM) / aRel);
     const tVel = velTolMps / aRel;
+    const tooLong = beyondClosedForm(tPos, maxHalfWindowS, `The passive window inside ±${envelopeM} m`) || beyondClosedForm(tVel, maxHalfWindowS, `The passive window inside ±${velTolMps} m/s`);
+    if (tooLong) return tooLong;
     const tBoth = Math.min(tPos, tVel);
+    const bestTotal = 4 * Math.sqrt(envelopeM / aRel);
     return {
       ok: true,
       aRel,
@@ -253,25 +299,31 @@
       speedAtEnvelopeEdge: aRel * tPos, // = sqrt(2 a e)
       separationAtVelTol: (velTolMps * velTolMps) / (2 * aRel),
       // The longest any passive trajectory can stay inside +-e: enter at +e falling, turn at -e, leave at +e.
-      bestPassive: { totalS: 4 * Math.sqrt(envelopeM / aRel), edgeSpeedMps: 2 * Math.sqrt(aRel * envelopeM) },
+      // its half-span is sqrt(2) t_pos, so it can pass the closed-form bound before t_pos does
+      bestPassive: { totalS: bestTotal, edgeSpeedMps: 2 * Math.sqrt(aRel * envelopeM), withinClosedForm: !isNum(maxHalfWindowS) || bestTotal / 2 <= maxHalfWindowS },
     };
   }
 
   // What a passive window of total duration T would need: envelope and the speed at its edge.
   function needs(args) {
-    const { aRel, totalS } = args || {};
-    if (!isNum(aRel) || aRel <= 0 || !isNum(totalS) || totalS <= 0) return refusal('out_of_envelope', 'Need a positive relative acceleration and window.', '');
+    const { aRel, totalS, maxHalfWindowS } = args || {};
+    if (!isNum(aRel) || aRel <= 0 || !isNum(totalS) || totalS <= 0) return refusal('out_of_envelope', 'Need a positive relative acceleration and window.', 'Give a positive window in seconds.');
     const half = totalS / 2;
+    const tooLong = beyondClosedForm(half, maxHalfWindowS, `A ${totalS} s window`);
+    if (tooLong) return tooLong;
     return { ok: true, totalS, envelopeM: 0.5 * aRel * half * half, edgeSpeedMps: aRel * half };
   }
 
   // Holding station with the tip for T seconds: the vehicle must supply a_rel the whole time.
   // The reel columns are the same kinematics paid by a line from the tip instead of by the vehicle.
+  // vGroundRel is the catch speed the Δv is compared with: EQ-3a's figure, the file's convention.
   function held(args) {
-    const { aRel, holdS, vGroundRel } = args || {};
-    if (!isNum(aRel) || aRel <= 0) return refusal('out_of_envelope', 'Relative acceleration must be positive.', '');
+    const { aRel, holdS, vGroundRel, maxHalfWindowS } = args || {};
+    if (!isNum(aRel) || aRel <= 0) return refusal('out_of_envelope', 'Relative acceleration must be positive.', 'Compute kinematics first.');
     if (!isNum(holdS) || holdS <= 0) return refusal('out_of_envelope', `The hold time must be a positive number of seconds (got ${String(holdS)}).`, 'Set the window, for example 3 or 10 s from docs/project_instructions.md §4.3.');
     const half = holdS / 2;
+    const tooLong = beyondClosedForm(half, maxHalfWindowS, `A held window of ${holdS} s`);
+    if (tooLong) return tooLong;
     return {
       ok: true,
       holdS,
@@ -386,6 +438,77 @@
     return { tipPos, tipVel, tipAcc, passiveAt, passiveExitTime, holdDeltaV, orbitalRate: Om };
   }
 
+  // ------------------------------------------------------------------ spin modulation
+  // [Likely] A rigid line body (any mass distribution along the line) on a circular orbit pitches
+  // under the gravity gradient as  theta'' = -(3/2) Omega^2 sin(2 theta),  theta measured in the
+  // orbit frame from the local vertical (the standard planar gravity-gradient pitch equation, known
+  // here from secondary sources). Its energy integral is
+  //     theta'^2 = theta_v'^2 - 3 Omega^2 sin^2(theta),
+  // so the spin is fastest at the vertical, the catch [Certain within the model]. The tip speed
+  // relative to the CoM, in the inertial frame, is v = L (theta' + Omega). Over one orbit-frame
+  // rotation the time mean of theta' is 2 pi / T with T = (4 / theta_v') K(k), k^2 = 3 Omega^2 /
+  // theta_v'^2, i.e. mean theta' = theta_v' * AGM(1, sqrt(1 - k^2)). One modulation cycle is half an
+  // orbit-frame rotation. Checked against the twin's golden run in the tests.
+  function agm(a, b) {
+    let x = a;
+    let y = b;
+    for (let i = 0; i < 64 && Math.abs(x - y) > 1e-16 * x; i++) {
+      const m = (x + y) / 2;
+      y = Math.sqrt(x * y);
+      x = m;
+    }
+    return x;
+  }
+
+  function makeLibration(C, kin) {
+    const R = kin.rComKm * 1e3;
+    const L = kin.halfLengthKm * 1e3;
+    const Om = Math.sqrt(C.mu / (R * R * R));
+    const k2 = (thdV) => (3 * Om * Om) / (thdV * thdV);
+    const meanThetaDot = (thdV) => thdV * agm(1, Math.sqrt(1 - k2(thdV)));
+    const speedAtVertical = (thdV) => L * (thdV + Om);
+    const meanSpeed = (thdV) => L * (meanThetaDot(thdV) + Om);
+    // the orbit-frame spin at the vertical that makes the rotation-mean tip speed equal v (bisection)
+    function thetaDotForMean(v) {
+      let lo = v / L - Om; // the mean is below the vertical value, so the answer is above this
+      let hi = Math.sqrt(lo * lo + 3 * Om * Om); // its slowest point is at least lo, so the mean is too
+      for (let i = 0; i < 200; i++) {
+        const mid = (lo + hi) / 2;
+        if (meanSpeed(mid) < v) lo = mid;
+        else hi = mid;
+      }
+      return (lo + hi) / 2;
+    }
+    // integrate the pitch equation from the vertical (theta = 0), sampling like run_measuring: the
+    // mean of the speed after each step
+    function integrate(thdV, durationS, dtS, sampleTimesS) {
+      const n = Math.max(1, Math.round(durationS / dtS));
+      const h = durationS / n;
+      const f = (th, w) => [w, -1.5 * Om * Om * Math.sin(2 * th)];
+      let th = 0;
+      let w = thdV;
+      let sumV = 0;
+      let sumA = 0;
+      const want = (sampleTimesS || []).map((t) => ({ t, step: Math.round(t / h) }));
+      const samples = [];
+      for (const s of want) if (s.step === 0) samples.push({ t: 0, speed: speedAtVertical(thdV), thetaDeg: 0 });
+      for (let i = 1; i <= n; i++) {
+        const k1 = f(th, w);
+        const k2v = f(th + (h / 2) * k1[0], w + (h / 2) * k1[1]);
+        const k3 = f(th + (h / 2) * k2v[0], w + (h / 2) * k2v[1]);
+        const k4 = f(th + h * k3[0], w + h * k3[1]);
+        th += (h / 6) * (k1[0] + 2 * k2v[0] + 2 * k3[0] + k4[0]);
+        w += (h / 6) * (k1[1] + 2 * k2v[1] + 2 * k3[1] + k4[1]);
+        const v = L * (w + Om);
+        sumV += v;
+        sumA += (v * v) / L;
+        for (const s of want) if (s.step === i) samples.push({ t: s.t, speed: v, thetaDeg: (th * 180) / Math.PI });
+      }
+      return { meanSpeed: sumV / n, meanCentripetal: sumA / n, samples };
+    }
+    return { orbitalRate: Om, meanThetaDot, speedAtVertical, meanSpeed, thetaDotForMean, integrate, k2 };
+  }
+
   // ------------------------------------------------------------------ kernel
   function makeKernel(C) {
     const kernel = { ok: true, constants: C, version: KERNEL_VERSION };
@@ -411,12 +534,14 @@
       }
       const kin = kinematicsFrom(C, { vTipKms, halfLengthKm: inp.halfLengthKm, rComKm: inp.rComKm });
       if (!kin.ok) return kin;
-      const pas = passive({ aRel: kin.aRel, envelopeM: inp.envelopeM, velTolMps: inp.velTolMps });
+      const maxHalfWindowS = kin.validity.closedFormMaxHalfWindowS;
+      const pas = passive({ aRel: kin.aRel, envelopeM: inp.envelopeM, velTolMps: inp.velTolMps, maxHalfWindowS });
       if (!pas.ok) return pas;
-      const hold = held({ aRel: kin.aRel, holdS: inp.holdS, vGroundRel: kin.groundTrack.speed });
+      const hold = held({ aRel: kin.aRel, holdS: inp.holdS, vGroundRel: kin.eq3a.speed, maxHalfWindowS });
       if (!hold.ok) return hold;
       const reqs = Array.isArray(inp.requirementWindowsS) ? inp.requirementWindowsS : [];
-      const requirement = reqs.map((T) => ({ totalS: T, passive: needs({ aRel: kin.aRel, totalS: T }), held: held({ aRel: kin.aRel, holdS: T, vGroundRel: kin.groundTrack.speed }) }));
+      // a requirement window beyond the closed form's range comes back as a refusal in its own slot
+      const requirement = reqs.map((T) => ({ totalS: T, passive: needs({ aRel: kin.aRel, totalS: T, maxHalfWindowS }), held: held({ aRel: kin.aRel, holdS: T, vGroundRel: kin.eq3a.speed, maxHalfWindowS }) }));
       return { ok: true, tier: tier ? tier.key : null, kin, passive: pas, held: hold, requirement };
     };
 
@@ -431,7 +556,7 @@
         const LKm = lMin + ((lMax - lMin) * i) / (n - 1);
         const k = kinematicsFrom(C, { vTipKms: a.vTipKms, halfLengthKm: LKm, rComKm: a.rComKm });
         if (!k.ok) continue;
-        const p = passive({ aRel: k.aRel, envelopeM: a.envelopeM, velTolMps: a.velTolMps });
+        const p = passive({ aRel: k.aRel, envelopeM: a.envelopeM, velTolMps: a.velTolMps, maxHalfWindowS: k.validity.closedFormMaxHalfWindowS });
         if (!p.ok) continue;
         pts.push({ LKm, tipAltitudeKm: k.tipAltitudeKm, aRel: k.aRel, tPos: p.tPos, tVel: p.tVel, totalPos: p.totalPos, totalVel: p.totalVel });
       }
@@ -445,7 +570,7 @@
       const comAltKm = (a.rComKm === undefined ? C.rComKm : a.rComKm) - C.earthRadiusKm;
       const k = kinematicsFrom(C, { vTipKms: a.vTipKms, halfLengthKm: comAltKm - 1e-9, rComKm: a.rComKm });
       if (!k.ok) return k;
-      const p = passive({ aRel: k.aRel, envelopeM: a.envelopeM, velTolMps: a.velTolMps });
+      const p = passive({ aRel: k.aRel, envelopeM: a.envelopeM, velTolMps: a.velTolMps, maxHalfWindowS: k.validity.closedFormMaxHalfWindowS });
       if (!p.ok) return p;
       return { ok: true, atHalfLengthKm: comAltKm, aRel: k.aRel, totalPos: p.totalPos, totalVel: p.totalVel, tPos: p.tPos, tVel: p.tVel };
     };
@@ -456,42 +581,89 @@
         const t = C.tiers[key];
         const k = kinematicsFrom(C, { vTipKms: t.vTipKms, halfLengthKm: a.halfLengthKm, rComKm: a.rComKm });
         if (!k.ok) return { key, label: t.label, short: t.short, vTipKms: t.vTipKms, refusal: k.refusal };
-        const p = passive({ aRel: k.aRel, envelopeM: a.envelopeM, velTolMps: a.velTolMps });
-        const h = held({ aRel: k.aRel, holdS: a.holdS, vGroundRel: k.groundTrack.speed });
-        return { key, label: t.label, short: t.short, vTipKms: t.vTipKms, stated: t.stated, kin: k, passive: p, held: h };
+        const maxHalfWindowS = k.validity.closedFormMaxHalfWindowS;
+        const p = passive({ aRel: k.aRel, envelopeM: a.envelopeM, velTolMps: a.velTolMps, maxHalfWindowS });
+        if (!p.ok) return { key, label: t.label, short: t.short, vTipKms: t.vTipKms, refusal: p.refusal };
+        const h = held({ aRel: k.aRel, holdS: a.holdS, vGroundRel: k.eq3a.speed, maxHalfWindowS });
+        if (!h.ok) return { key, label: t.label, short: t.short, vTipKms: t.vTipKms, refusal: h.refusal };
+        // the file states tip_acceleration_g only at its own half-length; elsewhere there is nothing to reconcile with
+        const atCanonL = k.halfLengthKm === C.halfLengthKm;
+        const stated = Object.assign({}, t.stated, atCanonL ? {} : { tipAccelG: null });
+        return { key, label: t.label, short: t.short, vTipKms: t.vTipKms, stated, statedTipAccelAtCanonLOnly: !atCanonL, kin: k, passive: p, held: h };
       });
     };
 
-    // The golden run's mean tip speed is below the rigid-rotor v_tip: the gravity-gradient
-    // modulation the glossary names. If the canon's v_tip were the rotation MEAN rather than the
-    // bottom-of-swing value, the bottom speed would be higher by the same ratio, and a_rel with it.
-    kernel.modulationCaveat = (opts) => {
-      const g = C.golden;
-      if (!g || !isNum(g.mean_tip_speed_mps)) return refusal('not_found', 'No golden run in the snapshot.', 'Snapshot tools/twin/golden.json.');
+    // Which speed is v_tip? The gravity gradient makes the tip fastest at the vertical (the catch)
+    // and slowest at the horizontal. Read as the speed at the vertical (the twin's initial
+    // condition), the kinematics above stand. Read as the rotation mean (physics/tether_dynamics.py
+    // run_measuring docstring), the tip passes the vertical faster and a_rel is higher. This returns
+    // both, for any tier and half-length, from the libration model, plus the golden-run check where
+    // the twin's configuration is the one selected.
+    kernel.modulation = (opts) => {
       const o = opts || {};
       const kin = kinematicsFrom(C, { vTipKms: o.vTipKms === undefined ? C.tiers.reference.vTipKms : o.vTipKms, halfLengthKm: o.halfLengthKm, rComKm: o.rComKm });
       if (!kin.ok) return kin;
-      const vTip = kin.vTipKms * 1e3;
-      const goldenVTip = g.meta && g.meta.config ? g.meta.config.v_tip_kms * 1e3 : null;
-      const ratio = goldenVTip ? goldenVTip / g.mean_tip_speed_mps : null; // bottom / mean in the twin
-      if (!ratio) return refusal('not_found', 'The golden run does not state its v_tip.', 'Check golden.meta.config.v_tip_kms.');
-      const vBottomIfMean = vTip * ratio;
+      const lib = makeLibration(C, kin);
+      const Om = lib.orbitalRate;
       const L = kin.halfLengthKm * 1e3;
-      const aRelIfMean = (vBottomIfMean * vBottomIfMean) / L - kin.gHub + kin.gTip;
+      const v = kin.vTipKms * 1e3;
+      const thdA = v / L - Om; // orbit-frame spin at the vertical if v_tip is the speed there
+      if (!(thdA * thdA > 3 * Om * Om)) {
+        return refusal('out_of_envelope', 'At this tip speed and half-length the spin is too slow to carry the tether through the horizontal against the gravity gradient: it would librate, not rotate, and has no rotation mean.', 'Use a faster tip speed or a shorter tether.');
+      }
+      const vMeanA = lib.meanSpeed(thdA);
+      const vHorizA = L * (Math.sqrt(thdA * thdA - 3 * Om * Om) + Om);
+      const thdB = lib.thetaDotForMean(v);
+      const vVertB = lib.speedAtVertical(thdB);
+      const aRelAt = (vv) => (vv * vv) / L - kin.gHub + kin.gTip;
+      const aA = kin.aRel;
+      const aB = aRelAt(vVertB);
+      const orbitFrameRotationS = (2 * Math.PI) / lib.meanThetaDot(thdA);
+      let golden = null;
+      const g = C.golden;
+      if (g && g.meta && g.meta.config && isNum(g.mean_tip_speed_mps)) {
+        const cfg = g.meta.config;
+        const applicable =
+          cfg.gravity === true && cfg.v_tip_kms === kin.vTipKms && cfg.half_length_km === kin.halfLengthKm && Math.abs(cfg.com_altitude_km - (kin.rComKm - C.earthRadiusKm)) < 1e-9;
+        golden = {
+          applicable,
+          config: { vTipKms: cfg.v_tip_kms, halfLengthKm: cfg.half_length_km, comAltitudeKm: cfg.com_altitude_km, nNodes: cfg.n_nodes },
+          durationS: g.meta.duration_s,
+          meanTipSpeedMps: g.mean_tip_speed_mps,
+          meanCentripetalMps2: g.mean_tip_centripetal_accel_mps2,
+        };
+        if (applicable) {
+          // the twin's 600 s is not a whole number of rotations or modulation cycles, so its mean is a
+          // 600 s mean, not a rotation mean; the model reproduces it over the same 600 s
+          golden.rotationsCovered = g.meta.duration_s / kin.periodS;
+          golden.modulationCyclesCovered = g.meta.duration_s / (orbitFrameRotationS / 2);
+          golden.model = lib.integrate(thdA, g.meta.duration_s, g.meta.dt, g.meta.checkpoints_s);
+        }
+      }
       return {
         ok: true,
-        goldenMeanTipSpeedMps: g.mean_tip_speed_mps,
-        goldenVTipMps: goldenVTip,
-        meanBelowVTipFraction: 1 - g.mean_tip_speed_mps / goldenVTip,
-        goldenMeanCentripetalMps2: g.mean_tip_centripetal_accel_mps2,
-        vBottomIfVTipWereMean: vBottomIfMean,
-        aRelIfVTipWereMean: aRelIfMean,
-        aRelIncreaseFraction: aRelIfMean / kin.aRel - 1,
+        vTipKms: kin.vTipKms,
+        halfLengthKm: kin.halfLengthKm,
+        orbitalRate: Om,
+        orbitFrameRotationS,
+        modulationPeriodS: orbitFrameRotationS / 2,
+        // if v_tip is the speed at the vertical (as this page's kinematics take it)
+        vertical: { vAtVerticalMps: v, rotationMeanMps: vMeanA, atHorizontalMps: vHorizA, aRel: aA },
+        peakToTroughFraction: (v - vHorizA) / v,
+        meanBelowVerticalFraction: 1 - vMeanA / v,
+        // if v_tip is the rotation mean
+        mean: { vAtVerticalMps: vVertB, rotationMeanMps: lib.meanSpeed(thdB), aRel: aB },
+        aRelRange: [aA, aB],
+        aRelIncreaseFraction: aB / aA - 1,
+        envelopeWindowShorteningFraction: 1 - Math.sqrt(aA / aB),
+        velocityWindowShorteningFraction: 1 - aA / aB,
+        golden,
+        libration: lib,
       };
     };
 
     return kernel;
   }
 
-  return { create, refusal, passive, needs, held, timeline, EARTH_REF, OMEGA_EARTH, ATMOSPHERE_CLEAR_KM, KERNEL_VERSION };
+  return { create, refusal, passive, needs, held, timeline, EARTH_REF, OMEGA_EARTH, ATMOSPHERE_CLEAR_KM, MIN_HALF_LENGTH_KM, CLOSED_FORM_MAX_ROTATION_FRACTION, KERNEL_VERSION };
 });

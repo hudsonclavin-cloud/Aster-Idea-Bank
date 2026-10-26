@@ -43,7 +43,7 @@
     <div class="row">
       <label class="lbl" for="hold">Held window T</label>
       <input id="hold" type="range" min="1" max="20" step="0.5" value="10" aria-describedby="hold-note">
-      <span class="nowrap"><input id="hold-num" type="number" min="0.1" max="600" step="0.5" value="10" inputmode="decimal" aria-label="Held window duration in seconds"><span class="unit">s</span></span>
+      <span class="nowrap"><input id="hold-num" type="number" min="0.1" max="120" step="0.5" value="10" inputmode="decimal" aria-label="Held window duration in seconds"><span class="unit">s</span></span>
       <p class="note" id="hold-note"><span class="marks"><button type="button" data-hold="3">§4.3 lower bound, 3 s</button><button type="button" data-hold="10">§4.3 upper bound, 10 s</button></span> How long the vehicle must stay matched to the tip for the grapple. The founding document asks for 3–10 seconds (<code>docs/project_instructions.md:124</code>).</p>
     </div>
   </section>
@@ -85,7 +85,7 @@
     <section class="card" id="req-card">
       <h2>What the founding document asks for, priced</h2>
       <p class="quote">"Rendezvous closing accuracy requirement: relative position within meters and relative velocity within ~1 m/s at the moment of capture, sustained through a window of <b>3–10 seconds</b>" — <code>docs/project_instructions.md:124</code> (§4.3). Section 5.2 (b) and (d): "the launch vehicle does all the matching" and "the capture envelope is engineered to be tens of meters wide with multi-second windows by shaping tip trajectory and using the smart grapple's own terminal maneuvering" (<code>:167</code>).</p>
-      <p>A window is not a property of the geometry. For a passive vehicle it is set by the relative acceleration above; to get the stated duration passively the envelope would have to be far wider than "meters" and the grapple would meet the vehicle at tens of metres per second. Otherwise something supplies <span class="mono" id="req-arel"></span> for the whole window: the vehicle's engine, the grapple's own thrusters, or a reel paying line out from the tip.</p>
+      <p>A window is not a property of the geometry alone. For a passive vehicle it is set by the relative acceleration above. <span id="req-env-note"></span> So unless the tolerance is relaxed, something supplies <span class="mono" id="req-arel"></span> for the whole window: the vehicle's engine, the grapple's own thrusters, or a reel paying line out from the tip.</p>
       <div class="req-grid" id="reqs"></div>
       <p class="caption">The reel row is the same kinematics paid by a line from the tip instead of by the vehicle: a reel that lets the grapple follow a ballistic vehicle over a symmetric window of T must pay the line in and back out by the excursion shown and reach the peak line speed. Who pays is a design choice; the bill is a_rel × T.</p>
     </section>
@@ -94,11 +94,11 @@
       <h2>The three tiers <span class="muted small">at the current half-length, envelope, tolerance and held window</span></h2>
       <div class="table-scroll">
         <table id="tiers-table">
-          <thead><tr><th>Tier</th><th class="num">v_tip km/s</th><th class="num">tip g (file)</th><th class="num">a_rel m/s²</th><th class="num">a_rel g</th><th class="num">±t env.</th><th class="num">±t vel.</th><th class="num">hold Δv</th><th class="num">ground km/s (file)</th><th class="num">air km/s</th></tr></thead>
+          <thead><tr><th>Tier</th><th class="num">v_tip km/s</th><th class="num">tip g (file)</th><th class="num">a_rel m/s²</th><th class="num">a_rel g</th><th class="num">±t env.</th><th class="num">±t vel.</th><th class="num">hold Δv</th><th class="num">EQ-3a km/s (file)</th><th class="num">Earth-fixed km/s</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
-      <p class="caption">"(file)" columns give the value stated in <code>params/rev_a.json</code> beside the recomputation; a dash means the file states none for that tier. Ground-track uses EQ-3a's surface co-rotation; airspeed uses co-rotation at the tip radius (see the convention note below).</p>
+      <p class="caption">"(file)" columns give the value stated in <code>params/rev_a.json</code> beside the recomputation; a dash means the file states none there. EQ-3a is the file's ground-relative convention, inertial speed minus the equatorial surface speed; Earth-fixed is the velocity relative to the rotating Earth at the tip radius, which is also the airspeed in a co-rotating atmosphere (see "Which Earth rotation?" below).<span id="tiers-cap-L"></span></p>
     </section>
 
     <section class="card">
@@ -130,7 +130,7 @@
         <div id="convention-body"></div>
       </section>
       <section class="card" id="modulation">
-        <h2>What the rigid rotor ignores</h2>
+        <h2>Which speed is v_tip?</h2>
         <div id="modulation-body"></div>
       </section>
     </div>

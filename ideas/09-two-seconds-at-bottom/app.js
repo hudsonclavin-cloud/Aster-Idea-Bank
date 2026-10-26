@@ -102,28 +102,47 @@
     }
     $('tier-note').textContent = `Tip speeds read from the params/rev_a.json snapshot (${C.tierOrder.map((k) => C.tiers[k].sourceKey).join(', ')}).`;
   }
-  function bindPair(rangeId, numId, key, parse) {
+  // A typed value outside the number box's declared min/max is refused, not clamped and not passed on
+  // to the closed forms; zero, negative and empty values go to the kernel, which refuses them itself.
+  const rangeErrors = {};
+  function bindPair(rangeId, numId, key, label, unit) {
     const r = $(rangeId);
     const n = $(numId);
     const set = (v) => {
       if (!Number.isFinite(v)) return;
       state[key] = v;
+      const lo = Number(n.min);
+      const hi = Number(n.max);
+      rangeErrors[key] = v > 0 && (v < lo || v > hi) ? { label, unit, v, lo, hi } : null;
       r.value = String(Math.min(Number(r.max), Math.max(Number(r.min), v)));
       n.value = String(v);
       render();
     };
-    r.addEventListener('input', () => set(parse(r.value)));
-    n.addEventListener('input', () => set(parse(n.value)));
+    r.addEventListener('input', () => set(Number(r.value)));
+    n.addEventListener('input', () => set(Number(n.value)));
     return set;
+  }
+  function inputRefusal() {
+    for (const key of ['L', 'env', 'vtol', 'hold']) {
+      const e = rangeErrors[key];
+      if (e) {
+        return CatchWindow.refusal(
+          'out_of_envelope',
+          `${e.label} of ${e.v} ${e.unit} is outside this page's input range, ${e.lo} to ${e.hi} ${e.unit}. Beyond it the page would be extrapolating the closed forms, so it shows nothing rather than a number.`,
+          `Type a value from ${e.lo} to ${e.hi} ${e.unit}, or use the slider.`
+        );
+      }
+    }
+    return null;
   }
   // half-length range: from 50 km to a little past the CoM altitude so the ground refusal is reachable
   const comAlt = C.rComKm - C.earthRadiusKm;
   $('L').max = String(comAlt + 90);
   $('L-num').max = String(comAlt + 90);
-  const setL = bindPair('L', 'L-num', 'L', Number);
-  const setEnv = bindPair('env', 'env-num', 'env', Number);
-  const setVtol = bindPair('vtol', 'vtol-num', 'vtol', Number);
-  const setHold = bindPair('hold', 'hold-num', 'hold', Number);
+  const setL = bindPair('L', 'L-num', 'L', 'A half-length', 'km');
+  bindPair('env', 'env-num', 'env', 'A capture envelope', 'm');
+  bindPair('vtol', 'vtol-num', 'vtol', 'A velocity tolerance', 'm/s');
+  const setHold = bindPair('hold', 'hold-num', 'hold', 'A held window', 's');
   $('L-canon').addEventListener('click', () => setL(C.halfLengthKm));
   for (const b of document.querySelectorAll('button[data-hold]')) b.addEventListener('click', () => setHold(Number(b.dataset.hold)));
   $('L-note').textContent = `The centre of mass stays at the canon altitude of ${f(C.comAltitudeKm, 0)} km (orbital.com_altitude_km); the tip altitude is that minus L. Below ${C.atmosphereClearKm} km the ballistic idealisation is flagged; at or below the ground the page refuses. Canon L = ${f(C.halfLengthKm, 0)} km (geometry.tether_half_length_km).`;
@@ -150,7 +169,7 @@
   }
 
   // ---------------------------------------------------------------- verdict
-  function renderVerdict(r) {
+  function renderVerdict(r, mod) {
     const k = r.kin;
     const p = r.passive;
     const h = r.held;
@@ -172,7 +191,7 @@
       c.appendChild(el('span', 'k', kk));
       chips.appendChild(c);
     };
-    chip(`${f(k.aRel, 2)} m/s²`, `relative acceleration, ${f(k.aRelG, 2)} g`, '');
+    chip(`${f(k.aRel, 2)} m/s²`, `relative acceleration, ${f(k.aRelG, 2)} g, v_tip at the vertical`, '');
     chip(`${fmtS(p.totalPos)} s`, `inside ${pm(p.envelopeM, 0)} m, passive`, 'pos');
     chip(`${fmtS(p.totalVel)} s`, `inside ${pm(p.velTolMps, 1)} m/s, passive`, 'vel');
     chip(`${f(h.deltaV, 0)} m/s`, `held for ${fmtT(h.holdS)} s at ${f(k.aRelG, 2)} g`, '');
@@ -189,8 +208,11 @@
     if (!k.validity.atmosphereClear) status('warn', '!', `tip at ${f(k.tipAltitudeKm, 0)} km, below ${k.validity.atmosphereClearKm} km: a vehicle there is not ballistic (drag not modelled); numbers shown are the vacuum kinematics only`);
     else status('ok', '✓', `tip altitude ${f(k.tipAltitudeKm, 0)} km, above the ${k.validity.atmosphereClearKm} km scope line`);
     const reqMin = REQUIREMENT_WINDOWS_S[0];
-    if (p.totalPos < reqMin) status('warn', '!', `the passive window is below the §4.3 lower bound of ${reqMin} s: the window is a station-keeping requirement, not a free property of the geometry`);
+    if (p.totalPos < reqMin) status('warn', '!', `the passive window is below the §4.3 lower bound of ${reqMin} s: holding ±${f(p.velTolMps, 1)} m/s through it is a station-keeping requirement, not a free property of the geometry`);
     else status('ok', '✓', `the passive envelope window meets the §4.3 lower bound of ${reqMin} s`);
+    if (mod && mod.ok) {
+      status('info', 'i', `open convention: these numbers read v_tip as the speed at the vertical; read as the rotation mean, a_rel is ${f(mod.mean.aRel, 2)} m/s² (+${f(100 * mod.aRelIncreaseFraction, 1)} %), see "Which speed is v_tip?"`);
+    }
   }
 
   // ---------------------------------------------------------------- sketch (CoM frame)
@@ -228,12 +250,12 @@
     let down = '';
     for (let i = 0; i < N; i++) {
       const t = -tSpan + (2 * tSpan * i) / (N - 1);
-      const x = X(-vTip * t);
+      const x = X(vTip * t);
       up += `${i ? 'L' : 'M'}${x.toFixed(1)},${Y(yTip(t) + p.envelopeM).toFixed(1)}`;
     }
     for (let i = N - 1; i >= 0; i--) {
       const t = -tSpan + (2 * tSpan * i) / (N - 1);
-      const x = X(-vTip * t);
+      const x = X(vTip * t);
       down += `L${x.toFixed(1)},${Y(yTip(t) - p.envelopeM).toFixed(1)}`;
     }
     svg.appendChild(svgEl('path', { class: 'band-pos', d: `${up}${down}Z` }));
@@ -242,7 +264,7 @@
     let veh = '';
     for (let i = 0; i < N; i++) {
       const t = -tSpan + (2 * tSpan * i) / (N - 1);
-      const x = X(-vTip * t);
+      const x = X(vTip * t);
       arc += `${i ? 'L' : 'M'}${x.toFixed(1)},${Y(yTip(t)).toFixed(1)}`;
       veh += `${i ? 'L' : 'M'}${x.toFixed(1)},${Y(yVeh(t)).toFixed(1)}`;
     }
@@ -257,7 +279,7 @@
     for (const s of [-1, 1]) {
       const t = s * p.tPos;
       if (Math.abs(t) <= tSpan) {
-        const xx = X(-vTip * t);
+        const xx = X(vTip * t);
         svg.appendChild(svgEl('circle', { class: 'marker pos', cx: xx, cy: Y(yVeh(t)), r: 4.5 }));
         // the two labels fan outward from the match point so they never meet on a narrow chart
         svg.appendChild(svgEl('text', { class: 'lab halo', x: xx + (xx < X(0) ? -7 : 7), y: Y(yVeh(t)) + 17, 'text-anchor': xx < X(0) ? 'end' : 'start' }, `${s < 0 ? '−' : '+'}${f(p.tPos, 2)} s`));
@@ -269,17 +291,19 @@
     // axes
     svg.appendChild(svgEl('line', { class: 'axis', x1: m.l, y1: m.t + ph, x2: m.l + pw, y2: m.t + ph }));
     for (const t of narrow ? [-tSpan, 0, tSpan] : [-tSpan, -tSpan / 2, 0, tSpan / 2, tSpan]) {
-      const x = X(-vTip * t);
+      const x = X(vTip * t);
       svg.appendChild(svgEl('line', { class: 'axis', x1: x, y1: m.t + ph, x2: x, y2: m.t + ph + 4 }));
-      svg.appendChild(svgEl('text', { class: 'tick', x, y: m.t + ph + 16, 'text-anchor': 'middle' }, `${minus((-vTip * t / 1000).toFixed(1))} km`));
+      svg.appendChild(svgEl('text', { class: 'tick', x, y: m.t + ph + 16, 'text-anchor': 'middle' }, `${minus((vTip * t / 1000).toFixed(1))} km`));
     }
-    svg.appendChild(svgEl('text', { class: 'tick', x: m.l + pw / 2, y: H - 6, 'text-anchor': 'middle' }, narrow ? `along the swing (${minus((-tSpan).toFixed(1))} to +${tSpan.toFixed(1)} s)` : `along the swing, from the vertical (${minus((-tSpan).toFixed(1))} s to +${tSpan.toFixed(1)} s)`));
+    // x is the distance along the tip's own motion, so time runs left to right as in the timeline below
+    // (in the orbit's direction the lower tip moves backward)
+    svg.appendChild(svgEl('text', { class: 'tick', x: m.l + pw / 2, y: H - 6, 'text-anchor': 'middle' }, narrow ? `tip moves → (${minus((-tSpan).toFixed(1))} s to +${tSpan.toFixed(1)} s)` : `along the tip's motion, tip moves → (${minus((-tSpan).toFixed(1))} s at left, +${tSpan.toFixed(1)} s at right)`));
     // y ticks
     svg.appendChild(svgEl('line', { class: 'axis', x1: m.l, y1: m.t, x2: m.l, y2: m.t + ph }));
     for (const ym of [0, yTip(tSpan)]) {
       svg.appendChild(svgEl('text', { class: 'tick', x: m.l - 6, y: Y(ym) + 4, 'text-anchor': 'end' }, fmtM(ym)));
     }
-    $('sketch-cap').textContent = `Centre-of-mass frame, vertical stretched ×${Math.round(exag)}; at the centre the vehicle and the tip share place and velocity. The tip's circular arc rises ${fmtM(yTip(tSpan))} above the bottom point in ${tSpan.toFixed(1)} s (centripetal ${f(k.aCentripetal, 2)} m/s²); the vehicle sags ${fmtM(-yVeh(tSpan))} (gravity gradient ${f(k.gravityGradient, 2)} m/s² over the ${f(k.halfLengthKm, 0)} km). Their difference is a_rel = ${f(k.aRel, 2)} m/s². The vehicle leaves the ${pm(p.envelopeM, 0)} m band ${pm(p.tPos, 2)} s from the match.`;
+    $('sketch-cap').textContent = `Centre-of-mass frame, vertical stretched ×${Math.round(exag)}; the tip moves left to right (backward along the orbit), so time runs left to right as in the timeline below. At the centre the vehicle and the tip share place and velocity. The tip's circular arc rises ${fmtM(yTip(tSpan))} above the bottom point in ${tSpan.toFixed(1)} s (centripetal ${f(k.aCentripetal, 2)} m/s²); the vehicle sags ${fmtM(-yVeh(tSpan))} (gravity gradient ${f(k.gravityGradient, 2)} m/s² over the ${f(k.halfLengthKm, 0)} km). Their difference is a_rel = ${f(k.aRel, 2)} m/s². The vehicle leaves the ${pm(p.envelopeM, 0)} m band ${pm(p.tPos, 2)} s from the match.`;
   }
 
   // ---------------------------------------------------------------- timeline (two panels)
@@ -410,7 +434,7 @@
     });
     svg.addEventListener('focus', () => show(tlCursor === null ? 0 : tlCursor));
     svg.addEventListener('blur', hide);
-    $('tl-cap').textContent = `Separation = a_rel t²/2 and relative speed = a_rel t with a_rel = ${f(k.aRel, 2)} m/s². Inside ${pm(p.envelopeM, 0)} m for ${pm(p.tPos, 2)} s; inside ${pm(p.velTolMps, 1)} m/s for ${pm(p.tVel, 3)} s, so the ${p.binding} tolerance binds. The best any passive trajectory can do inside ${pm(p.envelopeM, 0)} m (enter at the top, turn at the bottom) is ${f(p.bestPassive.totalS, 2)} s, arriving at ${f(p.bestPassive.edgeSpeedMps, 1)} m/s. Shrink the held window to zoom in.`;
+    $('tl-cap').textContent = `Separation = a_rel t²/2 and relative speed = a_rel t with a_rel = ${f(k.aRel, 2)} m/s². Inside ${pm(p.envelopeM, 0)} m for ${pm(p.tPos, 2)} s; inside ${pm(p.velTolMps, 1)} m/s for ${pm(p.tVel, 3)} s, so the ${p.binding} tolerance binds. ${p.bestPassive.withinClosedForm ? `The best any passive trajectory can do inside ${pm(p.envelopeM, 0)} m (enter at the top, turn at the bottom) is ${f(p.bestPassive.totalS, 2)} s, arriving at ${f(p.bestPassive.edgeSpeedMps, 1)} m/s.` : 'The grazing bound (enter at the top, turn at the bottom) would run past the closed forms’ range here and is not shown.'} Shrink the held window to zoom in.`;
   }
 
   function niceTicks(lo, hi, n) {
@@ -439,9 +463,24 @@
     const box = $('reqs');
     clear(box);
     $('req-arel').textContent = `a_rel = ${f(r.kin.aRel, 2)} m/s² (${f(r.kin.aRelG, 2)} g)`;
+    // §5.2(d)'s "tens of meters wide" envelope against the lower bound of §4.3, on position alone
+    const low = r.requirement[0];
+    const note = $('req-env-note');
+    if (low && low.passive.ok) {
+      note.textContent = `On position alone a passive ${low.totalS} s fits inside ${pm(low.passive.envelopeM, 1)} m, which §5.2(d)'s "tens of meters wide" envelope would allow; but the vehicle would cross the envelope's edges at ${f(low.passive.edgeSpeedMps, 1)} m/s, about ${f(low.passive.edgeSpeedMps / r.passive.velTolMps, 0)} times the ${pm(r.passive.velTolMps, 1)} m/s tolerance that §4.3 asks to be sustained through the window.`;
+    } else {
+      note.textContent = '';
+    }
     for (const q of r.requirement) {
       const card = el('div', 'req');
       card.appendChild(el('h3', null, `A ${q.totalS} s window`));
+      if (!q.passive.ok || !q.held.ok) {
+        const why = (q.passive.ok ? q.held : q.passive).refusal;
+        card.appendChild(el('p', 'small code', `refusal.code: ${why.code}`));
+        card.appendChild(el('p', 'small', why.reason));
+        box.appendChild(card);
+        continue;
+      }
       const dl = el('dl');
       const row = (k, v) => {
         dl.appendChild(el('dt', null, k));
@@ -451,7 +490,7 @@
       row('passive: speed at its edge', `${f(q.passive.edgeSpeedMps, 1)} m/s`);
       row('held: thrust acceleration', `${f(q.held.accel, 2)} m/s² = ${f(q.held.accel / C.g0, 2)} g`);
       row('held: Δv', `${f(q.held.deltaV, 0)} m/s`);
-      row('as a share of the catch speed', `${f(100 * q.held.fractionOfCatchSpeed, 1)} %`);
+      row('as a share of the EQ-3a catch speed', `${f(100 * q.held.fractionOfCatchSpeed, 1)} %`);
       row('reel: line excursion', `${fmtM(q.held.reelExcursionM)}`);
       row('reel: peak line speed', `${f(q.held.reelPeakSpeedMps, 0)} m/s`);
       card.appendChild(dl);
@@ -477,16 +516,18 @@
         tb.appendChild(tr);
         continue;
       }
-      tr.appendChild(td(`${f(row.kin.aCentripetalG, 2)} (${row.stated.tipAccelG === null ? '—' : row.stated.tipAccelG})`, 'num', 'tip g (file)'));
+      // the file states tip_acceleration_g at its own half-length only; at any other L the kernel withholds it
+      tr.appendChild(td(`${f(row.kin.aCentripetalG, 2)} (${row.stated.tipAccelG === null ? '—' : row.stated.tipAccelG})`, 'num', 'tip g (file at canon L)'));
       tr.appendChild(td(f(row.kin.aRel, 2), 'num', 'a_rel m/s²'));
       tr.appendChild(td(f(row.kin.aRelG, 2), 'num', 'a_rel g'));
       tr.appendChild(td(`${pm(row.passive.tPos, 2)} s`, 'num', '±t, envelope'));
       tr.appendChild(td(`${pm(row.passive.tVel, 3)} s`, 'num', '±t, velocity'));
       tr.appendChild(td(`${f(row.held.deltaV, 0)} m/s`, 'num', 'hold Δv'));
-      tr.appendChild(td(`${f(row.kin.groundTrack.speed / 1e3, 3)} (${row.stated.groundrelKms === null ? '—' : row.stated.groundrelKms})`, 'num', 'ground-track km/s (file)'));
-      tr.appendChild(td(f(row.kin.airspeed.speed / 1e3, 3), 'num', 'airspeed km/s'));
+      tr.appendChild(td(`${f(row.kin.eq3a.speed / 1e3, 3)} (${row.stated.groundrelKms === null ? '—' : row.stated.groundrelKms})`, 'num', 'EQ-3a km/s (file)'));
+      tr.appendChild(td(f(row.kin.earthFixed.speed / 1e3, 3), 'num', 'Earth-fixed km/s'));
       tb.appendChild(tr);
     }
+    $('tiers-cap-L').textContent = state.L === C.halfLengthKm ? '' : ` The file states tip_acceleration_g only at its own half-length of ${f(C.halfLengthKm, 0)} km, so at this L the "(file)" tip-g column shows a dash.`;
   }
 
   // ---------------------------------------------------------------- window vs L
@@ -618,14 +659,14 @@
       ['μ, Earth', `${(C.mu / 1e9).toFixed(0)} km³/s²`, `${revPath}: orbital.mu_earth_m3s2`],
       ['CoM altitude', `${f(C.comAltitudeKm, 0)} km`, `${revPath}: orbital.com_altitude_km`],
       ['Earth radius used', `${f(C.earthRadiusKm, 0)} km`, `${pyPath}: R_EARTH_KM (line ${src.physicsModule.R_EARTH_KM.line}); the twin's golden.json and the file's r_tip = ${f(C.earthRadiusKm + C.comAltitudeKm + C.halfLengthKm, 0)} km notes use the same radius`],
-      ['CoM radius used', `${f(k.rComKm, 0)} km`, `Earth radius + CoM altitude. The file's orbital.com_radius_km is ${f(C.comRadiusKmStated, 0)} km (idea 01's finding F1); with it a_rel is ${f(K.evaluate({ vTipKms: k.vTipKms, halfLengthKm: k.halfLengthKm, rComKm: C.comRadiusKmStated, envelopeM: p.envelopeM, velTolMps: p.velTolMps, holdS: h.holdS }).kin.aRel, 3)} m/s²`],
+      ['CoM radius used', `${f(k.rComKm, 0)} km`, `Earth radius + CoM altitude. The file's orbital.com_radius_km is ${f(C.comRadiusKmStated, 0)} km (idea 01's finding F1); with it a_rel is ${f(K.kinematics({ vTipKms: k.vTipKms, halfLengthKm: k.halfLengthKm, rComKm: C.comRadiusKmStated }).aRel, 3)} m/s²`],
       ['Half-length L', `${f(k.halfLengthKm, 0)} km`, state.L === C.halfLengthKm ? `${revPath}: geometry.tether_half_length_km` : `your input (canon: ${f(C.halfLengthKm, 0)} km)`],
       ['Tip radius, tip altitude', `${f(k.rTipKm, 0)} km, ${f(k.tipAltitudeKm, 0)} km`, 'CoM radius − L; the file states tip_altitude_lower_km for the canon L'],
       ['Tip speed v_tip', `${f(k.vTipKms, 3)} km/s`, `${revPath}: ${C.tiers[state.tier].sourceKey}`],
       ['Spin rate ω, period', `${k.omega.toExponential(3)} rad/s, ${f(k.periodMin, 2)} min`, `v_tip / L; 2πL / v_tip (file: ${C.rotationPeriodMinStated} min for the canon tier and L)`],
       ['v_orb at the CoM', `${f(k.vOrb / 1e3, 4)} km/s`, `EQ-2 √(μ/R) (file: ${C.vOrbKmsStated}, which is what ${f(C.comRadiusKmStated, 0)} km gives)`],
       ['Lower tip inertial speed at the bottom', `${f(k.vTipInertialBottom, 3)} m/s`, `v_orb − v_tip; the twin's golden.json t = 0 lower-tip state (${src.golden ? src.golden.path : 'golden.json'}) is ${C.golden ? f(C.golden.t0.lowerTip[3], 3) : '—'} m/s at r = ${C.golden ? f(C.golden.t0.lowerTip[0] / 1e3, 0) : '—'} km`],
-      ['Centripetal acceleration v_tip²/L', `${f(k.aCentripetal, 3)} m/s² = ${f(k.aCentripetalG, 3)} g`, `EQ-3c (file: tip_acceleration_g ${C.tiers[state.tier].stated.tipAccelG}); g₀ = ${C.g0} from ${pyPath} G_STD (line ${src.physicsModule.G_STD.line})`],
+      ['Centripetal acceleration v_tip²/L', `${f(k.aCentripetal, 3)} m/s² = ${f(k.aCentripetalG, 3)} g`, `EQ-3c (${state.L === C.halfLengthKm ? `file: tip_acceleration_g ${C.tiers[state.tier].stated.tipAccelG}` : `the file states tip_acceleration_g only at L = ${f(C.halfLengthKm, 0)} km`}); g₀ =${C.g0} from ${pyPath} G_STD (line ${src.physicsModule.G_STD.line})`],
       ['g at the hub, g at the tip', `${f(k.gHub, 4)}, ${f(k.gTip, 4)} m/s²`, 'μ/R², μ/(R−L)²'],
       ['Tip inertial acceleration at the bottom', `${f(k.aTipInertial, 3)} m/s² outward`, 'v_tip²/L − μ/R² (rigid rotor, CoM on a circular orbit)'],
       ['Relative acceleration a_rel', `${f(k.aRel, 3)} m/s² = ${f(k.aRelG, 3)} g`, 'v_tip²/L − μ/R² + μ/(R−L)²: tip minus a ballistic vehicle at the same point'],
@@ -661,49 +702,77 @@
     const box = $('convention-body');
     clear(box);
     const p1 = el('p', 'small');
-    p1.appendChild(document.createTextNode(`EQ-3a in ${C.sources.physicsModule.path} (line ${C.sources.physicsModule.v_earth_rot_kms.line}) subtracts a literal ${f(C.earthRotKmsEq3a, 3)} km/s "at equator": ground-track speed `));
-    p1.appendChild(el('b', null, `${f(k.groundTrack.speed / 1e3, 3)} km/s`));
-    p1.appendChild(document.createTextNode(`. That literal is the equatorial surface speed: ω_E × ${f(C.earthRef.equatorialRadiusKm, 3)} km = ${f(k.coRotationEquatorSurface, 1)} m/s, with ω_E from the ${C.earthRef.siderealRotationPeriodHours} h sidereal day (${C.earthRef.source}).`));
+    p1.appendChild(document.createTextNode(`EQ-3a in ${C.sources.physicsModule.path} (line ${C.sources.physicsModule.v_earth_rot_kms.line}) subtracts a literal ${f(C.earthRotKmsEq3a, 3)} km/s "at equator" from the tip's inertial ${f(k.vTipInertialBottom / 1e3, 3)} km/s: `));
+    p1.appendChild(el('b', null, `${f(k.eq3a.speed / 1e3, 3)} km/s`));
+    p1.appendChild(document.createTextNode(`, the file's v_lower_tip_groundrel_kms. That literal is the equatorial surface speed, ω_E × ${f(C.earthRef.equatorialRadiusKm, 3)} km = ${f(k.coRotationEquatorSurface, 1)} m/s, with ω_E from the ${C.earthRef.siderealRotationPeriodHours} h sidereal day (${C.earthRef.reference}, read ${C.earthRef.read}; full reference in the footer). So EQ-3a is launch-site bookkeeping: what a vehicle launched from the equator still has to add.`));
     box.appendChild(p1);
     const p2 = el('p', 'small');
-    p2.appendChild(document.createTextNode(`The air at the tip radius co-rotates faster, ω_E × ${f(k.rTipKm, 0)} km = ${f(k.airspeed.coRotation, 1)} m/s, so the tip's airspeed is `));
-    p2.appendChild(el('b', null, `${f(k.airspeed.speed / 1e3, 3)} km/s`));
-    p2.appendChild(document.createTextNode(`, ${f(k.groundTrack.speed - k.airspeed.speed, 0)} m/s less. Ground-track is the right bookkeeping for what a launch site's rotation hands the vehicle; airspeed is the right number for drag and heating at the tip. The parameter sheet (§2.2) does not say which it means; that is a verification-memo question for the maintainer, reported here, not resolved.`));
+    p2.appendChild(document.createTextNode(`Relative to the rotating Earth at the tip's own radius the frame moves ω_E × ${f(k.rTipKm, 0)} km = ${f(k.earthFixed.coRotation, 1)} m/s, so the tip's ground-relative velocity there, which is also its airspeed in a co-rotating atmosphere, is `));
+    p2.appendChild(el('b', null, `${f(k.earthFixed.speed / 1e3, 3)} km/s`));
+    p2.appendChild(document.createTextNode(`, ${f(k.eq3a.speed - k.earthFixed.speed, 0)} m/s below EQ-3a's figure. Neither is a ground-track speed: the point beneath the tip crosses the ground at ${f(k.subPoint.speed / 1e3, 3)} km/s (on the module's ${f(k.subPoint.radiusKm, 0)} km radius).`));
     box.appendChild(p2);
+    box.appendChild(el('p', 'small', 'All three assume a prograde equatorial orbit, as EQ-3a does; rev_a.json states no inclination. The parameter sheet (§2.2) does not say whether its ground-relative speed is the bookkeeping figure or the velocity relative to the Earth at the tip; that is a verification-memo question for the maintainer, reported here, not resolved.'));
   }
-  function renderModulation(r) {
+
+  function renderModulation(r, m) {
     const box = $('modulation-body');
     clear(box);
-    const m = K.modulationCaveat({ vTipKms: r.kin.vTipKms, halfLengthKm: r.kin.halfLengthKm });
     if (!m.ok) {
-      box.appendChild(el('p', 'small', `No golden run in the snapshot (${m.refusal.reason}).`));
+      box.appendChild(el('p', 'small code', `refusal.code: ${m.refusal.code}`));
+      box.appendChild(el('p', 'small', m.refusal.reason));
       return;
     }
+    const pct = (x, d) => f(100 * x, d === undefined ? 1 : d);
     const p1 = el('p', 'small');
-    p1.appendChild(document.createTextNode(`The lumped-mass twin's golden run (${C.sources.golden.path} @ ${SHORT}, ${C.golden.meta.config.n_nodes} nodes, ${f(C.golden.meta.duration_s, 0)} s) starts from exactly this scene, rigid rotation with the tether vertical, and then averages a tip speed of `));
-    p1.appendChild(el('b', null, `${f(m.goldenMeanTipSpeedMps, 1)} m/s`));
-    p1.appendChild(document.createTextNode(`, ${f(100 * m.meanBelowVTipFraction, 1)} % below the ${f(m.goldenVTipMps, 0)} m/s it starts with: the gravity-gradient modulation the glossary names (docs/glossary.md, "Gravity-gradient tip-speed modulation"). The spin is fastest when the tether is vertical, which is the catch.`));
+    p1.appendChild(document.createTextNode(`The gravity gradient modulates the spin. For a rigid line body on a circular orbit, θ'' = −(3/2)Ω² sin 2θ with θ from the local vertical, so the tip is fastest at the vertical, which is the catch, and slowest at the horizontal. At ${f(m.vTipKms, 1)} km/s and L = ${f(m.halfLengthKm, 0)} km the tip speed swings ${pct(m.peakToTroughFraction, 2)} % peak to trough, one cycle every ${f(m.modulationPeriodS, 0)} s, and its rotation mean sits ${pct(m.meanBelowVerticalFraction, 2)} % below its value at the vertical.`));
     box.appendChild(p1);
-    const p2 = el('p', 'small');
-    p2.appendChild(document.createTextNode(`So the canon tip speed is the bottom-of-swing value and the numbers above are the consistent ones. If instead v_tip were the rotation mean, the tip would pass the bottom at about ${f(m.vBottomIfVTipWereMean, 0)} m/s and a_rel would be `));
-    p2.appendChild(el('b', null, `${f(m.aRelIfVTipWereMean, 2)} m/s²`));
-    p2.appendChild(document.createTextNode(` (+${f(100 * m.aRelIncreaseFraction, 1)} %), shortening every window by about ${f(100 * (1 - 1 / Math.sqrt(1 + m.aRelIncreaseFraction)), 1)} %. Elasticity, damping and the catch transient itself are not in this page at all.`));
-    box.appendChild(p2);
+    box.appendChild(el('p', 'small', 'So which speed is v_tip? The repository does not settle it. The twin is spun up with v_tip at the vertical; the dynamics module says the rotation mean is the quantity that matches v_tip (physics/tether_dynamics.py, run_measuring docstring); the glossary says the nominal spin should sit slightly above the target speed. The two readings give:'));
+    const dl = el('dl', 'conv');
+    const row = (k, v) => {
+      dl.appendChild(el('dt', null, k));
+      dl.appendChild(el('dd', null, v));
+    };
+    row('v_tip at the vertical (the twin’s start; this page’s numbers)', `a_rel ${f(m.vertical.aRel, 2)} m/s²`);
+    row('v_tip as the rotation mean', `tip passes the vertical at ${f(m.mean.vAtVerticalMps, 0)} m/s; a_rel ${f(m.mean.aRel, 2)} m/s² (+${pct(m.aRelIncreaseFraction)} %)`);
+    box.appendChild(dl);
+    box.appendChild(el('p', 'small', `Read as the mean, every envelope window is ${pct(m.envelopeWindowShorteningFraction)} % shorter, every velocity window ${pct(m.velocityWindowShorteningFraction)} % shorter and every hold Δv ${pct(m.aRelIncreaseFraction)} % larger. A verification-memo question for the maintainer, reported here, not resolved.`));
+    const g = m.golden;
+    const p4 = el('p', 'small');
+    if (g && g.applicable) {
+      p4.appendChild(document.createTextNode(`Check against the twin: the lumped-mass golden run (${C.sources.golden.path} @ ${SHORT}, ${g.config.nNodes} nodes) starts from this configuration with v_tip at the vertical. Its ${f(g.durationS, 0)} s mean tip speed is `));
+      p4.appendChild(el('b', null, `${f(g.meanTipSpeedMps, 2)} m/s`));
+      p4.appendChild(document.createTextNode(`, a ${f(g.durationS, 0)} s mean (${f(g.rotationsCovered, 2)} of a rotation, ${f(g.modulationCyclesCovered, 2)} modulation cycles), not a rotation mean. The libration model over the same ${f(g.durationS, 0)} s gives ${f(g.model.meanSpeed, 2)} m/s (${f(100 * (g.model.meanSpeed / g.meanTipSpeedMps - 1), 3)} %).`));
+    } else if (g) {
+      p4.appendChild(document.createTextNode(`The twin's golden run covers only ${f(g.config.vTipKms, 1)} km/s at L = ${f(g.config.halfLengthKm, 0)} km. At this configuration these figures are the libration model's alone, unchecked against the twin.`));
+    } else {
+      p4.appendChild(document.createTextNode('No golden run in the snapshot to check the model against.'));
+    }
+    box.appendChild(p4);
+    box.appendChild(el('p', 'small', 'Elasticity, damping and the catch transient itself are not in this page.'));
   }
 
   // ---------------------------------------------------------------- render
+  function hideAll(ref, title) {
+    showRefusal(ref, title);
+    $('results').hidden = true;
+    $('verdict').hidden = true;
+  }
   function render() {
-    const r = K.evaluate({ tier: state.tier, halfLengthKm: state.L, envelopeM: state.env, velTolMps: state.vtol, holdS: state.hold, requirementWindowsS: REQUIREMENT_WINDOWS_S });
-    if (!r.ok) {
-      showRefusal(r.refusal, 'No window to compute');
-      $('results').hidden = true;
-      $('verdict').hidden = true;
+    const bad = inputRefusal();
+    if (bad) {
+      hideAll(bad.refusal, 'Input out of range');
       return;
     }
+    const r = K.evaluate({ tier: state.tier, halfLengthKm: state.L, envelopeM: state.env, velTolMps: state.vtol, holdS: state.hold, requirementWindowsS: REQUIREMENT_WINDOWS_S });
+    if (!r.ok) {
+      hideAll(r.refusal, 'No window to compute');
+      return;
+    }
+    const mod = K.modulation({ vTipKms: r.kin.vTipKms, halfLengthKm: r.kin.halfLengthKm });
     hideRefusal();
     $('results').hidden = false;
     $('verdict').hidden = false;
-    renderVerdict(r);
+    renderVerdict(r, mod);
     renderSketch(r);
     renderTimeline(r);
     renderRequirements(r);
@@ -711,7 +780,7 @@
     renderCurve(r);
     renderNumbers(r);
     renderConvention(r);
-    renderModulation(r);
+    renderModulation(r, mod);
     $('prov').textContent = `Tether constants: Skyhook ${C.sources.revA.path} @ ${SHORT} (${C.sources.revA.commitDate ? String(C.sources.revA.commitDate).slice(0, 10) : ''}), sha256 ${String(C.sources.revA.sha256).slice(0, 12)}…, revision ${C.revision}; Earth radius and EQ-3a literal from ${C.sources.physicsModule.path} at the same commit; golden run from ${C.sources.golden ? C.sources.golden.path : '—'}. Earth rotation from ${C.earthRef.source}. Kernel catchwindow.js ${K.version}. An idea-bank prototype: not through Skyhook's Rule 1 canon process, verification memo or pytest suite.`;
   }
 

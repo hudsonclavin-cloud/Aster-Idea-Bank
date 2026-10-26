@@ -8,9 +8,9 @@
   "readBlob": "ce4c48d78c9d9942b54b6877b80ad852015e675b",
   "sourceSha256": "e58897b1d10dd01248c1cbf2845dd8b1a8d2503dea9333a1dc0c8f186292991c",
   "sourceBytes": 12085,
-  "copiedAt": "2026-10-26T10:37:24.328Z",
+  "copiedAt": "2026-10-26T15:31:21.589Z",
   "mode": "copy",
-  "note": "Whole file, read-only evidence, not executed: R_EARTH_KM = 6371.0 (line 40) and EQ-3a's v_earth_rot = 0.465 km/s literal (line 95) are what the kernel's Earth radius and ground-relative convention are pinned to.",
+  "note": "Whole file, read-only evidence, not executed: R_EARTH_KM = 6371.0 (line 40), G_STD = 9.80665 (line 41) and EQ-3a's v_earth_rot = 0.465 km/s literal (line 109, inside the function defined at line 95) are what the kernel's Earth radius, g0 and EQ-3a ground-relative convention are pinned to.",
   "readMatchesCommitted": true,
   "writtenSha256": "e58897b1d10dd01248c1cbf2845dd8b1a8d2503dea9333a1dc0c8f186292991c",
   "writtenBytes": 12085
