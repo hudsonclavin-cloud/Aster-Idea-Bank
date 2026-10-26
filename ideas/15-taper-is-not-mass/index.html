@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taper Is Not Mass</title>
+<meta name="description" content="Skyhook's peak-area taper (EQ-5) and integrated two-arm mass ratio (EQ-6), drawn against each other, with every number read from params/rev_a.json.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">Skyhook · Rev A · an idea-bank prototype</p>
+    <h1>Taper is not mass</h1>
+    <p class="lede">EQ-5 gives how much thicker the tether is at its centre than at its tip. EQ-6 gives how heavy the whole tether is compared with the payload. The program once used the first as if it were the second. Both depend on one number, <i>x</i>&nbsp;=&nbsp;(<i>v</i><sub>tip</sub>/<i>V</i><sub>c</sub>)·√(SF/(1&nbsp;−&nbsp;derate)), and they differ by exactly 2√π·<i>x</i>·erf(<i>x</i>).</p>
+    <p class="canon" id="canon-line">Reading the canon…</p>
+  </header>
+
+  <div id="notice" class="notice" role="alert" hidden></div>
+
+  <section class="card controls" aria-label="Controls">
+    <div class="field">
+      <label for="material">Fibre</label>
+      <select id="material"></select>
+      <p class="hint" id="mat-note"></p>
+    </div>
+    <div class="custom" id="custom" hidden>
+      <div class="field">
+        <label for="c-sigma">Tensile strength σ (GPa)</label>
+        <input id="c-sigma" type="number" inputmode="decimal" min="0" step="0.1" placeholder="type a strength">
+      </div>
+      <div class="field">
+        <label for="c-rho">Density ρ (kg/m³)</label>
+        <input id="c-rho" type="number" inputmode="decimal" min="0" step="10" placeholder="type a density">
+      </div>
+    </div>
+    <div class="field">
+      <label for="v">Tip speed <output id="v-out" for="v"></output></label>
+      <input id="v" type="range" min="0.5" max="4" step="0.01">
+    </div>
+    <div class="field">
+      <label for="d">Strength derate <output id="d-out" for="d"></output></label>
+      <input id="d" type="range" min="0" max="50" step="1">
+    </div>
+    <div class="field">
+      <label for="sf">Safety factor <output id="sf-out" for="sf"></output></label>
+      <input id="sf" type="range" min="1" max="5" step="0.1">
+    </div>
+    <div class="snaps" id="snaps" aria-label="Set the controls to a point the canon or the history names"></div>
+  </section>
+
+  <section class="card readout" aria-live="polite">
+    <p class="sentence" id="sentence"></p>
+    <div class="tiles" id="tiles"></div>
+    <div id="refusal" class="refusal" hidden></div>
+  </section>
+
+  <figure class="card fig">
+    <figcaption>
+      <h2>Both curves across tip speed</h2>
+      <p>Log scale. The controls set the derate, safety factor and fibre for both curves; drag across the plot (or use the tip-speed slider) to move the cursor.</p>
+    </figcaption>
+    <ul class="legend" id="legend-curves"></ul>
+    <div class="plot" id="plot-curves"></div>
+    <div class="tip" id="tooltip" hidden></div>
+    <p class="note" id="curves-note"></p>
+  </figure>
+
+  <figure class="card fig">
+    <figcaption>
+      <h2>Height, not area</h2>
+      <p>The tether's cross-section along its length, as a multiple of the tip's, from one tip through the centre to the other. The taper is the height of the peak. The mass is the area under the curve.</p>
+    </figcaption>
+    <div class="plot" id="plot-profile"></div>
+    <p class="factors" id="factors"></p>
+  </figure>
+
+  <section class="card" id="ledger-card">
+    <h2>The ladder in rev_a.json, re-derived</h2>
+    <p class="hint">Each mass-ratio and fibre-mass value in the canon file, recomputed here from the fibre's strength and density (EQ-4) through EQ-6. A value earns a tick only when this page's own computation lands within a relative 5 × 10⁻⁴ of the file, the tolerance Skyhook's own test uses (<code>tests/test_rev_a_physics.py:180</code>).</p>
+    <div class="tablewrap"><table id="ledger"><thead><tr><th scope="col">Key in rev_a.json</th><th scope="col">File</th><th scope="col">Recomputed</th><th scope="col">Status</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card" id="history-card">
+    <h2>Numbers the program has quoted, re-derived</h2>
+    <p class="hint">Quoted verbatim from <code>docs/DECISION_LOG.md</code> and <code>docs/glossary.md</code> (snapshots). A quoted figure is <b>exact</b> when the computation rounds to it at the precision it was written with, <b>close</b> when it is within 5 %, and otherwise does not reproduce.</p>
+    <ol class="history" id="history"></ol>
+  </section>
+
+  <section class="card about">
+    <h2>What is computed, and from what</h2>
+    <ul>
+      <li><b>EQ-4</b> <i>V</i><sub>c</sub> = √(2σ/ρ), from the fibre's strength and density in <code>params/rev_a.json</code>. Never the file's rounded <code>V_c_kms</code>: the ladder only reproduces from σ and ρ.</li>
+      <li><b>EQ-5</b> taper = exp(<i>x</i>²), the ratio of the peak cross-section (at the centre) to the tip's. With no derate this is <code>taper_ratio()</code> in <code>physics/skyhook_physics.py</code>; with a derate it is the glossary's convention, the strength reduced by the same factor as in EQ-6.</li>
+      <li><b>EQ-6</b> <i>M</i>/<i>m</i> = 2√π·<i>x</i>·exp(<i>x</i>²)·erf(<i>x</i>), the Moravec/Forward integrated two-arm tether-to-payload mass ratio.</li>
+      <li>Both come from one constant-stress arm whose cross-section grows as exp(<i>x</i>²(1 − <i>u</i>²)) from the tip (<i>u</i> = 1) to the centre (<i>u</i> = 0). EQ-5 is its peak; EQ-6 is 2 arms × 2<i>x</i>² × its mean. So <i>M</i>/<i>m</i> ÷ taper = 2√π·<i>x</i>·erf(<i>x</i>), a function of <i>x</i> alone.</li>
+      <li>Tier pins, the ladder, the payload used for tonnes, the safety factor and the guardrail are read from the canon file at load. The ladder's derates other than the conservative one appear in that file only inside key names (such as <code>baseline_15pct_derate</code>), and the page reads them from there.</li>
+      <li>"Custom fibre" is not canon (Rule 1): its curves are dashed and marked so. A fibre whose density the canon does not give is refused, not guessed.</li>
+    </ul>
+    <p class="fidelity">An idea-bank prototype from the Aster Idea Bank, not a Skyhook release. It has not been through Skyhook's Rule 1 canon review, a verification memo, or the pytest suite. Constants come from a snapshot of <code>params/rev_a.json</code>; see the README for provenance.</p>
+  </section>
+</main>
+<script src="snapshots/rev_a.data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
