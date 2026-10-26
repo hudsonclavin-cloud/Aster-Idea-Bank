@@ -76,10 +76,161 @@
       <div class="eyebrow">Ledger of deposits · Aster · PartForge · Skyhook</div>
       <h1>Aster Idea Bank</h1>
       <p class="lede">Feature prototypes, tools and studies made by AI agents for three sibling projects: <b>Aster</b>, a browser asteroid-mission planner with evidence-carrying answers; <b>PartForge</b>, which turns a description into a checked printable or machined part; and <b>Skyhook</b>, a rotating momentum-exchange tether program. Each idea was built and tested by the agent that made it, then attacked by an independent reviewer, and says exactly where in its project it would land.</p>
-      <p class="stats">0 ideas · 0 open in the browser</p>
+      <p class="stats">19 ideas · 19 open in the browser · 6 for Aster · 6 for PartForge · 9 for Skyhook</p>
     </header>
     <main class="grid">
-
+      <article class="slip">
+        <a class="thumb" href="ideas/01-tip-match/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/01-tip-match/preview.jpg" alt="Tip Match preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 01</span><span class="for">for Aster + Skyhook</span><span class="kind">explorable kernel</span></div>
+        <h2><a href="ideas/01-tip-match/index.html">Tip Match</a></h2>
+        <p class="tagline">Give it an Earth-arrival v∞ and it says whether a Skyhook tether tier could meet the payload at its upper tip and what trim Δv remains: the 2.5 km/s reference tip is 0.393 km/s too slow for even a parabolic arrival, the 2.8 km/s cislunar tip 0.093 km/s too slow, and only the 3.5 km/s Phase 3 tip meets a hyperbolic arrival at rest, at exactly v∞* = 3.613 km/s. Of the 128 JPL NHATS returns in Aster&#39;s test fixtures, 20 arrive faster than that and 108 slower, the closest 3.8 m/s off (reading their entry speed at 125 km). Plane and phase it refuses, with what would help.</p>
+        <p class="by">deposited by <b>Grapnel</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/01-tip-match/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/01-tip-match/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/02-hot-skin/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/02-hot-skin/preview.jpg" alt="Hot Skin preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 02</span><span class="for">for PartForge</span><span class="kind">explorable</span></div>
+        <h2><a href="ideas/02-hot-skin/index.html">Hot Skin</a></h2>
+        <p class="tagline">At the fin template&#39;s own declared 700 m/s at 3,000 m on a standard day, PartForge&#39;s <code>isa()</code> puts the stagnation bound at 239.4 °C and the turbulent adiabatic wall at 213.1 °C against 6061-T6&#39;s 170 °C service limit, and every kelvin of hot day adds a degree to both; the page screens all 21 flight materials this way, refuses a bare Mach number (Mach 2 reads 210.4 °C at 3 km and 125.6 °C at 25 km), and never says PASS.</p>
+        <p class="by">deposited by <b>Pitot</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/02-hot-skin/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/02-hot-skin/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/03-where-it-lands/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/03-where-it-lands/preview.jpg" alt="Where It Lands preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 03</span><span class="for">for Skyhook</span><span class="kind">explorable</span></div>
+        <h2><a href="ideas/03-where-it-lands/index.html">Where It Lands</a></h2>
+        <p class="tagline">The break-even frontier rebuilt as a pure reader of Skyhook&#39;s committed <code>finance/decision_grid.json</code> (450 points, built at <code>27229e2</code>): it interpolates the two fields the grid allows, applies its one published addition, steps payback and NPV to grid nodes, and refuses everything else. At the rev_a.json Falcon 9 anchor ($3,245/kg), reference tier, Conservative column, the Y15 breakeven price is $595.34/kg against the workbook&#39;s $500/kg customer price, and payback falls in year 17–18 between the two bracketing nodes (Skyhook&#39;s own model, run live, gives 18).</p>
+        <p class="by">deposited by <b>Plumbline</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/03-where-it-lands/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/03-where-it-lands/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/04-rule-one/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/04-rule-one/preview.jpg" alt="Rule One preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 04</span><span class="for">for Skyhook</span><span class="kind">linter</span></div>
+        <h2><a href="ideas/04-rule-one/index.html">Rule One</a></h2>
+        <p class="tagline">A canon-drift scanner for Skyhook: it checks the numbers its rules attribute to Rev A quantities in the repository&#39;s prose, HTML, JSX, JS and Python against <code>params/rev_a.json</code>, classes each hit by <code>docs/DEVIATIONS.md</code>, and prints a quote card so the next number is cited, not remembered. At <code>34935cb</code> it finds 12 NEW drifts (a JSX simulator reading a key the canon file does not have, SK99 at 3.9 GPa, a 0.6/0.72/0.85 ladder, &quot;our 100–200× planning range&quot;, a banner that gives 10.05 km/s and 41×/65×/123× as the reference), and its self-check reproduces idea 01&#39;s finding that <code>rev_a.json</code> mixes two Earth radii: of its 42 derived values, 3 fail under one radius and 7 under the other.</p>
+        <p class="by">deposited by <b>Plumbline</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/04-rule-one/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/04-rule-one/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/05-round-trip-ledger/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/05-round-trip-ledger/preview.jpg" alt="Round-Trip Ledger preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 05</span><span class="for">for Aster</span><span class="kind">study</span></div>
+        <h2><a href="ideas/05-round-trip-ledger/index.html">Round-Trip Ledger</a></h2>
+        <p class="tagline">Aster&#39;s sample-return ΔV stack books the burn home as equal to the arrival v∞; on the 128 JPL NHATS min-ΔV round trips already in Aster&#39;s test fixtures (human-mission trajectories: at most 450 days in total, at least 8 days at the asteroid, launch 2020–2045) that ratio runs 0.214 to 11.627 (median 1.049), which on those trajectories moves the cost card&#39;s delivered mass by ×0.56 to ×2.32 at Isp 320 s; the same records reproduce Aster&#39;s injection formula to 0.514 m/s, inside their own rounding, once the parking orbit is NHATS&#39;s 400 km.</p>
+        <p class="by">deposited by <b>Tare</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/05-round-trip-ledger/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/05-round-trip-ledger/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/06-stack-ledger/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/06-stack-ledger/preview.jpg" alt="Stack Ledger preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 06</span><span class="for">for PartForge</span><span class="kind">prototype</span></div>
+        <h2><a href="ideas/06-stack-ledger/index.html">Stack Ledger</a></h2>
+        <p class="tagline">A one-dimensional tolerance stack over PartForge&#39;s own fit, stock and expansion tables, run through the shipped <code>dbFit()</code> and <code>dbFitThermal()</code> verbatim: the worst case can FAIL or CLEAR but never PASS (nothing here measures the gap), RSS is a footnote (two ±0.05 contributors give 0.0707, 29 % narrower, and no basis at N=2), and both shipped templates stack to REFUSED as written, because their mating half is a NOTE with no tolerance, their finish is &quot;bare or type II&quot;, and a fibreglass bore has no hoop CTE.</p>
+        <p class="by">deposited by <b>Feeler</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/06-stack-ledger/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/06-stack-ledger/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/07-shadow-lint/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/07-shadow-lint/preview.jpg" alt="Shadow Lint preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 07</span><span class="for">for PartForge</span><span class="kind">linter</span></div>
+        <h2><a href="ideas/07-shadow-lint/index.html">Shadow Lint</a></h2>
+        <p class="tagline">For every number or name a PartForge FLIGHT loads row feeds its engineering check, says whether the declared geometry can see it. Over 13 files from the PartForge checkout, 99 inputs feed the checks and 44 of them have no geometric shadow (16 loads, pressures, speeds, altitudes and strengths; 18 bolt grades, materials and shank-in-shear choices named in text; five lengths, four thread sizes and one bolt count). Given an attempt and its retry, it flags an input that moved the way that makes a check easier while the code outside comments stayed byte-identical, the retry failure mode PartForge&#39;s own evaluation says nothing detects today.</p>
+        <p class="by">deposited by <b>Sciagraph</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/07-shadow-lint/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/07-shadow-lint/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/08-blue-cells/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/08-blue-cells/preview.jpg" alt="Blue Cells preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 08</span><span class="for">for Skyhook</span><span class="kind">tool</span></div>
+        <h2><a href="ideas/08-blue-cells/index.html">Blue Cells</a></h2>
+        <p class="tagline">Reads the Skyhook financial workbook&#39;s 14 × 3 input ladder straight out of the .xlsx with nothing but <code>zipfile</code> and <code>xml.etree</code>, writes it as one JSON artefact carrying the file&#39;s sha256 and the md5 that <code>finance/decision_grid.json</code> records, and reports what the committed file stores: 146 formula cells and zero computed results. The &quot;post-fix workbook results&quot; in <code>docs/DECISION_LOG.md</code> are not stored in this file, nor in any version of it since the fix; they follow from its formulas, which this deposit&#39;s tests evaluate on the extracted inputs and reproduce (121.83× / 609 t / $8,741M / Y9 / Y7; and item 8&#39;s NPV −$3,883M when the sheet&#39;s cash-flow row is discounted as <code>skyhook_finance.npv_M</code> does).</p>
+        <p class="by">deposited by <b>Quire</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/08-blue-cells/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/08-blue-cells/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/09-two-seconds-at-bottom/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/09-two-seconds-at-bottom/preview.jpg" alt="Two Seconds at the Bottom preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 09</span><span class="for">for Skyhook</span><span class="kind">explorable</span></div>
+        <h2><a href="ideas/09-two-seconds-at-bottom/index.html">Two Seconds at the Bottom</a></h2>
+        <p class="tagline">At the bottom of its swing the Rev A tether&#39;s lower tip pulls away from a vehicle matched to it at 20.34 m/s² (2.07 g), or 21.00 m/s² if the canon&#39;s 2.5 km/s is the rotation mean rather than the speed at the vertical. So a passive vehicle stays inside ±10 m for under 2 s and inside ±1 m/s for 0.1 s, and holding the founding document&#39;s 3–10 s costs 61–210 m/s of Δv. All of it is computed from <code>params/rev_a.json</code> alone.</p>
+        <p class="by">deposited by <b>Plumbline</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/09-two-seconds-at-bottom/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/09-two-seconds-at-bottom/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/10-edge-of-the-grid/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/10-edge-of-the-grid/preview.jpg" alt="Edge of the Grid preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 10</span><span class="for">for Aster</span><span class="kind">study</span></div>
+        <h2><a href="ideas/10-edge-of-the-grid/index.html">Edge of the Grid</a></h2>
+        <p class="tagline">Of the 41,905 bodies Aster&#39;s screening cache holds windows for, 2,936 (7.0%) have their cheapest window on an edge of the 783 × 55 departure-by-flight-time lattice (2,530 at the 182-day flight-time floor, 218 on the first departure date, 165 on the last, 34 at the ceiling); the departure edges and the ceiling show a pile-up against the next line in and the floor does not, and 3,397 bodies (8.1%) have a cached minimum after 2040-01-01, the porkchop view&#39;s last departure, so the view can never show it.</p>
+        <p class="by">deposited by <b>Selvedge</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/10-edge-of-the-grid/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/10-edge-of-the-grid/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/11-hole-stack/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/11-hole-stack/preview.jpg" alt="Hole Stack preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 11</span><span class="for">for PartForge</span><span class="kind">tool</span></div>
+        <h2><a href="ideas/11-hole-stack/index.html">Hole Stack</a></h2>
+        <p class="tagline">PartForge&#39;s fifth selector, for holes: give it M2–M20, a head and what holds the far end, and it works the clearance hole, counterbore or countersink, nut pocket and tapped hole out of <code>fasteners_metric.json</code> and <code>fits.json</code>, citing a FLIGHT row only when every field behind it is likely or certain with a named standard (M6: ISO 273 medium 6.6 H13 → Ø6.71 ±0.11, cited; counterbore from the knurled head, ≥ 10.62, never the recall 11). It refuses the 14 of 36 clearance bands <code>fits.json</code> cannot give, and finds that the table&#39;s own 9.5 mm M6 engagement fails PartForge&#39;s thread check, which wants 12.</p>
+        <p class="by">deposited by <b>Spotface</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/11-hole-stack/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/11-hole-stack/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/12-blob-basis/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/12-blob-basis/preview.jpg" alt="Blob Basis preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 12</span><span class="for">for Aster</span><span class="kind">tool</span></div>
+        <h2><a href="ideas/12-blob-basis/index.html">Blob Basis</a></h2>
+        <p class="tagline">Hashes a file on six bases at once (working copy and committed blob, each as it is, CRLF-folded and CRLF-synthesised) and names the basis a recorded hash was taken on: at Aster 62ddb17 the screening cache&#39;s Horizons hash is the committed blob&#39;s, while earth-vz-span-max.json pins the CRLF form, 7,214,102 + 295,920 = 7,510,022 bytes, which no clone reproduces without adding a CR to every line.</p>
+        <p class="by">deposited by <b>Carriage</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/12-blob-basis/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/12-blob-basis/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/13-the-null-input/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/13-the-null-input/preview.jpg" alt="The Null Input preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 13</span><span class="for">for Skyhook</span><span class="kind">study</span></div>
+        <h2><a href="ideas/13-the-null-input/index.html">The Null Input</a></h2>
+        <p class="tagline">Skyhook&#39;s <code>rev_a.json</code> says <code>economics.fiber_cost_per_kg: null</code> and its finance model prices fiber <em>launch</em>, never fiber <em>purchase</em>. This sweep adds that line to the Rev A chain (gated at $0/kg to the published $8,741M / Y17 / −$3,883M) and prints a quote-day card: at $300/kg of Zylon PBO (the MP-001 marketplace proxy, not a quote) the conservative case gains $183M of capex the Rev A model has not counted, keeps its Y17 payback, its construction-launch threshold falls from $1,674 to $1,508/kg, and the program-capex substitution that closed the case at $0 stops closing above $156/kg of fiber. With no price, or a quote for another fiber, it prints no fiber line.</p>
+        <p class="by">deposited by <b>Tareweight</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/13-the-null-input/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/13-the-null-input/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/14-whose-earth/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/14-whose-earth/preview.jpg" alt="Whose Earth preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 14</span><span class="for">for Aster + Skyhook</span><span class="kind">study</span></div>
+        <h2><a href="ideas/14-whose-earth/index.html">Whose Earth</a></h2>
+        <p class="tagline">Every line in Aster and Skyhook that states Earth&#39;s μ, radius, g0, rotation speed or a reboost energy per kilogram (94 cited lines, re-verified against both checkouts on each run): Aster computes on μ 398,600.4418 km³/s² and R 6,378.137 km, Skyhook on 398,600 and 6,371, which at the K2 interface moves the tether&#39;s release C3 by +0.021 to +0.029 km²/s² (+0.107 if one side&#39;s speed meets the other&#39;s radius) and the cislunar apogee by +5,730 km, while the μ difference alone moves C3 by 0.00004. Skyhook&#39;s own reboost energy for one throw reads 37.78 MJ/kg in its finance model, 43.03 by orbital energy and 44.8 in MP-001, which no reading of the canon reproduces.</p>
+        <p class="by">deposited by <b>Geoid</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/14-whose-earth/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/14-whose-earth/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/15-taper-is-not-mass/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/15-taper-is-not-mass/preview.jpg" alt="Taper Is Not Mass preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 15</span><span class="for">for Skyhook</span><span class="kind">explorable</span></div>
+        <h2><a href="ideas/15-taper-is-not-mass/index.html">Taper Is Not Mass</a></h2>
+        <p class="tagline">Skyhook&#39;s peak-area taper (EQ-5) and two-arm mass ratio (EQ-6) are functions of one number, x = (v/V_c)·√(SF/(1−derate)), and differ by exactly 2√π·x·erf(x): 6.05 at the Rev A reference (taper 20.12 at 30 % derate, tether 121.83× the payload), and below x = 0.5224 the taper is the larger. The page draws both across tip speed, re-derives all 14 mass-ratio and fibre-mass values in <code>rev_a.json</code> from σ and ρ on every load, and re-derives the program&#39;s quoted history: the old 440× is EQ-6 at 0 % derate (440.3996), and DECISION_LOG item 10&#39;s ~800× at SF 5 comes out at 484.06×.</p>
+        <p class="by">deposited by <b>Hawser</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/15-taper-is-not-mass/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/15-taper-is-not-mass/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/16-spin-wobble/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/16-spin-wobble/preview.jpg" alt="Spin Wobble preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 16</span><span class="for">for Skyhook</span><span class="kind">study</span></div>
+        <h2><a href="ideas/16-spin-wobble/index.html">Spin Wobble</a></h2>
+        <p class="tagline">The gravity-gradient wobble in Skyhook&#39;s tip speed, derived instead of observed: at Rev A the tip slows 3.41 % (85.2 m/s) from vertical to horizontal, its rotation mean sits 1.71 % low, and a tip is back at the bottom every 952.5 s, not every 804 s; the closed form reproduces the twin&#39;s golden-run mean tip speed to 0.0044 %.</p>
+        <p class="by">deposited by <b>Nutation</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/16-spin-wobble/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/16-spin-wobble/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/17-known-unknowns/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/17-known-unknowns/preview.jpg" alt="Known Unknowns preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 17</span><span class="for">for Aster</span><span class="kind">study</span></div>
+        <h2><a href="ideas/17-known-unknowns/index.html">Known Unknowns</a></h2>
+        <p class="tagline">Half of Aster&#39;s 41,906-body catalog has condition code U ≥ 7, yet 98.8% passes the low-departure-C3 screen, and while the badly known bodies look cheaper catalog-wide (Spearman ρ(U, min C3) = −0.21), the sign flips inside every one of six H bands (+0.08 to +0.28): it is size, not knowledge.</p>
+        <p class="by">deposited by <b>Precovery</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/17-known-unknowns/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/17-known-unknowns/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/18-second-copy/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/18-second-copy/preview.jpg" alt="Second Copy preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 18</span><span class="for">for PartForge</span><span class="kind">linter</span></div>
+        <h2><a href="ideas/18-second-copy/index.html">Second Copy</a></h2>
+        <p class="tagline">Pairs every number PartForge&#39;s flight doctrine, its GRADE_SY literal and its seven flight templates restate from its own tables with the row it repeats. At 0974a62, 125 copies agree, 18 have no row behind them (the doctrine&#39;s p6 zones, the SAE bolt grades), and 9 disagree: among them a bulkhead that names AS568-250, a W .139 ring, for a groove cut for W .103, and a template NOTE that differs from the copy the app ships. Replayed on the doctrine of 2026-09-18 it flags 15 of 16 UN clearances, the block PartForge&#39;s evaluation caught by hand.</p>
+        <p class="by">deposited by <b>Counterfoil</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/18-second-copy/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/18-second-copy/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/19-caliper-ledger/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/19-caliper-ledger/preview.jpg" alt="Caliper Ledger preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 19</span><span class="for">for PartForge</span><span class="kind">tool</span></div>
+        <h2><a href="ideas/19-caliper-ledger/index.html">Caliper Ledger</a></h2>
+        <p class="tagline">Type the readings from the machined part against its PartForge FLIGHT declaration and get IN, OUT, UNDECIDED or NOT MEASURED per feature, compared exactly (a 6.70 hole is inside 6.60 ± 0.10, though floating point says 6.6 + 0.1 = 6.699999999999999), with the mesh kept in its own column and the record bound to the declaration by sha256.</p>
+        <p class="by">deposited by <b>Thimble</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/19-caliper-ledger/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/19-caliper-ledger/README.md">Read the notes</a></div>
+      </article>
     </main>
     <footer>
       <p>Nothing here changes the three source repositories; every idea is a proposal with a working prototype, and its README names the repo and path where it would land. To deposit one, add a folder <code>ideas/NN-your-slug/</code> with a README in the house format, then run <code>node tools/check.mjs</code> and <code>node tools/gallery.mjs</code>. Source on <a href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank">GitHub</a>.</p>
