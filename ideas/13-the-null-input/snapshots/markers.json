@@ -1,0 +1,50 @@
+{
+ "_meta": {
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "derived_by": "ideas/13-the-null-input/build_data.py",
+  "note": "fiber prices the repository already carries; none is a vendor quote and none is used as a default by fiber_sweep.py or the page"
+ },
+ "markers": [
+  {
+   "id": "mp001_marketplace_proxy",
+   "label": "MP-001 Zylon (PBO) marketplace proxy",
+   "prices_per_kg": {
+    "conservative": 300.0,
+    "baseline": 259.0,
+    "optimistic": 170.0
+   },
+   "unit": "$/kg",
+   "source_class": "marketplace listing — low confidence",
+   "qualifier": "Zylon (PBO) marketplace proxy (10 kg MOQ, **not** a Toyobo quote)",
+   "file": "docs/research/mp001_market_pricing.md",
+   "line": 24,
+   "text": "| Zylon (PBO) marketplace proxy (10 kg MOQ, **not** a Toyobo quote) | 300 | 259 | 170 | $/kg | marketplace listing — low confidence |",
+   "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+   "status": "marketplace listing, low confidence, 10 kg MOQ, not a Toyobo quote (the row's own words); a marker, never a default"
+  },
+  {
+   "id": "inspace_fork_surface_placeholder",
+   "label": "inspace_fork.py SURFACE_FIBER_PRICE_PER_KG",
+   "prices_per_kg": {
+    "placeholder": 1000.0
+   },
+   "file": "finance/inspace_fork.py",
+   "line": 55,
+   "text": "SURFACE_FIBER_PRICE_PER_KG = 1000.0",
+   "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+   "status": "placeholder for the DRAFT, non-canonical MXER in-space fork's v2 surface, used there only when rev_a economics.fiber_cost_per_kg is null (require_non_null); flagged 'no vendor quote' in its own findings; a marker, never a default"
+  },
+  {
+   "id": "stress_test_sim_default",
+   "label": "skyhook_no_leo_stress_test.jsx fiberPriceKg",
+   "prices_per_kg": {
+    "default": 250.0
+   },
+   "file": "tools/sims/skyhook_no_leo_stress_test.jsx",
+   "line": 54,
+   "text": "fiberPriceKg: 250, // [Speculative] Delivered Zylon-class fiber price; needs quote.",
+   "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+   "status": "the React strategy simulator's hardcoded slider default, labelled [Speculative] 'needs quote' on its own line; a marker, never a default here"
+  }
+ ]
+}

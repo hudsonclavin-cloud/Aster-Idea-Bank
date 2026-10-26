@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Null Input</title>
+<meta name="description" content="What a fiber quote would do to the Skyhook Rev A case: the fiber purchase line the finance model does not have, swept per tier, with a quote-day card that refuses to print a number until a price is typed.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>The Null Input</h1>
+    <p class="tag">Skyhook's <code>params/rev_a.json</code> carries <code>economics.fiber_cost_per_kg: null</code>, its weakest input, and the finance model prices fiber <em>launch</em>, not fiber <em>purchase</em>. This page re-derives that model from the workbook ladder, proves it at $0/kg against the published figures, then adds the missing line and lets you type the quote.</p>
+    <p class="meta" id="meta">Loading…</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card" aria-labelledby="h-quote" id="sec-quote">
+    <h2 id="h-quote">Quote-day card</h2>
+    <p class="lead">Type the vendor's price in $/kg. Until you do, this card prints no fiber number at all: the only honest value of this input today is <code>null</code>. The multiplier turns a <em>yarn</em> price into a <em>finished-tether</em> price (weaving, jackets, splices, waste); it is unsourced and defaults to 1.00.</p>
+    <div class="controls">
+      <div class="field">
+        <label for="price">Fiber price, $/kg</label>
+        <input id="price" type="number" min="0" step="any" inputmode="decimal" placeholder="no price" autocomplete="off" aria-describedby="price-help">
+      </div>
+      <div class="field">
+        <label for="mult">Finished-tether multiplier</label>
+        <input id="mult" type="number" min="0.01" step="0.01" value="1.00" inputmode="decimal" autocomplete="off">
+      </div>
+      <button type="button" id="clear" class="secondary">Clear</button>
+    </div>
+    <p class="small" id="price-help">Markers the repository already carries, none of them a quote. Tapping one fills the price and labels the card accordingly.</p>
+    <div class="chips" id="chips" role="group" aria-label="Marker prices (not quotes)"></div>
+    <div id="refusal" class="refusal" role="status" aria-live="polite"></div>
+    <div id="card" class="cardout" aria-live="polite" hidden></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-gate">
+    <h2 id="h-gate">Gate at $0/kg</h2>
+    <p class="lead">Before any fiber line, the chain must reproduce what Skyhook has published for a fiber price of zero: the three workbook triples (DECISION_LOG item 6), the <code>conservative-except-launch@$800</code> variant (item 7) and the five <code>rev_a.json</code> mass ratios and fiber masses. If one anchor fails, nothing below it is shown.</p>
+    <div class="tablewrap">
+      <table id="gate">
+        <thead><tr><th scope="col">anchor</th><th scope="col" class="num">computed</th><th scope="col" class="num">published</th><th scope="col">verdict</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="small" id="gate-summary"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-sweep" id="sec-sweep">
+    <h2 id="h-sweep">The sweep</h2>
+    <p class="lead">Every price here is hypothetical. The purchase line is $/kg × multiplier × fiber kg, added to total capex and spread 15/30/35/20 % over years 1–4 like every other capex dollar in the workbook; the hardware mass factor is not applied to it (it scales launched mass, not fiber bought). Option-tier rows are the partial tier model: only tip speed is tier-specific.</p>
+
+    <h3>How much each conservative lever must move to close the case, as the fiber price rises</h3>
+    <p class="small">Relaxation required = |threshold − conservative value| ÷ conservative value, for each input alone (bisection as <code>finance/sensitivity.py</code>). A line that leaves the chart means no value within a 5× stretch closes the case. Dotted verticals are the repository's markers. Fixed annual ops cannot close the case at any price and is not drawn.</p>
+    <figure class="chart">
+      <svg id="chart-relax" viewBox="0 0 720 360" role="img" aria-labelledby="chart-relax-title"><title id="chart-relax-title">Relaxation required per input versus fiber price</title></svg>
+      <ul id="legend-relax" class="legend" aria-label="Series"></ul>
+      <figcaption id="chart-relax-caption" class="small"></figcaption>
+    </figure>
+
+    <h3>Which baseline-value singles still close the conservative case</h3>
+    <p class="small">Each bar is one conservative input swapped alone to its baseline-column value (SENSITIVITY_FINDINGS §2); the bar ends at the fiber price where that single stops bringing payback inside Y15. Markers again dotted.</p>
+    <figure class="chart">
+      <svg id="chart-singles" viewBox="0 0 720 230" role="img" aria-labelledby="chart-singles-title"><title id="chart-singles-title">Fiber price at which each baseline single stops closing the case</title></svg>
+      <figcaption id="chart-singles-caption" class="small"></figcaption>
+    </figure>
+
+    <h3>Rows per price</h3>
+    <div class="tablewrap">
+      <table id="sweep">
+        <thead><tr><th scope="col">fiber $/kg</th><th scope="col">row</th><th scope="col" class="num">fiber t</th><th scope="col" class="num">added $M</th><th scope="col" class="num">capex $M</th><th scope="col" class="num">payback</th><th scope="col" class="num">NPV@10% $M</th><th scope="col" class="num">Y15 breakeven $/kg</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="small">* beyond the 15-year window, steady-state extrapolation; &gt;Y40 never pays back within 40 years.</p>
+
+    <h3>Conservative single-input thresholds per price</h3>
+    <div class="tablewrap">
+      <table id="thresholds"><thead></thead><tbody></tbody></table>
+    </div>
+    <p class="small" id="thresholds-note"></p>
+  </section>
+
+  <section class="card" aria-labelledby="h-markers">
+    <h2 id="h-markers">Markers, not defaults</h2>
+    <p class="lead">Three fiber prices already live in the Skyhook repository. None is a vendor quote; this page never uses one unless you tap it, and then says so.</p>
+    <ul id="marker-list" class="plain"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="h-prov">
+    <h2 id="h-prov">Provenance</h2>
+    <p class="lead">The page fetches nothing. <code>data.js</code> carries the snapshots below; <code>model.js</code> computes everything from them and is reconciled against the Python script's saved output by <code>model.test.mjs</code>.</p>
+    <ul id="prov" class="plain mono"></ul>
+    <p class="small">Fidelity: an idea-bank prototype. It has not been through Skyhook's Rule 1 canon review, a verification memo, or the repository's pytest suite. The command line is <code>python3 ideas/13-the-null-input/fiber_sweep.py --quote P</code>.</p>
+  </section>
+</main>
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

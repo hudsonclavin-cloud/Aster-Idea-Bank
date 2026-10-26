@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/DECISION_LOG.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "969aad2 2026-09-02T14:02:25-04:00",
+  "committedBlob": "79e205e9e6d67dad2ce2583e3c2f455d9f183866",
+  "readBlob": "79e205e9e6d67dad2ce2583e3c2f455d9f183866",
+  "sourceSha256": "e535473dec7beb9f2d261aeea2c069a39a400c3fecde2317b2486d651c2c54d7",
+  "sourceBytes": 12615,
+  "copiedAt": "2026-10-26T10:10:51.701Z",
+  "mode": "copy",
+  "note": "whole file: item 6 publishes the three workbook triples, item 8 records that the model prices fiber launch not fiber purchase (the open item this deposit serves)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e535473dec7beb9f2d261aeea2c069a39a400c3fecde2317b2486d651c2c54d7",
+  "writtenBytes": 12615
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/research/mp001_market_pricing.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5160f88 2026-09-02T13:35:47-04:00",
+  "committedBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "readBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "sourceSha256": "e7347cc6bba62c13f37427364883e973578e62c687740995bc7b61904378b712",
+  "sourceBytes": 9033,
+  "copiedAt": "2026-10-26T10:10:51.782Z",
+  "mode": "copy",
+  "note": "whole file: line 24 is the Zylon marketplace proxy ($300/$259/$170 per kg, 'marketplace listing - low confidence', 10 kg MOQ, not a Toyobo quote) drawn as a marker, never a default",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e7347cc6bba62c13f37427364883e973578e62c687740995bc7b61904378b712",
+  "writtenBytes": 9033
+}

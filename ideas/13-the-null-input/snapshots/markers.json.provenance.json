@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/inspace_fork.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "4114510 2026-07-14T23:06:15-04:00",
+  "committedBlob": "b27b37b8c65fe9ffd8c48edf9cd073a43c903d52",
+  "readBlob": "b27b37b8c65fe9ffd8c48edf9cd073a43c903d52",
+  "sourceSha256": "ac9bde14329d0a2775fff92248b48f8acb7595b95d312a8cf12a6cc4fd9a55a3",
+  "sourceBytes": 38597,
+  "copiedAt": "2026-10-26T10:17:41.773Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: three fiber prices the repository carries that are not quotes and are never defaults here: inspace_fork.py SURFACE_FIBER_PRICE_PER_KG (this sidecar's path, line 55), docs/research/mp001_market_pricing.md line 24 (the Zylon marketplace proxy row; whole file also snapshotted beside this), tools/sims/skyhook_no_leo_stress_test.jsx line 54 (fiberPriceKg); each marker records file, line, matched text and commit",
+  "readMatchesCommitted": true,
+  "writtenSha256": "aa26bda827fe7f628b3b3bf43018b5eca4b7d3be2f24ffb9529520503f88105e",
+  "writtenBytes": 2165
+}

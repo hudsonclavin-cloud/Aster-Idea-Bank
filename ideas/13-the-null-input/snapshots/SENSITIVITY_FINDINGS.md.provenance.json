@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/SENSITIVITY_FINDINGS.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "5755d667bad256e3f2e851a622348c7ed87c4550",
+  "readBlob": "5755d667bad256e3f2e851a622348c7ed87c4550",
+  "sourceSha256": "37ec421d864c02004a7a6531163e62214fbde96b0a8b6636f871b578606976c1",
+  "sourceBytes": 6466,
+  "copiedAt": "2026-10-26T10:10:51.613Z",
+  "mode": "copy",
+  "note": "whole file: the published conservative triple ($8,741M / Y17 / -$3,883M), the eight minimal-relaxation thresholds, the four baseline singles and the $6,877M/Y14 variant that the p=0 gate and the tests pin to",
+  "readMatchesCommitted": true,
+  "writtenSha256": "37ec421d864c02004a7a6531163e62214fbde96b0a8b6636f871b578606976c1",
+  "writtenBytes": 6466
+}
