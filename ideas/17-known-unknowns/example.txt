@@ -1,0 +1,95 @@
+Known Unknowns: Aster catalog orbit quality crossed with screening C3
+Aster checkout 62ddb17 (2026-10-25T19:36:43-04:00); "as of" date for past windows: 2026-10-25
+  tests/fixtures/v2/nea-catalog-slice9.json      sha256 f88028d28398…  52,969,826 bytes  blob 103bede
+  tests/fixtures/v2/lambert-screen-cache.json    sha256 bd27b9bd882a…  34,499,477 bytes  blob d0acf16
+  docs/tier-sizing-per-body.json                 sha256 dff569ab5ea0…  10,880,177 bytes  blob 13e79fa
+  cache built from this catalog (metadata.provenance.catalogFixtureSha256): yes
+  C3 band edges (km^2/s^2): 0.1 near-zero flag (src/v2/core/constants/near-zero-c3.ts:5), 1 colour floor (src/v2/porkchop/colormap.ts:4), 10 first contour (src/v2/porkchop/porkchop-view.ts:247), 25 screening threshold (cache metadata)
+  U bands: >= 7 JPL "highly uncertain" (src/v2/app/compare/main.ts:306); <= 2 Aster's own "tightly determined" (:314)
+
+1. The catalog
+  bodies 41,906; condition code U: 0 8,470, 1 1,705, 2 651, 3 477, 4 1,189, 5 2,468, 6 5,110, 7 9,587, 8 8,958, 9 3,281, null 10
+  U >= 7: 21,826 (52.1%)
+  data arc reported for 41,489; median 22 d; not reported 417
+  screening status: low_departure_c3 41,422, high_departure_c3 483, propagator_failed 1; low departure C3 = 98.8%
+  Slice 18 fidelity tiers by join: L0 11, L1 10,150, L2 31,745 (artifact populations {"L0":11,"L1":10150,"L2":31745,"total":41906,"structurallyBlindL2":688})
+
+2. Minimum departure C3 (on the 783 x 55 cache grid) band by condition code (count, row share)
+               below 0.1 (flag)          0.1–1           1–10          10–25       above 25    no solution    total
+  U 0                 227 2.7%    1,679 19.8%    5,085 60.0%    1,246 14.7%       233 2.8%         0 0.0%    8,470
+  U 1                  61 3.6%      384 22.5%      916 53.7%      272 16.0%        72 4.2%         0 0.0%    1,705
+  U 2                  53 8.1%      183 28.1%      349 53.6%        51 7.8%        15 2.3%         0 0.0%      651
+  U 3                 83 17.4%      167 35.0%      187 39.2%        35 7.3%         5 1.0%         0 0.0%      477
+  U 4                  93 7.8%      282 23.7%      691 58.1%       114 9.6%         9 0.8%         0 0.0%    1,189
+  U 5                 243 9.8%      633 25.6%    1,400 56.7%       177 7.2%        15 0.6%         0 0.0%    2,468
+  U 6                680 13.3%    1,875 36.7%    2,237 43.8%       291 5.7%        27 0.5%         0 0.0%    5,110
+  U 7              1,074 11.2%    4,394 45.8%    3,778 39.4%       300 3.1%        41 0.4%         0 0.0%    9,587
+  U 8                 512 5.7%    3,909 43.6%    4,245 47.4%       270 3.0%        22 0.2%         0 0.0%    8,958
+  U 9                 137 4.2%      932 28.4%    1,973 60.1%       199 6.1%        39 1.2%         1 0.0%    3,281
+  not reported          0 0.0%        2 20.0%        2 20.0%        1 10.0%        5 50.0%         0 0.0%       10
+  total                  3,163         14,440         20,863          2,956            483              1   41,906
+
+3. Why: size. Median minC3 (km^2/s^2, 783 x 55 cache grid) by U group, and Spearman rho of minC3 against U and data arc
+  all bodies   n 41,905  U<=2 10,826   3.32  U3-6  9,244   1.37  U>=7 21,825  0.993  rho(U) −0.21  rho(arc) +0.40
+               rho(H, minC3) −0.58; rho(H, U) +0.56
+  H < 18       n  1,088  U<=2  1,078   6.13  U3-6      5   18.7  U>=7      5   20.6  rho(U) +0.18  rho(arc) −0.23
+  H 18–20      n  3,703  U<=2  3,348   5.13  U3-6    243   6.78  U>=7    112   7.77  rho(U) +0.16  rho(arc) −0.19
+  H 20–22      n  6,726  U<=2  3,880   3.23  U3-6  1,767   4.73  U>=7  1,078   5.05  rho(U) +0.20  rho(arc) −0.21
+  H 22–24      n  8,867  U<=2  1,671   1.41  U3-6  2,734   2.61  U>=7  4,462   2.17  rho(U) +0.08  rho(arc) −0.05
+  H 24–26      n 11,767  U<=2    607  0.573  U3-6  2,148  0.723  U>=7  9,012   1.01  rho(U) +0.18  rho(arc) +0.04
+  H ≥ 26       n  9,545  U<=2    162  0.210  U3-6  2,309  0.170  U>=7  7,073  0.431  rho(U) +0.28  rho(arc) −0.02
+  (209 bodies with a minC3 but no H are in "all bodies" only)
+
+4. What-if filter (counting only; U is ranking-penalty + visibility flag; never a kill switch; never converted to a derived future-uncertainty number (triage §2.5).)
+  among 41,422 low-departure-C3 bodies, U <= 6 and data arc >= 30 d keeps 16,381 (39.5%)
+  dropped: U above 6 1,427; arc under 30 d 3,251; both 19,946; U not reported 5; arc not reported 412
+  survivors by C3 band: below 0.1 (near-zero flag) 556; 0.1–1 3,474; 1–10 10,200; 10–25 2,151
+
+5. The list: low departure C3, U >= 7, data arc under 30 d or not reported: 20,296 bodies (48.4% of the catalog)
+  flags: near-zero C3 1,686; window before 2026-10-25 1,747; window on a lattice edge 914; arrival after its L1 encounter 2,040; co-orbital 9; PHA 162; not-kepler-safe 140; H not reported 62; arc not reported 350
+  tiers: L0 2, L1 2,744, L2 17,550; ranked by minC3 the first 1,686 are near-zero-C3 flags
+  top 20 by absolute magnitude (brightest first) (C3 is the minimum on the 783 x 55 cache grid):
+     # designation    cls       H  U  arc  obs launch       TOF arrive           C3 vInfArr flags
+     1 2025 NR197     APO   13.88  8   10   23 2029-10-18   272 2030-07-17     24.4    29.5 L2
+     2 2015 RS183     AMO   16.45  9   11   12 2026-05-21   482 2027-09-15     13.9    9.18 past, L2
+     3 2018 GZ7       AMO   17.66  9    1    7 2038-03-25   422 2039-05-21     17.8    28.4 L2
+     4 2025 OX529     AMO  17.923  9    3    9 2036-02-21   422 2037-04-18     20.6    11.9 L2
+     5 2015 BO519     APO    18.1  9    3   16 2028-01-20   242 2028-09-18     4.15    28.9 PHA, L2
+     6 2022 UR13      APO   18.18  7   26   53 2039-01-13   182 2039-07-14     14.4    42.8 edge:floor, L2
+     7 2026 GN18      AMO  18.277  9    4    6 2035-05-31   212 2035-12-29     4.61    9.48 L2
+     8 2001 VB        APO    18.4  9    7   53 2034-09-14   332 2035-08-12    0.848    33.6 PHA, L2
+     9 1979 XB        APO    18.6  9    4   18 2029-03-08   242 2029-11-05     2.41    26.1 PHA, L2
+    10 2009 VQ25      APO   18.62  9    5   23 2032-01-22   182 2032-07-22     13.3    38.7 edge:floor, L2
+    11 2025 QH4       APO   18.62  8    7   13 2031-06-12   212 2032-01-10     6.84    41.7 L2
+    12 2020 PR6       APO   18.63  9    4   19 2032-12-16   212 2033-07-16     5.30    19.7 L2
+    13 2017 SH33      AMO  18.633  9    1   11 2038-05-27   182 2038-11-25     4.24    28.6 edge:floor, L2
+    14 2010 BO127     APO   18.65  9    7   56 2031-10-23   182 2032-04-22     8.68    20.0 edge:floor, L2
+    15 2007 JF16      APO   18.68  8   14   23 2035-03-29   182 2035-09-27     10.4    35.2 edge:floor, L2
+    16 2017 YB15      AMO   18.77  9    1    5 2033-06-23   182 2033-12-22     5.28    11.3 edge:floor, L2
+    17 2001 CA21      APO  18.775  9    2   13 2034-12-21   272 2035-09-19     1.98    25.6 PHA, L2
+    18 2025 SC79      IEO   18.83  8   10   19 2035-01-04   182 2035-07-05     11.7    14.8 edge:floor, after 2034-02-02 encounter, L1
+    19 2021 PF20      APO   18.89  9   27   32 2026-11-26   212 2027-06-26     5.92    37.6 L2
+    20 2020 BH14      APO    18.9  7   25   16 2033-02-03   182 2033-08-04     5.30    23.7 edge:floor, L2
+  top 5 by minimum C3 (C3 is the minimum on the 783 x 55 cache grid):
+     # designation    cls       H  U  arc  obs launch       TOF arrive           C3 vInfArr flags
+     1 2019 TN5       APO    28.3  7   17   15 2037-02-05   242 2037-10-05  8.21e-4    12.4 near-zero C3, L2
+     2 2025 XZ3       APO   28.85  7    5   37 2038-01-14   332 2038-12-12  9.85e-4    8.86 near-zero C3, L2
+     3 2024 JP17      ATE   26.77  7    3   37 2037-08-20   272 2038-05-19  0.00102    10.7 near-zero C3, after 2027-11-04 encounter, L1
+     4 2018 BD        APO    30.1  7    —   30 2030-05-23   242 2031-01-20  0.00114    8.86 near-zero C3, L1
+     5 2024 AZ3       APO   28.78  7    1   27 2033-06-16   212 2034-01-14  0.00122    9.91 near-zero C3, L2
+
+6. qualityRank audit
+  spec (tests/fixtures/v2/nea-catalog-slice9.spec.md:158-160): conditionScore = condition_code == null ? 0 : clamp01(1 - condition_code / 9) ; dataArcScore = data_arc_days == null ? 0 : clamp01(log10(1 + data_arc_days) / log10(1001)) ; qualityRank = clamp01(0.6 * conditionScore + 0.4 * dataArcScore)
+  recomputed for 41,906 bodies: max |spec - stored| 4.99e-7 (the stored value is rounded to 6 decimals); over 1e-6: 0
+  the fixture's own catalog.qualityRankFormula, read literally, has one clamp01 where the spec has three:
+    qualityRank = clamp01(0.6 * (condition_code == null ? 0 : 1 - condition_code / 9) + 0.4 * (data_arc_days == null ? 0 : log10(1 + data_arc_days) / log10(1001)))
+  read that way it disagrees with the stored value for 1,856 bodies, by up to 0.2246 (worst: 55P, U null, arc 48,407 d: stored 0.4, spec 0.400000, literal 0.624565)
+  the string comes from tools/slice9-ingestion/build-nea-catalog.mjs:34; the implementation (tools/slice9-ingestion/derived-fields.mjs:16) clamps each score, as the spec does
+
+7. What this study refuses
+  observing plan (insufficient_data): no apparent magnitude, sky position, elongation or facility model anywhere in Aster; what would help: observer ephemerides and a facility capability model (strategy/ASTER_FAMILY_MASTER_PLAN.md:37). --body DES prints it as an envelope.
+  U in kilometres (out_of_envelope): Condition code renders as its raw MPC category and is NEVER converted to kilometres — it is an ordinal longitude-runoff band, not a Cartesian uncertainty. (src/v2/SLICE_18_FOUNDING.md:63)
+  soonest window ranking (insufficient_data): the cache keeps only each body's five lowest-C3 cells, so the next window after a date is not in it; what would help: a dated porkchop_scan.
+  "U predicts screening error" (not tested here): Q ANSWERED — condition code does NOT predict propagation error. Structural caveat: "this measurement cannot test U's actual claim (solution-versus-reality error), because JPL's solution IS the truth source here and re-anchoring erased solution differences. The honest statement is narrow — U does not predict two-body model error — NOT that U is uninformative." (STATUS.md:269)
+
+reconciliation: all joins, status bands, minC3 windows, list count and qualityRank checks pass

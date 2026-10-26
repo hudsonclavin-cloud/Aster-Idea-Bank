@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nea-catalog-slice9.spec.md",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "eb8d84b85bfb06de05ca940e5612fb817c7387e2",
+  "readBlob": "eb8d84b85bfb06de05ca940e5612fb817c7387e2",
+  "sourceSha256": "f24a5b23b274e359f325632a6e5d5d5885b391f8348516137681e1ac5cb37953",
+  "sourceBytes": 5547,
+  "copiedAt": "2026-10-26T14:58:17.739Z",
+  "mode": "copy",
+  "note": "the fixture spec: the qualityRank formula with three clamp01s (lines 158-160) and the reserved planning-tier (line 118)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f24a5b23b274e359f325632a6e5d5d5885b391f8348516137681e1ac5cb37953",
+  "writtenBytes": 5547
+}

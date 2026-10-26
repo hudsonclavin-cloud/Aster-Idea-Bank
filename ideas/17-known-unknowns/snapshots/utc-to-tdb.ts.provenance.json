@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/core/units/utc-to-tdb.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "6b5f5440a853c92222de2940436fef46aaf6bf4f",
+  "readBlob": "6b5f5440a853c92222de2940436fef46aaf6bf4f",
+  "sourceSha256": "d156229ed76384f9cbd543490834d7a82e5d5e63e19bbc16be5f2f8cddf3063f",
+  "sourceBytes": 2161,
+  "copiedAt": "2026-10-26T14:58:18.131Z",
+  "mode": "copy",
+  "note": "TDB_MINUS_UTC_SECONDS = 69.184: the cache's departure epochs are UTC midnights, so arrival TDB = departure + offset + TOF when compared with an encounter's TDB Julian date",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d156229ed76384f9cbd543490834d7a82e5d5e63e19bbc16be5f2f8cddf3063f",
+  "writtenBytes": 2161
+}

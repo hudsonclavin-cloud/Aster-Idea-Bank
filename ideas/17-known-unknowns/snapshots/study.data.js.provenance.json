@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nea-catalog-slice9.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "readBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "sourceSha256": "f88028d2839842299b7aae20644d15fef265b19e3bbca576c5dd0faf7d231418",
+  "sourceBytes": 52969826,
+  "copiedAt": "2026-10-26T15:11:15.532Z",
+  "mode": "derived",
+  "note": "derived by known-unknowns.mjs --write: the catalog (orbit-quality fields, H, class) joined by bodyId to tests/fixtures/v2/lambert-screen-cache.json (minC3, its window, status) and by designation to docs/tier-sizing-per-body.json (Slice 18 tier, L1 encounter); both sha256s are under inputs. Ships histograms (C3 band x U x arc / nObs / H band), the stratified medians and rank correlations, the qualityRank audit, edge and encounter counts, the constants and quotes with path:line, and 400 list rows (the top 200 by H and by minC3 of 20,296); no other per-body record is copied",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ac27baf4b58a53dbdea0b1f2f987122dc1951e7a74d276acf5bf023e91a5adc1",
+  "writtenBytes": 79499
+}

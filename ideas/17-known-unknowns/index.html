@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Known Unknowns</title>
+<meta name="description" content="Aster's catalog orbit quality crossed with screening C3: which low-C3 bodies are badly known, and why the catalog-wide pattern is size, not knowledge.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header class="intro">
+    <p class="eyebrow">Aster Idea Bank · study for Aster's Survey lens · idea-bank prototype</p>
+    <h1>Known Unknowns</h1>
+    <p class="lede" id="lede"></p>
+    <div class="tiles" id="tiles"></div>
+  </header>
+
+  <section class="card" id="crosstab" aria-labelledby="ct-h">
+    <h2 id="ct-h">Minimum C3 against orbit quality</h2>
+    <p class="sub" id="ct-sub"></p>
+    <div class="seg" role="radiogroup" aria-label="Rows of the table" id="ct-views">
+      <button type="button" role="radio" data-view="U" aria-checked="true">Condition code U</button>
+      <button type="button" role="radio" data-view="arc" aria-checked="false">Data arc</button>
+      <button type="button" role="radio" data-view="obs" aria-checked="false">Observations</button>
+      <button type="button" role="radio" data-view="H" aria-checked="false">H</button>
+    </div>
+    <p class="hint">Scroll the table sideways for the other C3 bands; the row labels stay put.</p>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Cross-tab, scrolls sideways on narrow screens">
+      <table class="xtab" id="ct-table"></table>
+    </div>
+    <p class="note" id="ct-note"></p>
+  </section>
+
+  <section class="card" id="why" aria-labelledby="why-h">
+    <h2 id="why-h">Why: it is size, not knowledge</h2>
+    <p class="sub" id="why-sub"></p>
+    <div class="legend" id="why-legend"></div>
+    <div class="chart" id="why-chart"></div>
+    <details>
+      <summary>Table view</summary>
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Stratified table">
+        <table class="plain" id="why-table"></table>
+      </div>
+    </details>
+    <p class="note" id="why-note"></p>
+  </section>
+
+  <section class="card" id="whatif" aria-labelledby="wi-h">
+    <h2 id="wi-h">What-if filter</h2>
+    <p class="policy" id="wi-policy"></p>
+    <div class="sliders">
+      <label class="slider"><span>U at most <output id="u-out" for="u-in"></output></span>
+        <input type="range" id="u-in" min="0" max="9" step="1" value="6"></label>
+      <label class="slider"><span>Data arc at least <output id="d-out" for="d-in"></output></span>
+        <input type="range" id="d-in" min="0" step="1" value="9"></label>
+    </div>
+    <div class="result" id="wi-result" aria-live="polite"></div>
+    <div class="chart" id="wi-chart"></div>
+    <p class="note" id="wi-note"></p>
+  </section>
+
+  <section class="card" id="list" aria-labelledby="list-h">
+    <h2 id="list-h">The list: low C3, badly known</h2>
+    <p class="sub" id="list-sub"></p>
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Rank the list by" id="list-sort">
+        <button type="button" role="radio" data-sort="H" aria-checked="true">Brightest first (H)</button>
+        <button type="button" role="radio" data-sort="c3" aria-checked="false">Lowest minimum C3</button>
+      </div>
+      <label class="check"><input type="checkbox" id="hide-nz"> <span>Hide near-zero-C3 values</span></label>
+    </div>
+    <p class="note" id="list-rank-note"></p>
+    <div class="list-wrap" tabindex="0" role="region" aria-label="The list, scrolls sideways on narrow desktop windows"><table class="list" id="list-table"></table></div>
+    <div class="more"><button type="button" id="list-more">Show 20 more</button> <span id="list-count"></span></div>
+    <p class="note" id="list-note"></p>
+  </section>
+
+  <section class="card" id="audit" aria-labelledby="audit-h">
+    <h2 id="audit-h">qualityRank, checked against its own formula</h2>
+    <div id="audit-body"></div>
+    <div class="calc">
+      <label>U <input id="qr-u" inputmode="numeric" placeholder="0–9 or blank" value="9"></label>
+      <label>Data arc, days <input id="qr-arc" inputmode="numeric" placeholder="days or blank" value="94131"></label>
+    </div>
+    <div class="result" id="qr-out" aria-live="polite"></div>
+  </section>
+
+  <section class="card" id="refusals" aria-labelledby="ref-h">
+    <h2 id="ref-h">What this study refuses to say</h2>
+    <p class="sub">Each refusal is shaped like an Aster evidence envelope's <code>refusal</code> field: a code from its enum, a reason, and what would help.</p>
+    <div id="ref-list"></div>
+  </section>
+
+  <section class="card" id="prov" aria-labelledby="prov-h">
+    <h2 id="prov-h">Where every number comes from</h2>
+    <div id="prov-body"></div>
+  </section>
+
+  <footer>
+    <p>Known Unknowns is an Aster Idea Bank prototype. It has not been through Aster's founding-document DEC process, its INV-028 envelope builder or its MCP eval; nothing here changes Aster.</p>
+  </footer>
+</main>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+<script src="model.js"></script>
+<script src="snapshots/study.data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
