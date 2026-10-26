@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-10-26T15:53:41.344Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: index.html line 5804 (const GRADE_SY, the bolt_shear check's grade -> yield table), verbatim and parsed; wrapped as a UMD module",
+  "readMatchesCommitted": true,
+  "writtenSha256": "335a00b7fe97cb4fb51d62161b48d687e032afa19d95d5b377be159d899a31f9",
+  "writtenBytes": 870
+}

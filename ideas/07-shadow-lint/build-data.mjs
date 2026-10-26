@@ -7,14 +7,18 @@
 //
 // Writes:
 //   snapshots/flight-decl.js             PartForge's own parseFlight()/flightCounts() code, cut out of
-//                                        index.html between its DECL anchors, for the parser-agreement test
+//                                        index.html by regex anchors (^const FLIGHT_AXIS, ^function
+//                                        provenanceSummary, ^function flightCounts) inside its
+//                                        /* DECL-BEGIN */ … /* DECL-END */ block, for the parser-agreement test
+//   snapshots/grade_sy.excerpt.js        the evaluator's bolt-grade → yield table GRADE_SY, cut verbatim
+//                                        from its one line in index.html and parsed
 //   snapshots/fasteners_metric.excerpt.js  the rows of data/tables/fasteners_metric.json, a field subset
 //   snapshots/fasteners_un.excerpt.js      the rows of data/tables/fasteners_un.json, a field subset
 //   snapshots/motor_perf.excerpt.js        only the motor_perf.json rows the fixtures' loads name (`motor`)
 //   snapshots/motor-retainer.retry.scad    the motor-retainer template with ONE edit inside the FLIGHT
 //                                        block (force_N 20000 → 12000) and byte-identical geometry: the
 //                                        synthetic "cheapest fix" retry the differ must catch
-//   findings.js                          the classifier run over every fixture and three attempt pairs,
+//   findings.js                          the classifier run over every fixture and three file pairs,
 //                                        for the browser page (a test recomputes it and compares)
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,6 +29,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const Shadow = require(path.join(here, 'shadow.js'));
+const { PAIRS } = require(path.join(here, 'pairs.js'));
 const repo = path.resolve(process.argv[2] || '/home/user/Partforge');
 const snapshotTool = path.resolve(here, '..', '..', 'tools', 'snapshot.mjs');
 const snaps = path.join(here, 'snapshots');
@@ -38,15 +43,18 @@ function umd(globalName, obj) {
   return `/* derived by build-data.mjs — see the .provenance.json sidecar beside this file */\n(function (root, factory) {\n  var d = factory();\n  if (typeof module === 'object' && module.exports) module.exports = d;\n  else { root.ShadowData = root.ShadowData || {}; root.ShadowData[${JSON.stringify(globalName)}] = d; }\n})(typeof self !== 'undefined' ? self : this, function () {\n  return ${JSON.stringify(obj, null, 1)};\n});\n`;
 }
 
-// 1. PartForge's parser, cut out by anchors so a moved line does not break the extraction.
+// 1. PartForge's parser, cut out by regex anchors (inside the DECL-BEGIN/END block that PartForge's
+//    tests/run.mjs extracts whole) so a moved line does not break the extraction.
+const html = fs.readFileSync(path.join(repo, 'index.html'), 'utf8').split('\n');
 {
-  const html = fs.readFileSync(path.join(repo, 'index.html'), 'utf8').split('\n');
+  const db = html.findIndex((l) => l.includes('/* DECL-BEGIN */')), de = html.findIndex((l) => l.includes('/* DECL-END */'));
   const start = html.findIndex((l) => /^const FLIGHT_AXIS = /.test(l));
   const ps = html.findIndex((l, i) => i > start && /^function provenanceSummary\(/.test(l));
   const pe = html.findIndex((l, i) => i > ps && /^}/.test(l));
   const fc = html.findIndex((l) => /^function flightCounts\(/.test(l));
   const fe = html.findIndex((l, i) => i > fc && /^}/.test(l));
-  if ([start, ps, pe, fc, fe].some((i) => i < 0)) throw new Error('DECL anchors not found in index.html');
+  if ([start, ps, pe, fc, fe, db, de].some((i) => i < 0)) throw new Error('anchors not found in index.html');
+  if (![start, pe, fc, fe].every((i) => i > db && i < de)) throw new Error('the cut is not inside the DECL-BEGIN/END block');
   const code = [`// Cut from PartForge index.html lines ${start + 1}–${pe + 1} and ${fc + 1}–${fe + 1} by build-data.mjs; not edited.`,
     ...html.slice(start, pe + 1), ...html.slice(fc, fe + 1),
     'if (typeof module === \'object\' && module.exports) module.exports = { parseFlight, provenanceSummary, flightCounts, TOL_SRC, FLIGHT_HAZARD, FLIGHT_AXIS, FLIGHT_CAP };', ''].join('\n');
@@ -77,6 +85,20 @@ function excerptTable(file, keep) {
   const u = excerptTable('fasteners_un.json', KEEP_UN);
   fs.writeFileSync(path.join(snaps, 'fasteners_un.excerpt.js'), umd('fasteners_un', u));
   sidecar('data/tables/fasteners_un.json', path.join(snaps, 'fasteners_un.excerpt.js'), 'derived by build-data.mjs: all 16 rows, fields ' + KEEP_UN.join(',') + ' (+ field_confidence for those), table/license_note/columns kept; wrapped as a UMD module');
+}
+
+// 2b. The evaluator's GRADE_SY (bolt grade → yield, MPa): one line of index.html, cut verbatim and parsed.
+{
+  const i = html.findIndex((l) => /^\s*const GRADE_SY = \{.*\};\s*$/.test(l));
+  if (i < 0 || html.filter((l) => /const GRADE_SY = /.test(l)).length !== 1) throw new Error('expected exactly one GRADE_SY line in index.html');
+  const line = html[i].trim();
+  const body = line.replace(/^const GRADE_SY = \{/, '').replace(/\};$/, '');
+  const GRADE_SY = {};
+  for (const m of body.matchAll(/'([^']+)'\s*:\s*([0-9.]+)/g)) GRADE_SY[m[1]] = Number(m[2]);
+  if (Object.keys(GRADE_SY).length !== body.split(',').length) throw new Error('GRADE_SY did not parse entry for entry');
+  const out = { line: i + 1, source_line: line, GRADE_SY, excerpt: 'index.html line ' + (i + 1) + ' verbatim (source_line) and parsed (GRADE_SY); by build-data.mjs' };
+  fs.writeFileSync(path.join(snaps, 'grade_sy.excerpt.js'), umd('grade_sy', out));
+  sidecar('index.html', path.join(snaps, 'grade_sy.excerpt.js'), `derived by build-data.mjs: index.html line ${i + 1} (const GRADE_SY, the bolt_shear check's grade -> yield table), verbatim and parsed; wrapped as a UMD module`);
 }
 
 // 3. The fixtures (the .scad files already snapshotted beside this script).
@@ -110,13 +132,12 @@ const fixtures = Object.fromEntries(fixtureNames.map((f) => [f, fs.readFileSync(
 
 // 6. Findings for the page: every fixture classified, three attempt pairs diffed.
 {
-  const data = { metric: require(path.join(snaps, 'fasteners_metric.excerpt.js')), un: require(path.join(snaps, 'fasteners_un.excerpt.js')), motors: require(path.join(snaps, 'motor_perf.excerpt.js')) };
+  const data = { metric: require(path.join(snaps, 'fasteners_metric.excerpt.js')), un: require(path.join(snaps, 'fasteners_un.excerpt.js')), motors: require(path.join(snaps, 'motor_perf.excerpt.js')), grades: require(path.join(snaps, 'grade_sy.excerpt.js')) };
   const strip = (L) => (L.refusal ? L : { label: L.label, result: L.result });
   const perFixture = {};
   for (const name of Object.keys(fixtures).sort()) perFixture[name] = strip(Shadow.lint(fixtures[name], data, name));
-  const PAIRS = [['motor-retainer.scad', 'motor-retainer.retry.scad'], ['retainer.scad', 'retainer-fixed.scad'], ['ring1.scad', 'ring6-after-doctrine-fix.scad']];
   // the per-file results of a pair are already under fixtures[]; the page's diff view does not need them twice
-  const pairs = PAIRS.map(([a, b]) => { const { A, B, ...d } = Shadow.diffAttempts(fixtures[a], fixtures[b], data, [a, b]); return d; });
+  const pairs = PAIRS.map(([a, b, relation]) => { const { A, B, ...d } = Shadow.diffAttempts(fixtures[a], fixtures[b], data, [a, b]); return { relation, ...d }; });
   const prov = JSON.parse(fs.readFileSync(path.join(snaps, 'bulkhead.scad.provenance.json'), 'utf8'));
   const findings = { generated: { from: 'build-data.mjs over the snapshots in this folder', repo: prov.repo, commit: prov.commit }, fixtures: perFixture, pairs };
   fs.writeFileSync(path.join(here, 'findings.js'), `/* generated by build-data.mjs from snapshots/*.scad through shadow.js; shadow.test.mjs recomputes it and fails on drift */\n(function (root, factory) {\n  var d = factory();\n  if (typeof module === 'object' && module.exports) module.exports = d;\n  else root.ShadowFindings = d;\n})(typeof self !== 'undefined' ? self : this, function () {\n  return ${JSON.stringify(findings)};\n});\n`);

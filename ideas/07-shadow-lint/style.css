@@ -6,6 +6,7 @@
   --muted: #5c6066;
   --line: #d8d6cf;
   --accent: #2a5db0;
+  --on-accent: #ffffff;
   --w-bg: #e3f3e8; --w-ink: #1f6b3a; --w-line: #8fcaa4;   /* witnessed */
   --d-bg: #e4ecfa; --d-ink: #274f99; --d-line: #9db6e6;   /* derivable */
   --u-bg: #fbe9dd; --u-ink: #9a4a0f; --u-line: #e8b48e;   /* unwitnessed */
@@ -22,6 +23,7 @@
     --muted: #a3a7ad;
     --line: #3a3e45;
     --accent: #7fa6e6;
+    --on-accent: #10141a;
     --w-bg: #16311f; --w-ink: #8fd9a8; --w-line: #2f6b43;
     --d-bg: #182640; --d-ink: #9ec0f5; --d-line: #2e4f8a;
     --u-bg: #3b2414; --u-ink: #f1b283; --u-line: #7a4a24;
@@ -58,7 +60,7 @@ select, textarea, button {
 }
 select { max-width: 100%; }
 textarea { width: 100%; min-height: 140px; font: 12.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; resize: vertical; }
-button { cursor: pointer; background: var(--accent); color: #fff; border-color: transparent; font-weight: 600; }
+button { cursor: pointer; background: var(--accent); color: var(--on-accent); border-color: transparent; font-weight: 600; }
 button.secondary { background: var(--panel); color: var(--ink); border-color: var(--line); }
 button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 10px; }
@@ -80,6 +82,10 @@ button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3p
 .badge.POLICY { background: var(--p-bg); color: var(--p-ink); border-color: var(--p-line); }
 .badge.FINDING { background: var(--f-bg); color: var(--f-ink); border-color: var(--f-line); }
 .badge.OK { background: var(--ok-bg); color: var(--ok-ink); border-color: var(--w-line); }
+.badge.REFUSED, .badge.FAILS, .badge.SUSPICIOUS { background: var(--f-bg); color: var(--f-ink); border-color: var(--f-line); }
+.badge.ASSUMED, .badge.NOT-READ, .badge.NO-EFFECT { background: var(--p-bg); color: var(--p-ink); border-color: var(--p-line); }
+.badge.EXPECTED { background: var(--ok-bg); color: var(--ok-ink); border-color: var(--w-line); }
+.moved .w { color: var(--muted); }
 @media (max-width: 640px) {
   .input { grid-template-columns: 1fr auto; }
   .input .k { grid-column: 1; }

@@ -3,12 +3,12 @@
 (function () {
   'use strict';
   const S = window.ShadowLint, F = window.ShadowFindings, SD = window.ShadowData || {};
-  const data = { metric: SD.fasteners_metric, un: SD.fasteners_un, motors: SD.motor_perf };
+  const data = { metric: SD.fasteners_metric, un: SD.fasteners_un, motors: SD.motor_perf, grades: SD.grade_sy };
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const fmt = (v) => (typeof v === 'number' && isFinite(v)) ? String(+v.toFixed(4)) : String(v);
 
-  function badge(cls) { return el('span', 'badge ' + cls, cls); }
+  function badge(cls, text) { return el('span', 'badge ' + cls, text || cls); }
 
   function renderResult(container, L) {
     container.textContent = '';
@@ -28,6 +28,8 @@
     sum.appendChild(el('span', 'chip U', r.totals.UNWITNESSED + ' unwitnessed'));
     sum.appendChild(el('span', 'chip P', r.totals.POLICY + ' policy'));
     sum.appendChild(el('span', 'chip', 'invention surface ' + r.inventionSurface.length));
+    const gaps = r.rows.reduce((n, row) => n + row.missing.length, 0);
+    if (gaps) sum.appendChild(el('span', 'chip', gaps + ' gap' + (gaps === 1 ? '' : 's')));
     container.appendChild(sum);
     for (const row of r.rows) {
       const h = el('div', 'row-head');
@@ -43,13 +45,22 @@
         g.appendChild(el('span', 'w', w));
         container.appendChild(g);
       }
-      for (const k of row.missing) {
+      for (const m of row.missing) {
         const g = el('div', 'input');
-        g.appendChild(el('span', 'k', k)); g.appendChild(el('span', 'v', '(missing)')); g.appendChild(el('span', 'c', '—'));
-        g.appendChild(el('span', 'w', 'the evaluator refuses this row without it'));
+        g.appendChild(el('span', 'k', m.key));
+        g.appendChild(el('span', 'v', m.declared === undefined ? (m.effect === 'assumed' ? '(absent)' : '(missing)') : fmt(m.declared)));
+        const c = el('span', 'c'); c.appendChild(badge(m.effect === 'assumed' ? 'ASSUMED' : m.effect === 'fails' ? 'FAILS' : 'REFUSED')); g.appendChild(c);
+        g.appendChild(el('span', 'w', m.text));
         container.appendChild(g);
       }
-      const others = Object.entries(row.other).filter(([k]) => k !== 'inputs_src' && k !== 'inputs_ref');
+      for (const u of row.unread) {
+        const g = el('div', 'input');
+        g.appendChild(el('span', 'k', u.key)); g.appendChild(el('span', 'v', fmt(u.value)));
+        const c = el('span', 'c'); c.appendChild(badge('NOT-READ', 'not read')); g.appendChild(c);
+        g.appendChild(el('span', 'w', u.note));
+        container.appendChild(g);
+      }
+      const others = Object.entries(row.other).filter(([k]) => k !== 'inputs_src' && k !== 'inputs_ref' && k !== 'note');
       if (others.length) container.appendChild(el('p', 'other', 'other keys: ' + others.map(([k, v]) => k + '=' + JSON.stringify(v)).join(', ')));
     }
     if (r.inventionSurface.length) container.appendChild(el('p', 'other', 'Invention surface — inputs no declared geometry can see: ' + r.inventionSurface.join(', ')));
@@ -62,6 +73,7 @@
     const dl = el('dl', 'kv');
     const kv = (k, v) => { dl.appendChild(el('dt', null, k)); dl.appendChild(el('dd', null, v)); };
     kv('files', D.labels[0] + ' → ' + D.labels[1]);
+    if (D.relation) kv('what the pair is', D.relation);
     kv('geometry', g.identicalFiles ? 'the two files are byte-identical' : g.identical ? 'IDENTICAL — code outside comments is byte-identical; only comments changed' : 'changed: ' + g.removed + ' line' + (g.removed === 1 ? '' : 's') + ' removed, ' + g.added + ' added');
     kv('contract floor', Object.keys(D.floor.was).map((k) => k + ' ' + D.floor.was[k] + (D.floor.now[k] === D.floor.was[k] ? '' : '→' + D.floor.now[k])).join(', ') + (D.floor.lost.length ? ' — LOST: ' + D.floor.lost.map((l) => l.category).join(', ') : ' — held'));
     kv('declarations', D.declarations.length ? D.declarations.length + ' change' + (D.declarations.length === 1 ? '' : 's') + ' (information: the CMM re-measures these against the mesh)' : 'unchanged');
@@ -74,6 +86,9 @@
       if (m.before) line.appendChild(badge(m.before));
       if (m.before || m.after) line.appendChild(el('span', null, ' → '));
       if (m.after) line.appendChild(badge(m.after));
+      line.appendChild(el('span', null, ' '));
+      line.appendChild(badge(m.verdict === 'suspicious' ? 'SUSPICIOUS' : m.verdict === 'expected' ? 'EXPECTED' : 'NO-EFFECT', m.verdict === 'no_effect' ? 'no effect' : m.verdict));
+      line.appendChild(el('span', 'w', ' ' + m.why));
       mv.appendChild(line);
     }
     container.appendChild(mv);
@@ -86,7 +101,7 @@
       }
     } else {
       const ok = el('div', 'ok');
-      ok.appendChild(badge('OK')); ok.appendChild(el('span', null, ' no findings: ' + (g.identical ? 'nothing moved' : 'the geometry changed, the inputs did not, and the floor held')));
+      ok.appendChild(badge('OK')); ok.appendChild(el('span', null, ' no findings: ' + S.noFindingsText(D)));
       container.appendChild(ok);
     }
     if (D.declarations.length) {
@@ -107,7 +122,7 @@
 
   // --- pairs
   const psel = $('pair');
-  F.pairs.forEach((p, i) => { const o = el('option', null, p.refusal ? 'refused pair' : p.labels[0] + ' → ' + p.labels[1]); o.value = String(i); psel.appendChild(o); });
+  F.pairs.forEach((p, i) => { const o = el('option', null, p.refusal ? 'refused pair' : p.labels[0] + ' → ' + p.labels[1] + (p.relation ? ' (' + p.relation.split(' (')[0] + ')' : '')); o.value = String(i); psel.appendChild(o); });
   const showPair = () => renderDiff($('diff'), F.pairs[+psel.value]);
   psel.addEventListener('change', showPair);
   showPair();

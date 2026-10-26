@@ -14,7 +14,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const S = require(path.join(here, 'shadow.js'));
 const snaps = path.join(here, 'snapshots');
-const data = { metric: require(path.join(snaps, 'fasteners_metric.excerpt.js')), un: require(path.join(snaps, 'fasteners_un.excerpt.js')), motors: require(path.join(snaps, 'motor_perf.excerpt.js')) };
+const data = { metric: require(path.join(snaps, 'fasteners_metric.excerpt.js')), un: require(path.join(snaps, 'fasteners_un.excerpt.js')), motors: require(path.join(snaps, 'motor_perf.excerpt.js')), grades: require(path.join(snaps, 'grade_sy.excerpt.js')) };
 const URL0 = pathToFileURL(path.join(here, 'index.html')).href;
 let pw;
 try { pw = require('playwright'); } catch {
@@ -45,9 +45,11 @@ async function main() {
       ok(await p.locator('#fixture').inputValue() === 'bulkhead.scad', 'opens on bulkhead.scad');
       const bulk = S.lint(fs.readFileSync(path.join(snaps, 'bulkhead.scad'), 'utf8'), data, 'bulkhead.scad').result;
       const rows = await p.locator('#lint .input').count();
-      ok(rows === bulk.rows.reduce((n, r) => n + r.inputs.length + r.missing.length, 0), `bulkhead shows ${rows} input rows, as the module classifies`);
+      ok(rows === bulk.rows.reduce((n, r) => n + r.inputs.length + r.missing.length + r.unread.length, 0), `bulkhead shows ${rows} input rows (inputs, gaps, keys not read), as the module classifies`);
       const classes = await p.locator('#lint .input .badge').allTextContents();
-      ok(JSON.stringify(classes) === JSON.stringify(bulk.rows.flatMap((r) => r.inputs.map((i) => i.class))), 'bulkhead badges equal the module\'s classes in order');
+      const want = bulk.rows.flatMap((r) => [...r.inputs.map((i) => i.class), ...r.missing.map((m) => m.effect.toUpperCase()), ...r.unread.map(() => 'not read')]);
+      ok(JSON.stringify(classes) === JSON.stringify(want), 'bulkhead badges equal the module\'s classes, gaps and unread keys in order: ' + classes.join(' '));
+      ok((await p.locator('#lint').innerText()).includes('thread check ignores it'), 'the thread row\'s sf_min is shown as not read');
       const chips = await p.locator('#lint .chip').allTextContents();
       ok(chips[0] === `${bulk.totals.WITNESSED} witnessed` && chips[2] === `${bulk.totals.UNWITNESSED} unwitnessed`, 'summary chips carry the totals');
       ok((await p.locator('#lint').innerText()).includes('critical "plate thickness" plate/z 12.70'), 'plate_t_mm witness names the critical row');
@@ -58,6 +60,7 @@ async function main() {
       const txt = await p.locator('#lint').innerText();
       ok(txt.includes('Ø95.96/2 = 47.98') && txt.includes('(101.5 − 95.96)/2 = 2.77'), 'endcap: ri_mm and t_mm derivations shown');
       ok(txt.includes('17.4') && txt.includes('UNWITNESSED') && txt.includes('nearest'), 'endcap: the 17.4 wall is unwitnessed with a nearest candidate');
+      ok(txt.includes('the signature of an external groove declared as a bore'), 'endcap: the groove caveat is shown on the 2.77 "wall"');
 
       await p.selectOption('#fixture', 'av-sled.scad');
       await p.waitForTimeout(100);
@@ -66,6 +69,7 @@ async function main() {
       // pairs
       ok((await p.locator('#diff').innerText()).includes('IDENTICAL'), 'synthetic pair: geometry identical');
       ok((await p.locator('#diff .finding').count()) === 1 && (await p.locator('#diff').innerText()).includes('force_N 20000 → 12000'), 'synthetic pair: one finding, force_N moved');
+      ok((await p.locator('#diff .moved .badge.SUSPICIOUS').count()) === 1, 'synthetic pair: the move is marked suspicious');
       await p.selectOption('#pair', '1');
       await p.waitForTimeout(100);
       const d1 = await p.locator('#diff').innerText();
@@ -73,6 +77,7 @@ async function main() {
       await p.selectOption('#pair', '2');
       await p.waitForTimeout(100);
       ok((await p.locator('#diff .ok').count()) === 1, 'ring1 → ring6: no findings');
+      ok((await p.locator('#diff').innerText()).includes('two independent runs, not a retry'), 'ring1 → ring6 is labelled as two independent runs');
 
       // own text
       await p.fill('#own-a', 'cube(1);');
@@ -87,6 +92,14 @@ async function main() {
       await p.click('#load-sample');
       await p.waitForTimeout(150);
       ok((await p.locator('#own .finding').count()) === 1 && (await p.locator('#own').innerText()).includes('IDENTICAL'), 'the loaded sample pair is flagged');
+      // the recorded first-attempt failure (no bolt grade) and its fix: an expected correction, not a finding
+      const ring = fs.readFileSync(path.join(snaps, 'ring1.scad'), 'utf8');
+      await p.fill('#own-a', ring.replace(',"grade":"8.8"', ''));
+      await p.fill('#own-b', ring);
+      await p.click('#run');
+      await p.waitForTimeout(150);
+      ok((await p.locator('#own .finding').count()) === 0 && (await p.locator('#own .moved .badge.EXPECTED').count()) === 1, 'adding the missing grade is an expected correction, not a finding');
+      await p.fill('#own-b', '');
       // keyboard: the Lint button is reachable and works by Enter
       await p.fill('#own-a', '');
       await p.focus('#run');
@@ -101,6 +114,14 @@ async function main() {
       const { ctx, p, errors } = await page(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2, colorScheme: 'dark' });
       const bg = await p.evaluate(() => getComputedStyle(document.body).backgroundColor);
       ok(/rgb\(21, 23, 26\)/.test(bg), `dark scheme applied (body ${bg})`);
+      // WCAG contrast of the primary button's text on its background
+      const ratio = await p.evaluate(() => {
+        const b = document.getElementById('run'), cs = getComputedStyle(b);
+        const lum = (c) => { const v = c.match(/\d+(\.\d+)?/g).slice(0, 3).map((x) => +x / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; };
+        const a = lum(cs.color), c = lum(cs.backgroundColor);
+        return (Math.max(a, c) + 0.05) / (Math.min(a, c) + 0.05);
+      });
+      ok(ratio >= 4.5, `dark-mode Lint button text contrast ${ratio.toFixed(2)}:1 ≥ 4.5:1`);
       const over = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
       ok(over.sw <= over.iw + 1, `no horizontal overflow at 390 px (${over.sw} <= ${over.iw})`);
       await p.selectOption('#fixture', 'endcap.scad');

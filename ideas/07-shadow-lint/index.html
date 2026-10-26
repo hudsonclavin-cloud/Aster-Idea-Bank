@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shadow Lint</title>
-<meta name="description" content="For every number a PartForge FLIGHT loads row feeds its check, say whether the declared geometry can see it; for two attempts, say what moved while the geometry did not.">
+<meta name="description" content="For every number a PartForge FLIGHT loads row feeds its check, say whether the declared geometry can see it; for two attempts, say what moved while the geometry did not, and whether the move made a check easier.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <h1>Shadow Lint</h1>
-<p class="tag">For every number a FLIGHT loads row feeds its check: can the declared geometry see it? And when a retry moves a number the geometry did not, say so.</p>
+<p class="tag">For every number a FLIGHT loads row feeds its check: can the declared geometry see it? And when a retry moves a number while the geometry stays the same, say which way it moved.</p>
 
 <section class="panel" aria-labelledby="h-fixture">
   <h2 id="h-fixture">One file</h2>
@@ -22,7 +22,8 @@
 </section>
 
 <section class="panel" aria-labelledby="h-pair">
-  <h2 id="h-pair">Two attempts</h2>
+  <h2 id="h-pair">Two files</h2>
+  <p class="other">Only the first pair is an attempt and its retry, and it is synthetic: no recorded PartForge run keeps a failing attempt beside its retry.</p>
   <div class="controls">
     <label>Pair
       <select id="pair" aria-label="attempt pair"></select>
@@ -50,8 +51,10 @@
   <div class="legend">
     <span class="badge WITNESSED">WITNESSED</span><span>The value equals a declared dimension of compatible unit within that dimension's tolerance: a critical extent, a hole count whose row is a clearance size for the declared thread, a hole at the tap-drill or clearance diameter for that thread. PartForge's mesh CMM measures the declared dimension; this page measures no mesh.</span>
     <span class="badge DERIVABLE">DERIVABLE</span><span>An arithmetic combination of declared rows: a bore over two (ri_mm), an OD-minus-bore wall over two (t_mm), a feature's from–to span (a through hole's span is the plate thickness; a tapped hole's span is the engagement).</span>
-    <span class="badge UNWITNESSED">UNWITNESSED</span><span>Nothing declared can see it: a force, a pressure, a speed, an altitude, a strength; or a length whose candidates all miss (the nearest is named). The tool cannot know such a number is wrong, only that nothing checks it.</span>
-    <span class="badge POLICY">POLICY</span><span><code>sf_min</code>: a declared acceptance threshold, not a physical quantity. A retry can lower it with no geometric consequence, which is why the differ watches it.</span>
+    <span class="badge UNWITNESSED">UNWITNESSED</span><span>Nothing declared can see it: a force, a pressure, a speed, an altitude, a strength, a bolt grade or material named in text, a shank in the shear plane; or a length whose candidates all miss (the nearest is named). The tool cannot know such a number is wrong, only that nothing checks it.</span>
+    <span class="badge POLICY">POLICY</span><span><code>sf_min</code> on a hoop, flutter or bolt-shear row: a declared acceptance threshold, not a physical quantity. A retry can lower it with no geometric consequence, which is why the differ watches it. (The thread check ignores <code>sf_min</code>; it is listed as not read.)</span>
+    <span class="badge REFUSED">REFUSED</span><span>A key the row lacks, or declares as something the evaluator cannot read as a number, without which PartForge refuses to evaluate the row. <span class="badge ASSUMED">ASSUMED</span> means it computes with a default instead (1 bolt, sea level, an 800 MPa bolt); <span class="badge FAILS">FAILS</span> marks a missing plate thickness, which PartForge turns into a bearing SF of 0.</span>
+    <span class="badge SUSPICIOUS">suspicious</span><span>In the two-file view: an input moved the way that makes a check easier (a load lowered, a stronger grade), lost its witness, or was removed. With byte-identical geometry that is a finding. <span class="badge EXPECTED">expected</span> is the other way (a load raised to the motor's peak, a missing grade added); <span class="badge NO-EFFECT">no effect</span> means the evaluator reads the same number or does not read the key.</span>
   </div>
 </section>
 
@@ -62,6 +65,7 @@
 <script src="snapshots/fasteners_metric.excerpt.js"></script>
 <script src="snapshots/fasteners_un.excerpt.js"></script>
 <script src="snapshots/motor_perf.excerpt.js"></script>
+<script src="snapshots/grade_sy.excerpt.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

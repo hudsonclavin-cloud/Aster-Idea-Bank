@@ -8,6 +8,9 @@ shadow lint — bulkhead.scad (6061-T6, cnc_lathe; declared 5 critical, 0 od, 2 
                                               also holes "all-thread rods 1/4 in" circle × 4, Ø6.6 — a clearance for
                                               1/4-20 (between major 6.35 and close 6.747 / normal 7.144 / loose 7.541)
                                               (fasteners_un likely)
+    grade             A2-70      UNWITNESSED  grade A2-70 → bolt σy 450 MPa in the evaluator's GRADE_SY
+                                              (index.html:5804); a bolt grade is a purchasing specification: nothing in
+                                              the geometry can see it
     n                 2          WITNESSED    holes "U-bolt 1/4-20" list × 2, Ø7 — a clearance for 1/4-20 (between major
                                               6.35 and close 6.747 / normal 7.144 / loose 7.541) (fasteners_un likely)
     force_N           5000       UNWITNESSED  a load: nothing in the geometry can see it
@@ -16,7 +19,6 @@ shadow lint — bulkhead.scad (6061-T6, cnc_lathe; declared 5 critical, 0 od, 2 
                                               spans 0→12.7 = 12.70; also holes "e-match feed-through" spans 0→12.7 =
                                               12.70
     sf_min            2          POLICY       declared acceptance threshold (the doctrine default for bolt_shear is 2.0)
-    other keys: grade="A2-70"
 
   thread "terminal block screws"  inputs_src default
     input             value      class        witness
@@ -24,11 +26,17 @@ shadow lint — bulkhead.scad (6061-T6, cnc_lathe; declared 5 critical, 0 od, 2 
                                               3.454 for #8-32 (fasteners_un likely)
     engagement_mm     10         DERIVABLE    holes "terminal block #8-32 tap drill" spans 2.7→12.7 = 10.00, Ø3.45 is
                                               the 75% tap drill 3.454 for #8-32 (fasteners_un likely)
-    sf_min            2          POLICY       declared acceptance threshold
-    other keys: internal_material="6061-T6"
+    internal_material 6061-T6    UNWITNESSED  names the tapped material whose strength the strip check uses
+                                              (FLIGHT_MATERIALS[...] at index.html:5772, else the row's material); a
+                                              material named in text: nothing in the geometry can see it
+    bolt_sigma_u_MPa  (absent)   ASSUMED      the evaluator assumes a bolt UTS of 800 MPa (index.html:5773)
+    sf_min            2          not read     PartForge's thread check ignores it: it sets sf_min 1.0 and passes on
+                                              strip ≥ bolt and the engagement rule (index.html:5775–5776), whatever is
+                                              declared
 
-  8 inputs: 4 witnessed, 1 derivable, 1 unwitnessed, 2 policy thresholds
-  invention surface: 1 input no declared geometry can see — U-bolt recovery shock.force_N
+  9 inputs: 4 witnessed, 1 derivable, 3 unwitnessed, 1 policy threshold
+  invention surface: 3 inputs no declared geometry can see — U-bolt recovery shock.grade, U-bolt recovery shock.force_N, terminal block screws.internal_material
+  gaps: 1 the evaluator assumes
   (witnessed = a DECLARED dimension matches; the mesh CMM measures that declaration, this tool does not)
 (exit 0)
 
@@ -38,11 +46,18 @@ shadow lint — endcap.scad (6061-T6, cnc_lathe; declared 7 critical, 2 od, 3 bo
   hoop "shoulder wall at O-ring groove root"  inputs_src user
     input             value      class        witness
     P_MPa             6          UNWITNESSED  a pressure: nothing in the geometry can see it
-    ri_mm             47.98      DERIVABLE    bore "o-ring groove bottom diameter" Ø95.96/2 = 47.98
+    ri_mm             47.98      DERIVABLE    bore "o-ring groove bottom diameter" Ø95.96/2 = 47.98 — caveat: bore
+                                              "o-ring groove bottom diameter" (z 11.15–15.9) lies strictly inside od
+                                              "shoulder OD" (z 5.4–25.4), the signature of an external groove declared
+                                              as a bore; if it is one, this is the groove-root radius, not the inside of
+                                              a pressurised wall
     t_mm              2.77       DERIVABLE    wall (101.5 − 95.96)/2 = 2.77 from od "shoulder OD" and bore "o-ring
-                                              groove bottom diameter"
+                                              groove bottom diameter" — caveat: bore "o-ring groove bottom diameter" (z
+                                              11.15–15.9) lies strictly inside od "shoulder OD" (z 5.4–25.4), the
+                                              signature of an external groove declared as a bore; if it is one, this
+                                              number is the groove depth, and the "wall" is the material the groove
+                                              removes
     sf_min            2          POLICY       declared acceptance threshold (the doctrine default for hoop is 2.0)
-    other keys: note="ri = groove bottom radius = 95.96/2 = 47"
 
   hoop "flange face plate at MEOP"  inputs_src user
     input             value      class        witness
@@ -51,7 +66,6 @@ shadow lint — endcap.scad (6061-T6, cnc_lathe; declared 7 critical, 2 od, 3 bo
     t_mm              17.4       UNWITNESSED  no declared extent, wall or span within tolerance; nearest critical
                                               "shoulder length" shoulder/z 20.00 ±0.05 (default) (Δ 2.60)
     sf_min            2          POLICY       declared acceptance threshold (the doctrine default for hoop is 2.0)
-    other keys: note="face plate thickness = total_z - pocket_"
 
   thread "M8 bolts into aluminium tank flange"  inputs_src user
     input             value      class        witness
@@ -60,7 +74,10 @@ shadow lint — endcap.scad (6061-T6, cnc_lathe; declared 7 critical, 2 od, 3 bo
     engagement_mm     16         UNWITNESSED  no hole or bore span matches; nearest bores "npt port tap drill" spans
                                               28.4→13.9 = 14.50 (Δ 1.50) — a thread engagement is usually in the mating
                                               part
-    other keys: internal_material="6061-T6", note="16 mm engagement = 2x bolt diameter in t"
+    internal_material 6061-T6    UNWITNESSED  names the tapped material whose strength the strip check uses
+                                              (FLIGHT_MATERIALS[...] at index.html:5772, else the row's material); a
+                                              material named in text: nothing in the geometry can see it
+    bolt_sigma_u_MPa  (absent)   ASSUMED      the evaluator assumes a bolt UTS of 800 MPa (index.html:5773)
 
   bolt_shear "M8 bolt pattern pressure retention"  inputs_src user
     input             value      class        witness
@@ -71,10 +88,13 @@ shadow lint — endcap.scad (6061-T6, cnc_lathe; declared 7 critical, 2 od, 3 bo
     force_N           48641      UNWITNESSED  a load: nothing in the geometry can see it
     plate_t_mm        25.4       DERIVABLE    holes "M8 bolt pattern clearance" spans 0→25.4 = 25.40
     sf_min            2          POLICY       declared acceptance threshold (the doctrine default for bolt_shear is 2.0)
-    other keys: note="force_N = P * pi * r^2 = 6.00e6 Pa * pi ", grade="8.8"
+    grade             8.8        UNWITNESSED  grade 8.8 → bolt σy 640 MPa in the evaluator's GRADE_SY (index.html:5804);
+                                              a bolt grade is a purchasing specification: nothing in the geometry can
+                                              see it
 
-  15 inputs: 2 witnessed, 4 derivable, 6 unwitnessed, 3 policy thresholds
-  invention surface: 6 inputs no declared geometry can see — shoulder wall at O-ring groove root.P_MPa, flange face plate at MEOP.P_MPa, flange face plate at MEOP.t_mm, M8 bolts into aluminium tank flange.size, M8 bolts into aluminium tank flange.engagement_mm, M8 bolt pattern pressure retention.force_N
+  17 inputs: 2 witnessed, 4 derivable, 8 unwitnessed, 3 policy thresholds
+  invention surface: 8 inputs no declared geometry can see — shoulder wall at O-ring groove root.P_MPa, flange face plate at MEOP.P_MPa, flange face plate at MEOP.t_mm, M8 bolts into aluminium tank flange.size, M8 bolts into aluminium tank flange.engagement_mm, M8 bolts into aluminium tank flange.internal_material, M8 bolt pattern pressure retention.force_N, M8 bolt pattern pressure retention.grade
+  gaps: 1 the evaluator assumes
   (witnessed = a DECLARED dimension matches; the mesh CMM measures that declaration, this tool does not)
 (exit 0)
 
@@ -120,11 +140,14 @@ shadow lint — ring1.scad (6061-T6, cnc_mill; declared 2 critical, 1 od, 1 bore
                                               spans 0→8 = 8.00; also bores "MMT bore" spans 8→0 = 8.00; also holes
                                               "thrust bolts" spans 8→0 = 8.00; also holes "lightening holes" spans 8→0 =
                                               8.00
+    grade             8.8        UNWITNESSED  grade 8.8 → bolt σy 640 MPa in the evaluator's GRADE_SY (index.html:5804);
+                                              a bolt grade is a purchasing specification: nothing in the geometry can
+                                              see it
     sf_min            2          POLICY       declared acceptance threshold (the doctrine default for bolt_shear is 2.0)
-    other keys: grade="8.8", motor="Loki L2050"
+    other keys: motor="Loki L2050"
 
-  5 inputs: 3 witnessed, 0 derivable, 1 unwitnessed, 1 policy threshold
-  invention surface: 1 input no declared geometry can see — thrust bolts.force_N
+  6 inputs: 3 witnessed, 0 derivable, 2 unwitnessed, 1 policy threshold
+  invention surface: 2 inputs no declared geometry can see — thrust bolts.force_N, thrust bolts.grade
   (witnessed = a DECLARED dimension matches; the mesh CMM measures that declaration, this tool does not)
 (exit 0)
 
@@ -133,12 +156,13 @@ attempt diff — motor-retainer.scad → motor-retainer.retry.scad
   geometry (code outside comments, whitespace-normalised): IDENTICAL — only comments changed
   contract floor (flightCounts): critical 1, od 1, bores 2, holes 1, revolve 0, gauges 0, loads 2  — held
   loads inputs: 1 change
-    bolt_shear "thrust bolts" force_N: 20000 → 12000  [UNWITNESSED → UNWITNESSED]
+    bolt_shear "thrust bolts" force_N: 20000 → 12000  [UNWITNESSED → UNWITNESSED]  suspicious: a load
+      lowered: the check got easier and nothing in the geometry changed
   declarations: unchanged
 
   FINDINGS (1):
-    input_moved_geometry_unchanged: bolt_shear "thrust bolts": force_N 20000 → 12000 while the geometry is byte-identical — an
-      unwitnessed input changed and no mesh will notice (UNWITNESSED → UNWITNESSED)
+    input_moved_geometry_unchanged: bolt_shear "thrust bolts": force_N 20000 → 12000 while the geometry is byte-identical — a load
+      lowered: the check got easier and nothing in the geometry changed (UNWITNESSED → UNWITNESSED)
 (exit 1)
 
 $ node ideas/07-shadow-lint/shadow-lint.mjs ideas/07-shadow-lint/snapshots/retainer.scad ideas/07-shadow-lint/snapshots/retainer-fixed.scad

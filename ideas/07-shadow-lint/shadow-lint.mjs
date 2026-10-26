@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 // shadow-lint — for every number a FLIGHT loads row feeds its check, say whether the declared
-// geometry can see it; given two attempts, say what moved while the geometry did not.
+// geometry can see it; given two attempts, say what moved while the geometry did not, and which way.
 //
 //   node ideas/07-shadow-lint/shadow-lint.mjs <part.scad>                  shadow table for one file
 //   node ideas/07-shadow-lint/shadow-lint.mjs <attempt.scad> <retry.scad>  attempt diff
 //   options: --json (an envelope in the shape of PartForge's headless CLI), --terse, --help
 //
 // Exit codes, as headless/cli.mjs: 0 lint printed and no findings · 1 findings (an input moved
-// while the geometry stayed byte-identical, or a contract-floor loss) · 2 refused (no FLIGHT
-// block, malformed JSON, no loads rows, unreadable file) · 3 usage error.
+// the way that makes a check easier while the geometry stayed byte-identical, or a contract-floor
+// loss) · 2 refused (no FLIGHT block, malformed JSON, no loads rows, unreadable file) · 3 usage.
+// A move the other way (a load raised, a missing grade added) is listed as an expected correction.
 //
-// Nothing is rewritten. Node built-ins only; the fastener and motor rows it uses are the excerpts
-// under snapshots/ (PartForge data/tables/*, with their confidence fields).
+// Nothing is rewritten. Node built-ins only; the fastener, motor and bolt-grade rows it uses are
+// the excerpts under snapshots/ (PartForge data/tables/* with their confidence fields, and the
+// evaluator's GRADE_SY line).
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
@@ -25,10 +27,11 @@ const data = {
   metric: require(path.join(snaps, 'fasteners_metric.excerpt.js')),
   un: require(path.join(snaps, 'fasteners_un.excerpt.js')),
   motors: require(path.join(snaps, 'motor_perf.excerpt.js')),
+  grades: require(path.join(snaps, 'grade_sy.excerpt.js')),
 };
 
 function usage(code) {
-  const text = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith('//')).slice(1).map((l) => l.slice(3)).join('\n');
+  const text = fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter((l) => l.startsWith('//')).map((l) => l.slice(3)).join('\n');
   (code ? process.stderr : process.stdout).write(text + '\n');
   process.exit(code);
 }
@@ -42,7 +45,7 @@ if (argv.some((a) => a.startsWith('--')) || argv.length < 1 || argv.length > 2) 
 function provenanceOf() {
   const side = (f) => { try { return JSON.parse(fs.readFileSync(path.join(snaps, f + '.provenance.json'), 'utf8')); } catch { return null; } };
   const refs = [];
-  for (const f of ['fasteners_metric.excerpt.js', 'fasteners_un.excerpt.js', 'motor_perf.excerpt.js']) { const s = side(f); if (s) refs.push({ source: `${s.repo} ${s.path} @ ${String(s.commit).slice(0, 7)} (excerpt: ${s.note})` }); }
+  for (const f of ['fasteners_metric.excerpt.js', 'fasteners_un.excerpt.js', 'motor_perf.excerpt.js', 'grade_sy.excerpt.js']) { const s = side(f); if (s) refs.push({ source: `${s.repo} ${s.path} @ ${String(s.commit).slice(0, 7)} (excerpt: ${s.note})` }); }
   return refs;
 }
 
@@ -66,7 +69,8 @@ if (files.length === 1) {
   const text = Shadow.renderLint(L, { terse });
   if (L.refusal) finish(Shadow.envelope('shadow-lint', null, { refusal: L.refusal, summary: L.refusal.reason }), text, 2);
   const r = L.result;
-  const summary = `${files[0].label}: ${r.totals.WITNESSED} witnessed, ${r.totals.DERIVABLE} derivable, ${r.totals.UNWITNESSED} unwitnessed, ${r.totals.POLICY} policy; invention surface ${r.inventionSurface.length}`;
+  const gaps = r.rows.reduce((n, row) => n + row.missing.length, 0);
+  const summary = `${files[0].label}: ${r.totals.WITNESSED} witnessed, ${r.totals.DERIVABLE} derivable, ${r.totals.UNWITNESSED} unwitnessed, ${r.totals.POLICY} policy; invention surface ${r.inventionSurface.length}; ${gaps} gap${gaps === 1 ? '' : 's'}`;
   finish(Shadow.envelope('shadow-lint', { file: files[0].label, ...r }, { summary, provenance: provenanceOf() }), text, 0);
 } else {
   const D = Shadow.diffAttempts(files[0].text, files[1].text, data, [files[0].label, files[1].label]);

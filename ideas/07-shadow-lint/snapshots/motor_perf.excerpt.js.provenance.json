@@ -8,7 +8,7 @@
   "readBlob": "efb752096d84dc5030e5a968f510dadd7f5821ae",
   "sourceSha256": "42609fe54339dd20515b2ed73f81bbf52ecc1c55bad04331725bb2ecfd382ba3",
   "sourceBytes": 742332,
-  "copiedAt": "2026-10-26T09:58:50.232Z",
+  "copiedAt": "2026-10-26T15:53:42.066Z",
   "mode": "derived",
   "note": "derived by build-data.mjs: the 1 row(s) matched by the fixtures' loads.motor keys (Loki L2050) out of 1037; every field kept; wrapped as a UMD module",
   "readMatchesCommitted": true,

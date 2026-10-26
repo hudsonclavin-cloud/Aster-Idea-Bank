@@ -8,7 +8,7 @@
   "readBlob": "c04006aa5032f3dee05a3933b03d0d2e74454049",
   "sourceSha256": "4d60ab9a0a7e8d84a4cc2a700bc792928b5b3ca50828bcd317bed75799b0f616",
   "sourceBytes": 108390,
-  "copiedAt": "2026-10-26T09:58:50.095Z",
+  "copiedAt": "2026-10-26T15:53:40.928Z",
   "mode": "derived",
   "note": "derived by build-data.mjs: all 16 rows, fields key,series,major_mm,pitch_mm,tap_drill_75_mm,tap_drill_50_mm,clearance_close_mm,clearance_normal_mm,clearance_loose_mm,confidence,source (+ field_confidence for those), table/license_note/columns kept; wrapped as a UMD module",
   "readMatchesCommitted": true,

@@ -8,7 +8,7 @@
   "readBlob": "b455684cc54c31ed20c7f2d9d5fff8b9474b5c76",
   "sourceSha256": "791fdac06696f12e98a6f39a62f36b1444e6a36e72e2d48c056b0964633866ae",
   "sourceBytes": 4601,
-  "copiedAt": "2026-10-26T09:58:50.323Z",
+  "copiedAt": "2026-10-26T15:53:42.430Z",
   "mode": "derived",
   "note": "derived by build-data.mjs: the template with exactly one edit inside the FLIGHT block, \"force_N\":20000 -> \"force_N\":12000; code outside comments byte-identical (a synthetic retry that edits the number instead of the geometry)",
   "readMatchesCommitted": true,

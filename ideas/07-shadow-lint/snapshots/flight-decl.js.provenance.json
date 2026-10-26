@@ -8,7 +8,7 @@
   "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
   "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
   "sourceBytes": 1240104,
-  "copiedAt": "2026-10-26T09:58:49.886Z",
+  "copiedAt": "2026-10-26T15:53:40.429Z",
   "mode": "derived",
   "note": "derived by build-data.mjs: index.html lines 4651-4761 (FLIGHT_AXIS … provenanceSummary) and 4823-4825 (flightCounts), unedited, plus one module.exports line",
   "readMatchesCommitted": true,
