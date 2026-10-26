@@ -122,6 +122,11 @@ table.mini th, table.mini td { text-align: left; padding: 4px 12px 4px 0; border
 .verdict.near .vband { color: var(--near); }
 .verdict.under .vband { color: var(--under); }
 .vtext { margin: 0 0 12px; color: var(--muted); }
+.vnote { margin: 10px 0 0; color: var(--muted); }
+.warnnote { color: var(--warn); margin: 4px 0 6px; }
+#matTable td.name details { margin-top: 2px; }
+#matTable td.name summary { cursor: pointer; color: var(--accent); font-size: 0.72rem; }
+#matTable td.name details p { margin: 2px 0 0; color: var(--muted); font-size: 0.75rem; overflow-wrap: anywhere; }
 .figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
 @media (min-width: 560px) { .figs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 900px) { .figs { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -135,7 +140,7 @@ table.mini th, table.mini td { text-align: left; padding: 4px 12px 4px 0; border
 .flags { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
 .flags li { font-size: 0.9rem; padding-left: 1.2em; position: relative; color: var(--ink); }
 .flags li::before { content: "•"; position: absolute; left: 0.2em; color: var(--muted); }
-.flags li.provisional, .flags li.recall { color: var(--warn); }
+.flags li.provisional, .flags li.recall, .flags li.demoted { color: var(--warn); }
 .arith { margin-top: 12px; font-size: 0.9rem; }
 .arith summary { cursor: pointer; color: var(--accent); }
 .arith code { white-space: normal; }
@@ -166,10 +171,11 @@ canvas#chart { display: block; width: 100%; height: 300px; touch-action: none; b
 @media (max-width: 520px) {
   #matTable { font-size: 0.78rem; table-layout: fixed; }
   #matTable th, #matTable td { padding: 6px 3px; }
-  #matTable th:first-child { width: 33%; }
-  #matTable th:nth-child(2) { width: 19%; }
-  #matTable th:nth-child(3), #matTable th:nth-child(4) { width: 16%; }
-  #matTable th:last-child { width: 16%; }
+  #matTable th:first-child { width: 29%; }
+  #matTable th:nth-child(2) { width: 17%; }
+  #matTable th:nth-child(3), #matTable th:nth-child(4) { width: 18%; }
+  #matTable th:last-child { width: 18%; }
+  #matTable td.num.turb, #matTable td.num.t0 { font-size: 0.72rem; }
   #matTable .long { display: none; }
   #matTable .short { display: inline; }
   #matTable td.name b { overflow-wrap: anywhere; }

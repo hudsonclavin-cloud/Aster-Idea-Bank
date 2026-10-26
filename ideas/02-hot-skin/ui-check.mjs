@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Drives Hot Skin in headless Chromium: phone width by touch in dark mode, desktop width by mouse
 // and keyboard in light mode. Asserts the numbers on the page, the refusal states, the table, the
-// chart's hover readout, no console errors and no horizontal overflow. Not run by tools/check.mjs
-// (name is not *.test.mjs); run from the bank root: node ideas/02-hot-skin/ui-check.mjs
-// Uses the globally installed Playwright, as tools/smoke.mjs does.
+// chart's hover readout, no console errors and no horizontal overflow. Run by this folder's check.mjs,
+// which tools/check.mjs runs; by hand from the bank root: node ideas/02-hot-skin/ui-check.mjs
+// Uses the globally installed Playwright, as tools/smoke.mjs does, and prints "skipped" (exit 0)
+// when it is not installed.
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -17,7 +18,12 @@ let pw;
 try {
   pw = createRequire(import.meta.url)('playwright');
 } catch {
-  pw = createRequire(path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), 'noop.js'))('playwright');
+  try {
+    pw = createRequire(path.join(execSync('npm root -g', { encoding: 'utf8' }).trim(), 'noop.js'))('playwright');
+  } catch {
+    console.log('ui-check skipped: Playwright is not installed');
+    process.exit(0);
+  }
 }
 const outDir = process.argv.includes('--shots') ? path.join(os.tmpdir(), 'hot-skin-ui') : null;
 if (outDir) fs.mkdirSync(outDir, { recursive: true });
@@ -56,6 +62,9 @@ async function setAlt(page, s) { await page.fill('#alt', s); await page.waitForT
   for (const n of ['−4.5 °C', '2.13', '239.4 °C', '213.1 °C', '201.0 °C', '170 °C', 'likely', '−69.4 °C', '−43.1 °C', '592 / 627 m/s']) ok(vt.includes(n), `verdict shows ${n}`);
   ok(/tool-proposed/.test(vt), 'the inputs_src default flag is shown');
   ok(/upper bound/.test(vt), 'the bound caveat is shown');
+  ok(/airspeed, relative to the air/.test(vt) && vt.includes('7.0 K per 10 m/s of headwind'), 'the bound caveat says the speed is airspeed, 7.0 K per 10 m/s of headwind at 700 m/s');
+  ok(/Airspeed/.test(await page.locator('label[for="speed"]').innerText()) && /relative to the air/.test(await page.locator('#speed-hint').innerText()), 'the speed field is labelled airspeed, relative to the air');
+  ok(vt.includes('ISA−69.4 K') && vt.includes('none in the band') === false, '6061-T6 at the fin condition names its day, ISA−69.4 K, inside the band');
   ok(!/\bPASS\b/.test((await bodyText(page)).replace(/never PASS|never a pass/g, '')), 'the word PASS appears nowhere as a verdict');
   ok((await page.locator('#matRows tr').count()) === 21, '21 material rows');
   ok((await page.locator('#matRows tr.over').count()) === 13, '13 rows over');
@@ -91,6 +100,19 @@ async function setAlt(page, s) { await page.fill('#alt', s); await page.waitForT
   ok(/invalid_input/.test(rt) && /V²\/2cp/.test(rt), 'refusal names the code and the reason');
   ok(rt.includes('210.4 °C') && rt.includes('125.6 °C') && rt.includes('84.8 °C apart'), 'refusal carries the 3 km / 25 km example');
   ok((await page.locator('#matRows tr').count()) === 0, 'no table under a refusal');
+  // A Mach number past the ceiling is not worked: the example falls back to Mach 2 and says why.
+  await setSpeed(page, 'Mach 10');
+  const rt10 = await page.locator('#refusal').innerText();
+  ok(/invalid_input/.test(rt10) && rt10.includes('210.4 °C') && rt10.includes('125.6 °C') && /Mach 10 is not worked here/.test(rt10) && /Mach 2 at two altitudes/.test(rt10), 'Mach 10 refuses with the Mach 2 example and the reason');
+  const temps10 = (rt10.match(/−?[\d,]+\.\d °C/g) || []).map((x) => Number(x.replace('−', '-').replace(/,/g, '').replace(' °C', '')));
+  ok(temps10.length >= 4 && temps10.every((t) => t + 273.15 <= 2000), `no temperature past 2,000 K in the Mach 10 refusal (${temps10.join(', ')})`);
+  ok(!rt10.includes('5368.7') && !rt10.includes('4379.4'), 'the Mach 10 perfect-gas numbers are not printed');
+  await setSpeed(page, 'Mach 99999');
+  ok(!/\d{5,}\.\d °C/.test(await page.locator('#refusal').innerText()), 'Mach 99999 prints no huge temperature');
+  // "700 m" is an unfinished m/s, not Mach 700.
+  await setSpeed(page, '700 m');
+  const rtm = await page.locator('#refusal').innerText();
+  ok(/did you mean m\/s/.test(rtm) && (await page.locator('#refExample').isHidden()), '"700 m" asks for m/s and shows no Mach example');
   // Other units are reported, not converted.
   await setSpeed(page, '500 km/h');
   ok(/km\/h/.test(await page.locator('#refusal').innerText()), 'km/h is refused by name');
@@ -110,12 +132,46 @@ async function setAlt(page, s) { await page.fill('#alt', s); await page.waitForT
   await page.waitForTimeout(80);
   vt = await verdictText(page);
   ok(/bound under the limit/.test(vt) && vt.includes('800 °C') && vt.includes('+560.6 °C'), '304 at the fin condition: under, margin +560.6');
+  ok(vt.includes('none in the band') && /under the limit on every day from ISA−90 to ISA\+50 K/.test(vt) && !/560\.6 K/.test(vt), '304: no accepted day brings T0 to the limit, and ISA+560.6 K is not printed');
+  if (outDir) await page.screenshot({ path: path.join(outDir, 'phone-304.png'), fullPage: true });
+  await page.selectOption('#material', 'Graphite');
+  await page.waitForTimeout(80);
+  vt = await verdictText(page);
+  ok(vt.includes('none under the ceiling') && !/\b20\d\d\b m\/s|2007|2125/.test(vt), 'Graphite: no limit-speed crossing past the 2,000 K ceiling is named');
   await page.selectOption('#material', 'PEEK');
   await page.waitForTimeout(80);
   ok(/within 25 °C/.test(await verdictText(page)), 'PEEK at the fin condition is near');
   await page.selectOption('#src', 'user');
   await page.waitForTimeout(80);
   ok(!/tool-proposed/.test(await verdictText(page)), 'a user-declared speed is not flagged provisional');
+  ok(/ISA\+10\.6 K/.test(await verdictText(page)), 'the standard-day flag names the offset that erases PEEK’s margin');
+  // A hot day: ISA+11 takes PEEK from near to stagnation, and every bound rises by 11 K.
+  await page.fill('#dt', '11');
+  await page.waitForTimeout(80);
+  vt = await verdictText(page);
+  ok(/recovery under, stagnation over/.test(vt) && vt.includes('250.4 °C') && vt.includes('−0.4 °C') && /ISA\+11\.0 K/.test(vt), `ISA+11: PEEK goes to stagnation, T0 250.4 °C, margin −0.4 (${vt.slice(0, 60)}…)`);
+  await page.fill('#dt', '60');
+  await page.waitForTimeout(80);
+  ok(/out_of_envelope/.test(await page.locator('#refusal').innerText()) && (await page.locator('#matRows tr').count()) === 0, 'ISA+60 is refused and draws no table');
+  ok(!/this day is/.test(await page.locator('#dtNow').innerText()), 'the hint names no day temperature for a refused offset');
+  await page.fill('#dt', '-300');
+  await page.waitForTimeout(80);
+  ok(!/this day is|304\.5/.test(await page.locator('#dtNow').innerText()) && /out_of_envelope/.test(await page.locator('#refusal').innerText()), 'ISA−300 is refused and the hint prints no day below absolute zero');
+  await page.fill('#dt', '0');
+  await page.waitForTimeout(80);
+  // A cited source needs its citation, as in PartForge.
+  await page.selectOption('#src', 'source');
+  await page.waitForTimeout(80);
+  ok(!(await page.locator('#ref').isHidden()), 'choosing source shows the citation field');
+  vt = await verdictText(page);
+  ok(/demoted to default/.test(vt) && /tool-proposed/.test(vt), 'source with no citation is demoted and provisional');
+  await page.fill('#ref', 'OpenRocket sim, run 3');
+  await page.waitForTimeout(80);
+  vt = await verdictText(page);
+  ok(!/demoted/.test(vt) && !/tool-proposed/.test(vt), 'a citation clears both flags');
+  // The table's own note on the row is printed.
+  ok(/most notes describe expansion/.test(vt) && /Below the glass transition/.test(vt), 'the verdict prints PEEK’s table note');
+  ok((await page.locator('#matRows tr[data-key="6061-T6"] details').count()) === 1, 'the table row carries its note');
   ok(!(await overflow(page)), 'no horizontal overflow at 390 px after interaction');
   if (outDir) await page.screenshot({ path: path.join(outDir, 'phone-dark.png'), fullPage: true });
   ok(errors.length === 0, `no console errors on the phone (${errors.join('; ')})`);
@@ -175,6 +231,18 @@ async function setAlt(page, s) { await page.fill('#alt', s); await page.waitForT
   ok(!(await overflow(b.page)), 'no overflow on the phone with a query');
   ok(b.errors.length === 0, 'no console errors with ?v');
   await b.context.close();
+  // An unknown material is refused by name, not swapped for 6061-T6; an empty altitude is absent, not 0.
+  const c = await open(DESK, `${URL0}?m=Unobtainium&v=300&alt=`);
+  const rc = await c.page.locator('#refusal').innerText();
+  ok(/not_found/.test(rc) && /Unobtainium/.test(rc) && (await c.page.locator('#verdict').isHidden()), '?m=Unobtainium is refused as not_found');
+  ok((await c.page.inputValue('#alt')) === '3000', '?alt= (empty) leaves the template altitude');
+  ok(c.errors.length === 0, 'no console errors with ?m=Unobtainium');
+  await c.context.close();
+  const d = await open(DESK, `${URL0}?v=700&alt=3000&m=PEEK&dt=20`);
+  const vd = await verdictText(d.page);
+  ok(vd.includes('259.4 °C') && vd.includes('−9.4 °C') && /ISA\+20\.0 K/.test(vd), `?dt=20: PEEK T0 259.4 °C, margin −9.4 (${vd.slice(0, 60)}…)`);
+  ok(d.errors.length === 0, 'no console errors with ?dt');
+  await d.context.close();
 }
 
 // 4. Speeds far outside the envelope are refused at once, not computed. Before the ceiling existed a typed
@@ -189,7 +257,7 @@ async function setAlt(page, s) { await page.fill('#alt', s); await page.waitForT
     const dt = Date.now() - t0;
     const rt = await page.locator('#refusal').innerText();
     ok(dt < 1000, `${s} m/s is refused within a second (${dt} ms)`);
-    ok(/out_of_envelope/.test(rt) && /passes 2000 K/.test(rt) && /Stay below 1865 m\/s/.test(rt) && /does not apply/.test(rt), `${s} m/s names the 2,000 K ceiling and the 1,865 m/s limit at 3,000 m`);
+    ok(/out_of_envelope/.test(rt) && /passes 2000 K/.test(rt) && /Stay below 1865\.1 m\/s/.test(rt) && /does not apply/.test(rt), `${s} m/s names the 2,000 K ceiling and the 1,865.1 m/s stay-below speed at 3,000 m`);
     ok(await page.locator('#verdict').isHidden(), `${s} m/s shows no verdict`);
     ok((await page.locator('#matRows tr').count()) === 0 && /No table/.test(await page.locator('#tableCond').innerText()), `${s} m/s draws no table and says why`);
   }
@@ -211,6 +279,7 @@ async function setAlt(page, s) { await page.fill('#alt', s); await page.waitForT
   ok(!(await page.locator('#refusal').isHidden()) && /out_of_envelope/.test(await page.locator('#refusal').innerText()), 'one m/s over the ceiling at 3,000 m: refused');
   // Without an accepted speed the axis falls back to its 1,000 m/s minimum; the chart still draws.
   // (The refusal card is shorter than the verdict card, so the chart has moved: re-measure it.)
+  await page.locator('#chart').scrollIntoViewIfNeeded();
   const box2 = await page.locator('#chart').boundingBox();
   await page.mouse.move(box2.x + box2.width - 1, box2.y + box2.height * 0.5);
   await page.waitForTimeout(60);
@@ -221,6 +290,17 @@ async function setAlt(page, s) { await page.fill('#alt', s); await page.waitForT
   ok(/239\.4 °C/.test(await verdictText(page)), '"700." is read as 700 m/s');
   await setSpeed(page, '.5');
   ok(/bound under the limit/.test(await verdictText(page)), '".5" is read as 0.5 m/s');
+  // The day where T0 meets the limit is named only inside the band: 6061-T6 at 1,500 m/s and 3 km would
+  // need ISA−945.3 K (a free stream at −676.6 K), so the page says no accepted day brings T0 down to it.
+  await setSpeed(page, '1500');
+  let v15 = await verdictText(page);
+  ok(v15.includes('none in the band') && /over the limit on every day from ISA−90 to ISA\+50 K/.test(v15) && !/ISA−945\.3/.test(v15) && v15.includes('−945.3 °C'), '1,500 m/s in 6061-T6: margin −945.3 °C, no accepted day, and ISA−945.3 K is not printed');
+  await page.fill('#dt', '20');
+  await page.waitForTimeout(80);
+  v15 = await verdictText(page);
+  ok(/ISA\+20\.0 K/.test(v15) && /over it on every day from ISA−90\.0 K to ISA\+50\.0 K/.test(v15) && !/ISA−9[46]5\.3/.test(v15), 'and at ISA+20 the offset flag says over on every accepted day, with no ISA−965 K');
+  await page.fill('#dt', '0');
+  await page.waitForTimeout(60);
   ok(!(await overflow(page)), 'no horizontal overflow after the out-of-envelope inputs');
   ok(errors.length === 0, `no console errors with out-of-envelope inputs (${errors.join('; ')})`);
   await context.close();

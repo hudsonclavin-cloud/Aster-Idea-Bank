@@ -13,7 +13,7 @@
 <header class="top">
   <div class="wrap">
     <h1>Hot Skin</h1>
-    <p class="sub">The stagnation and recovery temperature of air at a speed and altitude are an <strong>upper bound</strong> on how hot a part's skin can get, not a prediction of how hot it does get. This page measures that bound against each PartForge flight material's <code>service_max_c</code>. The verdict is <strong>SCREEN</strong>, never a pass.</p>
+    <p class="sub">The stagnation and recovery temperature of air at an airspeed and altitude are an <strong>upper bound</strong> on how hot heating by the air can make a part's skin, on the day stated (the ISA standard day unless you set an offset), not a prediction of how hot it does get. Sun on the pad and motor heat are not in it. This page measures that bound against each PartForge flight material's <code>service_max_c</code>. The verdict is <strong>SCREEN</strong>, never a pass: the limits are judgement and the speed may be a guess.</p>
   </div>
 </header>
 
@@ -22,16 +22,19 @@
     <h2 id="controls-h">Condition</h2>
     <div class="grid3">
       <div class="field">
-        <label for="speed">Speed <span class="muted">m/s</span></label>
+        <label for="speed">Airspeed <span class="muted">m/s, relative to the air</span></label>
         <input id="speed" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="speed-hint">
-        <input id="speedRange" type="range" min="0" max="1500" step="1" aria-label="Speed in metres per second">
-        <p id="speed-hint" class="hint">The only speed input. Mach is derived. Type <em>Mach 2</em> to see why a bare Mach number is refused. Where T<sub>0</sub> would pass 2,000 K (about 1,855 m/s at sea level) the page refuses: the perfect-gas picture ends there.</p>
+        <input id="speedRange" type="range" min="0" max="1500" step="1" aria-label="Airspeed in metres per second">
+        <p id="speed-hint" class="hint">The only speed input, and it is airspeed: speed relative to the air, not over the ground. A ground speed into a headwind reads low, by 7.0 K per 10 m/s of headwind at 700 m/s. Mach is derived. Type <em>Mach 2</em> to see why a bare Mach number is refused. Where T<sub>0</sub> would pass 2,000 K (1,854.6 m/s at sea level on a standard day) the page refuses: the perfect-gas picture ends there.</p>
       </div>
       <div class="field">
         <label for="alt">Altitude <span class="muted">m, geometric</span></label>
         <input id="alt" type="number" inputmode="numeric" step="100" min="-4990" max="200000" aria-describedby="alt-hint">
         <input id="altRange" type="range" min="0" max="40000" step="100" aria-label="Altitude in metres">
         <p id="alt-hint" class="hint">1976 Standard Atmosphere, geometric altitude as an altimeter reports it. The table ends at 86 km; beyond it the page refuses.</p>
+        <label for="dt" class="later">Day <span class="muted">ISA + ΔT, kelvin</span></label>
+        <input id="dt" type="number" step="1" min="-90" max="50" aria-describedby="dt-hint">
+        <p id="dt-hint" class="hint">0 is the standard day. The offset is the day’s temperature minus the standard one, and every bound rises by exactly that much. <span id="dtNow"></span></p>
       </div>
       <div class="field">
         <label for="material">Material</label>
@@ -44,6 +47,11 @@
           <option value="source">source: cited (a sim run, a flight log)</option>
         </select>
         <p id="src-hint" class="hint">PartForge's <code>inputs_src</code>. A tool-proposed speed makes the margin arithmetic, not evidence.</p>
+        <div id="refField" hidden>
+          <label for="ref" class="later">The citation <span class="muted">inputs_ref</span></label>
+          <input id="ref" type="text" autocomplete="off" spellcheck="false" placeholder="e.g. OpenRocket sim, run 3" aria-describedby="ref-hint">
+          <p id="ref-hint" class="hint">PartForge demotes <em>source</em> with no reference to <em>default</em>; so does this page.</p>
+        </div>
       </div>
     </div>
     <div class="row">
@@ -58,7 +66,8 @@
     <p id="refReason"></p>
     <p class="what"><strong>What would help:</strong> <span id="refHelp"></span></p>
     <div id="refExample" hidden>
-      <p class="muted small">The same Mach number, two altitudes, this page's own <code>isa()</code>:</p>
+      <p class="muted small" id="refExampleCap">The same Mach number, two altitudes, this page's own <code>isa()</code>:</p>
+      <p class="small warnnote" id="refExampleNote" hidden></p>
       <table class="mini">
         <thead><tr><th scope="col">Altitude</th><th scope="col">T<sub>∞</sub></th><th scope="col">Speed</th><th scope="col">T<sub>0</sub></th></tr></thead>
         <tbody id="refExampleRows"></tbody>
@@ -70,6 +79,7 @@
     <h2 id="verdict-h" class="vh"><span class="vword">SCREEN</span> <span class="vband" id="vband"></span></h2>
     <p class="vtext" id="vtext"></p>
     <div class="figs" id="figs"></div>
+    <p class="vnote small" id="vnote"></p>
     <ul class="flags" id="flags"></ul>
     <details class="arith">
       <summary>Show the arithmetic</summary>
@@ -101,13 +111,13 @@
         <tbody id="matRows"></tbody>
       </table>
     </div>
-    <p class="hint">Margins in °C: positive means the bound sits under the limit. <em>over</em>: even the turbulent recovery temperature exceeds the limit. <em>stagnation</em>: only stagnation points (leading edge, nose tip) exceed it. <em>near</em>: the stagnation bound is within 25 °C of the limit. <em>under</em>: the bound is below the limit; the limit itself is still judgement, not a rating. Confidence: <em>likely</em> = nominal, agreeing across handbooks; <em>recall</em> = model recall, not cited.</p>
+    <p class="hint">Margins in °C on the day stated: positive means the bound sits under the limit, and a hotter day takes the offset off every margin. <em>over</em>: even the turbulent recovery temperature exceeds the limit. <em>stagnation</em>: only stagnation points (leading edge, nose tip) exceed it. <em>near</em>: the stagnation bound is within 25 °C of the limit. <em>under</em>: the bound is below the limit; the limit itself is still judgement, not a rating. Confidence: <em>likely</em> = nominal, agreeing across handbooks; <em>recall</em> = model recall, not cited. <em>note</em> opens the table’s own remark on the row (most are about expansion, not the limit).</p>
   </section>
 
   <footer class="prov">
     <h2>Where the numbers come from</h2>
     <ul id="prov"></ul>
-    <p class="small">Prototype for the <a href="README.md">Aster Idea Bank</a>; the only constant in the equations not read from PartForge is the Prandtl number of air, 0.71 [Likely]. The 800 K flag and the 2,000 K ceiling are textbook regime limits of the perfect-gas picture [Likely]; the 25 °C "near" band is a presentation choice. Read the README for what this has not been through.</p>
+    <p class="small">Prototype for the <a href="README.md">Aster Idea Bank</a>; the only constant in the equations not read from PartForge is the Prandtl number of air, 0.71 [Likely]. The 800 K flag and the 2,000 K ceiling are textbook regime limits of the perfect-gas picture [Likely]; the 25 °C "near" band and the −90 to +50 K band of day offsets are presentation choices. PartForge's <code>isa()</code> has no offset; this page adds ΔT after it. Read the README for what this has not been through.</p>
   </footer>
 </main>
 

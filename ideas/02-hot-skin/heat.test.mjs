@@ -11,6 +11,7 @@ import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { derive, contentDiff } from './build-data.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -19,6 +20,14 @@ const H = require(path.join(here, 'heat.js'));
 const ctx = H.create(S);
 const REPO = '/home/user/Partforge';
 const repoPresent = fs.existsSync(path.join(REPO, 'index.html')) && fs.existsSync(path.join(REPO, '.git'));
+// index.html exactly as it was at the commit the snapshot records, read from git (not the working
+// tree), so a later PartForge commit cannot move the lines under the verbatim comparison.
+function recordedIndexHtml() {
+  if (!repoPresent) return { skip: 'PartForge checkout not present at /home/user/Partforge' };
+  const r = spawnSync('git', ['-C', REPO, 'show', `${S.provenance.commit}:index.html`], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (r.status !== 0) return { skip: `commit ${S.provenance.commit} is not in the checkout (${(r.stderr || '').trim()})` };
+  return { html: r.stdout };
+}
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const sidecar = (name) => JSON.parse(fs.readFileSync(path.join(here, 'snapshots', `${name}.provenance.json`), 'utf8'));
 const C = (K) => K - 273.15;
@@ -63,9 +72,11 @@ test('snapshot: partforge.js embeds the folder copies exactly and records their 
   for (const r of S.materialsThermal.rows) assert.ok(S.materialsMeta[r.key], `FLIGHT_MATERIALS has ${r.key}`);
 });
 
-test('snapshot: the verbatim ISA block equals the PartForge checkout (skipped when absent)', (t) => {
-  if (!repoPresent) return t.skip('PartForge checkout not present at /home/user/Partforge');
-  const html = fs.readFileSync(path.join(REPO, 'index.html'), 'utf8');
+test('snapshot: the verbatim ISA block equals index.html at the recorded commit (skipped when absent)', (t) => {
+  const rec = recordedIndexHtml();
+  if (rec.skip) return t.skip(rec.skip);
+  const html = rec.html;
+  assert.equal(sha256(Buffer.from(html, 'utf8')), S.provenance.index_html.sha256, 'git show gives the file the module records');
   const mod = fs.readFileSync(path.join(here, 'snapshots', 'partforge.js'), 'utf8');
   const m = /\/\/ ---- BEGIN verbatim index\.html (\d+)-(\d+) @ [0-9a-f]+ ----\n([\s\S]*?)\/\/ ---- END verbatim ----/.exec(mod);
   assert.ok(m, 'BEGIN/END markers present');
@@ -87,6 +98,26 @@ test('snapshot: build-data.mjs --check says the derived module is fresh (skipped
   const r = spawnSync('node', [path.join(here, 'build-data.mjs'), REPO, '--check'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /^fresh:/);
+});
+
+test('snapshot: the drift gate ignores edits outside the carried blocks and catches edits inside them', (t) => {
+  const rec = recordedIndexHtml();
+  if (rec.skip) return t.skip(rec.skip);
+  const mod = fs.readFileSync(path.join(here, 'snapshots', 'partforge.js'), 'utf8');
+  const src = { repo: S.provenance.repo, commit: S.provenance.commit, commitDate: S.provenance.commitDate };
+  const same = derive(rec.html, src);
+  assert.equal(same.out, mod, 'deriving from the recorded index.html is byte-identical');
+  assert.deepEqual(contentDiff(mod, same), []);
+  // A docs-style edit that moves every line number: not stale.
+  const moved = derive('<!-- a later docs commit -->\n' + rec.html, { ...src, commit: 'f'.repeat(40) });
+  assert.equal(moved.isa.firstLine, same.isa.firstLine + 1);
+  assert.deepEqual(contentDiff(mod, moved), [], 'line moves and a new commit are not drift');
+  // Edits inside what the module carries: stale, and named.
+  assert.deepEqual(contentDiff(mod, derive(rec.html.replace('const ISA_GAMMA = 1.4;', 'const ISA_GAMMA = 1.41;'), src)), ['the verbatim ISA block']);
+  const nm = S.materialsMeta['6061-T6'].name;
+  assert.ok(rec.html.includes(`"${nm}"`) || rec.html.includes(`'${nm}'`), 'the 6061 name is quoted in index.html');
+  const renamed = rec.html.replace(new RegExp(`(["'])${nm}\\1`), '$1Aluminium 6061-T6$1');
+  assert.deepEqual(contentDiff(mod, derive(renamed, src)), ['the FLIGHT_MATERIALS {name, kind} map']);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -174,8 +205,8 @@ test('limit cases: V = 0 gives T0 = T∞; M = 1 at sea level gives T0 = 1.2 T∞
   near(C(s.T0_K), 72.63, 0.005, '72.63 °C');
 });
 
-test('closed form: speedAtLimit round-trips through aerotherm; null when the air is already hotter than the limit', () => {
-  for (const [smc, alt] of [[170, 3000], [90, 0], [800, 20000], [2000, 40000], [130, 11000]]) {
+test('closed form: speedAtLimit round-trips through aerotherm; null when the air is already hotter than the limit or the crossing is past the ceiling', () => {
+  for (const [smc, alt] of [[170, 3000], [90, 0], [800, 20000], [1200, 40000], [130, 11000]]) {
     const L = H.speedAtLimit(ctx, smc, alt);
     near(C(H.aerotherm(ctx, L.T0_m_s, alt).T0_K), smc, 1e-9, `T0 limit ${smc} @ ${alt}`);
     near(C(H.aerotherm(ctx, L.turb_m_s, alt).Tr_turb_K), smc, 1e-9, `turb limit ${smc} @ ${alt}`);
@@ -188,6 +219,26 @@ test('closed form: speedAtLimit round-trips through aerotherm; null when the air
   const hot = H.speedAtLimit(ctx, -10, 0); // −10 °C limit, 15 °C air
   assert.equal(hot.T0_m_s, null);
   assert.equal(hot.turb_m_s, null);
+  assert.equal(hot.air_hotter, true);
+  // Graphite's 2,000 °C at 3 km: by hand the T0 crossing is √(2 × 1004.685045 × (2273.15 − 268.6592)) =
+  // 2,007 m/s, past the 1,865.18 m/s at which T0 reaches the 2,000 K ceiling, so no crossing is named.
+  const g = H.speedAtLimit(ctx, 2000, 3000);
+  assert.ok(Math.sqrt(2 * 1004.685045 * (2273.15 - 268.6592)) > 2000, 'the raw crossing is past 2,000 m/s');
+  assert.equal(g.T0_m_s, null);
+  assert.equal(g.turb_m_s, null);
+  assert.equal(g.lam_m_s, null);
+  assert.equal(g.air_hotter, false, 'null because of the ceiling, not because the air is hot');
+  near(g.ceiling_m_s, 1865.18, 0.01, 'ceiling speed carried');
+  // Every crossing any material shows, at any condition the page computes, is under the ceiling speed.
+  for (const row of S.materialsThermal.rows) {
+    for (const [alt, dT] of [[0, 0], [3000, 0], [3000, 50], [25000, -90], [85999, 0]]) {
+      const L = H.speedAtLimit(ctx, row.service_max_c, alt, dT);
+      for (const k of ['T0_m_s', 'turb_m_s', 'lam_m_s']) {
+        if (L[k] == null) continue;
+        assert.ok(L[k] <= H.ceilingSpeed(ctx, alt, dT), `${row.key} ${k} at ${alt} m, ΔT ${dT}: ${L[k]} is under the ceiling speed`);
+      }
+    }
+  }
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -223,13 +274,50 @@ test('fin template: 700 m/s at 3000 m in 6061-T6 (service_max_c 170, likely)', (
   assert.equal(r.band, 'over');
   assert.ok(r.flags.some((f) => f.code === 'provisional'), 'inputs_src default is flagged');
   assert.ok(r.flags.some((f) => f.code === 'bound'), 'the bound caveat is always present');
+  const bound = r.flags.find((f) => f.code === 'bound').text;
+  assert.match(bound, /air alone/, 'the bound is for aerodynamic heating only');
+  assert.match(bound, /ISA standard day/, 'and names the atmosphere');
+  assert.match(bound, /Sun soak/, 'and names what it leaves out');
+  // V is airspeed: 10 m/s of headwind at 700 m/s is (710² − 700²)/(2 × 1004.685045) = 7.017 K, by hand.
+  assert.match(bound, /airspeed, relative to the air/, 'and says the speed is airspeed');
+  near(r.headwind10_K, (710 * 710 - 700 * 700) / (2 * 1004.685045), 1e-9, 'headwind sensitivity');
+  near(r.headwind10_K, 7.017, 0.001, '7.0 K per 10 m/s at 700 m/s');
+  assert.match(bound, /7\.0 K per 10 m\/s of headwind/);
+  assert.ok(r.flags.some((f) => f.code === 'standard_day'), 'the standard-day caveat is present when no offset is given');
   assert.ok(r.flags.some((f) => f.code === 'likely'), 'row confidence printed');
   assert.ok(!r.flags.some((f) => f.code === 'hot'), 'T0 512 K is not flagged hot');
   near(r.limitSpeed.turb_m_s, 626.91, 0.01, 'the turbulent bound reaches 170 °C at 627 m/s');
   near(r.limitSpeed.T0_m_s, 592.13, 0.01, 'the stagnation bound reaches 170 °C at 592 m/s');
-  // The same inputs with a cited source are not flagged provisional; anything else is default.
-  assert.ok(!H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', inputs_src: 'source' }).flags.some((f) => f.code === 'provisional'));
-  assert.equal(H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', inputs_src: 'guess' }).inputs.inputs_src, 'default');
+});
+
+test('inputs_src: PartForge’s rule (index.html:4738-4740): user and cited source clear the flag; source without a reference is demoted', () => {
+  const at = (extra) => H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', ...extra });
+  const codes = (r) => r.flags.map((f) => f.code);
+  // user: the engineer declared it.
+  const u = at({ inputs_src: 'user' });
+  assert.equal(u.inputs.inputs_src, 'user');
+  assert.ok(!codes(u).includes('provisional') && !codes(u).includes('demoted'), 'a user-declared speed is not provisional');
+  // source with a citation: kept, and the citation is carried (whitespace collapsed, cut to 140).
+  const c = at({ inputs_src: 'source', inputs_ref: '  OpenRocket   sim,\nrun 3 ' });
+  assert.equal(c.inputs.inputs_src, 'source');
+  assert.equal(c.inputs.inputs_ref, 'OpenRocket sim, run 3');
+  assert.ok(!codes(c).includes('provisional') && !codes(c).includes('demoted'));
+  assert.equal(at({ inputs_src: 'source', inputs_ref: 'x'.repeat(300) }).inputs.inputs_ref.length, 140);
+  // source with no citation, an empty one or a blank one: demoted to default, flagged both ways.
+  for (const ref of [undefined, '', '   ', 42]) {
+    const d = at({ inputs_src: 'source', inputs_ref: ref });
+    assert.equal(d.inputs.inputs_src, 'default', `ref ${JSON.stringify(ref)}`);
+    assert.equal(d.inputs.demoted, true);
+    assert.ok(codes(d).includes('demoted') && codes(d).includes('provisional'));
+  }
+  // default, a missing word and any other word: default, provisional, not demoted.
+  for (const src of ['default', undefined, 'guess', 'Source']) {
+    const d = at({ inputs_src: src });
+    assert.equal(d.inputs.inputs_src, 'default', `src ${src}`);
+    assert.ok(codes(d).includes('provisional') && !codes(d).includes('demoted'));
+  }
+  // A citation given with any other source word is not carried.
+  assert.equal(at({ inputs_src: 'user', inputs_ref: 'sim' }).inputs.inputs_ref, '');
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -248,7 +336,52 @@ test('refusal: a bare Mach number, with the two-altitude example', () => {
     near(r.refusal.example[1].T0_C, 125.64, 0.01);
     assert.equal(r.T0_C, undefined, 'no number escapes a refusal');
   }
-  assert.equal(H.screen(ctx, { mach: 'two', alt_m: 0, material: '6061-T6' }).refusal.example, null);
+  // A Mach number that is not a positive number still gets the worked example, at Mach 2, with the reason.
+  for (const m of ['two', 0, -3]) {
+    const r = H.screen(ctx, { mach: m, alt_m: 0, material: '6061-T6' });
+    assert.equal(r.refusal.example_mach, 2, `mach ${m}`);
+    assert.match(r.refusal.example_note, /not a positive number/);
+    near(r.refusal.example[0].T0_C, 210.44, 0.01);
+  }
+  // The reason states the gap as a formula and the Mach 2 figure, not a vague "tens of degrees".
+  assert.match(H.screen(ctx, { mach: 2 }).refusal.reason, /84\.8 °C at Mach 2 between 3000 m and 25000 m/);
+  assert.doesNotMatch(H.screen(ctx, { mach: 10 }).refusal.reason, /tens of degrees/);
+  // The reason's figure is the Mach 2 gap even when the example works the typed Mach: at Mach 5.67 the
+  // example's own gap is (268.659 − 221.552) × (1 + 0.2 × 5.67²) = 350.0 °C, and that belongs only to the example.
+  const typed = H.screen(ctx, { mach: 5.67 }).refusal;
+  assert.equal(typed.example_mach, 5.67);
+  const ownGap = typed.example[0].T0_C - typed.example[1].T0_C;
+  near(ownGap, 350.0, 0.05, 'the Mach 5.67 example’s own gap');
+  assert.match(typed.reason, /84\.8 °C at Mach 2 between 3000 m and 25000 m/);
+  assert.ok(!typed.reason.includes(ownGap.toFixed(1)), 'the example’s own gap is not in the reason');
+});
+
+test('refusal: the Mach example never shows a temperature past the 2,000 K ceiling', () => {
+  // The largest Mach the example can show is set by 3,000 m: ceiling speed 1,865.18 m/s over a = 328.58 m/s.
+  near(H.machCeiling(ctx, H.MACH_EXAMPLE_ALTS), 1865.18 / 328.5836, 1e-4, 'Mach 5.68 at 3 km');
+  const allT0 = (r) => JSON.stringify(r).match(/"T0_C":(-?[\d.e+]+)/g)?.map((x) => Number(x.split(':')[1])) || [];
+  for (const dT of [0, 50, -90]) {
+    for (const m of [5.67, 5.7, 6.5, 10, 700, 99999, 1e300]) {
+      const r = H.screen(ctx, { mach: m, alt_m: 3000, material: '6061-T6', isa_offset_K: dT });
+      assert.equal(r.ok, false);
+      for (const x of r.refusal.example) {
+        assert.equal(x.over_ceiling, false, `mach ${m} ΔT ${dT}: every row shown is under the ceiling`);
+        assert.ok(x.T0_C + 273.15 <= 2000 + 1e-9, `mach ${m} ΔT ${dT}: example T0 ${x.T0_C} °C is under 2,000 K`);
+      }
+      for (const T of allT0(r)) assert.ok(T + 273.15 <= 2000 + 1e-9, `no T0 past the ceiling anywhere in the result (${T})`);
+      const shown = m <= H.machCeiling(ctx, H.MACH_EXAMPLE_ALTS, dT);
+      assert.equal(r.refusal.example_mach, shown ? m : 2, `mach ${m} ΔT ${dT}`);
+      if (!shown) assert.match(r.refusal.example_note, /2000 K ceiling/);
+    }
+  }
+  // The building block refuses on its own: a row past the ceiling carries no speed and no temperature.
+  const raw = H.machExample(ctx, 10, [3000, 25000]);
+  for (const x of raw) { assert.equal(x.over_ceiling, true); assert.equal(x.T0_C, null); assert.equal(x.v_m_s, null); }
+  // Mach 6 is past the ceiling at 3 km (5.68) but not at 25 km (6.34): the row that fits still computes.
+  const six = H.machExample(ctx, 6, [3000, 25000]);
+  assert.equal(six[0].over_ceiling, true);
+  assert.equal(six[1].over_ceiling, false);
+  assert.ok(six[1].T0_C + 273.15 < 2000);
 });
 
 test('refusal: unknown or missing material lists the 21 keys', () => {
@@ -319,7 +452,7 @@ test('refusal: a speed at which the perfect-gas T0 would pass the 2,000 K ceilin
     assert.equal(r.refusal.code, 'out_of_envelope');
     assert.match(r.refusal.reason, /2000 K/);
     assert.match(r.refusal.reason, /no temperature is printed/);
-    assert.match(r.refusal.what_would_help, /Stay below 1865 m\/s/);
+    assert.match(r.refusal.what_would_help, /Stay below 1865\.1 m\/s/);
     assert.match(r.refusal.what_would_help, /does not apply/);
     assert.equal(r.refusal.ceiling_K, 2000);
     near(r.refusal.ceiling_speed_m_s, 1865.18, 0.01);
@@ -331,6 +464,14 @@ test('refusal: a speed at which the perfect-gas T0 would pass the 2,000 K ceilin
     assert.equal(t.refusal.code, 'out_of_envelope');
     assert.equal(t.rows.length, 0);
   }
+  // The printed "stay below" figure is rounded down, so it is itself a speed the page computes.
+  for (const alt of [0, 3000, 25000]) {
+    const r = H.screen(ctx, { v_m_s: 5000, alt_m: alt, material: '6061-T6' });
+    const vs = Number(/Stay below ([\d.]+) m\/s/.exec(r.refusal.what_would_help)[1]);
+    assert.ok(vs <= H.ceilingSpeed(ctx, alt) && H.ceilingSpeed(ctx, alt) - vs < 0.1, `stay-below at ${alt} m`);
+    assert.equal(H.screen(ctx, { v_m_s: vs, alt_m: alt, material: '6061-T6' }).ok, true);
+  }
+  assert.match(H.screen(ctx, { v_m_s: 1900, alt_m: 0, material: '6061-T6' }).refusal.what_would_help, /^Stay below 1854\.6 m\/s/);
   // The envelope is checked before the material, so a bad material above the ceiling reports the ceiling.
   assert.equal(H.screen(ctx, { v_m_s: 5000, alt_m: 0, material: 'Unobtainium' }).refusal.code, 'out_of_envelope');
   // The page's slider stops at 1,500 m/s, which is under the ceiling at every altitude in the table.
@@ -353,6 +494,144 @@ test('refusal: non-finite or negative speed and non-finite altitude', () => {
   const t = H.table(ctx, 'fast', 3000);
   assert.equal(t.ok, false);
   assert.equal(t.refusal.code, 'invalid_input');
+});
+
+// ---------------------------------------------------------------------------------------------
+// 5b. The day: an ISA offset ΔT moves every bound by exactly ΔT at a fixed speed.
+// ---------------------------------------------------------------------------------------------
+test('ISA offset: T0, both recovery temperatures and every margin shift by exactly ΔT; Mach does not stay put', () => {
+  const base = H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', inputs_src: 'user' });
+  for (const dT of [-90, -20, 11, 20, 35.5, 50]) {
+    const r = H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', inputs_src: 'user', isa_offset_K: dT });
+    assert.equal(r.ok, true, `ΔT ${dT}`);
+    near(r.T_inf_K - base.T_inf_K, dT, 1e-9, 'T∞');
+    near(r.T0_K - base.T0_K, dT, 1e-9, 'T0');
+    near(r.Tr_turb_K - base.Tr_turb_K, dT, 1e-9, 'Tr turbulent');
+    near(r.Tr_lam_K - base.Tr_lam_K, dT, 1e-9, 'Tr laminar');
+    near(r.margin_T0_C - base.margin_T0_C, -dT, 1e-9, 'margin vs T0');
+    near(r.margin_turb_C - base.margin_turb_C, -dT, 1e-9, 'margin vs Tr turbulent');
+    near(r.margin_lam_C - base.margin_lam_C, -dT, 1e-9, 'margin vs Tr laminar');
+    near(r.a_m_s, Math.sqrt(1.4 * 287.05287 * (268.6592 + dT)), 1e-3, 'a from the offset T∞');
+    near(r.T0_K - r.T_inf_K, 700 * 700 / (2 * 1004.685045), 1e-9, 'ΔT0 is still V²/2cp');
+    assert.equal(r.T_isa_K, base.T_inf_K, 'isa() itself is untouched');
+    if (dT > 0) assert.ok(r.M < base.M, 'warmer air, faster sound, lower Mach');
+    near(C(H.aerotherm(ctx, r.limitSpeed.T0_m_s, 3000, dT).T0_K), 170, 1e-9, 'limit speed on the offset day');
+    near(H.ceilingSpeed(ctx, 3000, dT), Math.sqrt(2 * 1004.685045 * (2000 - 268.6592 - dT)), 1e-3, 'ceiling speed on the offset day');
+    assert.ok(r.flags.some((f) => f.code === 'offset') && !r.flags.some((f) => f.code === 'standard_day'));
+    const t = H.table(ctx, 700, 3000, dT), t0 = H.table(ctx, 700, 3000);
+    t.rows.forEach((row, i) => near(row.margin_turb_C - t0.rows[i].margin_turb_C, -dT, 1e-9, `${row.key} table margin`));
+  }
+  // The standard day says so, with the offset at which the margin vs T0 is gone.
+  const peek = H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: 'PEEK', inputs_src: 'user' });
+  assert.equal(peek.band, 'near');
+  near(peek.margin_T0_C, 10.63, 0.01);
+  near(peek.offsetAtLimit.T0_K, peek.margin_T0_C, 1e-12);
+  const sd = peek.flags.find((f) => f.code === 'standard_day');
+  assert.ok(sd && /ISA\+10\.6 K/.test(sd.text), 'the standard-day flag names ISA+10.6 K for PEEK');
+  // The reviewer’s hot-day arithmetic: ISA+11 turns PEEK from near to stagnation (−0.4), ISA+20 to −9.4.
+  const p11 = H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: 'PEEK', inputs_src: 'user', isa_offset_K: 11 });
+  assert.equal(p11.band, 'stagnation');
+  near(p11.margin_T0_C, -0.37, 0.01);
+  near(H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: 'PEEK', inputs_src: 'user', isa_offset_K: 20 }).margin_T0_C, -9.37, 0.01);
+  // At the offset the flag names, the margin vs T0 is zero.
+  near(H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: 'PEEK', isa_offset_K: peek.offsetAtLimit.T0_K }).margin_T0_C, 0, 1e-9);
+  // Numeric strings are read as numbers; '0' is the standard day.
+  assert.equal(H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: 'PEEK', isa_offset_K: '0' }).dT_K, 0);
+  assert.equal(H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: 'PEEK', isa_offset_K: '20' }).dT_K, 20);
+});
+
+test('the day where T0 meets the limit is named only inside the band the page accepts', () => {
+  const sc = (extra) => H.screen(ctx, { inputs_src: 'user', ...extra });
+  const text = (r) => r.flags.map((f) => f.text).join(' ');
+  // 304 at the fin condition: ΔT + margin would be ISA+560.6 K, a day the page refuses as input.
+  const s304 = sc({ v_m_s: 700, alt_m: 3000, material: '304' });
+  near(s304.margin_T0_C, 560.63, 0.01, '304 margin vs T0');
+  assert.equal(s304.offsetAtLimit.T0_K, null);
+  assert.equal(s304.offsetAtLimit.status, 'under_every_day');
+  assert.match(s304.offsetAtLimit.reason, /under it on every day from ISA−90\.0 K to ISA\+50\.0 K/);
+  assert.ok(!/560\.6 K/.test(text(s304)), 'no ISA+560.6 K day in the flags');
+  assert.match(s304.flags.find((f) => f.code === 'standard_day').text, /No day this page accepts brings T0 to the limit/);
+  // 6061-T6 at 1,500 m/s and 3 km: ΔT + margin would be ISA−945.3 K, a free stream at −676.6 K.
+  for (const dT of [0, 20]) {
+    const r = sc({ v_m_s: 1500, alt_m: 3000, material: '6061-T6', isa_offset_K: dT });
+    near(r.margin_T0_C, -945.3 - dT, 0.05, `6061-T6 margin at 1,500 m/s, ΔT ${dT}`);
+    assert.ok(r.T_isa_K + dT + r.margin_T0_C < 0, 'the algebraic day would put T∞ below absolute zero');
+    assert.equal(r.offsetAtLimit.T0_K, null);
+    assert.equal(r.offsetAtLimit.status, 'over_every_day');
+    assert.match(text(r), /the bound is over it on every day from ISA−90\.0 K to ISA\+50\.0 K/);
+    assert.ok(!/945\.3|965\.3/.test(text(r)), 'no ISA−945 K day anywhere');
+  }
+  // PA12 at 1,000 m/s at sea level (ISA−362.7 K) and Delrin at rest (ISA+94.5 K): not days either.
+  assert.equal(sc({ v_m_s: 1000, alt_m: 0, material: 'PA12-SLS' }).offsetAtLimit.status, 'over_every_day');
+  assert.equal(sc({ v_m_s: 0, alt_m: 3000, material: 'Delrin-POM' }).offsetAtLimit.status, 'under_every_day');
+  // Inside the band the day is named: 6061-T6 at the fin condition comes under the limit only below ISA−69.4 K.
+  const fin = sc({ v_m_s: 700, alt_m: 3000, material: '6061-T6' });
+  near(fin.offsetAtLimit.T0_K, -69.37, 0.01);
+  assert.match(fin.flags.find((f) => f.code === 'standard_day').text, /only on a day colder than ISA−69\.4 K/);
+  // Near the ceiling the hottest day the page computes is the one where T0 reaches 2,000 K: Graphite at
+  // 1,865 m/s and 3 km has T0 1,999.66 K, so the band it can speak for ends at ISA+0.3 K.
+  const gr = sc({ v_m_s: 1865, alt_m: 3000, material: 'Graphite' });
+  assert.equal(gr.offsetAtLimit.T0_K, null);
+  assert.equal(gr.offsetAtLimit.ceiling_limited, true);
+  near(gr.offsetAtLimit.max_K, 2000 - gr.T0_K, 1e-9);
+  assert.match(gr.offsetAtLimit.reason, /ISA\+0\.3 K \(on a warmer day T0 passes the 2000 K ceiling/);
+  // A scan: 21 materials, six speeds, five altitudes, five days. Every day the model names is inside the
+  // band, leaves T∞ above absolute zero and T0 under the ceiling, and brings the T0 margin to zero there;
+  // every "none" is borne out at both ends of the band; no ISA offset printed in a flag lies outside it.
+  let named = 0, none = 0;
+  for (const row of S.materialsThermal.rows) {
+    for (const v of [0, 300, 700, 1000, 1500, 1800]) {
+      for (const alt of [-4990, 0, 3000, 25000, 85999]) {
+        for (const dT of [-90, -20, 0, 20, 50]) {
+          const r = sc({ v_m_s: v, alt_m: alt, material: row.key, isa_offset_K: dT });
+          if (!r.ok) continue;
+          const o = r.offsetAtLimit;
+          for (const m of text(r).matchAll(/ISA([+−])(\d+\.\d) K/g)) {
+            const x = (m[1] === '−' ? -1 : 1) * Number(m[2]);
+            assert.ok(x >= H.ISA_DT_MIN_K && x <= H.ISA_DT_MAX_K, `${row.key} ${v} m/s ${alt} m ΔT ${dT}: printed ISA${m[1]}${m[2]} K is in the band`);
+          }
+          if (o.T0_K !== null) {
+            named++;
+            assert.ok(o.T0_K >= H.ISA_DT_MIN_K && o.T0_K <= H.ISA_DT_MAX_K, 'named day in the band');
+            assert.ok(r.T_isa_K + o.T0_K > 0, 'named day leaves T∞ above 0 K');
+            const at = sc({ v_m_s: v, alt_m: alt, material: row.key, isa_offset_K: o.T0_K });
+            assert.equal(at.ok, true, 'the named day computes');
+            near(at.margin_T0_C, 0, 1e-9, 'and the T0 margin is zero on it');
+          } else {
+            none++;
+            const lo = sc({ v_m_s: v, alt_m: alt, material: row.key, isa_offset_K: o.min_K });
+            const hi = sc({ v_m_s: v, alt_m: alt, material: row.key, isa_offset_K: Math.min(o.max_K, H.ISA_DT_MAX_K) });
+            assert.equal(lo.ok && hi.ok, true, 'both ends of the band it speaks for compute');
+            const sign = o.status === 'under_every_day' ? 1 : -1;
+            assert.ok(sign * lo.margin_T0_C > 0 && sign * hi.margin_T0_C >= 0, `${row.key} ${v} m/s ${alt} m ΔT ${dT}: ${o.status} holds at both ends`);
+          }
+        }
+      }
+    }
+  }
+  assert.ok(named > 100 && none > 1000, `both branches are exercised (${named} named, ${none} none)`);
+});
+
+test('ISA offset: outside −90 to +50 K is out_of_envelope; unreadable is invalid_input; no temperature either way', () => {
+  for (const dT of [-91, 50.01, 120, -300]) {
+    const r = H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', isa_offset_K: dT });
+    assert.equal(r.ok, false, `ΔT ${dT}`);
+    assert.equal(r.refusal.code, 'out_of_envelope');
+    assert.match(r.refusal.what_would_help, /ISA\+20 K/);
+    assert.ok(!/T0_[CK]|Tr_/.test(JSON.stringify(r)));
+    assert.equal(H.table(ctx, 700, 3000, dT).rows.length, 0);
+  }
+  for (const dT of ['hot', NaN, Infinity, {}]) {
+    const r = H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', isa_offset_K: dT });
+    assert.equal(r.refusal.code, 'invalid_input', `ΔT ${String(dT)}`);
+  }
+  // The band's edges compute.
+  for (const dT of [H.ISA_DT_MIN_K, H.ISA_DT_MAX_K]) assert.equal(H.screen(ctx, { v_m_s: 700, alt_m: 3000, material: '6061-T6', isa_offset_K: dT }).ok, true);
+  // A hot day lowers the ceiling speed: 1,865 m/s at 3 km computes on a standard day and is refused at ISA+50.
+  assert.equal(H.screen(ctx, { v_m_s: 1865, alt_m: 3000, material: 'Graphite' }).ok, true);
+  const hot = H.screen(ctx, { v_m_s: 1865, alt_m: 3000, material: 'Graphite', isa_offset_K: 50 });
+  assert.equal(hot.refusal.code, 'out_of_envelope');
+  assert.match(hot.refusal.reason, /ISA\+50\.0 K day/);
 });
 
 // ---------------------------------------------------------------------------------------------
@@ -410,6 +689,13 @@ test('the verdict is SCREEN for every material at several conditions; never PASS
   }
   const hot = H.screen(ctx, { v_m_s: 1300, alt_m: 0, material: 'Graphite', inputs_src: 'user' });
   assert.ok(hot.T0_K > 800 && hot.flags.some((f) => f.code === 'hot'), 'T0 above 800 K is flagged');
+  // The 800 K threshold at its boundary, in kelvin: 1,010 m/s at sea level is T0 795.8 K, 1,020 m/s is 805.9 K.
+  const below = H.screen(ctx, { v_m_s: 1010, alt_m: 0, material: 'Graphite', inputs_src: 'user' });
+  const above = H.screen(ctx, { v_m_s: 1020, alt_m: 0, material: 'Graphite', inputs_src: 'user' });
+  near(below.T0_K, 795.8, 0.05, '1010 m/s at sea level');
+  near(above.T0_K, 805.9, 0.05, '1020 m/s at sea level');
+  assert.ok(!below.flags.some((f) => f.code === 'hot'), 'T0 795.8 K is not flagged hot');
+  assert.ok(above.flags.some((f) => f.code === 'hot'), 'T0 805.9 K is flagged hot');
   const recall = H.screen(ctx, { v_m_s: 300, alt_m: 0, material: 'G10-FR4', inputs_src: 'user' });
   assert.ok(recall.flags.some((f) => f.code === 'recall'), 'recall rows say so');
   assert.equal(recall.material.service_max_c, 130);
@@ -426,7 +712,10 @@ test('parseSpeed: m/s accepted, Mach spellings recognised for refusal, other uni
   assert.deepEqual(H.parseSpeed('700.'), { kind: 'speed', v_m_s: 700 }, 'a trailing point is a number');
   assert.deepEqual(H.parseSpeed('.5'), { kind: 'speed', v_m_s: 0.5 }, 'a leading point is a number');
   assert.deepEqual(H.parseSpeed('.5 m/s'), { kind: 'speed', v_m_s: 0.5 });
-  for (const s of ['Mach 2', 'mach2', 'M2', 'M 2', '2 Mach', '2M', '2.0 mach', 'Ma 2', 'Mach 2.']) assert.deepEqual(H.parseSpeed(s), { kind: 'mach', mach: 2 }, s);
+  for (const s of ['Mach 2', 'mach2', 'M2', 'M 2', '2 Mach', '2.0 mach', 'Ma 2', '2 Ma', 'Mach 2.']) assert.deepEqual(H.parseSpeed(s), { kind: 'mach', mach: 2 }, s);
+  // A trailing "m" is an unfinished m/s, never Mach 700.
+  for (const s of ['700 m', '700m', '700 M']) assert.deepEqual(H.parseSpeed(s), { kind: 'unit', unit: 'm', value: 700, didYouMean: 'm/s' }, s);
+  assert.deepEqual(H.parseSpeed('2M'), { kind: 'unit', unit: 'm', value: 2, didYouMean: 'm/s' });
   assert.equal(H.parseSpeed('.'), null, 'a bare point is not a number');
   assert.equal(H.parseSpeed('1e6'), null, 'no exponent notation');
   assert.deepEqual(H.parseSpeed('500 km/h'), { kind: 'unit', unit: 'km/h', value: 500 });
@@ -447,7 +736,12 @@ test('README and index.html carry the computed numbers and the bound caveat', ()
   assert.ok(readme.includes('210.4'), 'README says 210.4');
   assert.ok(readme.includes('125.6'), 'README says 125.6');
   assert.ok(readme.includes('627'), 'README says 627 m/s');
-  assert.ok(readme.includes('2,000 K') && readme.includes('1,855'), 'README names the ceiling and the sea-level ceiling speed');
+  assert.ok(readme.includes('2,000 K') && readme.includes('1,854.6'), 'README names the ceiling and the sea-level stay-below speed the page prints');
+  assert.ok(!/1,855 m\/s/.test(readme) && !/1,855 m\/s/.test(html), 'and never the rounded-up 1,855 m/s, which is past the ceiling');
+  assert.ok(/ISA\+10\.6/.test(readme), 'README names the hot-day offset that erases PEEK’s margin');
+  // The speed is airspeed, and the headwind figure the page's hint quotes is the model's at 700 m/s.
+  assert.ok(/airspeed/i.test(readme) && /relative to the air/.test(html), 'README and page say the speed is airspeed');
+  assert.ok(html.includes(`${r.headwind10_K.toFixed(1)} K per 10 m/s of headwind at 700 m/s`), 'the page’s headwind figure is the model’s');
   assert.ok(/2,000 K/.test(html), 'the page names the ceiling');
   assert.ok(/upper bound/i.test(html.split('<body')[1].slice(0, 4000)), 'the page says "upper bound" near the top');
   assert.ok(!/\bPASS\b/.test(html.replace(/never PASS|not PASS|never a PASS/g, '')), 'the page never offers PASS');

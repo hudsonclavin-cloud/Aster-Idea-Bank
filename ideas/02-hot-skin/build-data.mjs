@@ -6,6 +6,12 @@
 //   node ideas/02-hot-skin/build-data.mjs [repo-dir]          (default /home/user/Partforge)
 //   node ideas/02-hot-skin/build-data.mjs [repo-dir] --check  (exit 1 if the derived file is stale)
 //
+// "Stale" means the CONTENT the module carries differs from what the checkout would give: the
+// verbatim ISA block, the FLIGHT_MATERIALS {name, kind} map, or the embedded data files. A new
+// PartForge commit that leaves those alone (a docs change, an edit elsewhere in index.html that
+// moves line numbers) is not stale: the module still says truthfully what it was copied from. When
+// index.html is byte-for-byte the file the module records, the rebuild must also be byte-identical.
+//
 // After writing, record its provenance with the bank's tool (the sidecar points at index.html,
 // the source of the code it carries; the two data files it embeds have their own sidecars):
 //   node tools/snapshot.mjs <repo-dir> index.html ideas/02-hot-skin/snapshots/partforge.js \
@@ -26,6 +32,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -91,6 +98,16 @@ function readSidecar(name) {
 export function build() {
   const htmlPath = path.join(repo, 'index.html');
   const html = fs.readFileSync(htmlPath, 'utf8');
+  return derive(html, {
+    repo: git(['remote', 'get-url', 'origin']) || 'Partforge',
+    commit: git(['rev-parse', 'HEAD']),
+    commitDate: git(['log', '-1', '--format=%cI']),
+  });
+}
+
+// The derivation itself, from index.html's text and the commit it came from. Exported so the tests
+// can run it on a modified copy of index.html without touching the checkout.
+export function derive(html, source) {
   const isa = extractIsaBlock(html);
   const mats = extractMaterialsMeta(html);
 
@@ -111,9 +128,9 @@ export function build() {
   if (missing.length || extra.length) throw new Error(`material keys differ: thermal-only ${missing.join(',')}; FLIGHT_MATERIALS-only ${extra.join(',')}`);
 
   const provenance = {
-    repo: git(['remote', 'get-url', 'origin']) || 'Partforge',
-    commit: git(['rev-parse', 'HEAD']),
-    commitDate: git(['log', '-1', '--format=%cI']),
+    repo: source.repo,
+    commit: source.commit,
+    commitDate: source.commitDate,
     index_html: { path: 'index.html', sha256: sha256(html), bytes: Buffer.byteLength(html), isaLines: [isa.firstLine, isa.lastLine], flightMaterialsLines: [mats.firstLine, mats.lastLine] },
     materials_thermal: thermalSidecar,
     fin_scad: finSidecar,
@@ -150,19 +167,51 @@ return { ISA_G0: ISA_G0, ISA_R: ISA_R, ISA_R0: ISA_R0, ISA_GAMMA: ISA_GAMMA, ISA
   materialsMeta: materialsMeta, materialsThermal: materialsThermal, finTemplate: finTemplate, provenance: provenance };
 });
 `;
-  return { out, isa, mats, provenance };
+  return { out, isa, mats, thermal, finTemplate, provenance };
+}
+
+// Load a module text written by derive() and return what it carries.
+export function loadModule(text) {
+  const mod = { exports: {} };
+  new Function('module', 'self', text)(mod, undefined);
+  const m = /\/\/ ---- BEGIN verbatim index\.html (\d+)-(\d+) @ [0-9a-f]* ----\n([\s\S]*?)\/\/ ---- END verbatim ----/.exec(text);
+  return { S: mod.exports, verbatim: m ? m[3] : null };
+}
+
+// Which carried parts differ between a module text and a fresh derivation (empty when none do).
+export function contentDiff(moduleText, d) {
+  if (!moduleText) return ['the module is missing'];
+  let cur;
+  try { cur = loadModule(moduleText); } catch (e) { return [`the module does not load (${e.message})`]; }
+  const diffs = [];
+  if (cur.verbatim !== d.isa.text) diffs.push('the verbatim ISA block');
+  if (!isDeepStrictEqual(cur.S.materialsMeta, d.mats.meta)) diffs.push('the FLIGHT_MATERIALS {name, kind} map');
+  if (!isDeepStrictEqual(cur.S.materialsThermal, d.thermal)) diffs.push('the embedded materials_thermal.json');
+  if (!isDeepStrictEqual(cur.S.finTemplate, d.finTemplate)) diffs.push('the embedded fin template FLIGHT block');
+  return diffs;
 }
 
 function main() {
-  const { out, isa, mats, provenance } = build();
+  const d = build();
+  const { out, isa, mats, provenance } = d;
   if (check) {
+    const rel = path.relative(process.cwd(), dest);
     const cur = fs.existsSync(dest) ? fs.readFileSync(dest, 'utf8') : '';
-    // Provenance carries no timestamps, so a rebuild from the same checkout is byte-identical.
-    if (cur !== out) {
-      console.error(`stale: ${path.relative(process.cwd(), dest)} differs from a fresh derivation at ${provenance.commit}`);
+    const diffs = contentDiff(cur, d);
+    const recorded = cur ? loadModule(cur).S.provenance : {};
+    if (diffs.length) {
+      console.error(`stale: ${diffs.join('; ')} in ${rel} (recorded at ${recorded.commit || '?'}) differ from the checkout at ${provenance.commit}. Rerun build-data.mjs, then tools/snapshot.mjs --sidecar-only.`);
       process.exit(1);
     }
-    console.log(`fresh: ${path.relative(process.cwd(), dest)} matches ${provenance.commit}`);
+    // Provenance carries no timestamps, so a rebuild from the very file the module records is byte-identical.
+    const sameFile = recorded.index_html && recorded.index_html.sha256 === provenance.index_html.sha256;
+    if (sameFile && cur !== out) {
+      console.error(`stale: ${rel} carries the right content but is not the byte-identical rebuild of the index.html it records (${provenance.index_html.sha256.slice(0, 12)}…)`);
+      process.exit(1);
+    }
+    console.log(sameFile
+      ? `fresh: ${rel} is the byte-identical rebuild of index.html at ${provenance.commit}`
+      : `fresh: ${rel} (recorded at ${recorded.commit}) carries the same ISA block, materials and data as the checkout at ${provenance.commit}; index.html changed only outside them`);
     return;
   }
   fs.mkdirSync(path.dirname(dest), { recursive: true });
