@@ -76,6 +76,10 @@ async function pick(page, name, value) {
   const { context, page, errors } = await open(DESK);
   const prov = await text(page, '#prov');
   ok(/135 fixture files/.test(prov) && /130 /.test(prov) && /128 unique bodies/.test(prov) && new RegExp(K.aster.commit.slice(0, 7)).test(prov), `provenance line states 135 / 130 / 128 and the commit (${prov.slice(0, 120)}…)`);
+  ok(/74 before, 39 inside and 15 after Aster's screening-cache window 2026-01-01 to 2040-12-31/.test(prov) && /37 inside the porkchop grid's departures 2026-01-01 to 2040-01-01/.test(prov), `provenance line names both windows with their counts (${prov.slice(-200)})`);
+  const cons0 = await text(page, '#constraints');
+  ok(new RegExp(`at most ${S.constraints.maxDurationDays} days in total`).test(cons0) && /202 to 450; 11 bodies use all 450/.test(cons0) && /101 of 128 stay exactly 8/.test(cons0) && /400 km parking orbit/.test(cons0) && /12 km\/s at 125 km/.test(cons0) && /launch 2020-2045/.test(cons0), `the NHATS constraints are stated under the tiles (${cons0.slice(0, 160)}…)`);
+  ok(/127 of 128/.test(cons0) && /Bennu 5\.215 against 1\.501 km\/s/.test(cons0) && /not measured here/.test(cons0), 'the note says the factor at an Aster cell is not measured, with Bennu\'s two arrival speeds');
   const tile = async (k) => text(page, `.tile[data-k="${k}"] .v`);
   ok(Math.abs(num(await tile('ratio-min')) - S.ratio.unique.min) < 0.0006, `min ratio tile ${await tile('ratio-min')} equals the kernel's ${f3(S.ratio.unique.min)}`);
   ok(Math.abs(num(await tile('ratio-median')) - S.ratio.unique.median) < 0.0006, `median tile ${await tile('ratio-median')}`);
@@ -83,6 +87,8 @@ async function pick(page, name, value) {
   ok(new RegExp(`^${S.ratio.within10pct} of ${S.ratio.unique.n}`).test(await tile('within10')), `within-10% tile ${await tile('within10')}`);
   ok(new RegExp(`^${S.ratio.offByTwoOrMore} of`).test(await tile('off2x')), `off-by-2x tile ${await tile('off2x')}`);
   ok(/×0\.56 to ×2\.32/.test(await tile('mass')), `mass tile reads the measured factor range (${await tile('mass')})`);
+  ok(/on NHATS's trajectories/.test(await text(page, '.tile[data-k="mass"] .k')) && /not measured at an Aster cell/.test(await text(page, '.tile[data-k="mass"] .d')), 'the mass tile says whose trajectories it is measured on');
+  ok(/sign test p = 0\.033/.test(await text(page, '.tile[data-k="within10"] .d')), 'the lean above 1 is shown with its sign-test p');
   ok((await page.locator('#ratio-hist rect.hit').count()) === 13, 'the ratio histogram has 13 bins');
   ok((await page.locator('#ratio-hist path.bar').count()) >= 10, 'bars are drawn');
   ok(/Aster: 1/.test(await text(page, '#ratio-hist')), 'the symmetric marker is labelled');
@@ -102,7 +108,17 @@ async function pick(page, name, value) {
   ok(/C3 0\.510/.test(await text(page, '#aster-today')) && /different objective/.test(await text(page, '#aster-today')), 'the cache line shows Bennu\'s minC3 and the different-objective label');
   ok(/insufficient_data/.test(await text(page, '#return-leg')) && /K1/.test(await text(page, '#return-leg')), 'the return leg is a structured refusal naming K1');
   ok(await page.locator('#refusal').isHidden(), 'no refusal card for a body that is in NHATS');
-  ok(/0\.5 m\/s/.test(await text(page, '#inj')) && /6778\.137 km/.test(await text(page, '#inj')), 'the injection panel states the 0.5 m/s reproduction and the best-fit radius');
+  ok(/0\.514 m\/s/.test(await text(page, '#inj')) && /0\.523 m\/s/.test(await text(page, '#inj')) && /6778\.137 km/.test(await text(page, '#inj')) && /94× the worst/.test(await text(page, '#inj')), 'the injection panel states 0.514 m/s against the 0.523 m/s rounding bound, the best-fit radius and 94×');
+  // the definition list gives its values room at desktop width (labels and values side by side, values not squeezed)
+  const ddMin = await page.evaluate(() => Math.min(...[...document.querySelectorAll('#inj dd')].map((d) => d.getBoundingClientRect().width)));
+  ok(ddMin >= 400, `#inj values get at least 400 px at 1280 (${ddMin.toFixed(0)} px)`);
+  // band labels sit in their own row above the plot, so no bar covers them
+  const bandLab = await page.evaluate(() => {
+    const svg = document.querySelector('#dec-hist svg');
+    const top = Math.min(...[...svg.querySelectorAll('rect[class^="band-"]')].map((r) => r.getBoundingClientRect().top));
+    return [...svg.querySelectorAll('text.band-label')].map((t) => t.getBoundingClientRect().bottom <= top + 0.5);
+  });
+  ok(bandLab.length >= 3 && bandLab.every(Boolean), `declination band labels sit above the plot (${bandLab.join(',')})`);
   ok(/GREEN \(\|δ\| ≤ 28\.5°\): 56/.test(await text(page, '#dec-legend')), `declination legend counts GREEN 56 (${await text(page, '#dec-legend')})`);
   ok(/0\.262 km\/s/.test(await text(page, '#arr-foot')) && /4\.345 km\/s/.test(await text(page, '#arr-foot')), 'Earth-arrival range 0.262 to 4.345 km/s is stated');
   ok(/62ddb17/.test(await text(page, '#foot')), 'the footer names the commit');
@@ -139,7 +155,7 @@ async function pick(page, name, value) {
   ok(await page.locator('#ledger').isVisible() && /validation-targets\/2000_SG344\.json and oq7-coorbital\/2000_SG344\.json/.test(await text(page, '#body-note')), '2000 SG344 lists both fixture sources');
   // arrival altitude toggle
   await pick(page, 'alt', 'tb');
-  ok(/at 200 km/.test(await text(page, '#vinf-hist')) && /1\.211 km\/s/.test(await text(page, '#arr-foot')), 'the 200 km convention re-draws the histogram and states 1.211 km/s');
+  ok(/at 200 km/.test(await text(page, '#vinf-hist')) && /1\.211 km\/s/.test(await text(page, '#arr-foot')) && /The 75 km difference/.test(await text(page, '#arr-foot')) && /not settled/.test(await text(page, '#arr-foot')), 'the 200 km convention re-draws the histogram, states 1.211 km/s and the 75 km difference, and says the altitude is not settled here');
   await pick(page, 'alt', 'nhats');
   // declination toggles
   await pick(page, 'decwhich', 'arr');

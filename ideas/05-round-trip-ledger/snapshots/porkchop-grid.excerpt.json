@@ -1,0 +1,9 @@
+{
+ "derivedBy": "ideas/05-round-trip-ledger/build-data.mjs: the GRID_PARAMS block of src/v2/app/porkchop/main.ts, verbatim",
+ "path": "src/v2/app/porkchop/main.ts",
+ "lines": [
+  194,
+  201
+ ],
+ "text": "export const GRID_PARAMS = {\n  depStartJD: utcMidnightToJdTdb('2026-01-01'),\n  depEndJD: utcMidnightToJdTdb('2040-01-01'),\n  tofMinDays: 182.5,\n  tofMaxDays: 1826.25,\n  nDep: 200,\n  nTof: 100,\n} as const;"
+}

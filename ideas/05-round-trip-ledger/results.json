@@ -11,31 +11,31 @@
   "version": "1.3"
  },
  "cited": {
-  "LEO_ALTITUDE_KM": {
-   "value": 200,
-   "cite": "Aster src/v2/app/porkchop/main.ts:981 '200 km circular LEO (r = 6578.137 km)'; INVARIANTS.md:191 INV-016c '200km LEO'",
-   "label": "Certain"
-  },
-  "NHATS_PARKING_ALTITUDE_KM": {
-   "value": 400,
-   "cite": "Aster src/v2/research/slice-11-porkchop/perplexity-jpl-trajectory-browser-nhats.md:46 'Earth departure from a 400 km parking orbit'; confirmed here: injection at R_E + 400 km reproduces every dv_dep_park within the records' 1 m/s rounding",
-   "label": "Certain"
-  },
-  "NHATS_ENTRY_ALTITUDE_KM": {
-   "value": 125,
-   "cite": "Aster src/v2/research/slice-11-porkchop/perplexity-jpl-trajectory-browser-nhats.md:42 'Earth atmospheric entry speed ≤ 12 km/s at 125 km altitude'; reading v_arr_earth as the speed at that altitude is an interpretation",
-   "label": "Likely"
-  },
-  "TRAJECTORY_BROWSER_ENTRY_ALTITUDE_KM": {
-   "value": 200,
-   "cite": "Aster src/v2/research/slice-11-porkchop/perplexity-jpl-trajectory-browser-nhats.md:17 '200 km Earth inertial reentry' (Trajectory Browser FAQ); shown as the alternative convention",
-   "label": "Likely"
-  },
-  "NHATS_ENTRY_SPEED_CAP_KMPS": {
-   "value": 12,
-   "cite": "Aster src/v2/research/slice-11-porkchop/perplexity-jpl-trajectory-browser-nhats.md:42 'Earth atmospheric entry speed ≤ 12 km/s'",
-   "label": "Certain"
-  }
+  "LEO_ALTITUDE_KM": 200,
+  "NHATS_PARKING_ALTITUDE_KM": 400,
+  "NHATS_ENTRY_ALTITUDE_KM": 125,
+  "TRAJECTORY_BROWSER_ENTRY_ALTITUDE_KM": 200,
+  "NHATS_ENTRY_SPEED_CAP_KMPS": 12,
+  "NHATS_MAX_DURATION_DAYS": 450,
+  "NHATS_MIN_STAY_DAYS": 8,
+  "NHATS_LAUNCH_WINDOW": "2020-2045"
+ },
+ "citedIn": "ledger.js CITED (each value with its file:line)",
+ "analysis": {
+  "RATIO_WITHIN": [
+   0.1,
+   0.25
+  ],
+  "RATIO_FACTOR": 2,
+  "MASS_BAND": [
+   0.9,
+   1.1
+  ],
+  "FIT_ALTITUDE_KM": [
+   100,
+   800,
+   1
+  ]
  },
  "constants": {
   "EARTH_MU_KM3_PER_S2": 398600.4418,
@@ -83,244 +83,29 @@
   "EXHAUST_VELOCITY_MPS": 3138.1279999999997
  },
  "summary": {
-  "counts": {
-   "fixtureFiles": 135,
-   "records": 130,
-   "uniqueBodies": 128,
-   "notFound": 5,
-   "duplicates": 2,
-   "duplicatesIdentical": true
-  },
-  "computed": {
-   "earliest": "2021-04-19",
-   "latest": "2026-05-24"
-  },
-  "launch": {
-   "earliestYear": 2020,
-   "latestYear": 2045,
-   "before2026": 74,
-   "in2026to2040": 39,
-   "after2040": 15
-  },
-  "ratio": {
-   "unique": {
-    "n": 128,
-    "min": 0.21384297520661155,
-    "q1": 0.8274147027184557,
-    "median": 1.0488818090954524,
-    "q3": 1.8115423544067268,
-    "max": 11.627118644067798,
-    "minBody": "2008 EL68",
-    "maxBody": "2025 WR7"
-   },
-   "allRecords": {
-    "n": 130,
-    "min": 0.21384297520661155,
-    "median": 1.060060236909409,
-    "max": 11.627118644067798
-   },
-   "below1": 51,
-   "above1": 76,
-   "exactly1": 1,
-   "within10pct": 26,
-   "within25pct": 54,
-   "offByTwoOrMore": 35
-  },
-  "departureMinusArrivalKmps": {
-   "min": -2.516,
-   "median": 0.02599999999999998,
-   "max": 1.755
-  },
-  "massFactor": {
-   "min": 0.5558742712863967,
-   "median": 0.9913387762425263,
-   "max": 2.3206317765305036,
-   "minBody": "1999 AO10",
-   "maxBody": "459872",
-   "below0p9": 22,
-   "above1p1": 11
-  },
-  "injection": {
-   "nhatsRadiusKm": 6778.137,
-   "asterRadiusKm": 6578.137,
-   "maxAbsDeltaAtNhatsRadiusKmps": 0.000514086672672498,
-   "deltaAtAsterRadiusKmps": {
-    "min": 0.030050811003758504,
-    "max": 0.048293704536318316
-   },
-   "bestFitRadius": {
-    "radiusKm": 6778.137,
-    "maxAbsDeltaKmps": 0.000514086672672498
-   }
-  },
-  "nhatsLedger": {
-   "maxAbsResidualKmps": 0.0010000000000012221,
-   "maxAbsVDepEarthResidualKmps": 0.000931831383409909,
-   "vrelArrEarthAllZero": true,
-   "c3": {
-    "min": 0.031,
-    "max": 30.576
-   },
-   "dvTotal": {
-    "min": 3.389,
-    "max": 11.031
-   },
-   "stayDays": {
-    "min": 8,
-    "max": 152
-   }
-  },
-  "arrival": {
-   "vArrEarth": {
-    "min": 11.075,
-    "max": 11.894
-   },
-   "entryCapKmps": 12,
-   "allBelowCap": true,
-   "escapeAt125Kmps": 11.071907123481482,
-   "escapeAt200Kmps": 11.008608537883612,
-   "vinf125": {
-    "n": 128,
-    "min": 0.26172055517289466,
-    "median": 2.4488783432773187,
-    "max": 4.345124698901061,
-    "minBody": "2011 WE",
-    "maxBody": "2014 KF39",
-    "minRoundingLow": 0.23963075553857457,
-    "minRoundingHigh": 0.2820866870308006
-   },
-   "vinf200": {
-    "n": 128,
-    "min": 1.2108522038779204,
-    "max": 4.5030849491916145
-   },
-   "refusedAt125": 0
-  },
-  "declination": {
-   "dep": {
-    "min": -85.268,
-    "max": 79.636
-   },
-   "arr": {
-    "min": -83.143,
-    "max": 81.795
-   },
-   "depCape": {
-    "GREEN": 56,
-    "AMBER": 44,
-    "RED": 28
-   },
-   "depVandenberg": {
-    "GREEN": 115,
-    "AMBER": 13,
-    "RED": 0
-   },
-   "arrCape": {
-    "GREEN": 60,
-    "AMBER": 42,
-    "RED": 26
-   }
-  },
-  "cache": {
-   "rows": 128,
-   "of": 128,
-   "coOrbital": 125,
-   "statuses": {
-    "low_departure_c3": 128
-   },
-   "minC3BelowNhatsC3": 117,
-   "screeningWindow": {
-    "startUtc": "2026-01-01",
-    "endUtc": "2040-12-31"
-   }
-  }
+  "counts": {"fixtureFiles":135,"records":130,"uniqueBodies":128,"notFound":5,"duplicates":2,"duplicatesIdentical":true},
+  "rounding": {"decimals":3,"halfUnitKmps":0.0005},
+  "computed": {"earliest":"2021-04-19","latest":"2026-05-24"},
+  "launch": {"earliestYear":2020,"latestYear":2045,"screeningWindow":{"startUtc":"2026-01-01","endUtc":"2040-12-31"},"n":128,"beforeWindow":74,"inWindow":39,"afterWindow":15,"porkchopGrid":{"startUtc":"2026-01-01","endUtc":"2040-01-01","lines":[194,201],"inGrid":37,"inWindowNotGrid":["2001 GP2 2040-10-10","2014 WU200 2040-05-11"]},"byDir":{"validation-targets":{"n":5,"beforeWindow":0,"inWindow":5,"afterWindow":0},"oq7-coorbital":{"n":125,"beforeWindow":74,"inWindow":36,"afterWindow":15}}},
+  "constraints": {"maxDurationDays":450,"minStayDays":8,"launchWindow":"2020-2045","durTotal":{"min":202,"max":450},"atDurationCap":11,"allWithinDurationCap":true,"stayDays":{"min":8,"max":152},"atMinStay":101,"atMinStayRecords":103,"allMeetMinStay":true,"launchYears":{"min":2020,"max":2045}},
+  "ratio": {"unique":{"n":128,"min":0.21384297520661155,"q1":0.8274147027184557,"median":1.0488818090954524,"q3":1.8115423544067268,"max":11.627118644067798,"minBody":"2008 EL68","maxBody":"2025 WR7"},"allRecords":{"n":130,"min":0.21384297520661155,"median":1.060060236909409,"max":11.627118644067798},"below1":51,"above1":76,"exactly1":1,"signTestP":0.03278956169303338,"within10pct":26,"within25pct":54,"offByTwoOrMore":35},
+  "departureMinusArrivalKmps": {"min":-2.516,"median":0.02599999999999998,"max":1.755},
+  "massFactor": {"min":0.5558742712863967,"median":0.9913387762425263,"max":2.3206317765305036,"minBody":"1999 AO10","maxBody":"459872","below0p9":22,"above1p1":11},
+  "injection": {"nhatsRadiusKm":6778.137,"asterRadiusKm":6578.137,"maxAbsDeltaAtNhatsRadiusKmps":0.000514086672672498,"roundingBoundKmps":0.0005230491050464271,"allWithinRounding":true,"deltaAtAsterRadiusKmps":{"min":0.030050811003758504,"max":0.048293704536318316},"maxAbsDeltaAtAsterRadiusKmps":0.048293704536318316,"asterRadiusTimesWorse":93.94078295253554,"fitRangeKm":{"lo":6478.137,"hi":7178.137,"step":1},"bestFitRadius":{"radiusKm":6778.137,"maxAbsDeltaKmps":0.000514086672672498}},
+  "nhatsLedger": {"maxAbsResidualKmps":0.0010000000000012221,"residualBoundKmps":0.0025,"allSumsWithinRounding":true,"maxAbsVDepEarthResidualKmps":0.000931831383409909,"allVDepEarthWithinRounding":true,"vrelArrEarthAllZero":true,"c3":{"min":0.031,"max":30.576},"dvTotal":{"min":3.389,"max":11.031},"stayDays":{"min":8,"max":152}},
+  "arrival": {"vArrEarth":{"min":11.075,"max":11.894},"entryCapKmps":12,"allBelowCap":true,"escapeAt125Kmps":11.071907123481482,"escapeAt200Kmps":11.008608537883612,"vinf125":{"n":128,"min":0.26172055517289466,"median":2.4488783432773187,"max":4.345124698901061,"minBody":"2011 WE","maxBody":"2014 KF39","minRoundingLow":0.23963075553857457,"minRoundingHigh":0.2820866870308006},"vinf200":{"n":128,"min":1.2108522038779204,"max":4.5030849491916145},"refusedAt125":0},
+  "declination": {"dep":{"min":-85.268,"max":79.636},"arr":{"min":-83.143,"max":81.795},"depCape":{"GREEN":56,"AMBER":44,"RED":28},"depVandenberg":{"GREEN":115,"AMBER":13,"RED":0},"arrCape":{"GREEN":60,"AMBER":42,"RED":26}},
+  "cache": {"rows":128,"of":128,"coOrbital":125,"statuses":{"low_departure_c3":128},"minC3BelowNhatsC3":117,"screeningWindow":{"startUtc":"2026-01-01","endUtc":"2040-12-31"},"vInfArrMinusNhatsKmps":{"min":-0.01668588827109163,"median":2.4133120179185585,"max":5.535705709723842},"vInfArrAboveNhats":127}
  },
  "bodies": 128,
  "extremes": {
-  "101955": {
-   "launch": "2036-03-21",
-   "c3": 17.629,
-   "vrelArr": 1.501,
-   "vrelDep": 1.533,
-   "ratio": 1.021319120586276,
-   "massFactor": 0.9893500958753605,
-   "vArrEarth": 11.832,
-   "vinf125": 4.172420957789378,
-   "decDep": -39.357,
-   "bandDepCape": "AMBER"
-  },
-  "459872": {
-   "launch": "2020-01-21",
-   "c3": 30.576,
-   "vrelArr": 3.241,
-   "vrelDep": 0.725,
-   "ratio": 0.22369639000308544,
-   "massFactor": 2.3206317765305036,
-   "vArrEarth": 11.698,
-   "vinf125": 3.775722003670296,
-   "decDep": -14.21,
-   "bandDepCape": "GREEN"
-  },
-  "2008 EL68": {
-   "launch": "2045-12-11",
-   "c3": 0.518,
-   "vrelArr": 0.968,
-   "vrelDep": 0.207,
-   "ratio": 0.21384297520661155,
-   "massFactor": 1.2899794977029497,
-   "vArrEarth": 11.203,
-   "vinf125": 1.7088246396280722,
-   "decDep": 21.353,
-   "bandDepCape": "GREEN"
-  },
-  "2025 WR7": {
-   "launch": "2025-11-26",
-   "c3": 9.988,
-   "vrelArr": 0.059,
-   "vrelDep": 0.686,
-   "ratio": 11.627118644067798,
-   "massFactor": 0.8107539370442557,
-   "vArrEarth": 11.362,
-   "vinf125": 2.5510618669487464,
-   "decDep": -10.481,
-   "bandDepCape": "GREEN"
-  },
-  "1999 AO10": {
-   "launch": "2026-01-29",
-   "c3": 5.528,
-   "vrelArr": 0.351,
-   "vrelDep": 2.106,
-   "ratio": 6,
-   "massFactor": 0.5558742712863967,
-   "vArrEarth": 11.879,
-   "vinf125": 4.303895171702026,
-   "decDep": -11.685,
-   "bandDepCape": "GREEN"
-  },
-  "2011 WE": {
-   "launch": "2044-08-18",
-   "c3": 0.031,
-   "vrelArr": 0.194,
-   "vrelDep": 0.189,
-   "ratio": 0.9742268041237113,
-   "massFactor": 1.0016743721101478,
-   "vArrEarth": 11.075,
-   "vinf125": 0.26172055517289466,
-   "decDep": -16.298,
-   "bandDepCape": "GREEN"
-  },
-  "2014 KF39": {
-   "launch": "2031-11-11",
-   "c3": 12.075,
-   "vrelArr": 0.479,
-   "vrelDep": 0.689,
-   "ratio": 1.4384133611691023,
-   "massFactor": 0.932146935785773,
-   "vArrEarth": 11.894,
-   "vinf125": 4.345124698901061,
-   "decDep": -15.917,
-   "bandDepCape": "GREEN"
-  }
+  "101955": {"launch":"2036-03-21","c3":17.629,"vrelArr":1.501,"vrelDep":1.533,"ratio":1.021319120586276,"massFactor":0.9893500958753605,"vArrEarth":11.832,"vinf125":4.172420957789378,"decDep":-39.357,"bandDepCape":"AMBER"},
+  "459872": {"launch":"2020-01-21","c3":30.576,"vrelArr":3.241,"vrelDep":0.725,"ratio":0.22369639000308544,"massFactor":2.3206317765305036,"vArrEarth":11.698,"vinf125":3.775722003670296,"decDep":-14.21,"bandDepCape":"GREEN"},
+  "2008 EL68": {"launch":"2045-12-11","c3":0.518,"vrelArr":0.968,"vrelDep":0.207,"ratio":0.21384297520661155,"massFactor":1.2899794977029497,"vArrEarth":11.203,"vinf125":1.7088246396280722,"decDep":21.353,"bandDepCape":"GREEN"},
+  "2025 WR7": {"launch":"2025-11-26","c3":9.988,"vrelArr":0.059,"vrelDep":0.686,"ratio":11.627118644067798,"massFactor":0.8107539370442557,"vArrEarth":11.362,"vinf125":2.5510618669487464,"decDep":-10.481,"bandDepCape":"GREEN"},
+  "1999 AO10": {"launch":"2026-01-29","c3":5.528,"vrelArr":0.351,"vrelDep":2.106,"ratio":6,"massFactor":0.5558742712863967,"vArrEarth":11.879,"vinf125":4.303895171702026,"decDep":-11.685,"bandDepCape":"GREEN"},
+  "2011 WE": {"launch":"2044-08-18","c3":0.031,"vrelArr":0.194,"vrelDep":0.189,"ratio":0.9742268041237113,"massFactor":1.0016743721101478,"vArrEarth":11.075,"vinf125":0.26172055517289466,"decDep":-16.298,"bandDepCape":"GREEN"},
+  "2014 KF39": {"launch":"2031-11-11","c3":12.075,"vrelArr":0.479,"vrelDep":0.689,"ratio":1.4384133611691023,"massFactor":0.932146935785773,"vArrEarth":11.894,"vinf125":4.345124698901061,"decDep":-15.917,"bandDepCape":"GREEN"}
  },
  "perBodyTable": "example.txt §6 (node ideas/05-round-trip-ledger/ledger.mjs)"
 }

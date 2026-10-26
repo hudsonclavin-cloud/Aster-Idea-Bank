@@ -12,7 +12,7 @@
 <div class="wrap">
   <header>
     <h1>Round-Trip Ledger</h1>
-    <p class="tagline">Aster's sample-return ΔV stack books the departure burn at the asteroid as equal to the arrival v∞ (the symmetric-return assumption, <code>src/v2/porkchop/delta-v.ts:32-34,45</code>). Aster's own test fixtures hold JPL NHATS min-ΔV round trips that carry both numbers. This page puts the two ledgers side by side.</p>
+    <p class="tagline">Aster's sample-return ΔV stack books the departure burn at the asteroid as equal to the arrival v∞ (the symmetric-return assumption, <code>src/v2/porkchop/delta-v.ts:32-34,45</code>). Aster's own test fixtures hold JPL NHATS min-ΔV round trips that carry both numbers: human-mission trajectories under NHATS's own duration, stay, parking-orbit, entry and launch-window constraints (listed under the tiles). This page puts the two ledgers side by side.</p>
     <p class="prov" id="prov">Loading the snapshot…</p>
   </header>
 
@@ -20,6 +20,7 @@
     <h2 id="h-assume">The assumption against the data</h2>
     <p class="note">NHATS gives, for each body's minimum-ΔV round trip, the relative speed at the asteroid on arrival (<code>vrel_arr_neo</code>) and on departure (<code>vrel_dep_neo</code>). Aster assumes their ratio is 1.</p>
     <div class="tiles" id="tiles" aria-label="Summary of the departure to arrival ratio"></div>
+    <p class="note" id="constraints"></p>
     <div class="chart" id="ratio-chart">
       <div id="ratio-hist"></div>
       <div class="tip" id="tip" role="status" aria-live="polite" hidden></div>

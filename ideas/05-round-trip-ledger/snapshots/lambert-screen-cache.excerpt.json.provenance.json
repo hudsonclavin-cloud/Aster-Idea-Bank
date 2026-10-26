@@ -8,10 +8,10 @@
   "readBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
   "sourceSha256": "bd27b9bd882a65343399f772e37218b5fb05644bea5a822aafcb65e81e750206",
   "sourceBytes": 34499477,
-  "copiedAt": "2026-10-26T10:42:10.394Z",
+  "copiedAt": "2026-10-26T15:09:08.709Z",
   "mode": "derived",
-  "note": "derived by build-data.mjs: the 128 cache rows whose designation matches a NHATS min_dv_traj record, keeping designation, status, minC3, minC3Date, minC3TofDays, bestWindows[0].vInfArr, isCoOrbital, plus the cache metadata",
+  "note": "derived by build-data.mjs: the 128 cache rows whose designation matches a NHATS min_dv_traj record, keeping designation, status, minC3, minC3Date, minC3TofDays, bestWindows[0].vInfArr, isCoOrbital (one array per row in that order), plus the cache metadata",
   "readMatchesCommitted": true,
-  "writtenSha256": "8b0ea71683f66c3b93c4fd10da80f71780e6c63d40f165e2635f8ed2cb6b0f95",
-  "writtenBytes": 24419
+  "writtenSha256": "808901854aa453cbbd85a3089eb6fb64f91abe733cae0b9160a0125900a00827",
+  "writtenBytes": 13424
 }

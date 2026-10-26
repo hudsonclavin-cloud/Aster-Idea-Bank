@@ -7,7 +7,7 @@
   "committedTree": "f9b8499c69da422b587c9e2cca92221c8518dd6e",
   "files": 5,
   "sourceBytes": 5538,
-  "copiedAt": "2026-10-26T10:41:57.750Z",
+  "copiedAt": "2026-10-26T15:08:51.787Z",
   "mode": "bundle",
   "note": "one snapshot.mjs run per file in this directory (5 excerpts picking des,fullname,computed,signature,min_dv_traj, 0 whole copies of API error records), folded into one bundle by build-data.mjs; each file keeps its tool-written committedBlob, sha256 and bytes, and writtenSha256 = sha256 of JSON.stringify(data, null, 1) + newline, which ledger.test.mjs re-verifies. The sidecar is written by build-data.mjs in snapshot.mjs's schema because the tool has no multi-file mode; committedTree is git rev-parse HEAD:<path>.",
   "readMatchesCommitted": true,

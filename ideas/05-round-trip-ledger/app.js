@@ -1,6 +1,7 @@
 // Round-Trip Ledger page logic. Every number shown comes from Ledger (ledger.js) fed the nhats-data.js
-// aggregate of the snapshots. Nothing numeric is typed here except histogram bin edges (powers of two
-// around 1, and round-number steps for v∞ and declination), which are drawing choices.
+// aggregate of the snapshots, or from its CITED and ANALYSIS tables. Nothing numeric is typed here
+// except histogram bin edges (powers of two around 1, and round-number steps for v∞ and declination)
+// and layout, which are drawing choices.
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
@@ -10,7 +11,7 @@
   const SHORT = String(K.aster.commit || '').slice(0, 7);
   const state = { des: '101955', mode: 'sample-return', dep: 'symmetric', alt: 'nhats', decwhich: 'dep', site: 'CAPE_CANAVERAL' };
 
-  // ---------------------------------------------------------------- formatting
+  // --- formatting
   const f = (x, d) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a');
   const kms = (x, d = 3) => `${f(x, d)} km/s`;
   const ms = (x) => {
@@ -18,6 +19,7 @@
     return `${f(Math.abs(v) < 0.05 ? 0 : v, 1)} m/s`; // no "−0.0"
   };
   const deg = (x) => `${f(x, 1)}°`;
+  const ms3 = (x) => `${f(x * 1000, 3)} m/s`;
   function el(tag, cls, text) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -59,10 +61,12 @@
     target.appendChild(help);
   }
 
-  // ---------------------------------------------------------------- header
-  $('prov').textContent = `${S.counts.fixtureFiles} fixture files in Aster ${K.fixtureDirs.join(' and ')} at commit ${SHORT} (${K.aster.commitDate.slice(0, 10)}): ${S.counts.records} ${K.signature.source} v${K.signature.version} min_dv_traj records (object records computed ${S.computed.earliest} to ${S.computed.latest}), ${S.counts.notFound} "not found", ${S.counts.duplicates} designations in both directories, ${S.counts.uniqueBodies} unique bodies. NHATS launch dates ${S.launch.earliestYear}-${S.launch.latestYear}: ${S.launch.before2026} before 2026, ${S.launch.in2026to2040} inside Aster's 2026-2040 grid.`;
+  // --- header
+  const LW = S.launch;
+  const GR = LW.porkchopGrid;
+  $('prov').textContent = `${S.counts.fixtureFiles} fixture files in Aster ${K.fixtureDirs.join(' and ')} at commit ${SHORT} (${K.aster.commitDate.slice(0, 10)}): ${S.counts.records} ${K.signature.source} v${K.signature.version} min_dv_traj records (object records computed ${S.computed.earliest} to ${S.computed.latest}), ${S.counts.notFound} "not found", ${S.counts.duplicates} designations in both directories, ${S.counts.uniqueBodies} unique bodies. NHATS launch dates ${LW.earliestYear}-${LW.latestYear}: ${LW.beforeWindow} before, ${LW.inWindow} inside and ${LW.afterWindow} after Aster's screening-cache window ${LW.screeningWindow.startUtc} to ${LW.screeningWindow.endUtc}; ${GR.inGrid} inside the porkchop grid's departures ${GR.startUtc} to ${GR.endUtc}.`;
 
-  // ---------------------------------------------------------------- tooltips shared by the histograms
+  // --- tooltips shared by the histograms
   const tip = $('tip');
   function attachTooltips(container, bins, describe) {
     const hits = container.querySelectorAll('rect.hit');
@@ -135,7 +139,7 @@
   });
   const RATIO_EDGES = K.geometricEdges(Math.pow(2, -2.5), 16, 13);
 
-  // ---------------------------------------------------------------- section 1: the ratio
+  // --- section 1: the ratio
   function renderRatio() {
     const R = S.ratio;
     const tiles = $('tiles');
@@ -151,10 +155,16 @@
     tile('Smallest ratio', f(R.unique.min, 3), `${R.unique.minBody}: departure ${f(S.rows.find((r) => r.des === R.unique.minBody).vrelDep, 3)} vs arrival ${f(S.rows.find((r) => r.des === R.unique.minBody).vrelArr, 3)} km/s`, 'ratio-min');
     tile('Median ratio', f(R.unique.median, 3), `${R.unique.n} unique bodies; ${f(R.allRecords.median, 3)} over ${R.allRecords.n} records counting the duplicates twice`, 'ratio-median');
     tile('Largest ratio', f(R.unique.max, 3), `${R.unique.maxBody}: departure ${f(S.rows.find((r) => r.des === R.unique.maxBody).vrelDep, 3)} vs arrival ${f(S.rows.find((r) => r.des === R.unique.maxBody).vrelArr, 3)} km/s`, 'ratio-max');
-    tile('Within ±10% of 1', `${R.within10pct} of ${R.unique.n}`, `${R.within25pct} within ±25%; ${R.below1} below 1, ${R.above1} above`, 'within10');
-    tile('Off by 2× or more', `${R.offByTwoOrMore} of ${R.unique.n}`, `departure − arrival runs ${f(S.departureMinusArrivalKmps.min, 3)} to ${f(S.departureMinusArrivalKmps.max, 3)} km/s`, 'off2x');
-    tile(`Delivered mass at Isp ${C.SCREENING_ISP_S} s`, `×${f(S.massFactor.min, 2)} to ×${f(S.massFactor.max, 2)}`, `with NHATS's departure instead of the symmetric one (${(C.DETERMINISTIC_MARGIN_FRACTION * 100).toFixed(0)}% margin included); ${S.massFactor.below0p9} bodies below ×0.9, ${S.massFactor.above1p1} above ×1.1`, 'mass');
+    const AN = K.analysis;
+    tile(`Within ±${AN.RATIO_WITHIN[0] * 100}% of 1`, `${R.within10pct} of ${R.unique.n}`, `${R.within25pct} within ±${AN.RATIO_WITHIN[1] * 100}%; ${R.below1} below 1, ${R.above1} above (sign test p = ${f(R.signTestP, 3)})`, 'within10');
+    tile(`Off by ${AN.RATIO_FACTOR}× or more`, `${R.offByTwoOrMore} of ${R.unique.n}`, `departure − arrival runs ${f(S.departureMinusArrivalKmps.min, 3)} to ${f(S.departureMinusArrivalKmps.max, 3)} km/s`, 'off2x');
+    const A = K.analysis;
+    tile(`Delivered mass at Isp ${C.SCREENING_ISP_S} s, on NHATS's trajectories`, `×${f(S.massFactor.min, 2)} to ×${f(S.massFactor.max, 2)}`, `with NHATS's departure instead of the symmetric one (${(C.DETERMINISTIC_MARGIN_FRACTION * 100).toFixed(0)}% margin included); ${S.massFactor.below0p9} bodies below ×${A.MASS_BAND[0]}, ${S.massFactor.above1p1} above ×${A.MASS_BAND[1]}; not measured at an Aster cell`, 'mass');
     drawHistogram($('ratio-hist'), S.rows.map((r) => r.ratio), RATIO_EDGES, { scale: 'log', width: 640, height: 240, title: `NHATS departure v∞ ÷ arrival v∞ at the asteroid, ${R.unique.n} bodies`, titleNarrow: `departure ÷ arrival v∞, ${R.unique.n} bodies`, xLabel: 'vrel_dep_neo / vrel_arr_neo (geometric bins; Aster assumes 1)', xLabelNarrow: 'departure ÷ arrival v∞ (geometric bins)', marker: { x: 1, label: 'Aster: 1' } }, (b) => `ratio ${f(b.lo, 3)} to ${f(b.hi, 3)}`);
+    const Ct = S.constraints;
+    const bennu = S.rows.find((r) => r.des === '101955');
+    const VD = S.cache.vInfArrMinusNhatsKmps;
+    $('constraints').textContent = `These are NHATS's trajectories, shaped by its human-mission constraints (Aster research note perplexity-jpl-trajectory-browser-nhats.md:31,40-42,46): at most ${Ct.maxDurationDays} days in total (the records run ${Ct.durTotal.min} to ${Ct.durTotal.max}; ${Ct.atDurationCap} bodies use all ${Ct.maxDurationDays}), at least ${Ct.minStayDays} days at the asteroid (${Ct.atMinStay} of ${R.unique.n} stay exactly ${Ct.minStayDays}), departure from a ${K.cited.NHATS_PARKING_ALTITUDE_KM.value} km parking orbit, entry at most ${K.cited.NHATS_ENTRY_SPEED_CAP_KMPS.value} km/s at ${K.cited.NHATS_ENTRY_ALTITUDE_KM.value} km, launch ${Ct.launchWindow}. The spread is measured on them, not on the cells Aster prices: for the same bodies the cache's cheapest-C3 window arrives at the asteroid with a higher v∞ than NHATS's trajectory for ${S.cache.vInfArrAboveNhats} of ${S.cache.rows} (median +${f(VD.median, 2)} km/s; Bennu ${f(bennu.cacheVInfArr, 3)} against ${f(bennu.vrelArr, 3)} km/s), so the ratio and the mass factor at an Aster cell are not measured here.`;
     $('ratio-note').textContent = `Geometric bins so ×2 and ÷2 are the same distance from 1. Hover or tap a bar, or Tab to it, for the bodies in it. NHATS records carry three decimals; a ratio like ${R.unique.maxBody}'s (${f(S.rows.find((r) => r.des === R.unique.maxBody).vrelDep, 3)} / ${f(S.rows.find((r) => r.des === R.unique.maxBody).vrelArr, 3)}) is sensitive to that rounding in its last digit.`;
     const tb = $('ratio-table').querySelector('tbody');
     clear(tb);
@@ -167,7 +177,7 @@
     }
   }
 
-  // ---------------------------------------------------------------- section 2: one body
+  // --- section 2: one body
   function buildBodySelect() {
     const sel = $('body');
     for (const b of K.bodies) {
@@ -278,12 +288,12 @@
     // Aster today
     const today = [];
     if (b.cache.refusal) today.push(['Screening cache', `refused (${b.cache.refusal.code}): ${b.cache.refusal.reason}`]);
-    else today.push([`Screening cache, cheapest outbound window (${S.cache.screeningWindow.startUtc} to ${S.cache.screeningWindow.endUtc})`, `C3 ${f(b.cache.minC3, 3)} km²/s² departing ${b.cache.minC3Date}, TOF ${b.cache.minC3TofDays} d, arrival v∞ ${kms(b.cache.minC3VInfArr)}; status ${b.cache.status}${b.cache.isCoOrbital ? '; co-orbital' : ''}. ${b.cache.objective}.`]);
+    else today.push([`Screening cache, cheapest outbound window (${S.cache.screeningWindow.startUtc} to ${S.cache.screeningWindow.endUtc})`, `C3 ${f(b.cache.minC3, 3)} km²/s² departing ${b.cache.minC3Date}, TOF ${b.cache.minC3TofDays} d, arrival v∞ ${kms(b.cache.minC3VInfArr)} (NHATS's trajectory: ${kms(t.vrel_arr_neo)}); status ${b.cache.status}${b.cache.isCoOrbital ? '; co-orbital' : ''}. A different trajectory, so the ratio above is NHATS's, not this cell's. ${b.cache.objective}.`]);
     kv($('aster-today'), today);
     refusalNode($('return-leg'), 'Return leg', b.returnLeg.refusal);
   }
 
-  // ---------------------------------------------------------------- section 3: Earth arrival
+  // --- section 3: Earth arrival
   function buildAlts() {
     const box = $('alts');
     const opts = [['nhats', `${K.cited.NHATS_ENTRY_ALTITUDE_KM.value} km (NHATS API)`], ['tb', `${K.cited.TRAJECTORY_BROWSER_ENTRY_ALTITUDE_KM.value} km (Trajectory Browser)`]];
@@ -312,11 +322,11 @@
     $('arr-note').textContent = `NHATS reports the Earth atmospheric entry speed v_arr_earth (${kms(A.vArrEarth.min)} to ${kms(A.vArrEarth.max)}; the API caps it at ${A.entryCapKmps} km/s). Reading it as the speed at ${K.cited.NHATS_ENTRY_ALTITUDE_KM.value} km (the research note's constraint altitude) and inverting vis-viva gives the hyperbolic excess speed a return leg arrives with: the quantity Aster's K1 would compute and K2 would hand to Skyhook. Every record is above the escape speed at that altitude (${kms(A.escapeAt125Kmps, 3)}), so none is refused.`;
     drawHistogram($('vinf-hist'), vals, K.linearEdges(0, 4.75, 19), { scale: 'linear', width: 640, height: 220, title: `Implied Earth-arrival v∞ at ${alt} km, ${finite.length} bodies`, titleNarrow: `Earth-arrival v∞ at ${alt} km, ${finite.length} bodies`, xLabel: 'v∞ at Earth, km/s (0.25 km/s bins)', xLabelNarrow: 'v∞ at Earth, km/s', labelEvery: 2, labelEveryNarrow: 4 }, (b) => `v∞ ${f(b.lo, 2)} to ${f(b.hi, 2)} km/s at ${alt} km`);
     $('arr-foot').textContent = nh
-      ? `At ${alt} km: ${kms(A.vinf125.min)} (${A.vinf125.minBody}) to ${kms(A.vinf125.max)} (${A.vinf125.maxBody}), median ${kms(A.vinf125.median)}. The low end is fragile: ±0.0005 km/s of rounding on v_arr_earth moves ${A.vinf125.minBody} between ${f(A.vinf125.minRoundingLow, 3)} and ${f(A.vinf125.minRoundingHigh, 3)} km/s, because the record sits only ${ms(A.vArrEarth.min - A.escapeAt125Kmps)} above escape speed.`
-      : `At ${alt} km (the altitude the Trajectory Browser FAQ quotes, shown to make the convention visible): ${kms(A.vinf200.min)} to ${kms(A.vinf200.max)}. The 75 km difference in the assumed altitude moves the floor by about ${kms(A.vinf200.min - A.vinf125.min, 2)}; whichever altitude the API means, the record cannot tell.`;
+      ? `At ${alt} km: ${kms(A.vinf125.min)} (${A.vinf125.minBody}) to ${kms(A.vinf125.max)} (${A.vinf125.maxBody}), median ${kms(A.vinf125.median)}. The low end is fragile: ±${S.rounding.halfUnitKmps} km/s of rounding on v_arr_earth moves ${A.vinf125.minBody} between ${f(A.vinf125.minRoundingLow, 3)} and ${f(A.vinf125.minRoundingHigh, 3)} km/s, because the record sits only ${ms(A.vArrEarth.min - A.escapeAt125Kmps)} above escape speed.`
+      : `At ${alt} km (the altitude the Trajectory Browser FAQ quotes, shown to make the convention visible): ${kms(A.vinf200.min)} to ${kms(A.vinf200.max)}. The ${K.cited.TRAJECTORY_BROWSER_ENTRY_ALTITUDE_KM.value - K.cited.NHATS_ENTRY_ALTITUDE_KM.value} km difference in the assumed altitude moves the floor by about ${kms(A.vinf200.min - A.vinf125.min, 2)}. Which altitude the API means is not settled on this page; a two-body check at one body's NHATS dates (README, Honest assessment) sides with ${K.cited.NHATS_ENTRY_ALTITUDE_KM.value} km.`;
   }
 
-  // ---------------------------------------------------------------- section 4: declinations
+  // --- section 4: declinations
   function buildSites() {
     const box = $('sites');
     for (const key of ['CAPE_CANAVERAL', 'VANDENBERG_SFB']) {
@@ -353,7 +363,7 @@
     ];
     if (site.dlaCeilingDeg < 90) bands.push({ lo: site.dlaCeilingDeg, hi: 90, cls: 'RED', label: 'RED' }, { lo: -90, hi: -site.dlaCeilingDeg, cls: 'RED', label: 'RED' });
     $('dec-note').textContent = dep
-      ? `NHATS dec_dep is the declination of the departure asymptote for each min-ΔV trajectory. Aster classifies a cell by |DLA| against a launch site's corridor (feasibility.ts: GREEN up to the site's minimum inclination, AMBER up to its declination ceiling, RED beyond). The frame of NHATS's declination is not stated anywhere in the Aster checkout; Aster's own DLA is equatorial (ICRF, INV-021), so the comparison holds only if NHATS's is too [Likely].`
+      ? `NHATS dec_dep is the declination of the departure asymptote for each min-ΔV trajectory. Aster classifies a cell by |DLA| against a launch site's corridor (feasibility.ts: GREEN up to the site's minimum inclination, AMBER up to its declination ceiling, RED beyond). The frame of NHATS's declination is not stated anywhere in the Aster checkout; Aster's own DLA is equatorial (ICRF, INV-021), so the comparison holds only if NHATS's is too [Likely: not settled on this page; a two-body check at one body's NHATS dates, in the README, sides with equatorial].`
       : `NHATS dec_arr is the declination of the Earth-arrival asymptote: a return-leg quantity Aster has no model or band for yet (K1). It is shown against the same departure bands only to give it a scale; a landing-site constraint would be a different model.`;
     drawHistogram($('dec-hist'), vals, K.linearEdges(-90, 90, 18), { scale: 'linear', width: 640, height: 220, title: `${dep ? 'Departure' : 'Earth-arrival'} declination, ${vals.length} bodies, ${site.name} bands`, titleNarrow: `${dep ? 'Departure' : 'Earth-arrival'} declination, ${site.name}`, xLabel: 'declination, degrees (10° bins)', xLabelNarrow: 'declination, degrees', bands, labelEvery: 3, labelEveryNarrow: 3 }, (b) => `${deg(b.lo)} to ${deg(b.hi)}`);
     const leg = $('dec-legend');
@@ -368,33 +378,34 @@
     $('dec-foot').textContent = `From ${site.name}: GREEN ${counts.GREEN}, AMBER ${counts.AMBER}, RED ${counts.RED} of ${vals.length}. ${site.dlaCeilingDeg >= 90 ? 'This corridor reaches polar inclination, so no declination is RED.' : 'RED here means a dogleg at screening fidelity.'} Declinations run ${deg(Math.min(...vals))} to ${deg(Math.max(...vals))}.`;
   }
 
-  // ---------------------------------------------------------------- section 5: injection
+  // --- section 5: injection
   function renderInjection() {
     const I = S.injection;
     kv($('inj'), [
-      [`Aster injectionDvFromC3 at NHATS's radius (${f(C.NHATS_PARKING_RADIUS_KM, 3)} km = R_E ${f(C.EARTH_RADIUS_KM, 3)} + ${K.cited.NHATS_PARKING_ALTITUDE_KM.value} km) vs dv_dep_park, ${S.counts.records} records`, `max |Δ| ${ms(I.maxAbsDeltaAtNhatsRadiusKmps)} (the records carry 3 decimals, so 0.5 m/s is the rounding floor)`],
-      ['Best-fitting parking radius, 1 km grid', `${f(I.bestFitRadius.radiusKm, 3)} km (max |Δ| ${ms(I.bestFitRadius.maxAbsDeltaKmps)}): the data pin NHATS's ${K.cited.NHATS_PARKING_ALTITUDE_KM.value} km parking orbit`],
-      [`At Aster's own ${K.cited.LEO_ALTITUDE_KM.value} km radius (${f(C.LEO_PARKING_RADIUS_KM, 3)} km)`, `Aster − NHATS = ${ms(I.deltaAtAsterRadiusKmps.min)} to ${ms(I.deltaAtAsterRadiusKmps.max)}: a convention difference the two disclosures already state, not an error`],
-      ['NHATS internal consistency', `dv_total − (dv_dep_park + vrel_arr_neo + vrel_dep_neo + vrel_arr_earth): max |residual| ${ms(S.nhatsLedger.maxAbsResidualKmps)}; |√c3 − v_dep_earth| max ${ms(S.nhatsLedger.maxAbsVDepEarthResidualKmps)}; vrel_arr_earth is 0 in every record`],
+      [`Aster injectionDvFromC3 at NHATS's radius (${f(C.NHATS_PARKING_RADIUS_KM, 3)} km = R_E ${f(C.EARTH_RADIUS_KM, 3)} + ${K.cited.NHATS_PARKING_ALTITUDE_KM.value} km) vs dv_dep_park, ${S.counts.records} records`, `max |Δ| ${ms3(I.maxAbsDeltaAtNhatsRadiusKmps)}. The records carry ${S.rounding.decimals} decimals: ±${ms(S.rounding.halfUnitKmps)} on dv_dep_park plus c3's rounding carried through gives at most ${ms3(I.roundingBoundKmps)}, and every record is within its own bound: ${I.allWithinRounding ? 'yes' : 'no'}`],
+      [`Best-fitting parking radius, ${I.fitRangeKm.step} km grid`, `${f(I.bestFitRadius.radiusKm, 3)} km (max |Δ| ${ms3(I.bestFitRadius.maxAbsDeltaKmps)}): the data pin NHATS's ${K.cited.NHATS_PARKING_ALTITUDE_KM.value} km parking orbit`],
+      [`At Aster's own ${K.cited.LEO_ALTITUDE_KM.value} km radius (${f(C.LEO_PARKING_RADIUS_KM, 3)} km)`, `Aster − NHATS = ${ms(I.deltaAtAsterRadiusKmps.min)} to ${ms(I.deltaAtAsterRadiusKmps.max)}, ${f(I.asterRadiusTimesWorse, 0)}× the worst |Δ| at ${K.cited.NHATS_PARKING_ALTITUDE_KM.value} km: a convention difference the two disclosures already state, not an error`],
+      ['NHATS internal consistency', `dv_total − (dv_dep_park + vrel_arr_neo + vrel_dep_neo + vrel_arr_earth): max |residual| ${ms(S.nhatsLedger.maxAbsResidualKmps)} (five rounded numbers allow ${ms(S.nhatsLedger.residualBoundKmps)}); |√c3 − v_dep_earth| max ${ms(S.nhatsLedger.maxAbsVDepEarthResidualKmps)}; vrel_arr_earth is 0 in every record`],
     ]);
     $('inj-foot').textContent = `So the injection model is right and the two catalogues differ only in parking altitude. The departure line is the one assumption Aster cannot check against itself; the section above measures it. μ = ${C.EARTH_MU_KM3_PER_S2} km³/s² from delta-v.ts.`;
   }
 
-  // ---------------------------------------------------------------- footer
+  // --- footer
   function renderFooter() {
     const foot = $('foot');
     clear(foot);
-    foot.appendChild(el('p', null, 'Fidelity: an idea-bank prototype. Not through Aster\'s multi-agent math audit, oracle validation, founding-document DEC process or protected-core review. NHATS field semantics are the API\'s; the 125 km entry altitude and the equatorial declination frame are [Likely]; everything else is arithmetic on snapshotted values [Certain].'));
+    foot.appendChild(el('p', null, `Fidelity: an idea-bank prototype. Not through Aster's multi-agent math audit, oracle validation, founding-document DEC process or protected-core review. NHATS field semantics are the API's; the ${K.cited.NHATS_ENTRY_ALTITUDE_KM.value} km entry altitude and the equatorial declination frame are [Likely], not settled on this page; everything else is arithmetic on snapshotted values [Certain], measured on NHATS's own trajectories, not on Aster's cells.`));
     const ul = el('ul');
     const li = (t) => ul.appendChild(el('li', null, t));
-    li(`Aster ${K.aster.repo} @ ${K.aster.commit}; constants from ${Object.values(C.sources).map((s) => `${s.path} (blob ${s.blob.slice(0, 7)})`).join(', ')}.`);
+    li(`Aster ${K.aster.repo} @ ${K.aster.commit}; constants from ${Object.values(C.sources).map((s) => `${s.path} (blob ${s.blob.slice(0, 7)})`).join(', ')}; porkchop grid from ${K.porkchopGrid.source.path}:${K.porkchopGrid.source.lines.join('-')} (blob ${K.porkchopGrid.source.blob.slice(0, 7)}).`);
     li(`NHATS fixtures: ${K.fixtureDirs.join(', ')}; cache excerpt from ${K.cacheSource.path} (blob ${K.cacheSource.blob.slice(0, 7)}, solver ${String(K.cacheMetadata.provenance.solverCommit).slice(0, 7)}).`);
     for (const c of Object.values(K.cited)) li(`${c.value} [${c.label}]: ${c.cite}.`);
+    li(`Analysis choices: ratio within ±${K.analysis.RATIO_WITHIN.map((x) => `${x * 100}%`).join(' and ±')} of 1, off by ${K.analysis.RATIO_FACTOR}×; mass bands ×${K.analysis.MASS_BAND.join(' and ×')}; parking-radius scan R_E + ${K.analysis.FIT_ALTITUDE_KM[0]} to R_E + ${K.analysis.FIT_ALTITUDE_KM[1]} km in ${K.analysis.FIT_ALTITUDE_KM[2]} km steps.`);
     li(`Not in NHATS: ${K.notFound.map((n) => n.des).join(', ')} (the fixtures hold the API's "${K.notFound[0].error}").`);
     foot.appendChild(ul);
   }
 
-  // ---------------------------------------------------------------- boot
+  // --- boot
   renderRatio();
   buildBodySelect();
   wireSeg('modes', 'mode', (v) => {

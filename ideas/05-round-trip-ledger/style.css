@@ -168,7 +168,7 @@ tr.sub td { border-top: 1px solid var(--axis); }
 }
 .refused .code { font-family: var(--mono); font-size: 0.8rem; color: var(--ink-2); }
 .refused[hidden] { display: none; }
-dl.kv { margin: 6px 0 0; display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 0.88rem; }
+dl.kv { margin: 6px 0 0; display: grid; grid-template-columns: minmax(12rem, 38%) 1fr; gap: 3px 12px; font-size: 0.88rem; }
 dl.kv dt { color: var(--muted); }
 dl.kv dd { margin: 0; font-variant-numeric: tabular-nums; }
 @media (max-width: 480px) { dl.kv { grid-template-columns: 1fr; gap: 0; } dl.kv dd { margin-bottom: 5px; } }

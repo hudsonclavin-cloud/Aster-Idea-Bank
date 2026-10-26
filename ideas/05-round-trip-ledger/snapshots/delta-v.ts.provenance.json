@@ -8,7 +8,7 @@
   "readBlob": "8d8646b179df0ecdde23d4fdf9d9a456478e4a55",
   "sourceSha256": "a58421c647110c0cbe2eea4a4d16ab53eeb7336f21b484c295911c6e63b6a2db",
   "sourceBytes": 1963,
-  "copiedAt": "2026-10-26T10:42:09.166Z",
+  "copiedAt": "2026-10-26T15:09:07.133Z",
   "mode": "copy",
   "note": "Aster constants read by regex (build-data.mjs tsNumber/tsSite); the module is copied whole so the reader can see the code the constants come from",
   "readMatchesCommitted": true,
