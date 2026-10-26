@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Edge of the Grid</title>
-<meta name="description" content="Where Aster's screening minima land on the departure × flight-time lattice, how many sit on its edges, which edge binds, and how many cached minima the porkchop view cannot show.">
+<meta name="description" content="Where Aster's screening minima land on the departure × flight-time lattice, how many sit on each edge and what the stored windows say about the surface there, and how many cached minima the porkchop view cannot show.">
 <meta name="color-scheme" content="light dark">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -60,8 +60,12 @@
     <h2 id="edges-h">Minima on the edges</h2>
     <p class="hint" id="edgesHint"></p>
     <div class="tablewrap"><table id="edgeTable"></table></div>
-    <p class="hint" id="verdictHint"></p>
+    <h3 id="rise-h">The inward rise</h3>
+    <ul class="hint notes" id="riseNotes"></ul>
+    <div class="tablewrap"><table id="riseTable" aria-labelledby="rise-h"></table></div>
+    <h3 id="alt-h">Another stored window off the edge</h3>
     <p class="hint" id="altHint"></p>
+    <div class="tablewrap"><table id="altTable" aria-labelledby="alt-h"></table></div>
   </section>
 
   <section class="card" aria-labelledby="tail-h">
@@ -83,6 +87,10 @@
   <section class="card" aria-labelledby="basins-h">
     <h2 id="basins-h">How many basins the five windows span</h2>
     <p class="hint" id="basinsHint"></p>
+    <div class="controls-row">
+      <label for="basinRule">Rule</label>
+      <select id="basinRule"></select>
+    </div>
     <div id="basins" class="chart" role="img" aria-describedby="basinsHint"></div>
     <div class="tablewrap"><table id="basinsTable"></table></div>
   </section>

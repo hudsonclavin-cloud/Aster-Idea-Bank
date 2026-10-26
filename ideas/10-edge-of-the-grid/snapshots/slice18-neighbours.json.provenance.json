@@ -1,0 +1,30 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tools/slice18-research/c3-drift-sensitivity-results.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "a0924e45e5efbe4155f8314e11287ebe749f50db",
+  "readBlob": "a0924e45e5efbe4155f8314e11287ebe749f50db",
+  "sourceSha256": "ebfc294bf2eeaade8fd583708bf64b9ff35737ef28e9734b062335c2025c5f6c",
+  "sourceBytes": 56650,
+  "copiedAt": "2026-10-26T16:15:24.118Z",
+  "mode": "excerpt",
+  "note": "Slice 18's independent re-solve of the four lattice neighbours (dep±7 d, TOF±30 d) of five bodies' best cells (C3_DRIFT_SENSITIVITY.md §7, table at :108-114). Used by grid-census.test.mjs to check the premise of the lower bound on an unstored neighbour's rise: every neighbour among the cache's five windows matches its stored C3, and every neighbour not among them costs at least the fifth window.",
+  "readMatchesCommitted": true,
+  "picked": [
+    "convergenceFailures",
+    "bodies.asteroid-433.bestCell",
+    "bodies.asteroid-433.neighbors",
+    "bodies.asteroid-163693.bestCell",
+    "bodies.asteroid-163693.neighbors",
+    "bodies.asteroid-2017 UR52.bestCell",
+    "bodies.asteroid-2017 UR52.neighbors",
+    "bodies.asteroid-1979 XB.bestCell",
+    "bodies.asteroid-1979 XB.neighbors",
+    "bodies.asteroid-99942.bestCell",
+    "bodies.asteroid-99942.neighbors"
+  ],
+  "writtenSha256": "44d381f9fe8ef3de67a99651ff86e79b3623cd86e3ee5ee6432eaef59d00a52c",
+  "writtenBytes": 3090
+}
