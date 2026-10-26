@@ -14,19 +14,19 @@ On 2026-10-26 the owner asked to stop spending on ideas 20 and above and to save
 | 17 | Known Unknowns | Aster | built and checked, not yet reviewed | `main` |
 | 18 | Second Copy | PartForge | built and checked, not yet reviewed | `main` |
 | 19 | Caliper Ledger | PartForge | built and checked, not yet reviewed | `main` |
-| 20 | Twenty Percent Line | Skyhook | built and checked by its builder, not reviewed | `hold/ideas-20-30` |
-| 22 | Said vs Derived | Aster | built and checked by its builder, not reviewed (a review was stopped part-way; no findings kept) | `hold/ideas-20-30` |
-| 26 | Required Life | Skyhook | built and checked by its builder, not reviewed | `hold/ideas-20-30` |
-| 23 | Line Drift | Aster | built (its builder finished), folder recovered by transcript replay, not reviewed | `hold/ideas-20-30` |
-| 21 | Homeward Porkchop | Aster | builder stopped while writing its README; kernel, tests and page were done; recovered by replay | `hold/ideas-20-30` |
-| 30 | Momentum Ledger | Skyhook | builder stopped during the page; kernel, Python CLI and tests done; recovered by replay | `hold/ideas-20-30` |
-| 24 | Cold Read | PartForge | builder stopped during tests; linter kernel and CLI done; recovered by replay | `hold/ideas-20-30` |
-| 25 | Reach Census | Aster + PartForge + Skyhook | builder stopped mid-build; recovered by replay | `hold/ideas-20-30` |
-| 27 | Torque Receipt | PartForge | builder stopped during the kernel; snapshots done; recovered by replay | `hold/ideas-20-30` |
-| 28 | Near Field Guide | Aster | builder stopped early (snapshots and kernel); recovered by replay | `hold/ideas-20-30` |
+| 20 | Twenty Percent Line | Skyhook | built; its builder's checks passed; not reviewed | `hold/ideas-20-30` |
+| 22 | Said vs Derived | Aster | built; its builder's checks passed; not reviewed (a review was stopped part-way, no findings kept) | `hold/ideas-20-30` |
+| 26 | Required Life | Skyhook | built; its builder's checks passed; not reviewed | `hold/ideas-20-30` |
+| 23 | Line Drift | Aster | **complete**: kernel, CLI, page, tests, README; `tools/check.mjs` passes; not reviewed. Recovered by transcript replay | `hold/ideas-20-30` |
+| 21 | Homeward Porkchop | Aster | **nearly complete**: README, kernel, 25 passing tests, page and ui-check; the builder was stopped at its final check, so the smoke test and README accuracy are unchecked. Recovered by replay | `hold/ideas-20-30` |
+| 30 | Momentum Ledger | Skyhook | **kernel, Python CLI, page and tests done** (node and Python tests pass); **no README**. Recovered by replay | `hold/ideas-20-30` |
+| 27 | Torque Receipt | PartForge | kernel, tests, CLI and page files written; **no README**, tests not yet checked by the bank checker. Recovered by replay | `hold/ideas-20-30` |
+| 24 | Cold Read | PartForge | linter kernel, CLI and example output; **no tests, page or README**. Recovered by replay | `hold/ideas-20-30` |
+| 28 | Near Field Guide | Aster | kernel and a first page; **no tests or README**. Recovered by replay | `hold/ideas-20-30` |
+| 25 | Reach Census | Aster + PartForge + Skyhook | census script and its output data; **no tests, page or README**. Recovered by replay | `hold/ideas-20-30` |
 | 29 | Confidence Census | PartForge | never started | proposal only |
 
-The STATE column for 21–30 is finalised below under *Recovery*. Beyond these, `waitlist.json` holds the next fifteen candidates the judging panel ranked (31–45) and the six it dropped as duplicates.
+Beyond these, `waitlist.json` holds the next fifteen candidates the judging panel ranked (31–45) and the six it dropped as duplicates.
 
 ## What is in this folder
 
@@ -46,6 +46,10 @@ What it cost this week, so the choice is informed: one builder, reviewer or fixe
 4. **29** starts from its proposal.
 
 The briefs name absolute paths under `/home/user/`. A new session that clones the four repositories to the same places can use them as they are.
+
+## Tool change made while recovering
+
+`tools/check.mjs` now ignores everything under `snapshots/` when it looks for an idea's tests. Idea 21 had snapshotted two of Aster's own test files as reference data, and the checker ran them as 21's tests; they import Aster's modules and fail here. Copies of source files are data, not tests.
 
 ## Recovery
 

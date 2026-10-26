@@ -86,8 +86,11 @@ function run(cmd, args, cwd) {
 }
 
 function runTests(dir, files, errors, notes) {
-  const nodeTests = files.filter((f) => /\.test\.(c|m)?js$/.test(f));
-  const pyTests = files.filter((f) => /(^|\/)test_[^/]*\.py$/.test(f));
+  // Files under snapshots/ are copies of source-repository files kept as data (some are that
+  // repository's own tests); they import modules that do not exist here and are not this idea's tests.
+  const own = files.filter((f) => !/(^|\/)snapshots\//.test(path.relative(dir, f).split(path.sep).join('/')));
+  const nodeTests = own.filter((f) => /\.test\.(c|m)?js$/.test(f));
+  const pyTests = own.filter((f) => /(^|\/)test_[^/]*\.py$/.test(f));
   if (nodeTests.length) {
     const r = run('node', ['--test', ...nodeTests], ROOT);
     notes.push(`node tests (${nodeTests.length} file${nodeTests.length > 1 ? 's' : ''}): ${r.ok ? 'pass' : 'FAIL'}`);
