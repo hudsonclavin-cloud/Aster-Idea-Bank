@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/research/mp001_market_pricing.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5160f88 2026-09-02T13:35:47-04:00",
+  "committedBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "readBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "sourceSha256": "e7347cc6bba62c13f37427364883e973578e62c687740995bc7b61904378b712",
+  "sourceBytes": 9033,
+  "copiedAt": "2026-10-26T15:38:25.883Z",
+  "mode": "copy",
+  "note": "section 1 row 'HMPE creep guidance' (SK78 about 8 yr at 20% load, 20 C; secondary) and section 3c (28-40% sustained load at SF 2.5); the only anchored life datum on the page",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e7347cc6bba62c13f37427364883e973578e62c687740995bc7b61904378b712",
+  "writtenBytes": 9033
+}

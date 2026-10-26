@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/research/lr001_splice_literature.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "8e4e527 2026-08-31T14:22:09-04:00",
+  "committedBlob": "ece77e77dee2d97b6fa9b950cf314304a523c212",
+  "readBlob": "ece77e77dee2d97b6fa9b950cf314304a523c212",
+  "sourceSha256": "4a56ff6e83a3c602b6cd94d71a8883cde469e5302ac96d7883847a2c1366cd30",
+  "sourceBytes": 7764,
+  "copiedAt": "2026-10-26T15:38:26.187Z",
+  "mode": "copy",
+  "note": "section D: DM20 grade reported to creep >50x slower than SK78 (secondary); drawn as a second tick only",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4a56ff6e83a3c602b6cd94d71a8883cde469e5302ac96d7883847a2c1366cd30",
+  "writtenBytes": 7764
+}

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Said vs Derived</title>
+  <meta name="description" content="Where Aster's display strings type a value the code already owns, read from a saved scan of the checkout.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="wrap">
+    <p class="eyebrow">Aster Idea Bank · maintainer tool · idea-bank prototype</p>
+    <h1>Said vs Derived</h1>
+    <p class="lede">Aster's rule (DEC-17-5, DEC-19.5-8) is that a label is read from the computation that produced the numbers, never typed. This page shows a saved scan of the Aster checkout that finds where it is typed anyway, side by side with the place the value already lives.</p>
+    <p class="meta" id="run-meta">Loading the saved run…</p>
+  </header>
+
+  <main class="wrap">
+    <section aria-labelledby="pairs-h">
+      <h2 id="pairs-h">Said here, derived there</h2>
+      <p class="hint">Each card is built from the saved run: the left side is a literal the scan found, the right side is where the same value is owned or read.</p>
+      <div class="pairs" id="pairs"></div>
+    </section>
+
+    <section aria-labelledby="classes-h">
+      <h2 id="classes-h">Findings</h2>
+      <p class="hint">Tap a class to filter. Red classes fail the run unless an allow-list entry with a reason covers them; grey is informational.</p>
+      <div class="tiles" id="tiles" role="group" aria-label="Filter by class"></div>
+      <label class="filter">
+        <span>Filter by file, literal or constant</span>
+        <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. 69.184 or compare/main.ts">
+      </label>
+      <p class="count" id="count" aria-live="polite"></p>
+      <ol class="findings" id="findings"></ol>
+    </section>
+
+    <section aria-labelledby="try-h">
+      <h2 id="try-h">Try a snippet</h2>
+      <p class="hint">Paste TypeScript. The page runs the same <code>said-derived.js</code> the command line uses, against the canon harvested from the checkout (constants and the cache metadata), and shows how it reads every string.</p>
+      <label class="sr" for="snippet">TypeScript snippet</label>
+      <textarea id="snippet" rows="7" spellcheck="false"></textarea>
+      <div class="row">
+        <button type="button" id="scan">Scan the snippet</button>
+        <button type="button" id="reset" class="quiet">Restore the example</button>
+      </div>
+      <div id="try-out" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="more-h">
+      <h2 id="more-h">Behind the findings</h2>
+      <details id="dates">
+        <summary>Dates typed in several files</summary>
+        <div id="dates-body"></div>
+      </details>
+      <details id="derived">
+        <summary>Labels that read a named constant</summary>
+        <div id="derived-body"></div>
+      </details>
+      <details id="canon">
+        <summary>The canon: what the code already owns</summary>
+        <label class="filter">
+          <span>Filter the canon</span>
+          <input id="cq" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. Km2S2 or GRID_PARAMS">
+        </label>
+        <div class="table-wrap"><table id="canon-table"><thead><tr><th scope="col">Name</th><th scope="col">Value</th><th scope="col">Kind</th><th scope="col">Home</th></tr></thead><tbody></tbody></table></div>
+      </details>
+    </section>
+
+    <footer>
+      <p>Saved output: <code>example.txt</code> (same run as this page's data, <code>page-data.js</code>). Re-run from the bank root: <code>node ideas/22-said-vs-derived/said-vs-derived.mjs /path/to/asteroid-mining-planner --allowlist ideas/22-said-vs-derived/allowlist.proposed.json</code>. A prototype: it has not been through Aster's founding-document DEC process, multi-agent audit or CI.</p>
+    </footer>
+  </main>
+
+  <script src="said-derived.js"></script>
+  <script src="page-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

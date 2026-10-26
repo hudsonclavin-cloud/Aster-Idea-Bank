@@ -1,0 +1,19 @@
+{
+ "source": "physics/tether_dynamics.py",
+ "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+ "lines": {
+  "17": "Mass and stiffness discretization [Certain]:",
+  "18": "  The continuum uniform-working-stress (taper-optimized) arm profile is",
+  "19": "    A(s) = A_L * exp[x^2 * (1 - s^2/L^2)],   A_L = m_p * omega^2 * L / sigma_w",
+  "20": "  with sigma_w = sigma*(1-derate)/SF, x = (v_tip/V_c)*sqrt(SF/(1-derate)),",
+  "21": "  V_c = sqrt(2*sigma/rho) (EQ-4). This is the same profile whose integrated",
+  "22": "  mass gives EQ-6 (Moravec/Forward): m_arm = m_p*sqrt(pi)*x*exp(x^2)*erf(x).",
+  "23": "  Node lump masses are EXACT integrals of rho*A(s) over each half-segment",
+  "24": "  window (via erf), so total fiber mass matches EQ-6 to machine precision.",
+  "25": "  Analytic tension for verification: T(s) = sigma_w * A(s).",
+  "81": "    payload_both_tips: bool = False   # attach design payload at both tips (V3)",
+  "120": "        if cfg.payload_both_tips:",
+  "353": "        measured at the catch instant. Gravity-gradient modulation (~4% at this",
+  "357": "        self.m[0] += payload_kg"
+ }
+}

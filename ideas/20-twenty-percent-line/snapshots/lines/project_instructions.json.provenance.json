@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/project_instructions.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "4d4072b 2026-09-02T14:02:59-04:00",
+  "committedBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "readBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "sourceSha256": "4f89e168ee9450d9d9530bf0ff7818919d63dcd3c3dab5998759326cbc086db4",
+  "sourceBytes": 43975,
+  "copiedAt": "2026-10-26T15:23:35.060Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: verbatim lines 10, 67, 108, 112 of docs/project_instructions.md, keyed by line number; catch-to-release is half a rotation (10); the founding material survey row for Dyneema SK99 with its 970 kg/m3 density, which rev_a.json does not carry (67); the construction baseline with the ~20 km Zylon outer lower arm (108); Zylon UV/AO degradation (112)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "729d35861929e3dbe803919c042635f6c1d65a15ee164421aa813265ba4284da",
+  "writtenBytes": 2008
+}

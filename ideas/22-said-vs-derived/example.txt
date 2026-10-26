@@ -1,0 +1,239 @@
+# Said vs Derived
+
+Checkout: /home/user/asteroid-mining-planner at 62ddb17
+Scanned: 121 TypeScript files and 10 HTML files (git ls-files); 5007 literals, 766 of them display text.
+Canon: 258 homes (244 TypeScript constants or fields, 14 cache metadata leaves from tests/fixtures/v2/lambert-screen-cache.json).
+Allow-list: allowlist.proposed.json, 7 entries, 7 applied.
+
+| class | found | allowed | what it means |
+|---|---|---|---|
+| LITERAL-MATCHES-CONSTANT | 10 | 0 | a display string types a value the code owns; read it from the home instead |
+| LITERAL-DATE-SPAN | 2 | 0 | a display string types a date or a year span; derive it from the grid or data it describes |
+| RETYPED-CONSTANT | 26 | 0 | a code literal restates a value with a home elsewhere, or is typed in two or more files |
+| DUPLICATE-DATE | 9 | 0 | the same ISO date literal is typed in two or more files |
+| TWO-HOMES | 17 | 7 | one quantity is defined in two files under two names |
+| LITERAL-WITH-UNITS | 18 | 0 | a unit-bearing number in a display string that matches nothing the code owns (informational) |
+
+## LITERAL-MATCHES-CONSTANT (10)
+
+- `mcp/src/tools/estimate-mission-cost.ts:247` `5%` = DETERMINISTIC_MARGIN_FRACTION = 0.05 (src/v2/porkchop/launch-vehicles.ts:59)
+  - Margin policy: deterministic 5% margin on deterministic maneuver lines only; stationkeeping…
+- `mcp/src/tools/estimate-mission-cost.ts:270` `5%` = DETERMINISTIC_MARGIN_FRACTION = 0.05 (src/v2/porkchop/launch-vehicles.ts:59)
+  - …epresentative screening Isp, stationkeeping allocation, and 5% deterministic margin policy.
+- `mcp/src/tools/explain-cell.ts:264` `5%` = DETERMINISTIC_MARGIN_FRACTION = 0.05 (src/v2/porkchop/launch-vehicles.ts:59)
+  - Margin policy: deterministic 5% margin on deterministic maneuver lines only; stationkeeping…
+- `src/v2/app/catalog-list/honesty-disclosure.ts:59` `≤ 25 km²/s²` = metadata.feasibleC3MaxKm2S2 = 25 (tests/fixtures/v2/lambert-screen-cache.json:1)
+  - …departure, time-of-flight) window in ${…} with departure C3 ≤ 25 km²/s². That is a necessary condition for a low-energy launch, but …
+  - same value, no shared name word (not counted as a match): DEFAULT_ABSOLUTE_KM2S2 (src/v2/porkchop/segment-windows.ts:91)
+- `src/v2/app/catalog-list/honesty-disclosure.ts:68` `0.05 AU` = metadata.coorbitalCriteria.aDeltaKm = 7479893.535 (tests/fixtures/v2/lambert-screen-cache.json:1)
+  - …— low eccentricity, low inclination, semi-major axis within 0.05 AU of 1 AU. Both the catalog and comparison screens use patch…
+- `src/v2/app/compare/main.ts:270` `0.053` = ALBEDO_C_COMPLEX = 0.053 (src/v2/app/compare/main.ts:222)
+  - …ghtness (H ${…}) across dark-to-bright surface reflectivities (0.053–0.166) — an assumption, not a measurement
+- `src/v2/app/compare/main.ts:270` `0.166` = ALBEDO_S_COMPLEX = 0.166 (src/v2/app/compare/main.ts:223)
+  - …s (H ${…}) across dark-to-bright surface reflectivities (0.053–0.166) — an assumption, not a measurement
+- `src/v2/app/compare/main.ts:842` `0.053` = ALBEDO_C_COMPLEX = 0.053 (src/v2/app/compare/main.ts:222)
+  - …nge spans the dark-to-bright taxonomy median reflectivities 0.053–0.166 (Mainzer et al. 2011), and the survey-average 0.14 (S…
+- `src/v2/app/compare/main.ts:842` `0.14` = ASTEROID_DEFAULT_ALBEDO = 0.14 (src/v2/core/constants/asteroids.ts:9)
+  - …s 0.053–0.166 (Mainzer et al. 2011), and the survey-average 0.14 (Stuart & Binzel 2004) quoted beneath it is the same assump…
+- `src/v2/app/compare/main.ts:842` `0.166` = ALBEDO_S_COMPLEX = 0.166 (src/v2/app/compare/main.ts:223)
+  - …ans the dark-to-bright taxonomy median reflectivities 0.053–0.166 (Mainzer et al. 2011), and the survey-average 0.14 (Stuart …
+
+## LITERAL-DATE-SPAN (2)
+
+- `mcp/src/tools/compute-shared.ts:367` `2024-02-29` = ELVPERF_AS_OF = 2024-02-29 (src/v2/porkchop/launch-vehicles.ts:66)
+  - NASA LSP elvperf payload anchors, as-of 2024-02-29.
+- `src/v2/app/porkchop/main.ts:889` `2026-07-02`
+  - Vehicle curve: ${…}, as-of ${…} (queried 2026-07-02); official anchors only.
+
+## RETYPED-CONSTANT (26)
+
+- `mcp/src/tools/compute-shared.ts:135` `946_728_000`
+  - typed in 5 files; no named home
+- `mcp/src/tools/compute-shared.ts:136` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
+  - typed in 5 files; the value has a named home
+- `mcp/src/tools/compute-shared.ts:143` `946_728_000`
+  - typed in 5 files; no named home
+- `mcp/src/tools/compute-shared.ts:144` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
+  - typed in 5 files; the value has a named home
+- `mcp/src/tools/dla-feasibility.ts:116` `2451545.0` = J2000_TDB_JULIAN_DAY = 2451545 (src/v2/app/solar-system/runtime.ts:225); J2000_TDB_JULIAN_DATE = 2451545.0 (src/v2/core/units.ts:1)
+  - typed in 3 files; the value has a named home
+- `mcp/src/tools/estimate-mission-cost.ts:160` `2451545.0` = J2000_TDB_JULIAN_DAY = 2451545 (src/v2/app/solar-system/runtime.ts:225); J2000_TDB_JULIAN_DATE = 2451545.0 (src/v2/core/units.ts:1)
+  - typed in 3 files; the value has a named home
+- `mcp/src/tools/explain-cell.ts:134` `2451545.0` = J2000_TDB_JULIAN_DAY = 2451545 (src/v2/app/solar-system/runtime.ts:225); J2000_TDB_JULIAN_DATE = 2451545.0 (src/v2/core/units.ts:1)
+  - typed in 3 files; the value has a named home
+- `src/v2/app/compare/main.ts:95` `946_728_000`
+  - typed in 5 files; no named home
+- `src/v2/app/compare/main.ts:96` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
+  - typed in 5 files; the value has a named home
+- `src/v2/app/porkchop-smoke/main.ts:32` `946_728_000`
+  - typed in 5 files; no named home
+- `src/v2/app/porkchop-smoke/main.ts:33` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
+  - typed in 5 files; the value has a named home
+- `src/v2/app/porkchop-smoke/main.ts:67` `182.5` = TOF_MIN_DAYS = 182.5 (src/v2/app/compare/main.ts:112); GRID_PARAMS.tofMinDays = 182.5 (src/v2/app/porkchop/main.ts:197)
+  - typed in 2 files; the value has a named home
+- `src/v2/app/porkchop-smoke/main.ts:68` `1826.25` = TOF_MAX_DAYS = 1826.25 (src/v2/app/compare/main.ts:113); GRID_PARAMS.tofMaxDays = 1826.25 (src/v2/app/porkchop/main.ts:198)
+  - typed in 2 files; the value has a named home
+- `src/v2/app/porkchop/main.ts:167` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
+  - typed in 5 files; the value has a named home
+- `src/v2/app/porkchop/main.ts:167` `946_728_000`
+  - typed in 5 files; no named home
+- `src/v2/app/porkchop/main.ts:188` `946_728_000`
+  - typed in 5 files; no named home
+- `src/v2/app/porkchop/main.ts:189` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
+  - typed in 5 files; the value has a named home
+- `src/v2/app/solar-system/runtime.ts:619` `block of 8 literals`
+  - lines 619-627 (1867216.25, 36524.25, 1524, 122.1, 365.25, 30.6001, 4716, 4715) repeat src/v2/porkchop/porkchop-view.ts:275-285; no named home
+- `src/v2/app/solar-system/slice9-runtime-asteroids.ts:18` `1329`
+  - typed in 2 files; no named home
+- `src/v2/app/ui-overlay/overlay.ts:152` `946_728_000`
+  - typed in 5 files; no named home
+- `src/v2/app/ui-overlay/overlay.ts:153` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
+  - typed in 5 files; the value has a named home
+- `src/v2/app/ui-overlay/overlay.ts:162` `182.5` = TOF_MIN_DAYS = 182.5 (src/v2/app/compare/main.ts:112); GRID_PARAMS.tofMinDays = 182.5 (src/v2/app/porkchop/main.ts:197)
+  - typed in 2 files; the value has a named home
+- `src/v2/app/ui-overlay/overlay.ts:163` `1826.25` = TOF_MAX_DAYS = 1826.25 (src/v2/app/compare/main.ts:113); GRID_PARAMS.tofMaxDays = 1826.25 (src/v2/app/porkchop/main.ts:198)
+  - typed in 2 files; the value has a named home
+- `src/v2/boundary/tier-assignments.ts:64` `41_906` = SLICE9_NEA_CATALOG_TOTAL_BODIES = 41_906 (src/v2/boundary/slice9-nea-catalog.ts:20)
+  - typed in 1 file; the value has a named home
+- `src/v2/core/constants/asteroids.ts:80` `1329`
+  - typed in 2 files; no named home
+- `src/v2/porkchop/porkchop-view.ts:275` `block of 8 literals`
+  - lines 275-285 (1867216.25, 36524.25, 1524, 122.1, 365.25, 30.6001, 4716, 4715) repeat src/v2/app/solar-system/runtime.ts:619-627; no named home
+
+## DUPLICATE-DATE (9)
+
+- `mcp/src/resources/reference.ts:37` `'2024-02-29'` = ELVPERF_AS_OF = 2024-02-29 (src/v2/porkchop/launch-vehicles.ts:66)
+  - typed in 2 files
+- `src/v2/app/compare/main.ts:106` `'2026-01-01'` = GRID_PARAMS.depStartJD = 2026-01-01 (src/v2/app/porkchop/main.ts:195); metadata.screeningWindow.startUtc = 2026-01-01 (tests/fixtures/v2/lambert-screen-cache.json:1)
+  - typed in 4 files
+- `src/v2/app/compare/main.ts:107` `'2040-01-01'` = GRID_PARAMS.depEndJD = 2040-01-01 (src/v2/app/porkchop/main.ts:196)
+  - typed in 4 files
+- `src/v2/app/porkchop-smoke/main.ts:65` `'2026-01-01'` = DEPARTURE_WINDOW_START_UTC = 2026-01-01 (src/v2/app/compare/main.ts:106); GRID_PARAMS.depStartJD = 2026-01-01 (src/v2/app/porkchop/main.ts:195); metadata.screeningWindow.startUtc = 2026-01-01 (tests/fixtures/v2/lambert-screen-cache.json:1)
+  - typed in 4 files
+- `src/v2/app/porkchop-smoke/main.ts:66` `'2040-01-01'` = DEPARTURE_WINDOW_END_UTC = 2040-01-01 (src/v2/app/compare/main.ts:107); GRID_PARAMS.depEndJD = 2040-01-01 (src/v2/app/porkchop/main.ts:196)
+  - typed in 4 files
+- `src/v2/app/porkchop/main.ts:195` `'2026-01-01'` = DEPARTURE_WINDOW_START_UTC = 2026-01-01 (src/v2/app/compare/main.ts:106); metadata.screeningWindow.startUtc = 2026-01-01 (tests/fixtures/v2/lambert-screen-cache.json:1)
+  - typed in 4 files
+- `src/v2/app/porkchop/main.ts:196` `'2040-01-01'` = DEPARTURE_WINDOW_END_UTC = 2040-01-01 (src/v2/app/compare/main.ts:107)
+  - typed in 4 files
+- `src/v2/app/ui-overlay/overlay.ts:160` `'2026-01-01'` = DEPARTURE_WINDOW_START_UTC = 2026-01-01 (src/v2/app/compare/main.ts:106); GRID_PARAMS.depStartJD = 2026-01-01 (src/v2/app/porkchop/main.ts:195); metadata.screeningWindow.startUtc = 2026-01-01 (tests/fixtures/v2/lambert-screen-cache.json:1)
+  - typed in 4 files
+- `src/v2/app/ui-overlay/overlay.ts:161` `'2040-01-01'` = DEPARTURE_WINDOW_END_UTC = 2040-01-01 (src/v2/app/compare/main.ts:107); GRID_PARAMS.depEndJD = 2040-01-01 (src/v2/app/porkchop/main.ts:196)
+  - typed in 4 files
+
+## TWO-HOMES (17)
+
+- `src/v2/app/compare/main.ts:112` `TOF_MIN_DAYS = 182.5` = GRID_PARAMS.tofMinDays = 182.5 (src/v2/app/porkchop/main.ts:197)
+  - 2 homes for one time: TOF_MIN_DAYS = 182.5 (src/v2/app/compare/main.ts:112); GRID_PARAMS.tofMinDays = 182.5 (src/v2/app/porkchop/main.ts:197)
+- `src/v2/app/compare/main.ts:113` `TOF_MAX_DAYS = 1826.25` = GRID_PARAMS.tofMaxDays = 1826.25 (src/v2/app/porkchop/main.ts:198)
+  - 2 homes for one time: TOF_MAX_DAYS = 1826.25 (src/v2/app/compare/main.ts:113); GRID_PARAMS.tofMaxDays = 1826.25 (src/v2/app/porkchop/main.ts:198)
+- `src/v2/app/compare/main.ts:114` `DELTA_KM2S2 = 5` = DEFAULT_DELTA_KM2S2 = 5 (src/v2/porkchop/segment-windows.ts:85)
+  - 2 homes for one c3: DELTA_KM2S2 = 5 (src/v2/app/compare/main.ts:114); DEFAULT_DELTA_KM2S2 = 5 (src/v2/porkchop/segment-windows.ts:85)
+- `src/v2/app/compare/main.ts:115` `B_MIN_CELLS = 2` = DEFAULT_B_MIN_CELLS = 2 (src/v2/porkchop/segment-windows.ts:92)
+  - 2 homes for one value: B_MIN_CELLS = 2 (src/v2/app/compare/main.ts:115); DEFAULT_B_MIN_CELLS = 2 (src/v2/porkchop/segment-windows.ts:92)
+- [allowed] `src/v2/app/earth-moon/runtime.ts:23` `WHEEL_ZOOM_SENSITIVITY = 0.0015` = WHEEL_ZOOM_SENSITIVITY = 0.0015 (src/v2/app/inner-solar-system/runtime.ts:21); WHEEL_ZOOM_SENSITIVITY = 0.0015 (src/v2/app/solar-system/runtime.ts:83)
+  - 3 homes for one value: WHEEL_ZOOM_SENSITIVITY = 0.0015 (src/v2/app/earth-moon/runtime.ts:23); WHEEL_ZOOM_SENSITIVITY = 0.0015 (src/v2/app/inner-solar-system/runtime.ts:21); WHEEL_ZOOM_SENSITIVITY = 0.0015 (src/v2/app/solar-system/runtime.ts:83)
+  - allowed: Camera wheel-zoom tuning repeated in the three 3D route runtimes (earth-moon, inner-solar-system, solar-system); never shown as a number. Fold into a shared camera-controls module when one exists.
+- [allowed] `src/v2/app/earth-moon/runtime.ts:24` `TIME_SCRUB_STEP = 1` = TIME_SCRUB_STEP = 1 (src/v2/app/inner-solar-system/runtime.ts:22)
+  - 2 homes for one value: TIME_SCRUB_STEP = 1 (src/v2/app/earth-moon/runtime.ts:24); TIME_SCRUB_STEP = 1 (src/v2/app/inner-solar-system/runtime.ts:22)
+  - allowed: Time-scrub keyboard step repeated per 3D route runtime; a control setting, never shown as a number.
+- `src/v2/app/inner-solar-system/loader.ts:11` `SLICE2_EPOCH_TDB = 830865600` = SLICE2_EPOCH_TDB = 830865600 (src/v2/boundary/slice2-inner-system.ts:26)
+  - 2 homes for one value: SLICE2_EPOCH_TDB = 830865600 (src/v2/app/inner-solar-system/loader.ts:11); SLICE2_EPOCH_TDB = 830865600 (src/v2/boundary/slice2-inner-system.ts:26)
+- `src/v2/app/inner-solar-system/runtime.ts:16` `AU_M = 149_597_870_700` = AU_M = 149_597_870_700 (src/v2/app/solar-system/runtime.ts:73); AU_M = 149_597_870_700 (src/v2/render/asteroid-cell-renderer.ts:52); AU_KM = 149_597_870.7 (src/v2/render/slice9-spatial-partition.ts:78); AU_KM = 149_597_870.7 (src/v2/render/spatial-grid.ts:16)
+  - 5 homes for one length: AU_M = 149_597_870_700 (src/v2/app/inner-solar-system/runtime.ts:16); AU_M = 149_597_870_700 (src/v2/app/solar-system/runtime.ts:73); AU_M = 149_597_870_700 (src/v2/render/asteroid-cell-renderer.ts:52); AU_KM = 149_597_870.7 (src/v2/render/slice9-spatial-partition.ts:78); AU_KM = 149_597_870.7 (src/v2/render/spatial-grid.ts:16)
+- [allowed] `src/v2/app/inner-solar-system/runtime.ts:18` `MIN_CAMERA_DISTANCE_M = 1e9` = MIN_CAMERA_DISTANCE_M = 1e9 (src/v2/app/solar-system/runtime.ts:79)
+  - 2 homes for one length: MIN_CAMERA_DISTANCE_M = 1e9 (src/v2/app/inner-solar-system/runtime.ts:18); MIN_CAMERA_DISTANCE_M = 1e9 (src/v2/app/solar-system/runtime.ts:79)
+  - allowed: Camera near-limit repeated in two 3D route runtimes; a control clamp, never shown as a number.
+- [allowed] `src/v2/app/inner-solar-system/runtime.ts:20` `ORBIT_SENSITIVITY = 0.005` = ORBIT_SENSITIVITY = 0.005 (src/v2/app/solar-system/runtime.ts:82)
+  - 2 homes for one value: ORBIT_SENSITIVITY = 0.005 (src/v2/app/inner-solar-system/runtime.ts:20); ORBIT_SENSITIVITY = 0.005 (src/v2/app/solar-system/runtime.ts:82)
+  - allowed: Camera orbit-drag tuning repeated per 3D route runtime (earth-moon uses 0.006 on purpose or not; the tool cannot say); never shown as a number.
+- [allowed] `src/v2/app/inner-solar-system/runtime.ts:24` `FOCUS_TRANSITION_DURATION_MS = 650` = FOCUS_TRANSITION_DURATION_MS = 650 (src/v2/app/solar-system/runtime.ts:85)
+  - 2 homes for one time: FOCUS_TRANSITION_DURATION_MS = 650 (src/v2/app/inner-solar-system/runtime.ts:24); FOCUS_TRANSITION_DURATION_MS = 650 (src/v2/app/solar-system/runtime.ts:85)
+  - allowed: Focus animation length repeated in two 3D route runtimes; motion tuning, never shown as a number.
+- [allowed] `src/v2/app/solar-system/runtime.ts:88` `SLICE9_HYBRID_COARSE_CELL_SIZE_AU = 1` = SPATIAL_GRID_CELL_SIZE_AU = 1 (src/v2/render/spatial-grid.ts:13)
+  - 2 homes for one length: SLICE9_HYBRID_COARSE_CELL_SIZE_AU = 1 (src/v2/app/solar-system/runtime.ts:88); SPATIAL_GRID_CELL_SIZE_AU = 1 (src/v2/render/spatial-grid.ts:13)
+  - allowed: Two different spatial partitions (the Slice 9 hybrid coarse level and render/spatial-grid.ts, whose comment at :10-12 records 1 AU as a measured choice) that happen to use the same cell size; not one quantity.
+- `src/v2/app/solar-system/runtime.ts:225` `J2000_TDB_JULIAN_DAY = 2451545` = J2000_TDB_JULIAN_DATE = 2451545.0 (src/v2/core/units.ts:1)
+  - 2 homes for one epoch: J2000_TDB_JULIAN_DAY = 2451545 (src/v2/app/solar-system/runtime.ts:225); J2000_TDB_JULIAN_DATE = 2451545.0 (src/v2/core/units.ts:1)
+- `src/v2/core/units.ts:3` `METERS_PER_KILOMETER = 1000` = METERS_PER_KILOMETER = 1000 (src/v2/porkchop/grid-compute.ts:8)
+  - 2 homes for one value: METERS_PER_KILOMETER = 1000 (src/v2/core/units.ts:3); METERS_PER_KILOMETER = 1000 (src/v2/porkchop/grid-compute.ts:8)
+- `src/v2/porkchop/compare-data.ts:48` `COMPARE_BODY_CAP = 5` = COMPARE_BODIES_CAP = 5 (src/v2/porkchop/compare-url.ts:12)
+  - 2 homes for one value: COMPARE_BODY_CAP = 5 (src/v2/porkchop/compare-data.ts:48); COMPARE_BODIES_CAP = 5 (src/v2/porkchop/compare-url.ts:12)
+- `src/v2/porkchop/delta-v.ts:5` `STATIONKEEPING_DV_KMPS = 0.150` = SPACECRAFT_STATIONKEEPING_MPS = 150 (src/v2/porkchop/launch-vehicles.ts:61)
+  - 2 homes for one speed: STATIONKEEPING_DV_KMPS = 0.150 (src/v2/porkchop/delta-v.ts:5); SPACECRAFT_STATIONKEEPING_MPS = 150 (src/v2/porkchop/launch-vehicles.ts:61)
+- [allowed] `src/v2/render/asteroid-renderer.ts:27` `ASTEROID_POINTS_TO_INSTANCE_EXIT_DIAMETER_PX = 1.5` = HALO_FULL_VISIBILITY_MAX_DIAMETER_PX = 1.5 (src/v2/render/halos.ts:7)
+  - 2 homes for one pixel: ASTEROID_POINTS_TO_INSTANCE_EXIT_DIAMETER_PX = 1.5 (src/v2/render/asteroid-renderer.ts:27); HALO_FULL_VISIBILITY_MAX_DIAMETER_PX = 1.5 (src/v2/render/halos.ts:7)
+  - allowed: Level-of-detail thresholds in two renderer modules; equal at 1.5 px, possibly as a deliberate hand-off that nothing enforces. Renderer tuning, never shown as a number.
+
+## LITERAL-WITH-UNITS (18)
+
+- `src/v2/app/catalog-list/honesty-disclosure.ts:68` `1 AU`
+  - …tricity, low inclination, semi-major axis within 0.05 AU of 1 AU. Both the catalog and comparison screens use patched-conic…
+  - same value, no shared name word (not counted as a match): SPATIAL_GRID_CELL_SIZE_AU (src/v2/render/spatial-grid.ts:13); MAX_CAMERA_DISTANCE_M (src/v2/app/earth-moon/runtime.ts:20); AU_M (src/v2/app/inner-solar-system/runtime.ts:16); AU_M (src/v2/app/solar-system/runtime.ts:73); SLICE9_HYBRID_COARSE_CELL_SIZE_AU (src/v2/app/solar-system/runtime.ts:88); AU_M (src/v2/render/asteroid-cell-renderer.ts:52); AU_KM (src/v2/render/slice9-spatial-partition.ts:78); AU_KM (src/v2/render/spatial-grid.ts:16)
+- `src/v2/app/compare/main.ts:185` `< 1 ms`
+  - < 1 ms (cached grids)
+- `src/v2/app/compare/main.ts:192` `< 1 kg`
+  - < 1 kg
+- `src/v2/app/porkchop/main.ts:177` `< 1 kg`
+  - < 1 kg
+- `src/v2/app/porkchop/main.ts:710` `~39 deg`
+  - …outherly azimuth side, where the effective ceiling is only ~39 deg. Dogleg cost is priced by a two-regime screening model: zero…
+- `src/v2/app/porkchop/main.ts:710` `36.5 deg`
+  - …try can bind tighter — e.g. MGS launched from Cape with DLA 36.5 deg (nominally AMBER) yet required a dogleg because its daily w…
+- `src/v2/app/porkchop/main.ts:891` `300–350 s`
+  - …ecraft propulsion: screening Isp ${…} s (representative of the 300–350 s storable-bipropellant class). Mission mode: ${…}. Delivered ma…
+- `src/v2/app/porkchop/main.ts:905` `~3.1%`
+  - … the steep C3 20–30 segment overestimates payload by up to ~3.1% (measured, Phase B oracle).
+- `src/v2/app/porkchop/main.ts:905` `C3 20–30`
+  - New Glenn: interpolation across the steep C3 20–30 segment overestimates payload by up to ~3.1% (measured, Phase …
+- `src/v2/app/porkchop/main.ts:981` `200 km`
+  - …s: ${…}; impulsive, patched-conic, no gravity assists, no SEP; 200 km circular LEO (r = ${…} km); rendezvous = arrival v∞; ${…}stationk…
+- `src/v2/app/solar-system/runtime.ts:1011` `= 1 m`
+  - Scale — distances true scale (1 unit = 1 m); planet, moon and Sun radii true scale; asteroid radii estim…
+- `src/v2/porkchop/tier-disclosure.ts:18` `10^6 km`
+  - 10^6 km is the drift at which the optimal transfer window was measu…
+  - same value, no shared name word (not counted as a match): MIN_CAMERA_DISTANCE_M (src/v2/app/inner-solar-system/runtime.ts:18); MIN_CAMERA_DISTANCE_M (src/v2/app/solar-system/runtime.ts:79)
+- `src/v2/porkchop/tier-disclosure.ts:19` `10^5 km`
+  - …fer window was measured to move (3 of 15 tested cells); at 10^5 km, none moved. The number of objects above this threshold dep…
+  - same value, no shared name word (not counted as a match): ASTEROID_KEPLERIAN_ERROR_BAR_M (src/v2/core/constants/asteroids.ts:11)
+- `src/v2/porkchop/tier-disclosure.ts:25` `at least 10^6 km`
+  - … carried to the end of the screening window, adds at least 10^6 km of drift. ${…}
+  - same value, no shared name word (not counted as a match): MIN_CAMERA_DISTANCE_M (src/v2/app/inner-solar-system/runtime.ts:18); MIN_CAMERA_DISTANCE_M (src/v2/app/solar-system/runtime.ts:79)
+- `src/v2/porkchop/tier-disclosure.ts:29` `0.46 to 330 million km`
+  - …ct. Two-body propagation over the screening window drifted 0.46 to 330 million km across the 17 asteroids that were measured. This object was…
+- `src/v2/porkchop/tier-disclosure.ts:141` `0.28 AU`
+  - …e-approach data Aster uses does not cover encounters beyond 0.28 AU from Jupiter.
+- `src/v2/porkchop/tier-disclosure.ts:205` `0.28 AU`
+  - …the screening error (comets, and orbits reaching beyond the 0.28 AU from Jupiter that the close-approach data covers) or has n…
+- `src/v2/porkchop/tier-disclosure.ts:207` `0.46 to 330 million km`
+  - …vers) or has not measured it (two-body propagation drifted 0.46 to 330 million km across the 17 asteroids that were measured).
+
+## Duplicate date groups
+
+- '2024-02-29' in 2 files: mcp/src/resources/reference.ts:37, src/v2/porkchop/launch-vehicles.ts:66; homes: ELVPERF_AS_OF (src/v2/porkchop/launch-vehicles.ts:66)
+- '2026-01-01' in 4 files: src/v2/app/compare/main.ts:106, src/v2/app/porkchop-smoke/main.ts:65, src/v2/app/porkchop/main.ts:195, src/v2/app/ui-overlay/overlay.ts:160; homes: DEPARTURE_WINDOW_START_UTC (src/v2/app/compare/main.ts:106), GRID_PARAMS.depStartJD (src/v2/app/porkchop/main.ts:195), metadata.screeningWindow.startUtc (tests/fixtures/v2/lambert-screen-cache.json:1)
+- '2040-01-01' in 4 files: src/v2/app/compare/main.ts:107, src/v2/app/porkchop-smoke/main.ts:66, src/v2/app/porkchop/main.ts:196, src/v2/app/ui-overlay/overlay.ts:161; homes: DEPARTURE_WINDOW_END_UTC (src/v2/app/compare/main.ts:107), GRID_PARAMS.depEndJD (src/v2/app/porkchop/main.ts:196)
+  - same year, another day in the data: metadata.screeningWindow.endUtc = 2040-12-31 (tests/fixtures/v2/lambert-screen-cache.json:1)
+
+## Derived (30 interpolations read a named constant)
+
+- `mcp/src/tools/porkchop-scan.ts`: :193 MAX_GRID_CELLS
+- `src/v2/app/catalog-list/honesty-disclosure.ts`: :83 NEAR_ZERO_C3_DEGENERACY_THRESHOLD_KM2_S2
+- `src/v2/app/compare/main.ts`: :271 COMPARE_DEFAULT_ALBEDO (← ASTEROID_DEFAULT_ALBEDO), :271 ALBEDO_HIGH_REFLECTIVITY, :271 ALBEDO_LOW_REFLECTIVITY, :821 DEPARTURE_WINDOW_START_UTC, :821 DEPARTURE_WINDOW_END_UTC, :838 REFERENCE_RENDEZVOUS_MPS, :838 SPACECRAFT_STATIONKEEPING_MPS, :1050 COMPARE_BODIES_CAP, :1148 DELTA_KM2S2
+- `src/v2/app/porkchop/main.ts`: :647 PORKCHOP_DEPARTURE_SPAN_LABEL (← GRID_PARAMS.depStartJD, GRID_PARAMS.depEndJD), :647 GRID_PARAMS.tofMinDays, :647 GRID_PARAMS.tofMaxDays, :868 DETERMINISTIC_MARGIN_PERCENT (← DETERMINISTIC_MARGIN_FRACTION), :891 SCREENING_ISP_S, :892 DETERMINISTIC_MARGIN_PERCENT (← DETERMINISTIC_MARGIN_FRACTION), :892 SPACECRAFT_STATIONKEEPING_DISPLAY_MPS (← SPACECRAFT_STATIONKEEPING_MPS), :959 DV_MARGIN_FRACTION, :960 DV_MARGIN_FRACTION, :981 LEO_PARKING_RADIUS_KM, :981 STATIONKEEPING_DV_KMPS, :981 DV_MARGIN_FRACTION
+- `src/v2/app/solar-system/runtime.ts`: :1012 HALO_INVISIBLE_MIN_DIAMETER_PX, :1012 DEFAULT_MIN_HALO_DIAMETER_PX, :1012 ASTEROID_POINTS_MIN_SIZE_PX, :1126 TIME_SCRUB_STEP_SECONDS, :1840 AU_M
+- `src/v2/porkchop/compare-data.ts`: :264 COMPARE_BODY_CAP
+- `src/v2/porkchop/near-zero-c3.ts`: :15 NEAR_ZERO_C3_DEGENERACY_THRESHOLD_KM2_S2
+
+## Runtime reads of data-file fields (9)
+
+- metadata.departureGridSpacingDays: src/v2/boundary/c3-grid.ts:80
+- metadata.feasibleC3MaxKm2S2: src/v2/app/compare/main.ts:956
+- metadata.schemaVersion: src/v2/boundary/lambert-screen-cache.ts:105, src/v2/boundary/lambert-screen-cache.ts:106
+- metadata.screeningWindow.endUtc: src/v2/boundary/c3-grid.ts:86
+- metadata.screeningWindow.startUtc: src/v2/boundary/c3-grid.ts:85
+- metadata.tofGridSpacingDays: src/v2/boundary/c3-grid.ts:81
+- metadata.tofMaxDays: src/v2/boundary/c3-grid.ts:83
+- metadata.tofMinDays: src/v2/boundary/c3-grid.ts:82
+
+Result: 57 failing finding(s) after the allow-list; 18 informational.

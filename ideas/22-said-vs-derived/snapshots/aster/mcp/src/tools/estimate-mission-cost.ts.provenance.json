@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "mcp/src/tools/estimate-mission-cost.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "90ace4714d68cc2cf38d06dd9add8eaec222afca",
+  "readBlob": "90ace4714d68cc2cf38d06dd9add8eaec222afca",
+  "sourceSha256": "8df474576f5e1300b28a6fd5e39411f0d53f1dbeee6363ef1da960778cfda0ff",
+  "sourceBytes": 9800,
+  "copiedAt": "2026-10-26T15:19:09.562Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: lines 158-162, 244-249, 266-272 verbatim, all other lines empty (line numbers preserved)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "66b4b722277c8227544fce507c1fc6d69a6dd0ddfc4bd8d8a82f77c29ca1cad2",
+  "writtenBytes": 1009
+}

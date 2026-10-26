@@ -1,0 +1,9 @@
+{
+ "source": "docs/research/mp001_market_pricing.md",
+ "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+ "lines": {
+  "22": "| HMPE (SK78/SK99) specs: 0.97 g/cm³, SK99 ≈ +15–20% strength vs SK78, melt 145 °C | — | — | — | — | secondary spec sheets |",
+  "23": "| HMPE creep guidance: sustained load ≤ ~20% of break for multi-year life; SK78 ≈ 8 yr at 20% load, 20 °C; creep 3–5× aramid | — | — | — | — | secondary engineering guidance |",
+  "46": "**3c · Creep vs SF 2.5 — a newly quantified named problem [Likely].** At SF 2.5 the HMPE bulk sections carry a **steady centrifugal load of 28–40% of rated break strength** (40% raw; 28% if the 30% strength derate is applied in sizing). Public guidance: keep sustained HMPE load **≤ ~20%** for multi-year life (SK78 ≈ 8 yr at 20% and 20 °C). The centrifugal load is genuinely sustained in the rotating frame — this is exactly the bad regime. Reaching 20% load needs SF ≈ 5, which cuts Vc by √2 and blows the reference mass ratio from **~41× to order ~800×** (Moravec form) — not a design, a refutation. So the honest outcomes are: (a) HMPE sections have a **creep-governed replacement cadence** costed into ops; (b) the **hybrid boundary shifts toward PBO** (aramid-class creep, 3–5× lower) for the high-stress fraction; or (c) some mix. This goes on the risk register with numbers, feeds the TP-001 creep series, and motivates **ST-002** (below). Per Rule 6, this joins the named hard parts."
+ }
+}

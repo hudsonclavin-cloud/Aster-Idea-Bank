@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/app/catalog-list/honesty-disclosure.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "c9a7476 2026-10-14T15:02:14-04:00",
+  "committedBlob": "f88394a5cb6783308611d9c6989d273e565773e1",
+  "readBlob": "f88394a5cb6783308611d9c6989d273e565773e1",
+  "sourceSha256": "276323f4e06a8d3a861f02f76de5a3d59bd32a0d03efd33338dff8a5e9c6e9d1",
+  "sourceBytes": 3927,
+  "copiedAt": "2026-10-26T15:19:07.132Z",
+  "mode": "copy",
+  "note": "whole file; said-vs-derived reconciliation tree",
+  "readMatchesCommitted": true,
+  "writtenSha256": "276323f4e06a8d3a861f02f76de5a3d59bd32a0d03efd33338dff8a5e9c6e9d1",
+  "writtenBytes": 3927
+}

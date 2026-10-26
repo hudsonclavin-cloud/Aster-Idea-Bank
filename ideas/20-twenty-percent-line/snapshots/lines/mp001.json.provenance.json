@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/research/mp001_market_pricing.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "5160f88 2026-09-02T13:35:47-04:00",
+  "committedBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "readBlob": "b0e5fde300025ee2de6bc511f8b083937269d140",
+  "sourceSha256": "e7347cc6bba62c13f37427364883e973578e62c687740995bc7b61904378b712",
+  "sourceBytes": 9033,
+  "copiedAt": "2026-10-26T15:23:35.174Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: verbatim lines 22, 23, 46 of docs/research/mp001_market_pricing.md, keyed by line number; HMPE specs 0.97 g/cm3 (22), the <=20 % creep guidance row (23), section 3c (46)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "9a471afaaefc9fefdf17da279b6a7086f73daa46539510143162d353fc88b950",
+  "writtenBytes": 1505
+}
