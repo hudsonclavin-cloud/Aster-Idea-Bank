@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/stock.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "6d7edc36ae164d2e1fc8c5b35db08911189e91a1",
+  "readBlob": "6d7edc36ae164d2e1fc8c5b35db08911189e91a1",
+  "sourceSha256": "f97caca4b125268a27d2996e72c785dbea8b8c9436d15adbc39ba8d2cde6c81f",
+  "sourceBytes": 383512,
+  "copiedAt": "2026-10-26T10:07:16.981Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: 10 of the 192 rows of stock.json, verbatim, by key (bar_6061_i_6.000; the six tube_6061_i_6.000x* rows; plate_6061_i_0.500; plate_6061_m_012; bar_6061_i_0.250) with the table's own license_note, columns and notes; the reconciliation block and the other 182 rows are omitted; tol_plus_mm/tol_minus_mm, id_min_mm/id_max_mm and tolerance_confidence are what the stock contributor reads",
+  "readMatchesCommitted": true,
+  "writtenSha256": "fc5e0281dcb82b2bbb5c195c2db587bc219799d498845df779a567fb10d6a1de",
+  "writtenBytes": 33885
+}

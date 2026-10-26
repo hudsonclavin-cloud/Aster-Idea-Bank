@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/bulkhead.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "9e79f4c 2026-09-18T03:10:59+00:00",
+  "committedBlob": "3624faaa769ff9ae3437a9f44d118569bda99922",
+  "readBlob": "3624faaa769ff9ae3437a9f44d118569bda99922",
+  "sourceSha256": "7e237fe822e3942ed1a5126001a0aaeaaee942168ee8ab00fbd9c5c061ea2ea5",
+  "sourceBytes": 13301,
+  "copiedAt": "2026-10-26T10:05:24.342Z",
+  "mode": "copy",
+  "note": "worked fixture: the bulkhead-in-coupler stack is built from this file's FLIGHT critical 'bulkhead OD' entry, its mfg.finish and the NOTE giving the assumed coupler ID",
+  "readMatchesCommitted": true,
+  "writtenSha256": "7e237fe822e3942ed1a5126001a0aaeaaee942168ee8ab00fbd9c5c061ea2ea5",
+  "writtenBytes": 13301
+}

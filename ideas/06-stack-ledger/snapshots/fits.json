@@ -1,0 +1,520 @@
+{
+ "table": "fits",
+ "license_note": "ISO 286-1 defines the standard tolerance grades and fundamental deviations; the standard document is copyright ISO. Dimensional values are facts and are reproduced in every machinist handbook and vendor chart. Nothing here was copied from the standard’s text: each value is derived from the standard’s defining formulas (written out in tools/db/derive-fits.mjs) and cross-checked against an independently recalled published table, and any value where the two disagreed was withheld rather than shipped. The standard governs where it and this table differ.",
+ "columns": {
+  "key": "unique row id",
+  "from_mm": "size step lower bound, exclusive above 3 mm as the standard defines it",
+  "to_mm": "size step upper bound, inclusive",
+  "mean_mm": "geometric mean of the step, the D every formula below uses",
+  "i_um": "standard tolerance factor i = 0.45·∛D + 0.001·D, micrometres",
+  "it_um": "IT grade width in micrometres, IT5 to IT13, for this size step",
+  "shaft_es_um": "fundamental deviation of the shaft letter in micrometres: es (upper) for d/e/f/g/h, ei (lower) for k/n. A hole letter is the mirror: H is EI = 0, and the hole tolerance runs upward.",
+  "confidence": "likely: two independent derivations agree",
+  "source": "the formula and what corroborates it"
+ },
+ "notes": "HOW TO USE. A fit is a hole letter and grade over a shaft letter and grade, e.g. H7/g6 on a 101.60 bore. The hole H7 runs 0 to +IT7; the shaft g6 runs es to es−IT6, where es is negative. Clearance is therefore (hole max − shaft min) down to (hole min − shaft max). Worked: Ø50 H7/g6 → H7 = 25 µm so the bore is 50.000/50.025; g6 es = -9 and IT6 = 16 so the shaft is 49.991/49.975; clearance 0.009 to 0.050 mm.\nLIMITS. (1) Size steps stop at 500 mm; nothing here applies above it. (2) Only the letters whose fundamental deviation is a single closed formula are here: d, e, f, g, h, k, n — and k's value applies to grades 4 to 7 only; at any other grade its deviation is zero, which dbFit() enforces. The interference letters p, r, s, t and u need the standard's delta rule and are NOT in this table — a press fit taken from a half-remembered table is how a coupler cracks, so get p6 or s6 from the standard or a vendor chart and say where it came from. (3) k is +0.6·∛D for grades 4 to 7 only; at other grades its deviation is zero. (4) js is symmetric, ±IT/2, and needs no table. (5) THESE ARE FOR MACHINED METAL. A composite or phenolic tube is not round, not constant, and not to an IT grade: for anything mating with a body tube or coupler, measure the actual part at three clockings and design to the measurement with a stated clearance — the airframes table says the same thing. (6) Anodise adds roughly 0.005 to 0.025 mm per surface on a Type II coating and more on Type III; mask the fit or size for the coating. (7) The thermal case matters for a rocket: an aluminium part in a composite tube gains clearance as it cools at altitude and loses it in the sun on the pad.\nWITHHELD: 5 value(s) where the formula and the published table disagreed; see 'disputed'.",
+ "fits": [
+  {
+   "name": "H7/h6",
+   "kind": "location, sliding",
+   "use": "a coupler or bulkhead that must go in by hand and stay concentric; the tightest fit that still assembles without press",
+   "hole": [
+    "H",
+    7
+   ],
+   "shaft": [
+    "h",
+    6
+   ]
+  },
+  {
+   "name": "H7/g6",
+   "kind": "close running",
+   "use": "a piston or plug that must slide under load, e.g. an O-ring-sealed end cap sliding into a tank bore",
+   "hole": [
+    "H",
+    7
+   ],
+   "shaft": [
+    "g",
+    6
+   ]
+  },
+  {
+   "name": "H8/f7",
+   "kind": "free running",
+   "use": "a normal sliding fit where a little clearance is welcome: av-bay sled rails, a motor tube in a centring ring",
+   "hole": [
+    "H",
+    8
+   ],
+   "shaft": [
+    "f",
+    7
+   ]
+  },
+  {
+   "name": "H9/d9",
+   "kind": "loose running",
+   "use": "wide clearance for paint, anodise, thermal growth or dirt: a coupler into a phenolic tube",
+   "hole": [
+    "H",
+    9
+   ],
+   "shaft": [
+    "d",
+    9
+   ]
+  },
+  {
+   "name": "H11/d11",
+   "kind": "very loose",
+   "use": "as-cut composite tubes and anything hand-fitted; the clearance no fit table can save you from measuring. The looser H11/c11 a shop might call out is NOT here: c has no closed-form deviation in this file, and a fit named for a letter it was not built from is worse than no fit at all",
+   "hole": [
+    "H",
+    11
+   ],
+   "shaft": [
+    "d",
+    11
+   ]
+  },
+  {
+   "name": "H7/k6",
+   "kind": "transition",
+   "use": "a located part that should not move but must still be removable with light force",
+   "hole": [
+    "H",
+    7
+   ],
+   "shaft": [
+    "k",
+    6
+   ]
+  },
+  {
+   "name": "H7/n6",
+   "kind": "tight transition, light press",
+   "use": "a bushing or bearing outer race pressed into an aluminium housing",
+   "hole": [
+    "H",
+    7
+   ],
+   "shaft": [
+    "n",
+    6
+   ]
+  }
+ ],
+ "rows": [
+  {
+   "key": "iso286_1-3",
+   "from_mm": 1,
+   "to_mm": 3,
+   "mean_mm": 1.732,
+   "i_um": 0.542,
+   "it_um": {
+    "5": 4,
+    "6": 6,
+    "7": 10,
+    "8": 14,
+    "13": 140
+   },
+   "shaft_es_um": {
+    "d": -20,
+    "e": -14,
+    "f": -6,
+    "g": -2,
+    "h": 0,
+    "k": 0
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_3-6",
+   "from_mm": 3,
+   "to_mm": 6,
+   "mean_mm": 4.243,
+   "i_um": 0.733,
+   "it_um": {
+    "5": 5,
+    "6": 8,
+    "7": 12,
+    "8": 18,
+    "9": 30,
+    "10": 48,
+    "11": 75,
+    "12": 120,
+    "13": 180
+   },
+   "shaft_es_um": {
+    "d": -30,
+    "e": -20,
+    "f": -10,
+    "g": -4,
+    "h": 0,
+    "k": 1,
+    "n": 8
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_6-10",
+   "from_mm": 6,
+   "to_mm": 10,
+   "mean_mm": 7.746,
+   "i_um": 0.898,
+   "it_um": {
+    "5": 6,
+    "6": 9,
+    "7": 15,
+    "8": 22,
+    "9": 36,
+    "10": 58,
+    "11": 90,
+    "12": 150,
+    "13": 220
+   },
+   "shaft_es_um": {
+    "d": -40,
+    "e": -25,
+    "f": -13,
+    "g": -5,
+    "h": 0,
+    "k": 1,
+    "n": 10
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_10-18",
+   "from_mm": 10,
+   "to_mm": 18,
+   "mean_mm": 13.416,
+   "i_um": 1.083,
+   "it_um": {
+    "5": 8,
+    "6": 11,
+    "7": 18,
+    "8": 27,
+    "9": 43,
+    "10": 70,
+    "11": 110,
+    "12": 180,
+    "13": 270
+   },
+   "shaft_es_um": {
+    "d": -50,
+    "e": -32,
+    "f": -16,
+    "g": -6,
+    "h": 0,
+    "k": 1,
+    "n": 12
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_18-30",
+   "from_mm": 18,
+   "to_mm": 30,
+   "mean_mm": 23.238,
+   "i_um": 1.307,
+   "it_um": {
+    "5": 9,
+    "6": 13,
+    "7": 21,
+    "8": 33,
+    "9": 52,
+    "10": 84,
+    "11": 130,
+    "12": 210,
+    "13": 330
+   },
+   "shaft_es_um": {
+    "d": -65,
+    "e": -40,
+    "f": -20,
+    "g": -7,
+    "h": 0,
+    "k": 2,
+    "n": 15
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_30-50",
+   "from_mm": 30,
+   "to_mm": 50,
+   "mean_mm": 38.73,
+   "i_um": 1.561,
+   "it_um": {
+    "5": 11,
+    "6": 16,
+    "7": 25,
+    "8": 39,
+    "9": 62,
+    "10": 100,
+    "11": 160,
+    "12": 250,
+    "13": 390
+   },
+   "shaft_es_um": {
+    "d": -80,
+    "e": -50,
+    "f": -25,
+    "g": -9,
+    "h": 0,
+    "k": 2,
+    "n": 17
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_50-80",
+   "from_mm": 50,
+   "to_mm": 80,
+   "mean_mm": 63.246,
+   "i_um": 1.856,
+   "it_um": {
+    "5": 13,
+    "6": 19,
+    "7": 30,
+    "8": 46,
+    "9": 74,
+    "10": 120,
+    "11": 190,
+    "12": 300,
+    "13": 460
+   },
+   "shaft_es_um": {
+    "d": -100,
+    "e": -60,
+    "f": -30,
+    "g": -10,
+    "h": 0,
+    "k": 2,
+    "n": 20
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_80-120",
+   "from_mm": 80,
+   "to_mm": 120,
+   "mean_mm": 97.98,
+   "i_um": 2.173,
+   "it_um": {
+    "5": 15,
+    "6": 22,
+    "7": 35,
+    "8": 54,
+    "9": 87,
+    "10": 140,
+    "11": 220,
+    "12": 350,
+    "13": 540
+   },
+   "shaft_es_um": {
+    "d": -120,
+    "e": -72,
+    "f": -36,
+    "g": -12,
+    "h": 0,
+    "k": 3,
+    "n": 23
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_120-180",
+   "from_mm": 120,
+   "to_mm": 180,
+   "mean_mm": 146.969,
+   "i_um": 2.522,
+   "it_um": {
+    "5": 18,
+    "6": 25,
+    "7": 40,
+    "8": 63,
+    "9": 100,
+    "10": 160,
+    "11": 250,
+    "12": 400,
+    "13": 630
+   },
+   "shaft_es_um": {
+    "d": -145,
+    "e": -85,
+    "f": -43,
+    "g": -14,
+    "h": 0,
+    "k": 3,
+    "n": 27
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_180-250",
+   "from_mm": 180,
+   "to_mm": 250,
+   "mean_mm": 212.132,
+   "i_um": 2.896,
+   "it_um": {
+    "5": 20,
+    "6": 29,
+    "7": 46,
+    "8": 72,
+    "9": 115,
+    "10": 185,
+    "11": 290,
+    "12": 460,
+    "13": 720
+   },
+   "shaft_es_um": {
+    "d": -170,
+    "e": -100,
+    "f": -50,
+    "g": -15,
+    "h": 0,
+    "k": 4,
+    "n": 31
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_250-315",
+   "from_mm": 250,
+   "to_mm": 315,
+   "mean_mm": 280.624,
+   "i_um": 3.227,
+   "it_um": {
+    "5": 23,
+    "6": 32,
+    "7": 52,
+    "8": 81,
+    "9": 130,
+    "10": 210,
+    "11": 320,
+    "12": 520,
+    "13": 810
+   },
+   "shaft_es_um": {
+    "d": -190,
+    "e": -110,
+    "f": -56,
+    "g": -17,
+    "h": 0,
+    "k": 4,
+    "n": 34
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_315-400",
+   "from_mm": 315,
+   "to_mm": 400,
+   "mean_mm": 354.965,
+   "i_um": 3.541,
+   "it_um": {
+    "5": 25,
+    "6": 36,
+    "7": 57,
+    "8": 89,
+    "9": 140,
+    "10": 230,
+    "11": 360,
+    "12": 570,
+    "13": 890
+   },
+   "shaft_es_um": {
+    "d": -210,
+    "e": -125,
+    "f": -62,
+    "g": -18,
+    "h": 0,
+    "k": 4,
+    "n": 37
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  },
+  {
+   "key": "iso286_400-500",
+   "from_mm": 400,
+   "to_mm": 500,
+   "mean_mm": 447.214,
+   "i_um": 3.888,
+   "it_um": {
+    "5": 27,
+    "6": 40,
+    "7": 63,
+    "8": 97,
+    "9": 155,
+    "10": 250,
+    "11": 400,
+    "12": 630,
+    "13": 970
+   },
+   "shaft_es_um": {
+    "d": -230,
+    "e": -135,
+    "f": -68,
+    "g": -20,
+    "h": 0,
+    "k": 5,
+    "n": 40
+   },
+   "confidence": "likely",
+   "source": "ISO 286-1 (limits and deviations for standard tolerance grades and fundamental deviations). Every IT value here is reproduced to the standard rounding by IT = k·i with i = 0.45·∛D + 0.001·D on the step mean D, and every shaft deviation by its closed-form definition (d −16·D^0.44, e −11·D^0.41, f −5.5·D^0.41, g −2.5·D^0.34, h 0, k +0.6·∛D for grades 4–7, n +5·D^0.34); the shipped figure is the published one, corroborated by that formula."
+  }
+ ],
+ "disputed": [
+  {
+   "step": "1-3",
+   "field": "IT9",
+   "value": "formula gives 22 um, the published table gives 25 um",
+   "note": "withheld: the two derivations disagree by more than the standard rounding",
+   "confidence": "certain"
+  },
+  {
+   "step": "1-3",
+   "field": "IT10",
+   "value": "formula gives 35 um, the published table gives 40 um",
+   "note": "withheld: the two derivations disagree by more than the standard rounding",
+   "confidence": "certain"
+  },
+  {
+   "step": "1-3",
+   "field": "IT11",
+   "value": "formula gives 54 um, the published table gives 60 um",
+   "note": "withheld: the two derivations disagree by more than the standard rounding",
+   "confidence": "certain"
+  },
+  {
+   "step": "1-3",
+   "field": "IT12",
+   "value": "formula gives 85 um, the published table gives 100 um",
+   "note": "withheld: the two derivations disagree by more than the standard rounding",
+   "confidence": "certain"
+  },
+  {
+   "step": "1-3",
+   "field": "shaft n",
+   "value": "formula gives 6 um, the published table gives 4 um",
+   "note": "withheld: the two derivations disagree",
+   "confidence": "certain"
+  }
+ ]
+}

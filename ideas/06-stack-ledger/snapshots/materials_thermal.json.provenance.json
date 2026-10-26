@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/materials_thermal.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "aca38a1 2026-09-18T01:30:40+00:00",
+  "committedBlob": "080fcd044f5874c26f0734c40bf6c96131e66146",
+  "readBlob": "080fcd044f5874c26f0734c40bf6c96131e66146",
+  "sourceSha256": "ee9e1dcdb97f867da354e822bbe8347dedb8b93586564fada357603df89d977e",
+  "sourceBytes": 15650,
+  "copiedAt": "2026-10-26T10:05:24.266Z",
+  "mode": "copy",
+  "note": "whole table: nu, CTE and service_max_c for the 21 FLIGHT_MATERIALS keys; the thermal contributor reads cte_um_m_K through PartForge's own dbFitThermal()",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ee9e1dcdb97f867da354e822bbe8347dedb8b93586564fada357603df89d977e",
+  "writtenBytes": 15650
+}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stack Ledger</title>
+<meta name="description" content="A one-dimensional tolerance stack over PartForge's own fits.json, stock.json and materials_thermal.json: worst case gates, RSS is a footnote, and every contributor nobody can source is refused with a reason.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#ledger">Skip to the ledger</a>
+<header class="top">
+  <div class="wrap">
+    <h1>Stack Ledger</h1>
+    <p class="sub">A gap as a signed chain of contributors, added up the only way that gates: <strong>worst case</strong>. Each contributor is an ISO 286 fit from PartForge's <code>fits.json</code>, an as-supplied surface from <code>stock.json</code>, a differential expansion from <code>materials_thermal.json</code> through the shipped <code>dbFitThermal()</code>, a declared dimension with its <code>tol_src</code>, or a coating build-up. RSS is a footnote, centred on the mid-limit means, with its N. What the tables refuse, the page refuses, and prints no number in its place.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card controls" aria-labelledby="example-h">
+    <h2 id="example-h" class="visually-hidden">Worked example</h2>
+    <div class="row">
+      <label for="preset">Worked example</label>
+      <select id="preset" aria-describedby="presetWhy"></select>
+      <button type="button" id="reload" class="btn">Reload example</button>
+    </div>
+    <p id="presetWhy" class="hint"></p>
+  </section>
+
+  <section class="card verdict" id="ledger" aria-live="polite" aria-labelledby="verdict-h">
+    <h2 id="verdict-h" class="vh"><span class="vword" id="vword">—</span> <span class="vgap" id="vgap"></span></h2>
+    <p class="vtext" id="vreason"></p>
+    <div class="figs" id="figs"></div>
+    <div class="line" id="lineWrap">
+      <svg id="numberLine" role="img" aria-label="Number line of the gap: the worst-case band, the RSS band, the requirement window and the nominal sum" height="128"></svg>
+    </div>
+    <p class="rss" id="rssLine"></p>
+    <p class="rss" id="thermalLine"></p>
+  </section>
+
+  <section class="card refusals" id="refusals" hidden aria-labelledby="refusals-h">
+    <h2 id="refusals-h">Refused</h2>
+    <ul id="refList"></ul>
+  </section>
+
+  <section class="card contribs" aria-labelledby="contribs-h">
+    <h2 id="contribs-h">Contributors</h2>
+    <div class="scroll">
+      <table id="ctab">
+        <thead>
+          <tr><th scope="col">#</th><th scope="col">dir</th><th scope="col">contributor</th><th scope="col" class="num">low</th><th scope="col" class="num">high</th><th scope="col" class="num">signed</th><th scope="col">from</th></tr>
+        </thead>
+        <tbody id="crows"></tbody>
+      </table>
+    </div>
+    <p class="hint">Limits are absolute (mm). <em>signed</em> is the contributor's band after its direction: the worst-case gap is the sum of the signed lows and the sum of the signed highs. Confidence words are the tables' own: <em>likely</em> or <em>recall</em> for a table row (a recall row is never presented as cited), <em>source</em> / <em>user</em> / <em>default</em> for a declaration (PartForge's <code>tol_src</code>).</p>
+  </section>
+
+  <section class="card controls" aria-labelledby="stack-h">
+    <h2 id="stack-h">Stack JSON <span class="muted">(edit it; the ledger follows)</span></h2>
+    <label for="stackJson" class="visually-hidden">Stack JSON</label>
+    <textarea id="stackJson" spellcheck="false" autocomplete="off" rows="12" aria-describedby="jsonHint"></textarea>
+    <p id="parseError" class="err" role="alert" hidden></p>
+    <div class="row">
+      <button type="button" id="compute" class="btn primary">Compute</button>
+      <span id="jsonHint" class="hint">Kinds: <code>declared</code> (nominal_mm, plus_mm/minus_mm or tol_mm, tol_src, tol_ref, dir), <code>fit</code> (size_mm, hole ["H",7], shaft ["g",6]), <code>iso</code> (size_mm, feature, letter, grade, dir), <code>stock</code> (key, surface od|id|thickness, dir), <code>coating</code> (per_side_mm or [min,max], surfaces, src), <code>thermal</code> (D_mm, hole_mat, shaft_mat, dT_K [low,high], hoop_cte). <code>dir</code> is +1 when the contributor opens the gap and −1 when it closes it. Units are mm.</span>
+    </div>
+  </section>
+
+  <section class="card notes" aria-labelledby="notes-h">
+    <h2 id="notes-h">Notes</h2>
+    <ul id="flags"></ul>
+    <p class="mesh" id="mesh"></p>
+    <details class="text">
+      <summary>Ledger as text (what the command line prints)</summary>
+      <pre id="ledgerText"></pre>
+    </details>
+  </section>
+
+  <footer class="prov">
+    <h2>Where the numbers come from</h2>
+    <ul id="prov"></ul>
+    <p class="small">Prototype for the <a href="README.md">Aster Idea Bank</a>. Every limit on this page is read from a PartForge table through PartForge's own <code>dbFit()</code> and <code>dbFitThermal()</code>, copied verbatim, or is a declaration whose provenance is printed beside it. The only numbers of this page's own are the N=4 line under which RSS is called baseless [Likely: a rule of thumb, not a theorem] and the illustrative tolerances the examples label as illustrative. It has not been through PartForge's geometry gate, data provenance pipeline or skeptic review; read the README for what it has not been through.</p>
+  </footer>
+</main>
+
+<script src="snapshots/partforge.js"></script>
+<script src="stack.js"></script>
+<script src="examples.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

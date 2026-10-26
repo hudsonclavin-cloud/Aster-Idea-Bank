@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/fits.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "ad4d587 2026-09-18T01:59:04+00:00",
+  "committedBlob": "1390c474344b1a0c5024b534654cda6d73c2a8ee",
+  "readBlob": "1390c474344b1a0c5024b534654cda6d73c2a8ee",
+  "sourceSha256": "328508fa44c771b26a0dd578c366a3d5ea2197f8b9bc02021b6db38c38019639",
+  "sourceBytes": 17453,
+  "copiedAt": "2026-10-26T10:05:24.184Z",
+  "mode": "copy",
+  "note": "whole table: ISO 286 IT grades and fundamental deviations as PartForge derives them; the five withheld 1-3 mm values stay withheld and are refused by lookup",
+  "readMatchesCommitted": true,
+  "writtenSha256": "328508fa44c771b26a0dd578c366a3d5ea2197f8b9bc02021b6db38c38019639",
+  "writtenBytes": 17453
+}
