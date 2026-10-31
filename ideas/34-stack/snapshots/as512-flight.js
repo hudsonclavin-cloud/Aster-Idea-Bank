@@ -111,7 +111,10 @@
     // TANK" + "FUEL BELOW TANK" (the two rows given separately), TOTAL of the burning stage, TOTAL VEHICLE.
     stageTables: {
       'S-IC': { table: '16-1', page: 227, events: {
-        'ground ignition': { t: -6.55, dry: 130342, lox: [1482255, 21126], fuel: [645190, 4318], stage: 2285680, vehicle: 2961860 },
+        // review: the column's other seven rows (LOX ULLAGE GAS, FUEL ULLAGE GAS, N2 PURGE GAS, HELIUM IN BOTTLE, FROST,
+        // RETROROCKET PROP, OTHER), so the test that sums the column to its total reads them from here
+        'ground ignition': { t: -6.55, dry: 130342, lox: [1482255, 21126], fuel: [645190, 4318], stage: 2285680, vehicle: 2961860,
+          otherRows: [['LOX ULLAGE GAS', 191], ['FUEL ULLAGE GAS', 30], ['N2 PURGE GAS', 36], ['HELIUM IN BOTTLE', 288], ['FROST', 635], ['RETROROCKET PROP', 1026], ['OTHER', 239]] },
         'holddown arm release': { t: 0.24, dry: 130342, lox: [1447435, 21886], fuel: [633521, 6001], stage: 2241664, vehicle: 2917844 },
         'center engine cutoff': { t: 139.30, dry: 130342, lox: [158699, 21869], fuel: [76625, 6001], stage: 398652, vehicle: 1074520 },
         // OECO range time printed "161.2" with an illegible last digit; Tables 2-2 and 4-2 give 161.20
@@ -168,6 +171,10 @@
       sivb1Gcs: [702.69, 170.5, 7802.3, 25598.1],
       sivb2Gcs: [11907.64, 300.0, 10844.6, 35579.4],
     },
+    // Table 4-2, same page, S-IVB second guidance cutoff, "C3, m^2/s^2 (ft^2/s^2)": [ACTUAL, NOMINAL, ACT-NOM], each
+    // [m^2/s^2, ft^2/s^2] (added in review). The ACTUAL ft^2/s^2 entry's third digit is smudged (it reads as 9 or 8);
+    // NOMINAL + ACT-NOM = -19,086,760 settles it, and the m^2/s^2 column agrees.
+    c3AtSivb2Gcs: { actual: [-1773218, -19086760], nominal: [-1769310, -19044694], difference: [-3908, -42066] },
     // Table 4-4, Parking Orbit Insertion Conditions, printed page 4-8 (PDF page 63), ACTUAL
     parkingOrbit: { t: 712.66, altitudeKm: 170.5, velocity: 7804.1, velocityFt: 25604.0, flightPathDeg: 0.003, inclinationDeg: 28.526,
       eccentricity: 0.0000, apogeeKm: 167.2, perigeeKm: 166.6, periodMin: 87.83 },

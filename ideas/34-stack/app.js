@@ -120,7 +120,9 @@
     var P = S.stagePropellant(s), pmax = Math.max(10, Math.ceil(P / 1000 * 2.5));
     var pn = numInput('prop' + i, (P / 1000).toFixed(1), '0.1', 'Propellant on stage ' + (i + 1) + ', tonnes');
     var pr = el('input', { id: 'propR' + i, type: 'range', min: '1', max: String(pmax), step: '0.5', value: String(P / 1000), 'aria-label': 'Propellant slider for stage ' + (i + 1) + ', tonnes' });
-    var setP = function (t, from) { if (!(t > 0)) return; setPropellant(s, t * 1000); state.veh.id = 'custom'; if (from !== 'n') pn.value = (+t).toFixed(1); if (from !== 'r') pr.value = t; compute(); };
+    var setP = function (t, from) {
+      if (!(t > 0)) { setPropellant(s, isFinite(t) ? t * 1000 : NaN); state.veh.id = 'custom'; compute(); return; } // review fix: refused, not ignored
+      setPropellant(s, t * 1000); state.veh.id = 'custom'; if (from !== 'n') pn.value = (+t).toFixed(1); if (from !== 'r') pr.value = t; compute(); };
     pn.addEventListener('change', function () { setP(+this.value, 'n'); });
     pr.addEventListener('input', function () { setP(+this.value, 'r'); });
     c.appendChild(el('div', { class: 'ctl' }, [el('div', { class: 'ctl-head' }, [el('label', { for: 'prop' + i, html: 'Propellant burned <small>(t' + (s.burns.length > 1 ? '; the last burn takes what the first leaves' : '') + ')</small>' }), pn]), pr]));
@@ -133,10 +135,11 @@
     c.appendChild(el('div', { class: 'ctl' }, [el('div', { class: 'ctl-head' }, [el('label', { for: 'rem' + i, html: 'Left unburned <small>(t, residuals, gases)</small>' }), rn])]));
     var fs = el('select', { id: 'frac' + i, 'aria-label': 'Real stage to scale the dry mass from' });
     FRAC.forEach(function (f, k) { fs.appendChild(el('option', { value: String(k), text: f.label + ' (' + fmt(100 * f.value, 2) + ' % inert)' })); });
+    FRAC.forEach(function (f, k) { if (s.fraction && s.fraction.label === f.label) fs.value = String(k); });
     var fb = el('button', { type: 'button', text: 'Scale dry mass', 'aria-label': 'Scale stage ' + (i + 1) + ' dry mass from the chosen stage' });
     fb.addEventListener('click', function () {
       var f = FRAC[+fs.value], Pt = S.stagePropellant(s);
-      s.dry = S.dryForFraction(Pt, f.value); s.remaining = 0; s.note = 'Dry mass scaled from ' + f.label + '\'s inert fraction (' + fmt(100 * f.value, 2) + ' %), assumed.';
+      s.dry = S.dryForFraction(Pt, f.value); s.remaining = 0; s.fraction = f; s.note = 'Dry mass scaled from ' + f.label + '\'s inert fraction (' + fmt(100 * f.value, 2) + ' %), assumed.';
       dn.value = (s.dry / 1000).toFixed(2); rn.value = '0.00'; state.veh.id = 'custom'; compute(); info.textContent = s.note;
     });
     c.appendChild(el('div', { class: 'fx' }, [fs, fb]));
@@ -160,8 +163,9 @@
     cur.use = vehicleInUse(); cur.engs = enginesFor(cur.use);
     cur.r = S.evaluate(cur.use, cur.engs);
     var pl = cur.use.payload.mass, tg = targetDv();
-    cur.solve = cur.r.ok && tg ? S.solvePayload(cur.use, cur.engs, tg) : null;
-    var xmax = Math.max(20000, 2 * pl, cur.solve && cur.solve.payload ? cur.solve.payload * 1.4 : 0);
+    cur.solve = cur.r.ok && state.target !== 'none' ? S.solvePayload(cur.use, cur.engs, tg) : null;
+    var sp = cur.solve && (cur.solve.payload != null ? cur.solve.payload : cur.solve.payloadNoLiftoff);
+    var xmax = Math.max(20000, 2 * pl, sp ? sp * 1.4 : 0);
     cur.sweep = cur.r.ok ? S.sweepPayload(cur.use, cur.engs, xmax, 41) : null;
     cur.xmax = xmax;
     renderSource(); renderResults(); drawFly(); drawPay(); buildHandoff();
@@ -171,7 +175,7 @@
   function renderSource() {
     var v = state.veh;
     $('vehSource').textContent = v.id === 'AS-512' ? 'Every mass from NASA\'s AS-512 flight evaluation report (MPR-SAT-FE-73-1, Tables 16-1 to 16-9): the stack as it stood at holddown release on 7 December 1972. Engines: idea 33\'s F-1 and J-2.' :
-      v.id === 'imported' ? 'Imported from a 34-stack handoff; engines re-computed with idea 33\'s kernel.' :
+      v.id === 'imported' ? 'Imported from a 34-stack handoff; engines re-computed with idea 33\'s kernel, outputs checked against them. Its masses are assumed.' + (v.note ? ' ' + v.note : '') :
       'Edited or built here: these masses are assumptions (typed, or scaled from an AS-512 stage\'s inert fraction); engines are idea 33\'s. Choose the vehicle again to restore it.';
     $('eventsNote').textContent = state.events === 'simple' ? 'One burn per stage with every engine to depletion; jettisoned items ride to separation; losses between burns taken at the start. Same total mass.' :
       (state.veh.stages.some(function (s) { return s.burns.some(function (b) { return (b.jettisons || []).length || (b.engineOut || []).length || b.shed || b.coast; }); }) ? 'Engine cutoffs, jettisons and losses as listed under each stage.' : 'This stack schedules none.');
@@ -255,7 +259,7 @@
   var FLY = { v: { label: 'Ideal velocity gained (km/s)', f: function (p) { return p.v / 1000; } }, a: { label: 'Acceleration, vacuum thrust (g)', f: function (p) { return p.a / G0; } }, m: { label: 'Vehicle mass (t)', f: function (p) { return p.m / 1000; } } };
   function flightPoints() {
     // AS-512's measured points on the same clock (cumulative mainstage burning time), shown when the AS-512 stack is unedited
-    if (state.veh.id !== 'AS-512' || state.events !== 'flown') return [];
+    if (state.veh.id !== 'AS-512' || state.events !== 'flown' || state.veh.simplified) return [];
     var ST = D.stageTables, A = D.acceleration, sq = function (lab) { return D.sequence.filter(function (x) { return x[0] === lab; })[0][1]; };
     var t1c = D.events.sicOeco - ST['S-IC'].events['holddown arm release'].t;
     var t2c = ST['S-II'].events['S-II engine cutoff'].t - ST['S-II'].events['S-II mainstage'].t;
@@ -344,16 +348,16 @@
     leg.appendChild(el('li', { html: '<span class="key" style="border-color:var(--s1)"></span>this stack (vacuum engine-level Isp)' }));
     if (tg) leg.appendChild(el('li', { html: '<span class="key dash" style="border-color:var(--s2)"></span>target' }));
     if (bad.length) leg.appendChild(el('li', { html: '<span class="swatch" style="background:var(--refused)"></span>does not lift off (thrust/weight ≤ 1)' }));
-    if (!tg) { sol.className = 'verdict'; sol.textContent = 'Choose a target to see the most payload this stack can give it.'; }
+    if (state.target === 'none') { sol.className = 'verdict'; sol.textContent = 'Choose a target to see the most payload this stack can give it.'; }
     else if (cur.solve.refusal) { sol.className = 'verdict bad'; sol.textContent = 'Refused (' + cur.solve.refusal.code + '): ' + cur.solve.refusal.reason + ' What would help: ' + cur.solve.refusal.what_would_help; }
     else {
       var tw = S.evaluate(S.withPayload(cur.use, cur.solve.payload), cur.engs, { timeline: false }).liftoff.tw;
       sol.className = 'verdict ok';
-      sol.textContent = 'At most ' + t1(cur.solve.payload) + ' t of payload for ' + fmt(tg, 0) + ' m/s of ideal delta-v (all propellant burned), with liftoff thrust/weight ' + fmt(tw, 2) + (tw <= 1 ? ': it would not leave the pad.' : '.') + ' [derived; ' + (state.target === 'typed' ? 'your target, assumed' : 'a screening reference: losses depend on the trajectory, module 35') + ']';
+      sol.textContent = 'At most ' + t1(cur.solve.payload) + ' t of payload for ' + fmt(tg, 0) + ' m/s of ideal delta-v (all propellant burned)' + (cur.solve.liftoffRefused ? '; liftoff is refused above (no sea-level thrust), so this holds only for a stack lit in vacuum.' : ', with liftoff thrust/weight ' + fmt(tw, 2) + '.') + ' [derived; ' + (state.target === 'typed' ? 'your target, assumed' : 'a screening reference: losses depend on the trajectory, module 35') + ']';
     }
     $('capPay').textContent = 'Drag the blue handle, tap the chart or use the arrow keys to change the payload (now ' + t1(pl) + ' t, ' + fmt(cur.r.dv, 0) + ' m/s). ' +
       (state.target === 'orbit' ? 'The target is the ideal delta-v this model gives Apollo 17\'s own stack from liftoff to its 170.5 km circular parking orbit (S-IC, S-II, S-IVB first burn, ' + fmt(AS.dvOrbit, 0) + ' m/s): what that orbit cost a Saturn V, losses included.' :
-        state.target === 'tli' ? 'The target is the ideal delta-v this model gives Apollo 17\'s whole flight to translunar injection (' + fmt(AS.dvTli, 0) + ' m/s; C3 −1.77 km²/s², Table 4-2).' : '');
+        state.target === 'tli' ? 'The target is the ideal delta-v this model gives Apollo 17\'s whole flight to translunar injection (' + fmt(AS.dvTli, 0) + ' m/s; C3 ' + fmt(D.c3AtSivb2Gcs.actual[0] / 1e6, 2).replace('-', '−') + ' km²/s², Table 4-2).' : '');
   }
   function setPayload(kg) { if (!(kg >= 0)) return; state.veh.payload.mass = kg; if (state.veh.id === 'AS-512') state.veh.id = 'custom'; $('plNum').value = (kg / 1000).toFixed(1); $('plRange').value = kg / 1000; compute(); }
   function payPick(evt) { var svg = $('chartPay'); if (!svg._X) return; var p = svgPoint(svg, evt); setPayload(Math.max(0, Math.round(svg._X.inv(p.x) * 10) / 10 * 1000)); }
@@ -381,7 +385,7 @@
     var tl = $('trustList'); tl.innerHTML = '';
     [
       '<b>The ledger is exact</b>: AS-512\'s stack built from the report\'s masses lifts off at ' + t1(g['Liftoff (holddown release)'].model) + ' t against the report\'s ' + t1(g['Liftoff (holddown release)'].flight) + ' t and arrives at every cutoff within 30 kg. [Certain]',
-      '<b>The F-1 is right</b> at the engine level: idea 33\'s F-1 gives sea-level thrust ' + pct(g['F-1 sea-level thrust'].gap, 2) + ', flow ' + pct(g['F-1 mass flow'].gap, 2) + ' and Isp ' + pct(g['F-1 sea-level Isp'].gap, 2) + ' against the five flight engines. In flight its thrust and flow rose about 2.4 % by cutoff, which the model (fixed chamber pressure) does not follow. [Certain as numbers]',
+      '<b>The F-1 is right</b> at the engine level: idea 33\'s F-1 gives sea-level thrust ' + pct(g['F-1 sea-level thrust'].gap, 2) + ', flow ' + pct(g['F-1 mass flow'].gap, 2) + ' and Isp ' + pct(g['F-1 sea-level Isp'].gap, 2) + ' against the five flight engines (Table 5-2, standard pump inlet conditions). In flight it ran harder: the S-IC burned its propellant on ' + pct(-g['F-1 flow, flight average over the S-IC burn'].gap / (1 + g['F-1 flow, flight average over the S-IC burn'].gap), 1) + ' more flow on average, and its acceleration at cutoff needs ' + pct(-g['S-IC at outboard cutoff (4 engines, 66.5 km)'].gap / (1 + g['S-IC at outboard cutoff (4 engines, 66.5 km)'].gap), 1) + ' more thrust than idea 33\'s fixed chamber pressure gives. [Certain as numbers]',
       '<b>The J-2 is right only where it was calibrated</b>: on the S-II (mixture ratio 5.5) thrust ' + pct(g['J-2 vacuum thrust, S-II high-EMR phase'].gap, 2) + '; on the S-IVB, which ran at 5.0, ' + pct(g['J-2 vacuum thrust, S-IVB'].gap, 1) + ' in thrust and ' + pct(g['J-2 mass flow, S-IVB'].gap, 1) + ' in flow, so its burns come out ' + pct(g['S-IVB second burn, mainstage to cutoff'].gap, 0) + ' short. [Certain as numbers]',
       '<b>Ideal is not flown</b>: the S-II\'s ideal delta-v exceeds the velocity the flight gained by ' + fmt(g['S-II burn: ideal delta-v vs space-fixed gain'].gap, 0) + ' m/s, the loss to gravity while climbing; at the flight\'s own Isp the S-IVB\'s near-horizontal first burn agrees with the velocity gained within ' + fmt(Math.abs(g['S-IVB first burn at the flight\'s Isp'].gap), 0) + ' m/s. [Likely]',
     ].forEach(function (h) { tl.appendChild(el('li', { html: h })); });
@@ -410,7 +414,7 @@
   }
   function doImport(text, how) {
     var st = $('importStatus'), obj = decode(text);
-    var p = S.parseHandoff(obj);
+    var p = S.parseHandoff(obj, D);
     if (p.refusal) { st.className = 'status bad'; st.textContent = 'Refused (' + p.refusal.code + '): ' + p.refusal.reason + ' What would help: ' + p.refusal.what_would_help; return false; }
     if (p.engine || p.record) {
       imported = p.engine || p.record; engines[imported.id] = imported;
@@ -419,7 +423,7 @@
       st.textContent = 'Imported ' + how + ': idea 33\'s engine (' + imported.label + '), re-computed with idea 33\'s kernel; its numbers match the handoff. Put on a two-stage stack with assumed masses; change anything.';
     } else {
       for (var k in p.engines) { engines[k] = p.engines[k]; if (p.engines[k].kind === 'imported') imported = p.engines[k]; }
-      importedVeh = p.vehicle; importedVeh.id = importedVeh.id === 'AS-512' ? 'AS-512' : 'imported';
+      importedVeh = p.vehicle; importedVeh.id = importedVeh.id === 'AS-512' ? 'AS-512' : 'imported'; // parseHandoff(…, D) demotes an edited AS-512
       loadVehicle('impveh');
       st.className = 'status ok';
       st.textContent = 'Imported ' + how + ': a 34-stack vehicle (' + (p.vehicle.label || 'unnamed') + '), its engines re-computed with idea 33\'s kernel.';
@@ -455,7 +459,7 @@
   $('plRange').addEventListener('input', function () { setPayload(+this.value * 1000); });
   document.querySelectorAll('[data-fly]').forEach(function (b) { b.addEventListener('click', function () { state.fly = b.dataset.fly; drawFly(); }); });
   $('target').addEventListener('change', function () { state.target = this.value; $('targetNum').hidden = state.target !== 'typed'; compute(); });
-  $('targetNum').addEventListener('change', function () { var v = +this.value; if (v > 0) { state.targetTyped = v; compute(); } });
+  $('targetNum').addEventListener('change', function () { state.targetTyped = this.value.trim() === '' ? NaN : +this.value; compute(); }); // review fix: the kernel refuses a bad target
   var fly = $('chartFly'), dragF = false;
   fly.addEventListener('pointerdown', function (e) { dragF = true; fly.setPointerCapture && fly.setPointerCapture(e.pointerId); flyPick(e); });
   fly.addEventListener('pointermove', function (e) { if (dragF) flyPick(e); });

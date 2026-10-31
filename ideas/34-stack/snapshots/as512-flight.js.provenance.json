@@ -7,6 +7,6 @@
  "license": "NASA technical memorandum (MPR-SAT-FE-73-1 / NASA-TM-X-69534), a US-government work: public domain in the US",
  "path": "NTRS 19730025089, MPR-SAT-FE-73-1 (NASA-TM-X-69534), Saturn V Launch Vehicle Flight Evaluation Report - AS-512 Apollo 17 Mission (28 Feb 1973): Table 16-9 (PDF pages 235-236), Tables 16-1, 16-3, 16-5, 16-7 (PDF pages 227, 229, 231, 233), Table 2-2 (PDF pages 37-39), Tables 4-1, 4-2, 4-4 (PDF pages 60, 61, 63), Table 5-2 (PDF page 71), section 6.3 (PDF page 84), section 7.1 and Tables 7-1, 7-2 (PDF pages 98, 103, 111)",
  "note": "Hand-transcribed from the pages rendered at 170-400 dpi with pdftoppm (the tables have no legible text layer). Actual (reconstructed) columns only. Checked three ways by stack.test.mjs: kg against the report's own lbm column, every running total against the rows above it, and the stage tables against Table 16-9.",
- "writtenSha256": "ef09158085857489061f1e46a720bd8d9bd3c63ce452d6b4a38af29f26d6c0aa",
- "writtenBytes": 11904
+ "writtenSha256": "34f8a6e682b4e932949224ad58731081f8049e52f126a4ebd451cee1dd2cf871",
+ "writtenBytes": 12745
 }

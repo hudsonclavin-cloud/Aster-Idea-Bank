@@ -61,9 +61,14 @@ test('AS-512 stage tables (16-1, 16-3, 16-5, 16-7) agree with Table 16-9, and th
     [T['S-IVB burn 1'].events['S-IVB ignition'].vehicle, '3RD FLT STG 1ST IGN'], [T['S-IVB burn 1'].events['S-IVB mainstage'].vehicle, '3RD FLT STG 1ST MS'], [T['S-IVB burn 1'].events['S-IVB engine cutoff'].vehicle, '3RD FLT STG 1ST COS'],
     [T['S-IVB burn 2'].events['S-IVB ignition'].vehicle, '3RD FLT STG 2ND IGN'], [T['S-IVB burn 2'].events['S-IVB mainstage'].vehicle, '3RD FLT STG 2ND MS'], [T['S-IVB burn 2'].events['S-IVB engine cutoff'].vehicle, '3RD FLT STG 2ND COS']];
   for (const [a, lab] of pairs) near(a, seq(lab)[1], 1, lab);
-  // ignition column of Table 16-1 sums (with its other eight rows, 1910 kg) to its total within the table's rounding
+  // ignition column of Table 16-1 sums (with its other seven rows, 2445 kg, in the snapshot since review) to its total
   const ig = T['S-IC'].events['ground ignition'];
-  near(ig.dry + ig.lox[0] + ig.lox[1] + ig.fuel[0] + ig.fuel[1] + 191 + 30 + 36 + 288 + 635 + 1026 + 239, ig.stage, 6, 'Table 16-1 ignition column');
+  assert.equal(ig.otherRows.length, 7);
+  near(ig.dry + ig.lox[0] + ig.lox[1] + ig.fuel[0] + ig.fuel[1] + ig.otherRows.reduce((a, r) => a + r[1], 0), ig.stage, 6, 'Table 16-1 ignition column');
+  // Table 4-2's C3 at the S-IVB second cutoff: m^2/s^2 against ft^2/s^2, and ACTUAL = NOMINAL + ACT-NOM in both units
+  const c3 = D.c3AtSivb2Gcs;
+  for (const k of ['actual', 'nominal', 'difference']) near(c3[k][0] / (FT * FT), c3[k][1], 1, 'C3 ' + k + ' m^2 vs ft^2');
+  for (const i of [0, 1]) assert.equal(c3.nominal[i] + c3.difference[i], c3.actual[i], 'C3 actual = nominal + difference');
   for (const [k, row] of Object.entries(D.cutoff)) near(row[2] / FT, row[3], 0.06, k + ' m/s vs ft/s');
   for (const [k, row] of Object.entries(D.acceleration)) { near(row[1] / FT, row[2], 0.006, k + ' m/s^2 vs ft/s^2'); near(row[1] / g0, row[3], 0.006, k + ' g'); }
   near(D.parkingOrbit.velocity / FT, D.parkingOrbit.velocityFt, 0.06, 'parking orbit velocity');
@@ -174,11 +179,18 @@ test('AS-512 against its flight report: the gaps, pinned', () => {
   pin('J-2 vacuum thrust, S-II high-EMR phase', -0.00579, 0.0001); pin('J-2 mass flow, S-II', -0.00848, 0.0001); pin('J-2 Isp, S-II', 0.00278, 0.0001);
   pin('J-2 vacuum thrust, S-IVB', 0.1176, 0.0005); pin('J-2 mass flow, S-IVB', 0.1305, 0.0005); pin('J-2 Isp, S-IVB', -0.01152, 0.0001);
   pin('S-IC, holddown release to outboard cutoff', 0.0243, 0.0005);
+  // review: the burn-time gap as a flow, 2,076,017 kg over 5 x 139.06 + 4 x 21.90 engine-seconds = 2651.70 kg/s
+  near(g['F-1 flow, flight average over the S-IC burn'].flight, 2076017 / (5 * (139.30 - 0.24) + 4 * (161.20 - 139.30)), 1e-9, 'flight-average F-1 flow by hand');
+  pin('F-1 flow, flight average over the S-IC burn', -0.01959, 0.0001);
   // by hand from the report's rows: Table 16-9's 2,076,017 kg mainstage, five F-1s until 139.30 - 0.24 s, then four
   const tc = 139.30 - 0.24, md = ENG['F-1'].mdot;
   close(g['S-IC, holddown release to outboard cutoff'].model, tc + (2076017 - 5 * md * tc) / (4 * md), 1e-12, 'S-IC burn time by hand'); pin('S-II, mainstage to outboard cutoff', -0.0289, 0.0005);
   pin('S-IVB first burn, mainstage to cutoff', -0.1152, 0.0005); pin('S-IVB second burn, mainstage to cutoff', -0.1416, 0.0005);
-  pin('S-IC at outboard cutoff (4 engines, 66.5 km)', -0.02435, 0.0005); pin('S-II just before centre cutoff (5 engines)', -0.0101, 0.0005);
+  pin('S-IC at outboard cutoff (4 engines, 66.5 km)', -0.02435, 0.0005);
+  // review: by hand, four F-1s at the 1976 atmosphere's pressure at 66.5 km over 2,917,816 - 2,076,017 - 1,807 kg
+  const pa665 = L.pf.isa(66500).P_Pa;
+  assert.ok(pa665 > 5 && pa665 < 15, 'about 9 Pa at 66.5 km');
+  close(g['S-IC at outboard cutoff (4 engines, 66.5 km)'].model, 4 * (ENG['F-1'].thrustVac - pa665 * ENG['F-1'].exitArea) / (2917816 - 2076017 - 1807), 1e-12, 'S-IC cutoff acceleration by hand'); pin('S-II just before centre cutoff (5 engines)', -0.0101, 0.0005);
   pin('S-IVB at first cutoff', 0.1101, 0.0005); pin('S-IVB at second cutoff', 0.1233, 0.0005);
   pin('S-IC fuel volume at the engine\'s mixture ratio', 0.01365, 0.0001); pin('S-II fuel volume at the engine\'s mixture ratio', -0.00646, 0.0001); pin('S-IVB fuel volume at the engine\'s mixture ratio', -0.1316, 0.0001);
   near(g['S-II burn: ideal delta-v vs space-fixed gain'].gap, 411.6, 1, 'S-II loss'); near(g['S-IVB first burn: ideal vs gain'].gap, -11.9, 1, 'S-IVB first');
@@ -241,7 +253,68 @@ test('handoff.json is what the kernel computes; every output is complete; it rou
   const p = S.parseHandoff(h);
   const r2 = S.evaluate(p.vehicle, p.engines);
   close(r2.dv, h.outputs.delta_v_ideal.value, 1e-12, 'round trip delta-v');
-  near(h.outputs.delta_v_ideal.value, 10767.8, 0.1, 'sample delta-v'); near(h.outputs.liftoff_thrust_to_weight.value, 1.2838, 0.0001, 'sample T/W');
+  // pinned by an independent Python recompute in review (from the report's rows and idea 33's committed outputs)
+  near(h.outputs.delta_v_ideal.value, 10733.07, 0.01, 'sample delta-v'); near(h.outputs.liftoff_thrust_to_weight.value, 1.28321, 0.00001, 'sample T/W'); near(h.outputs.liftoff_mass.value, 556263.4, 0.1, 'sample liftoff mass');
   const asH = S.makeHandoff(S.fromAS512(D), ENG, S.evaluate(S.fromAS512(D), ENG), { produced: 'x' });
   assert.equal(asH.outputs.liftoff_mass.confidence, 'measured'); assert.match(asH.assumptions.join(' '), /launch escape system jettison time is not in the report/);
+});
+
+// ------------------------------------------------------------------ added in independent review
+test('review: the payload solve refuses a payload the stack cannot lift, and says the most it can; T/W of exactly 1 is refused', () => {
+  const veh = S.fromAS512(D);
+  const r = S.solvePayload(veh, ENG, 5000);
+  assert.equal(r.refusal && r.refusal.code, 'out_of_envelope', 'a 5 km/s target asks for 674 t, which does not lift off');
+  assert.match(r.refusal.reason, /does not leave the pad/);
+  // the most it lifts is where liftoff thrust equals liftoff weight: 5 F-1s at sea level / g0 less the empty stack
+  const empty = S.evaluate(S.withPayload(veh, 0), ENG, { timeline: false });
+  close(r.maxLiftoffPayload, 5 * ENG['F-1'].thrustSL / g0 - empty.liftoff.mass, 1e-12, 'max liftoff payload, closed form');
+  close(r.dvAtMaxLiftoffPayload, S.evaluate(S.withPayload(veh, r.maxLiftoffPayload), ENG).dv, 1e-12, 'its delta-v');
+  assert.ok(r.dvAtMaxLiftoffPayload > 5000);
+  const ok = S.solvePayload(veh, ENG, 9177);
+  assert.ok(ok.payload > 0 && !ok.refusal && ok.liftoffRefused === false);
+  // a stack exactly at thrust-to-weight 1 is refused, a hair above it is not
+  const at1 = Object.assign({}, eng1, { thrustSL: (66000 * g0) / 4 });
+  assert.match(S.evaluate(one({}), { x: at1 }).refusals[0].reason, /does not leave the pad/);
+  assert.equal(S.evaluate(one({}), { x: Object.assign({}, at1, { thrustSL: at1.thrustSL * (1 + 1e-9) }) }).refusals.length, 0);
+});
+test('review: an idea 33 handoff without engine-level outputs is insufficient data (not "edited"); deck stays in its throttle range', () => {
+  const noCyc = JSON.parse(JSON.stringify(H33));
+  for (const k of ['thrust_vacuum', 'mass_flow', 'specific_impulse_vacuum', 'specific_impulse_vacuum_upper', 'gas_generator_flow', 'thrust_sea_level', 'specific_impulse_sea_level']) delete noCyc.outputs[k];
+  noCyc.inputs.engine.cycle_reference = null;
+  let x = S.engineFromHandoff(noCyc);
+  assert.equal(x.refusal.code, 'insufficient_data'); assert.match(x.refusal.reason, /no cycle/);
+  noCyc.inputs.engine.cycle_reference = 'SSME (EPL)';
+  noCyc.refusals.push({ applies_to: 'engine_level', code: 'out_of_envelope', reason: 'Engine-level flow and Isp need the cycle, which is refused: test.' });
+  x = S.engineFromHandoff(noCyc);
+  assert.equal(x.refusal.code, 'insufficient_data'); assert.match(x.refusal.reason, /idea 33 refused it/);
+  const narrow = JSON.parse(JSON.stringify(H33)); narrow.inputs.engine.throttle = { min: 0.6, max: 1, nominal: 1 };
+  const rec = S.engineFromHandoff(narrow).record;
+  assert.deepEqual(rec.deckVac.throttle, [0.6, 0.8, 1]);
+  assert.deepEqual(S.engineFromHandoff(H33).record.deckVac.throttle, [0.4, 0.6, 0.8, 1, 1.1]);
+});
+test('review: a 34-stack handoff is refused when its engines or outputs were edited; an edited AS-512 is not "measured"', () => {
+  const veh = S.fromAS512(D), h = JSON.parse(JSON.stringify(S.makeHandoff(veh, ENG, S.evaluate(veh, ENG), { produced: 'x' })));
+  assert.equal(S.parseHandoff(h, D).vehicle.id, 'AS-512');
+  const a = JSON.parse(JSON.stringify(h)); a.outputs.delta_v_ideal.value += 1;
+  assert.equal(S.parseHandoff(a).refusal.code, 'invalid_input'); assert.match(S.parseHandoff(a).refusal.reason, /delta_v_ideal/);
+  const b = JSON.parse(JSON.stringify(h)); b.inputs.engines['J-2'].mass_flow_kg_s *= 1.001;
+  assert.match(S.parseHandoff(b).refusal.reason, /J-2\.mass_flow_kg_s/);
+  const c = JSON.parse(JSON.stringify(h)); c.inputs.vehicle.stages[0].dry += 1000;
+  const rc = S.evaluate(c.inputs.vehicle, ENG);
+  c.outputs.liftoff_mass.value = rc.liftoff.mass; c.outputs.delta_v_ideal.value = rc.dv; c.outputs.burn_time_total.value = rc.burnTime;
+  const pc = S.parseHandoff(c, D);
+  assert.equal(pc.vehicle.id, 'imported', 'masses not the report\'s: not AS-512');
+  assert.equal(S.makeHandoff(pc.vehicle, pc.engines, S.evaluate(pc.vehicle, pc.engines), {}).outputs.liftoff_mass.confidence, 'assumed');
+  const sv = S.simplify(veh), hs = JSON.parse(JSON.stringify(S.makeHandoff(sv, ENG, S.evaluate(sv, ENG), {})));
+  assert.equal(S.parseHandoff(hs, D).vehicle.id, 'AS-512', 'events off is still the report\'s masses');
+  // two jettisons at one instant make no zero-length segment for module 35
+  for (const st of h.outputs.stages.value) for (const bn of st.burns) for (const g of bn.segments) assert.ok(g.t1_s - g.t0_s > 1e-6, st.label + ' segment of zero length');
+  assert.equal(h.outputs.stages.value[1].burns[0].segments.length, 3, 'S-II: to the jettisons, to the centre cutoff, to depletion');
+  assert.equal(h.outputs.stages.value[1].burns[0].segments[0].t1_s, D.events.siiAftInterstageJettison - D.stageTables['S-II'].events['S-II mainstage'].t, 'segment ends on the event time');
+});
+test('review: an inert fraction scales back to its own stage (dryForFraction inverts inertFractions)', () => {
+  const veh = S.fromAS512(D), f = S.inertFractions(D);
+  veh.stages.forEach((s, i) => close(S.dryForFraction(S.stagePropellant(s), f[i].value), s.dry + s.remaining, 1e-12, s.label));
+  // and by hand from Table 16-9's rows: S-II dropped 45,560 kg against 449,797 kg burned
+  close(f[1].value, 45560 / (45560 + 449797), 1e-12, 'S-II inert fraction by hand');
 });

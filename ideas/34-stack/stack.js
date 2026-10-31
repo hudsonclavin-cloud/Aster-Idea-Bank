@@ -51,7 +51,7 @@
     // ================================================================== engines (all idea 33's)
     /** An engine record from idea 33's quantities at nominal throttle: thrust chamber point v (vacuum), sl (sea
      * level), the cycle and engine level, per chamber; multiplied by the number of chambers here. */
-    function record(spec, ctx, cyc, base) {
+    function record(spec, ctx, cyc, base, range) {
       var n = spec.chambers || 1;
       var v = E.point(ctx, spec.pc, 0), sl = E.point(ctx, spec.pc, isa(0).P_Pa);
       var refs = [];
@@ -64,7 +64,14 @@
       var d = E.densities(spec.prop);
       var mo = v.mdotOx + (gg ? cOk.pumps.ox.flow - v.mdotOx : 0), mf = ev.mdot - mo;
       if (sl.refusal) refs.push(Object.assign({}, sl.refusal, { applies_to: 'thrust_sea_level', from: '33-engine-deck' }));
-      var deckRows = DECK_THROTTLES.map(function (tau) {
+      // review fix: an imported engine's deck stays inside the throttle range idea 33's handoff declares for it
+      var thr = DECK_THROTTLES.slice();
+      if (range && num(range.min) && num(range.max) && range.min > 0 && range.max >= range.min) {
+        thr = thr.filter(function (x) { return x > range.min + 1e-12 && x < range.max - 1e-12; }).concat([range.min, range.max]);
+        if (range.min <= 1 && range.max >= 1 && thr.indexOf(1) < 0) thr.push(1);
+        thr = thr.filter(function (x, i, a) { return a.indexOf(x) === i; }).sort(function (a, b) { return a - b; });
+      }
+      var deckRows = thr.map(function (tau) {
         var p = E.point(ctx, tau * spec.pc, 0);
         return { tau: tau, Fvac: p.Fvac != null ? n * p.Fvac : null, mdot: p.mdot != null ? n * p.mdot : null, sepOnsetPa: p.sepOnset != null ? p.sepOnset : null };
       });
@@ -79,7 +86,7 @@
         ispSL: es ? (gg ? es.ispLow : sl.isp) : null, ispSLUpper: es && gg ? es.ispHigh : null,
         mixtureRatio: mo / mf, rhoOx: d.ox && d.ox.value, rhoFuel: d.fuel && d.fuel.value,
         exitArea: n * v.Ae, sepOnsetPa: v.sepOnset,
-        deckVac: { throttle: DECK_THROTTLES.slice(), thrust_vac: deckRows.map(function (x) { return x.Fvac; }), mass_flow_chamber: deckRows.map(function (x) { return x.mdot; }), separation_onset_pa: deckRows.map(function (x) { return x.sepOnsetPa; }) },
+        deckVac: { throttle: thr, thrust_vac: deckRows.map(function (x) { return x.Fvac; }), mass_flow_chamber: deckRows.map(function (x) { return x.mdot; }), separation_onset_pa: deckRows.map(function (x) { return x.sepOnsetPa; }) },
         refusals: refs, source: base.source,
       };
       if (!(r.rhoOx > 0 && r.rhoFuel > 0)) r.refusals.push({ applies_to: 'tank_volume', code: 'insufficient_data', reason: 'No measured density for one of this engine\'s propellants in idea 31\'s table, so no tank volume.', what_would_help: 'A measured density for it (idea 31\'s snapshots/propellant-densities.js).' });
@@ -112,6 +119,13 @@
       if (!(eng.throat_area_m2 > 0)) return { refusal: refusal('insufficient_data', 'This engine handoff has no throat area, so no thrust or mass flow.', 'Size the nozzle for a thrust in idea 32 or idea 33 and export again.') };
       var O = h.outputs || {};
       var checks = ['thrust_vacuum', 'mass_flow', 'specific_impulse_vacuum'];
+      // review fix: idea 33 leaves these out (unedited) when its cycle is 'none' for a pump-fed engine or the cycle is
+      // refused; say that, instead of calling the handoff edited
+      var absent = checks.filter(function (k) { return !O[k]; });
+      if (absent.length) {
+        var why = (h.refusals || []).filter(function (x) { return x.applies_to === 'engine_level' || x.applies_to === 'cycle'; })[0];
+        return { refusal: refusal('insufficient_data', 'This idea 33 handoff has no engine-level ' + absent.join(', ') + (why ? ': idea 33 refused it (' + why.reason + ')' : eng.cycle_reference ? '' : ': it was exported with no cycle (\'None\'), so idea 33 gives the thrust chamber alone and not the engine\'s flow and Isp') + '. A stage needs the whole engine\'s flow.', 'In idea 33, choose a cycle reference that closes for this engine (its own reference by default) and export again.') };
+      }
       var modes = ['shifting', 'frozen'], last = null;
       for (var mi = 0; mi < modes.length; mi++) {
         var spec;
@@ -123,7 +137,7 @@
         var v = E.point(ctx, spec.pc, 0), d = E.densities(spec.prop);
         var cyc = eng.cycle_reference ? E.cycle(E.cycleReference(eng.cycle_reference), { pc: v.pc, mdotOx: v.mdotOx, mdotFuel: v.mdotFuel, prop: spec.prop, rhoOx: d.ox.value, rhoFuel: d.fuel.value }, { richSide: eng.rich_side || undefined }) : null;
         var rec = record(spec, ctx, cyc, { id: 'imported:' + (eng.id || 'engine'), label: (eng.label || eng.id || 'engine') + ', imported from idea 33', kind: 'imported',
-          source: '33-engine-deck handoff (produced ' + (h.produced || '?') + '), re-computed with 33-engine-deck/engine.js' });
+          source: '33-engine-deck handoff (produced ' + (h.produced || '?') + '), re-computed with 33-engine-deck/engine.js' }, eng.throttle);
         if (rec.refusal) return rec;
         var n = rec.chambers;
         var mine = { thrust_vacuum: rec.thrustVac / n, mass_flow: rec.mdot / n, specific_impulse_vacuum: rec.ispVac };
@@ -144,6 +158,11 @@
       return m;
     }
     function stagePropellant(s) { return (s.burns || []).reduce(function (a, b) { return a + (b.propellant || 0); }, 0); }
+    /** Inert fraction (dry + remaining) / (dry + remaining + propellant burned): the definition dryForFraction()
+     * inverts, so scaling a stage's own propellant at its own fraction gives back its own dry mass. (Review fix: it
+     * was dropped mass over the whole stage mass, shed, coast and jettisons included, which put the S-II's launch
+     * escape tower and aft interstage in the denominator.) */
+    function inertOf(s) { var d = s.dry + s.remaining; return d / (d + stagePropellant(s)); }
     function validate(veh, engines) {
       var out = [];
       if (!veh || !Array.isArray(veh.stages) || !veh.stages.length) return [refusal('invalid_input', 'A vehicle needs at least one stage.', 'Add a stage.')];
@@ -218,7 +237,8 @@
           for (var i = 0; i < evs.length; i++) {
             var ev = evs[i], dP = n * e.mdot * (ev.t - t);
             if (dP >= P) break;
-            burnTo(dP); P -= dP;
+            // review fix: land exactly on the event's time, and make no segment for a second event at the same instant
+            if (dP > 1e-9 * b.propellant) { burnTo(dP); P -= dP; t = ev.t; segs[segs.length - 1].t1 = ev.t; }
             if (ev.kind === 'jettison') { m -= ev.mass; push(m, t, n); }
             else { n -= ev.count; push(m, t, n); }
             applied.push(ev);
@@ -241,7 +261,7 @@
         var P = stagePropellant(s), r = e.mixtureRatio;
         st.propellant = P; st.oxidizer = P * r / (1 + r); st.fuel = P / (1 + r);
         st.volumeOx = e.rhoOx > 0 ? st.oxidizer / e.rhoOx : null; st.volumeFuel = e.rhoFuel > 0 ? st.fuel / e.rhoFuel : null;
-        st.inertFraction = (s.dry + s.remaining) / masses[si];
+        st.inertFraction = inertOf(s);
         st.massRatio = st.burns.length ? st.burns[0].mIgnition / st.burns[st.burns.length - 1].mCutoff : null;
         stages.push(st);
       });
@@ -282,7 +302,16 @@
       var lo = 0, hi = 1000;
       while (f(hi) >= dvTarget) { lo = hi; hi *= 2; if (hi > 1e10) return { refusal: refusal('out_of_envelope', 'No finite payload brings the delta-v down to the target.', 'Check the masses.') }; }
       for (var i = 0; i < 100 && hi - lo > 1e-6 * Math.max(1, hi); i++) { var mid = (lo + hi) / 2; if (f(mid) >= dvTarget) lo = mid; else hi = mid; }
-      return { payload: (lo + hi) / 2, dvAtZero: d0 };
+      var p = (lo + hi) / 2, at = evaluate(withPayload(veh, p), engines, { timeline: false });
+      // review fix: a payload the stack cannot lift is refused, with the most it can lift and what that gives
+      if (at.liftoff.tw != null && !(at.liftoff.tw > 1)) {
+        var pMax = at.liftoff.thrust / g0 - (at.liftoff.mass - p);
+        var lift = pMax > 0 ? evaluate(withPayload(veh, pMax), engines, { timeline: false }) : null;
+        return { refusal: refusal('out_of_envelope', 'The ' + fmt(p / 1000, 4) + ' t of payload that brings the ideal delta-v down to ' + fmt(dvTarget, 5) + ' m/s gives a liftoff thrust-to-weight of ' + fmt(at.liftoff.tw, 3) + ': the stack does not leave the pad. ' +
+          (pMax > 0 ? 'It lifts at most ' + fmt(pMax / 1000, 4) + ' t (thrust-to-weight 1), which leaves ' + fmt(lift.dv, 5) + ' m/s.' : 'It does not lift off even with no payload.'),
+          'Liftoff needs thrust-to-weight above 1: more or bigger first-stage engines, a lighter stack, or a higher target delta-v.'), dvAtZero: d0, payloadNoLiftoff: p, maxLiftoffPayload: pMax > 0 ? pMax : 0, dvAtMaxLiftoffPayload: lift ? lift.dv : null };
+      }
+      return { payload: p, dvAtZero: d0, liftoffRefused: at.liftoff.tw == null };
     }
 
     // ================================================================== AS-512 (Apollo 17) as flown
@@ -349,10 +378,10 @@
       };
     }
     function as512Engines() { return { 'F-1': engineFromPreset('F-1'), 'J-2': engineFromPreset('J-2') }; }
-    /** Inert fraction of each AS-512 stage (dropped at separation / stage mass), for scaling a new stage's dry mass. */
+    /** Inert fraction of each AS-512 stage (inertOf), for scaling a new stage's dry mass. */
     function inertFractions(D) {
       var v = fromAS512(D);
-      return v.stages.map(function (s) { return { label: 'AS-512 ' + s.label, value: (s.dry + s.remaining) / stageMass(s), source: D.report + ' (Tables 16-1 to 16-9)' }; });
+      return v.stages.map(function (s) { return { label: 'AS-512 ' + s.label, value: inertOf(s), source: D.report + ' (Tables 16-1 to 16-9): (dry + remaining) / (dry + remaining + propellant burned)' }; });
     }
     /** Dry mass for propellant P at inert fraction f (dry / (dry + propellant), residuals counted as dry). */
     function dryForFraction(P, f) { return P * f / (1 - f); }
@@ -398,6 +427,10 @@
       add('Engine (idea 33)', 'J-2 Isp, S-IVB', J.ispVac, b1.ispS * g0, 'm/s');
       // burn durations (mainstage clock to cutoff)
       var EV = D.events, ST = D.stageTables;
+      // review addition: the flow the flight must have averaged per F-1 to burn Table 16-9's mainstage propellant in the flown
+      // time (five engines to centre cutoff, four after), against idea 33's: the burn-time gap read as a flow
+      var tCe = EV.sicCeco - ST['S-IC'].events['holddown arm release'].t, tOe = EV.sicOeco - ST['S-IC'].events['holddown arm release'].t;
+      add('Engine (idea 33)', 'F-1 flow, flight average over the S-IC burn', F.mdot, veh.stages[0].burns[0].propellant / (5 * tCe + 4 * (tOe - tCe)), 'kg/s', 'Table 16-9 mainstage propellant over the flown engine-seconds (Tables 2-2, 16-1). Table 5-2 is reduced to standard pump inlet conditions; Figure 5-3 shows the stage flow rising through the burn.');
       add('Burn time', 'S-IC, holddown release to outboard cutoff', r.stages[0].burns[0].time, EV.sicOeco - ST['S-IC'].events['holddown arm release'].t, 's', 'Same propellant as flown, idea 33\'s flow, centre engine out at 139.30 s.');
       add('Burn time', 'S-II, mainstage to outboard cutoff', r.stages[1].burns[0].time, ST['S-II'].events['S-II engine cutoff'].t - ST['S-II'].events['S-II mainstage'].t, 's', 'The flight shifted to mixture ratio 4.8 at 489.2 s, cutting flow; idea 33\'s J-2 holds 5.5.');
       add('Burn time', 'S-IVB first burn, mainstage to cutoff', r.stages[2].burns[0].time, ST['S-IVB burn 1'].events['S-IVB engine cutoff'].t - ST['S-IVB burn 1'].events['S-IVB mainstage'].t, 's', 'Mixture ratio 5.0 in flight.');
@@ -405,7 +438,7 @@
       // acceleration at cutoff (thrust over the cutoff mass), ambient from the 1976 atmosphere at the cutoff altitude
       var A = D.acceleration, C = D.cutoff;
       var b0 = r.stages[0].burns[0], pa = isa(C.sicOeco[1] * 1000).P_Pa;
-      add('Acceleration', 'S-IC at outboard cutoff (4 engines, ' + C.sicOeco[1] + ' km)', b0.nCutoff * (F.thrustVac - pa * F.exitArea) / b0.mCutoff, A.sic[1], 'm/s^2', 'Table 4-1 maximum non-gravitational acceleration. In flight the F-1\'s thrust rose through the burn (pump inlet pressure grows with acceleration); idea 33 holds the nominal.');
+      add('Acceleration', 'S-IC at outboard cutoff (4 engines, ' + C.sicOeco[1] + ' km)', b0.nCutoff * (F.thrustVac - pa * F.exitArea) / b0.mCutoff, A.sic[1], 'm/s^2', 'Table 4-1 maximum non-gravitational acceleration. In flight the F-1\'s thrust and flow rose through the burn (Figure 5-3); idea 33 holds the nominal.');
       var sb = r.stages[1].burns[0], tC = EV.siiCeco - ST['S-II'].events['S-II mainstage'].t, mC = massAt(sb, tC, J.mdot);
       add('Acceleration', 'S-II just before centre cutoff (5 engines)', 5 * J.thrustVac / mC, A.sii[1], 'm/s^2', 'Mass at 461.21 s from idea 33\'s flow, so this mixes a flow and a thrust error.');
       add('Acceleration', 'S-IVB at first cutoff', r.stages[2].burns[0].accelCutoffVac, A.sivb1[1], 'm/s^2');
@@ -416,7 +449,7 @@
         add('Tanks', x[0] + ' fuel volume at the engine\'s mixture ratio', tot / (1 + e.mixtureRatio) / e.rhoFuel, fuel / e.rhoFuel, 'm^3', 'Same loaded total (' + fmt(tot / 1000, 5) + ' t, Table ' + D.stageTables[x[0] === 'S-IVB' ? 'S-IVB burn 1' : x[0]].table + ') and density both sides: loaded oxidizer/fuel ' + fmt(lox / fuel, 4) + ' against the engine\'s ' + fmt(e.mixtureRatio, 4) + '.');
       });
       // velocity: ideal delta-v against the flight's space-fixed velocity change (the difference is losses)
-      add('Velocity', 'S-II burn: ideal delta-v vs space-fixed gain', r.stages[1].dv, C.siiOeco[2] - C.sicOeco[2], 'm/s', 'Gain from S-IC to S-II cutoff (Table 4-2). The difference is gravity and steering loss over 393 s, not a model error.', 'diff');
+      add('Velocity', 'S-II burn: ideal delta-v vs space-fixed gain', r.stages[1].dv, C.siiOeco[2] - C.sicOeco[2], 'm/s', 'Gain from S-IC to S-II cutoff (Table 4-2). Mostly gravity and steering loss over 393 s; idea 33\'s J-2 Isp is ' + (J.ispVac / (sii.ispS * g0) > 1 ? '+' : '') + fmt(100 * (J.ispVac / (sii.ispS * g0) - 1), 2) + ' % of the high-EMR phase\'s (about ' + fmt(Math.abs(r.stages[1].dv * (1 - sii.ispS * g0 / J.ispVac)), 2) + ' m/s of this), and the flight\'s shift to mixture ratio 4.8 is not followed.', 'diff');
       add('Velocity', 'S-IVB first burn: ideal vs gain', r.stages[2].burns[0].dv, C.sivb1Gcs[2] - C.siiOeco[2], 'm/s', 'Gain from S-II cutoff to S-IVB first cutoff.', 'diff');
       add('Velocity', 'S-IVB first burn at the flight\'s Isp', r.stages[2].burns[0].dv * X.sivbFirstBurn.ispS * g0 / J.ispVac, C.sivb1Gcs[2] - C.siiOeco[2], 'm/s', 'The same masses with Table 7-1\'s 427.7 s: the ledger itself against the flight, near-horizontal flight with little gravity loss.', 'diff');
       add('Velocity', 'S-IVB second burn: ideal vs gain', r.stages[2].burns[1].dv, C.sivb2Gcs[2] - D.parkingOrbit.velocity, 'm/s', 'Gain from parking-orbit insertion (Table 4-4, circular, e = 0.0000) to second cutoff; assumes the speed at second ignition equals the insertion speed.', 'diff');
@@ -484,21 +517,42 @@
       out.refusals.push({ applies_to: 'losses', code: 'insufficient_data', reason: 'Gravity, drag and steering losses, and so the orbit this stack reaches, are not computed here: that needs an ascent trajectory.', what_would_help: 'Module 35 (Max Q) flies this vehicle through the 1976 atmosphere.' });
       return out;
     }
-    /** Read this module's own handoff back (round trip): the vehicle and its engines, engines re-built. */
-    function parseHandoff(input) {
+    /**
+     * Read this module's own handoff back (round trip): the vehicle and its engines, engines re-built with idea 33's
+     * kernel. Review fix: refused unless every engine's carried numbers and the headline outputs are what the kernel
+     * re-computes from the handoff's inputs (1e-8), as idea 33 refuses an edited engine; and when D (the AS-512
+     * transcription) is given, a vehicle that calls itself AS-512 keeps that id only if it is the transcription's.
+     */
+    function parseHandoff(input, D) {
       var h = input;
       if (typeof input === 'string') { try { h = JSON.parse(input); } catch (e) { return { refusal: refusal('invalid_input', 'That is not JSON.', 'A handoff from idea 33 or idea 34.') }; } }
       if (!h || h.handoff !== 'long-way-round') return { refusal: refusal('invalid_input', 'That is not a Long Way Round handoff.', 'A handoff from idea 33 or idea 34.') };
       if (h.from === '33-engine-deck') { var e = engineFromHandoff(h); return e.refusal ? e : { engine: e.record }; }
       if (h.from !== '34-stack') return engineFromHandoff(h);
       var veh = h.inputs && h.inputs.vehicle, eng = (h.inputs && h.inputs.engines) || {};
-      if (!veh) return { refusal: refusal('invalid_input', 'This 34-stack handoff carries no vehicle.', 'A handoff exported by this page.') };
+      if (!veh || !Array.isArray(veh.stages)) return { refusal: refusal('invalid_input', 'This 34-stack handoff carries no vehicle.', 'A handoff exported by this page.') };
       var engines = {};
+      var edited = function (what, got, want) { return { refusal: refusal('invalid_input', 'The vehicle handoff says ' + what + ' = ' + fmt(got, 9) + ', but this module computes ' + fmt(want, 9) + ' from its inputs: it was edited, or made with other data.', 'The unedited handoff this page exported.') }; };
+      var off = function (got, want) { return want == null ? got != null : !(num(got) && Math.abs(got / want - 1) <= 1e-8); };
       for (var k in eng) {
-        var x = eng[k];
+        var x = eng[k] || {};
         var rec = x.kind === 'preset' ? engineFromPreset(x.recompute && x.recompute.engineSpec || k) : engineFromHandoff(x.engine_handoff);
         if (rec.refusal) return { refusal: rec.refusal };
-        engines[k] = rec.record || rec;
+        rec = rec.record || rec;
+        var carried = [['thrust_vacuum_N', rec.thrustVac], ['thrust_sea_level_N', rec.thrustSL], ['mass_flow_kg_s', rec.mdot], ['specific_impulse_vacuum_m_s', rec.ispVac], ['mixture_ratio', rec.mixtureRatio], ['exit_area_m2', rec.exitArea]];
+        for (var i = 0; i < carried.length; i++) if (off(x[carried[i][0]], carried[i][1])) return edited(k + '.' + carried[i][0], x[carried[i][0]], carried[i][1]);
+        engines[k] = rec;
+      }
+      veh = clone(veh);
+      if (veh.id === 'AS-512' && D) {
+        var ref = fromAS512(D); if (veh.simplified) ref = simplify(ref);
+        var strip = function (v) { return JSON.stringify({ p: v.payload && v.payload.mass, s: v.stages }); };
+        if (strip(veh) !== strip(ref)) { veh.id = 'imported'; veh.note = 'Called itself AS-512 but its masses or events are not the flight report\'s: treated as assumed.'; }
+      }
+      var r = evaluate(veh, engines, { timeline: false }), O = h.outputs || {};
+      if (r.ok) {
+        var outs = [['liftoff_mass', r.liftoff.mass], ['payload_mass', r.payload], ['delta_v_ideal', r.dv], ['burn_time_total', r.burnTime]];
+        for (var j = 0; j < outs.length; j++) if (!O[outs[j][0]] || off(O[outs[j][0]].value, outs[j][1])) return edited('outputs.' + outs[j][0], O[outs[j][0]] ? O[outs[j][0]].value : null, outs[j][1]);
       }
       return { vehicle: veh, engines: engines };
     }
