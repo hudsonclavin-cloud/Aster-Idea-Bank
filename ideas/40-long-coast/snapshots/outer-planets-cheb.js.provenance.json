@@ -1,0 +1,16 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+ "path": "horizons.api?format=json&COMMAND='5'..'8'&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2026-01-01'&STOP_TIME='2041-01-01'&STEP_SIZE='4 d'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES'",
+ "sourceSha256": {
+  "horizons-planet-5-4d.json": "f2b469f00d70424158ae2c6cdbf2e55e9391790f962636bce716ebe34c063bf5",
+  "horizons-planet-6-4d.json": "288b8e2acdc56408b6471e4935773c9653f99ff526104f48d7895316d39ba698",
+  "horizons-planet-7-4d.json": "98817ca554a83810fd51ffde9b10a4fb4d3caa3fe58ffa29d7d2524dcc78ef55",
+  "horizons-planet-8-4d.json": "e62686efa2c1bb2e259ede46c7cdebbc216be680b04fd6e6a9440bf4c3a6248c"
+ },
+ "license": "NASA/JPL Horizons; US-government work, public domain in the US",
+ "note": "derived by build-data.mjs: Chebyshev series, 256-day segments, degree 10, coefficients in whole 10 km, fitted to positions and velocities; worst residual at a record in the file",
+ "writtenSha256": "750d081947812c9d3fdd6fc5afb6a0eb89b239a729097f7386babe48864e5c71",
+ "writtenBytes": 12284
+}

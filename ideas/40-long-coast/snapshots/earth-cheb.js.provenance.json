@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/39-lamberts-road/snapshots/earth-cheb.js",
+  "commit": "9830c84f01c85e4c531f1f2d17b6c0b773b817c6",
+  "commitDate": "2026-10-31T16:36:22+00:00",
+  "pathLastChanged": "0ade548 2026-10-31T16:36:12+00:00",
+  "committedBlob": "7164500411e50203f24e7fa1da364006b76fe164",
+  "readBlob": "7164500411e50203f24e7fa1da364006b76fe164",
+  "sourceSha256": "2e55c502999977d68501c8ba1f2ac63aabc9383ceab46e0a6032fbfd8ba28611",
+  "sourceBytes": 73531,
+  "copiedAt": "2026-10-31T16:54:35.358Z",
+  "mode": "copy",
+  "note": "idea 39's committed file, used unmodified: module 40 runs idea 39's kernel (Earth ephemeris, Aster's Kepler, Lambert, parseHandoff) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2e55c502999977d68501c8ba1f2ac63aabc9383ceab46e0a6032fbfd8ba28611",
+  "writtenBytes": 73531
+}

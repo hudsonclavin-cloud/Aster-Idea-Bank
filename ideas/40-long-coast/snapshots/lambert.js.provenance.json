@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/39-lamberts-road/lambert.js",
+  "commit": "9830c84f01c85e4c531f1f2d17b6c0b773b817c6",
+  "commitDate": "2026-10-31T16:36:22+00:00",
+  "pathLastChanged": "0ade548 2026-10-31T16:36:12+00:00",
+  "committedBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "readBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "sourceSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "sourceBytes": 67306,
+  "copiedAt": "2026-10-31T16:54:35.218Z",
+  "mode": "copy",
+  "note": "idea 39's committed file, used unmodified: module 40 runs idea 39's kernel (Earth ephemeris, Aster's Kepler, Lambert, parseHandoff) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "writtenBytes": 67306
+}

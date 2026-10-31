@@ -1,0 +1,11 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://ssd.jpl.nasa.gov/ftp/eph/planets/ascii/de440/",
+ "path": "header.440 (GROUP 1040 names, GROUP 1041 values: AU, CLIGHT, EMRAT, GMS, GM1, GM2, GMB, GM4..GM8, J2E, RE)",
+ "sourceSha256": "0f4636b663e6f00af9efa2b605ef23635489f56b23dd1a5e3821d3acc6ac3359",
+ "license": "JPL planetary ephemeris constants; US-government work, public domain in the US",
+ "note": "parsed by build-data.mjs; GM converted from au^3/day^2 to m^3/s^2 with the header's AU (km) and 86400 s",
+ "writtenSha256": "9b153c196ca651a5e16bae9c5be54076c642750af08902c3a0d24787fb4cb6fe",
+ "writtenBytes": 1265
+}

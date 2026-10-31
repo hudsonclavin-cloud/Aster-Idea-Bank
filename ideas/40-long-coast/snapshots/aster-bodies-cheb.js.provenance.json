@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/data/horizons-inner-solar-system-2026-2040.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "20ea55d10d7d079fc6961b3ddf0d771595d93d2f",
+  "readBlob": "20ea55d10d7d079fc6961b3ddf0d771595d93d2f",
+  "sourceSha256": "b278dd5567f30266593c49bf4fef203e7570d3613187fd112dc7015109a39c15",
+  "sourceBytes": 7214102,
+  "copiedAt": "2026-10-31T17:21:38.135Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: Chebyshev series (positions and velocities fitted together by least squares) for the Moon (301 about 399, 32-day segments, degree 20, 1 km), Mercury (64 d, 18, 100 km), Venus and Mars (128 d, 16, 10 km) from Aster's daily records; the Moon fit also measured against hourly Horizons in two fetched windows (README)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a0fb0761cd42b5c10c296d0f577e5447f1caa39b371fbd49c3943c2d979c0410",
+  "writtenBytes": 77759
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/39-lamberts-road/snapshots/neo-excerpt.js",
+  "commit": "9830c84f01c85e4c531f1f2d17b6c0b773b817c6",
+  "commitDate": "2026-10-31T16:36:22+00:00",
+  "pathLastChanged": "80204bc 2026-10-31T15:55:02+00:00",
+  "committedBlob": "05fd571fcfa86e956dcc559e86c98acfc80ad21a",
+  "readBlob": "05fd571fcfa86e956dcc559e86c98acfc80ad21a",
+  "sourceSha256": "a27b2145297ab81cb952a7bffe5bc2b6a636eb9ca7eeb39d422f4634f3e414ed",
+  "sourceBytes": 51172,
+  "copiedAt": "2026-10-31T17:21:38.356Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: six of the 61 bodies of idea 39's committed excerpt (99942, 101955, 162173, 65803, 433, 2000 SG344), keeping designation, name, spkId, orbitClass, H, estimatedRadiusM, conditionCode, dataArcDays, tier and elements",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d9b4b66929aeaef91a43c4739bcd726b83bfe4af92fa6e66f0286494e25c79c5",
+  "writtenBytes": 2957
+}

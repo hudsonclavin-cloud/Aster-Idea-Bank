@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Long Coast: the cruise to the asteroid</title>
+<meta name="description" content="Fly idea 39's transfer through the real solar system: the departure hyperbola, the Moon and every planet, the asteroid where it really is, the trajectory-correction manoeuvres that get you there, and a Deep Space Network navigation analysis that says how well you know where you are and what each correction must budget.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Long Coast</h1>
+  <p class="lede">Idea 39 drew the transfer as a single arc about the Sun, from the Earth's centre to where Kepler puts the asteroid. Here it is flown: out of the parking orbit on a hyperbola, with the Earth, the Moon, the Sun and all eight planets pulling the whole way, to where the asteroid will really be. Then it is navigated, the way JPL and KinetX do it: the Deep Space Network ranges, Dopplers and interferometers the spacecraft, the knowledge of where it is grows and shrinks, and each trajectory-correction manoeuvre (TCM) costs what the injection error, the navigation error and the last manoeuvre's own error make it cost. Move the schedule, the tracking, the errors; read the budget and the delivery.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 10 of 20. Previous: <a href="../39-lamberts-road/index.html">39 Lambert's Road</a>, the transfer. Next: 41 Signal, talking to the spacecraft (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Transfer</h2>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+    <label class="lab" for="presetSel">Preset <small>(idea 39's kernel picks each)</small></label>
+    <select id="presetSel" aria-label="Transfer preset"></select>
+    <p class="note">Or import idea 39's handoff below: it is checked by idea 39's own kernel, and its refusals travel on.</p>
+
+    <h2 class="sub">Departure and aim</h2>
+    <label class="lab" for="depSel">Departure</label>
+    <select id="depSel" aria-label="Departure"></select>
+    <span class="lab" id="lab-aim">Aim</span>
+    <div class="seg" role="group" aria-labelledby="lab-aim">
+      <button type="button" data-aim="injection">Re-aim the injection</button>
+      <button type="button" data-aim="tcm1">Correct at TCM-1</button>
+    </div>
+    <span class="lab" id="lab-tgt">Aim at the asteroid</span>
+    <div class="seg" role="group" aria-labelledby="lab-tgt">
+      <button type="button" data-tgt="nbody">Where it is (n-body)</button>
+      <button type="button" data-tgt="two_body">Where Kepler puts it</button>
+    </div>
+
+    <h2 class="sub">Forces</h2>
+    <div class="checks">
+      <label><input type="checkbox" id="fMoon" checked> The Moon</label>
+      <label><input type="checkbox" id="fPlanets" checked> Mercury to Neptune</label>
+      <label><input type="checkbox" id="fJ2" checked> Earth's J2</label>
+      <label><input type="checkbox" id="fGR" checked> Relativity (Sun)</label>
+    </div>
+    <div class="ctl"><div class="ctl-head"><label for="srpIn">Sunlit area per mass <small>m²/kg</small></label><input id="srpIn" type="number" min="0" max="0.1" step="0.001" inputmode="decimal"></div>
+      <input id="srpRange" type="range" min="0" max="0.05" step="0.0005" aria-label="Sunlit area per mass">
+      <small>0 = no spacecraft area given (refused). OSIRIS-APEX fits 0.013 to 0.015 with Cr 1 (oracle below).</small></div>
+
+    <h2 class="sub">Manoeuvres</h2>
+    <p class="note">Days after the departure or before the arrival; each on the nearest 2-hour node.</p>
+    <div id="tcmRows"></div>
+
+    <h2 class="sub">Navigation</h2>
+    <label class="lab" for="navSel">Tracking assumptions</label>
+    <select id="navSel"><option value="lucy">Lucy's covariance analysis (AAS 17-632)</option><option value="dsn">DSN data noise (DESCANSO, 810-005)</option></select>
+    <div class="ctl"><div class="ctl-head"><label for="ppwIn">DSN passes a week <small>8 h each</small></label><input id="ppwIn" type="number" min="0" max="21" step="1" inputmode="numeric"></div><input id="ppwRange" type="range" min="0" max="14" step="1" aria-label="Passes a week"></div>
+    <div class="ctl"><div class="ctl-head"><label for="ddorIn">Delta-DOR sessions a week</label><input id="ddorIn" type="number" min="0" max="7" step="1" inputmode="numeric"></div><input id="ddorRange" type="range" min="0" max="7" step="1" aria-label="Delta-DOR sessions a week"></div>
+    <div class="grid2">
+      <div class="ctl"><label for="dopIn">Doppler σ <small>mm/s</small></label><input id="dopIn" type="number" min="0.001" max="10" step="0.01" inputmode="decimal"></div>
+      <div class="ctl"><label for="rngIn">Range σ <small>m</small></label><input id="rngIn" type="number" min="0.1" max="10000" step="1" inputmode="decimal"></div>
+      <div class="ctl"><label for="dorIn">Delta-DOR σ <small>ns</small></label><input id="dorIn" type="number" min="0.001" max="10" step="0.01" inputmode="decimal"></div>
+      <div class="ctl"><label for="cutIn">Data cutoff <small>days before a TCM</small></label><input id="cutIn" type="number" min="0.5" max="14" step="0.5" inputmode="decimal"></div>
+      <div class="ctl"><label for="contDepIn">Continuous after launch <small>days</small></label><input id="contDepIn" type="number" min="0" max="60" step="1" inputmode="numeric"></div>
+      <div class="ctl"><label for="contArrIn">Continuous before arrival <small>days</small></label><input id="contArrIn" type="number" min="0" max="60" step="1" inputmode="numeric"></div>
+    </div>
+    <label class="lab" for="stoSel">Unmodelled acceleration <small>(1σ, white, 1-day batches)</small></label>
+    <select id="stoSel"><option value="0">none</option><option value="1e-10">1e-10 m/s²</option><option value="1e-9">1e-9 m/s² (Lucy)</option><option value="3e-9">3e-9 m/s² (OSIRIS-APEX's cannonball residual)</option><option value="1e-8">1e-8 m/s²</option></select>
+
+    <h2 class="sub">Errors</h2>
+    <label class="lab" for="injSel">Injection accuracy <small>(3σ, upper stage)</small></label>
+    <select id="injSel"><option value="coveap">Orion EM-1 ICPS, COVEAP estimate</option><option value="requirement">Orion EM-1 ICPS, requirement</option><option value="inca">Orion EM-1 ICPS, with INCA updates</option><option value="none">perfect injection</option></select>
+    <label class="lab" for="exeSel">Manoeuvre execution <small>(Gates' model)</small></label>
+    <select id="exeSel"><option value="lucy">Lucy: 30 mm/s + 4 % (3σ)</option><option value="em1">Orion EM-1: 3 + 3 mm/s, 30 ppm, 0.03°</option><option value="none">perfect execution</option></select>
+    <div class="btnrow"><button type="button" id="resetBtn">Reset</button></div>
+    <p class="note" id="runNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-res">
+      <h2 id="h-res">The cruise</h2>
+      <div id="resLine" class="small"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+
+    <section class="card" aria-labelledby="h-unc">
+      <h2 id="h-unc">How well you know where you are</h2>
+      <canvas id="uncChart" role="img" aria-label="Position uncertainty against days since departure: the knowledge now, the knowledge mapped to the arrival, and the trajectory's dispersion mapped to the arrival, with the TCMs marked."></canvas>
+      <ul class="legend" id="uncLegend"></ul>
+      <p class="chart-cap" id="uncCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-tcm">
+      <h2 id="h-tcm">What each TCM must budget</h2>
+      <canvas id="tcmChart" role="img" aria-label="Bars per TCM: the mean and the 99th percentile of its delta-v, and its deterministic part."></canvas>
+      <ul class="legend" id="tcmLegend"></ul>
+      <div class="tablewrap"><table class="stack" id="tcmTable"><thead><tr><th>TCM</th><th>When (UTC)</th><th>Deterministic</th><th>Mean</th><th>99 %</th><th>Knowledge 1σ</th></tr></thead><tbody></tbody></table></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-orbit">
+      <h2 id="h-orbit">The path, seen from the ecliptic pole</h2>
+      <canvas id="orbitChart" role="img" aria-label="Top view: the Earth's path, the asteroid's path, the cruise flown with every force, and idea 39's departure flown uncorrected."></canvas>
+      <ul class="legend" id="orbitLegend"></ul>
+      <p class="chart-cap" id="orbitCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-bp">
+      <h2 id="h-bp">Arrival, on the approach plane</h2>
+      <canvas id="bpChart" role="img" aria-label="The 3-sigma ellipses of the delivery dispersion and of the knowledge at arrival, on the plane across the arrival v-infinity."></canvas>
+      <ul class="legend" id="bpLegend"></ul>
+      <p class="chart-cap" id="bpCap"></p>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Against the oracles</h2>
+    <p class="small">Each row is computed by this page and set beside JPL's own numbers: Horizons' integrated asteroids, Apophis through its 2029 encounter, and JPL's predicted trajectory of OSIRIS-APEX, the spacecraft that will reach Apophis in 2029.</p>
+    <div class="btnrow"><button type="button" id="apexBtn">Fit sunlight on OSIRIS-APEX (a few seconds)</button></div>
+    <div class="tablewrap"><table class="stack" id="checkTable"><thead><tr><th>Check</th><th>JPL</th><th>This page</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 39's handoff (or one from this page); export this cruise for module 41. Every number carries its units, a confidence class and its source; refusals travel down the chain.</p>
+    <label class="lab" for="importText">Paste a handoff</label>
+    <textarea id="importText" rows="4" spellcheck="false" placeholder='{"handoff":"long-way-round","from":"39-lamberts-road",...}'></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import</button>
+      <label class="filebtn"><input type="file" id="importFile" accept="application/json,.json"> <span>Load a file</span></label>
+      <button type="button" id="copyBtn">Copy handoff</button>
+      <button type="button" id="dlBtn">Download</button>
+      <button type="button" id="linkBtn">Copy a link</button>
+    </div>
+    <div id="hoStatus" class="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <details><summary>The forces and the integrator</summary>
+      <p class="small">Dormand-Prince 5(4) with the 6×6 state transition matrix integrated alongside. The Sun (Aster's GM), the Earth (Aster's GM, DE440's J2 about the ICRF pole), the Moon and Mercury to Neptune (DE440 GMs), each with its indirect term in this Sun-centred frame, and the Sun's relativistic (Schwarzschild) term. Within a million kilometres of the Earth the state is integrated relative to it, against the ephemeris Earth's own acceleration: the same problem, without the 1e-5 m/s an hour that heliocentric round-off costs near the periapsis. Planets: Chebyshev series fitted to JPL Horizons (Aster's daily file for the Earth, Moon, Mercury, Venus and Mars; fetched records for Jupiter to Neptune). Sunlight, when an area is given: a flat absorber facing the Sun, L☉/(4πcr²) from NASA's Sun fact sheet, no eclipses.</p></details>
+    <details><summary>The departure and the aim</summary>
+      <p class="small">Idea 39's v-infinity is flown from a periapsis on Aster's 6,578.137 km parking radius at its departure epoch, in the least-inclined plane through it; or idea 37's planned impulsive departure; or the state idea 38 actually flew. "Re-aim the injection" solves for the v-infinity that reaches the target at idea 39's arrival epoch through every force (Newton on the STM, converged to 1 km): what a mission's launch target would be. "Correct at TCM-1" flies the departure as given and puts the correction in TCM-1. The target is Aster's own elements integrated through the same forces (no Yarkovsky) or, for comparison, idea 39's two-body position.</p></details>
+    <details><summary>The navigation analysis</summary>
+      <p class="small">A linear covariance analysis (as Orion EM-1's, AAS 15-758): the trajectory's dispersion and the navigation knowledge are carried along the reference by its STMs. The injection error starts both (Orion EM-1's ICPS accuracy, U V W). Every Doppler point (each node of a pass), range point (one a pass) and Delta-DOR point (one per baseline a session, Goldstone-Canberra and Goldstone-Madrid, both antennas above 10°) is a Kalman update of the knowledge, from DSS-14, 43 and 63 turned by the Earth rotation angle. Each TCM nulls the estimated arrival miss (fixed-time position targeting), designed on the data up to its cutoff; its delta-v is Gaussian with the estimate's covariance mapped through the targeting matrix, and its mean and 99th percentile come from 4,000 seeded samples. Gates' four-term model adds the execution error to the knowledge. Unmodelled accelerations and Lucy's momentum dumps (0.4 mm/s, 3σ, every 4 days) add process noise. The budget totals the per-TCM 99th percentiles, as Orion EM-1's tables do.</p></details>
+    <details><summary>What it does not do</summary>
+      <p class="small">No light time, no station-dependent biases or media errors (DSN's numbers fold them into the data weight), no solar-plasma blackout near conjunction (module 41), no SRP or other estimated parameters, no optical navigation or target ephemeris uncertainty (module 42), no flyby targeting. TCMs are impulsive; the deterministic correction is fixed-time position targeting, not a B-plane target with free arrival time.</p></details>
+  </section>
+</main>
+
+<footer>Aster Idea Bank, idea 40. An idea-bank prototype, not flight software: it has not passed Aster's multi-agent math audit or its oracle harness. Sources and gaps are in the README.</footer>
+
+<script src="snapshots/lambert.js"></script>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/earth-cheb.js"></script>
+<script src="snapshots/aster-refs.js"></script>
+<script src="snapshots/catalog-elements.js"></script>
+<script src="snapshots/aster-bodies-cheb.js"></script>
+<script src="snapshots/outer-planets-cheb.js"></script>
+<script src="snapshots/de440-constants.js"></script>
+<script src="snapshots/nav-sources.js"></script>
+<script src="snapshots/erfa-iau2006.js"></script>
+<script src="snapshots/horizons-truth.js"></script>
+<script src="presets.js"></script>
+<script src="coast.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+ "path": "horizons.api?format=json&COMMAND='99942;' ('101955;', '162173;', 'DES=2000433;', '65803;', 'DES=2000 SG344;', and '-64' OSIRIS-APEX from 2026-01-01 to 2028-12-30)&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2026-05-01'&STOP_TIME='2029-01-01'&STEP_SIZE='1 d'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES' ; COMMAND='99942;' 2029-01-01..2029-07-01 step '1 d' and 2029-04-12..2029-04-16 step '1 h'",
+ "sourceSha256": {
+  "horizons-sb-433-1d.json": "f996f8433e51de173af451a93295d5a53659ef48915d00598b23c7634c6adf0e",
+  "horizons-sb-65803-1d.json": "393ab293900554fae7e70b54cf62e962d7eacd98997cd0512c375b76c1c12513",
+  "horizons-sb-99942-1d.json": "cd62fa26536d203f7b744a08d23b32130d1cf808068d89c98e372fd9d9f28f3c",
+  "horizons-sb-101955-1d.json": "e1e09a1958f2880c28e91e3d8d64cc77bff8e878551b9f4fe0caba00170a083c",
+  "horizons-sb-162173-1d.json": "5cf700acf3d1ca59297cd8ff8ebf0f5bce794ae3769f4b1905e13d95a6dc65d5",
+  "horizons-sb-2000_SG344-1d.json": "e17f5b7c74b620f4460475a202d11881a7036a8d4da47a97aad07ca2e9951209",
+  "horizons-sb-99942-2029-1d.json": "549dd2427382257eb9117f6e53f19a7dce09d9bb1ed5d484582020917fe20b7f",
+  "horizons-sb-99942-2029-1h.json": "2b8f94d4d924de4c5a23f2d3883866757a9233376c662ad5ec1195c3bed8d847",
+  "horizons-sc-64-1d.json": "aa421ea133e72dc08e3c11a90d9ce60f65855c7f9d06c710dd0de00021a13ea2"
+ },
+ "license": "NASA/JPL Horizons; US-government work, public domain in the US",
+ "note": "excerpted by build-data.mjs: each body's solution, small-perturber set and non-gravitational parameters from the response header, and its states on five whole TDB days; Apophis daily on four days of 2029 and hourly on 2029-04-13 and 14; OSIRIS-APEX (-64, JPL predict od398) every 20 days on two manoeuvre-free arcs",
+ "writtenSha256": "29917c62557a2795a8c431c376ee2d9cf6e7183616d96d442e325202395493a6",
+ "writtenBytes": 16072
+}
