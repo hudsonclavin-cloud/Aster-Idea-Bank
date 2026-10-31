@@ -86,6 +86,8 @@ const k0 = K(), kOpt = K({ steering: 'optimal' }), kFix = K({ steering: 'fixed' 
   await page.click('[data-n="3"]'); await settle(page);
   ok((await page.locator('[data-steer="tangential"]').getAttribute('aria-pressed')) === 'true', 'three burns switch to along-velocity');
   ok((await page.locator('#burnList li').count()) === 3, 'three burns listed');
+  const lb = K({ burns: 3 }).sol.final, arcLast = Math.acos(Math.min(1, lb.start.r.reduce((s, x, i) => s + x * lb.r[i], 0) / Math.hypot(...lb.start.r) / Math.hypot(...lb.r))) / (Math.PI / 180);
+  ok(Math.abs(num(await tileVal(page, 'Burn arc')) - arcLast) < 0.06, 'with perigee burns the arc tile is the last burn\'s, not first ignition to last cutoff: ' + await tileVal(page, 'Burn arc') + ' vs ' + arcLast.toFixed(2));
   ok((await refusals(page)).some((t) => /asymptote_epoch/.test(t)), 'asymptote_epoch refusal with perigee burns');
   const k3 = K({ burns: 3, capability: true });
   ok(Math.abs(num(await tileVal(page, 'Loss if the launch were aimed for the phasing')) - k3.sol.inPlane.loss) < 0.006, 'in-plane loss tile');
@@ -131,6 +133,7 @@ const k0 = K(), kOpt = K({ steering: 'optimal' }), kFix = K({ steering: 'fixed' 
   ok(/^Replayed/.test(await page.locator('#verdict').innerText()), 'Apollo replay verdict');
   ok(await page.locator('#twIn').isDisabled(), 'thrust is the flight\'s in the replay');
   ok(await page.locator('[data-n="2"]').isDisabled(), 'one burn only in the replay');
+  ok(Math.abs(num(await tileVal(page, 'Thrust-to-weight')) - kAp.sc.tw0) < 0.0006 && Math.abs(kAp.sc.tw0 - B.apollo17Engine().meanF / (139750 * B.G0)) < 1e-9, 'Apollo T/W at the burn\'s mean thrust (the sweep\'s engine)');
   await page.selectOption('#apEngine', 'chain'); await settle(page);
   ok(Math.abs(num(await tileVal(page, 'Burn time')) - 301.98) < 0.06, 'the chain\'s J-2 burns 302 s: ' + await tileVal(page, 'Burn time'));
   await noNaN(page, 'Apollo');
@@ -146,6 +149,20 @@ const k0 = K(), kOpt = K({ steering: 'optimal' }), kFix = K({ steering: 'fixed' 
   await noNaN(page, 'custom refused');
   await setNum(page, '#cAlt', 300);
   ok(/^Refused|^Departs/.test(await page.locator('#verdict').innerText()), 'custom recovers');
+  // added by the independent review: a bound target does not "depart"; a stage whose finite-burn loss eats the impulsive
+  // margin shows no capability (it showed 0 kg); an engine that cannot reach the C3 says so without NaN
+  await setNum(page, '#cPay', 20000); await setNum(page, '#cC3', -5);
+  ok(/^Reaches C3 -?\d/.test(await page.locator('#verdict').innerText()) && /bound orbit/.test(await page.locator('#verdict').innerText()), 'a bound target reaches a bound orbit, not a departure: ' + (await page.locator('#verdict').innerText()).slice(0, 90));
+  ok((await tileVal(page, 'C3 reached (bound)')) !== null && (await tileVal(page, 'C3 at infinity')) === null, 'its C3 tile is not "at infinity"');
+  await setNum(page, '#cC3', 10); await setNum(page, '#cIsp', 51);
+  ok((await refusals(page)).some((t) => /targeting/.test(t) && /2 % of its ignition mass/.test(t)), 'an engine that cannot reach the C3 is refused in words: ' + (await refusals(page)).join(' | ').slice(0, 200));
+  await noNaN(page, 'custom unreachable');
+  const sc0 = B.customScenario({ altitudeKm: 300, inclinationDeg: 0, c3: 1e6, inertKg: 1, propellantKg: 5e4, payloadKg: 1, thrustN: 3e4, veMS: 450 * B.G0, j2: true }, B.defaults());
+  const inertTight = Math.round(5e4 / (Math.exp(sc0.dvImp / (450 * B.G0)) - 1) - 50);
+  await setNum(page, '#cIsp', 450); await setNum(page, '#cC3', 1); await setNum(page, '#cProp', 50000); await setNum(page, '#cInert', inertTight); await setNum(page, '#cPay', 1000); await setNum(page, '#cThrust', 30);
+  ok((await tileVal(page, 'Payload the stage can send')) === 'none', 'the finite-burn loss eats a 50 kg impulsive margin: no capability, not 0 kg (' + await tileVal(page, 'Payload the stage can send') + ')');
+  ok((await refusals(page)).some((t) => /payload_capability/.test(t)), 'with its payload_capability refusal');
+  await noNaN(page, 'custom tight');
   ok(errors.length === 0, 'desktop: no console errors: ' + errors.slice(0, 3).join(' | '));
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'desktop.png'), fullPage: true });
   await context.close();

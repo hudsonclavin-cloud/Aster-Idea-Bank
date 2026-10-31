@@ -2,7 +2,7 @@
  *
  * Idea 37 put the parking orbit on the calendar and handed on the point where an IMPULSIVE burn would leave along the
  * departure asymptote, and the delta-v it would take. No engine does that: the S-IVB took 351 s to leave for the Moon,
- * swinging through about a quarter of an orbit while it burned. This module flies the burn: thrust on, mass going down,
+ * swinging about 28 deg round the Earth while it burned (this module's replay). This module flies the burn: thrust on, mass going down,
  * gravity pulling the vehicle round the Earth during the burn, a steering law, cutoff when the energy reaches the target
  * C3, and the ignition time solved so that the hyperbola actually leaves along the asymptote. Then it says what that
  * costs against the impulsive figure (the finite-burn or "gravity" loss), how the cost grows as thrust-to-weight falls,
@@ -296,6 +296,7 @@
       var ev = function (xx) {
         var b = flyX(xx);
         if (!b) return { refusal: ignitionRefusal(sc, xx[0]) };
+        if (b.refusal) return b;
         if (b.ended !== 'target' || b.phi == null) return { refusal: burnRefusal(sc, b) };
         return b;
       };
@@ -330,7 +331,7 @@
     /** In-plane targeting only: the ignition (or first-burn) time that zeroes the in-plane miss, no yaw (secant).
      * The out-of-plane angle is left as it falls. */
     function target1(sc, flyT, t0) {
-      var ev = function (t) { var b = flyT(t); if (!b) return { refusal: ignitionRefusal(sc, t) }; if (b.ended !== 'target' || b.phi == null) return { refusal: burnRefusal(sc, b) }; return b; };
+      var ev = function (t) { var b = flyT(t); if (!b) return { refusal: ignitionRefusal(sc, t) }; if (b.refusal) return b; if (b.ended !== 'target' || b.phi == null) return { refusal: burnRefusal(sc, b) }; return b; };
       var x0 = t0, x1 = t0 + 5, b0 = ev(x0);
       if (b0.refusal) return b0;
       var f0 = b0.phi, b1 = b0, it;
@@ -351,15 +352,20 @@
     }
     function burnRefusal(sc, b) {
       if (b.ended === 'timeout') return refusal('out_of_envelope', 'At this thrust a single burn to C3 ' + fmt(sc.E * 2 / 1e6, 4) + ' km^2/s^2 runs past ' + fmt(sc.tMax / 3600, 3) + ' h: it would wind round the Earth while burning, outside what this model is for.', 'More thrust-to-weight, or split the departure into perigee burns.', { applies_to: 'burn_length' });
-      return refusal('out_of_envelope', 'The burn reaches C3 ' + fmt(b.conic ? b.conic.c3 / 1e6 : NaN, 4) + ' km^2/s^2 without a departure asymptote.', 'A hyperbolic target (C3 > 0).', { applies_to: 'targeting' });
+      // (added by the independent review) a burn that ran down to 2 % of its ignition mass without reaching the energy: the
+      // engine cannot reach this C3 with any propellant load, so say that, with the C3 it did reach (this used to read
+      // "C3 NaN ... without a departure asymptote")
+      if (b.ended === 'depleted') return refusal('out_of_envelope', 'Burned down to 2 % of its ignition mass, this engine reaches only C3 ' + fmt(2 * (sc.efn || energy)(b.r, b.v) / 1e6, 4) + ' km^2/s^2, not the ' + fmt(sc.E * 2 / 1e6, 4) + ' the transfer needs: at ' + fmt(sc.ve, 4) + ' m/s exhaust velocity and with this steering, no propellant load gets there.', 'A higher exhaust velocity, more thrust-to-weight, or a lower C3 (module 39).', { applies_to: 'targeting' });
+      if (!b.conic || !b.conic.sHat) return refusal('out_of_envelope', 'The burn reaches C3 ' + fmt(b.conic ? b.conic.c3 / 1e6 : 2 * energy(b.r, b.v) / 1e6, 4) + ' km^2/s^2 without a departure asymptote.', 'A hyperbolic target (C3 > 0).', { applies_to: 'targeting' });
+      return refusal('out_of_envelope', 'The burn reaches the target C3 but its asymptote could not be placed.', 'Another thrust or steering law.', { applies_to: 'targeting' });
     }
     /** Minimise the propellant over the steering law's parameters (fixed: golden section on alpha; optimal: Nelder-Mead
      * on a, b), each trial with its own solved ignition. Returns {x, burn} or {refusal}. */
     function optimise(sc, law, opts) {
       opts = opts || {};
       var best = null, lastT = null, lastY = null;
-      var f = function (x) {
-        var b = solveIgnition(sc, law, lawParams(sc, law, x), lastT, lastY);
+      var f = function (x, cold) {
+        var b = solveIgnition(sc, law, lawParams(sc, law, x), cold ? null : lastT, cold ? null : lastY);
         if (b.refusal) return { v: Infinity, b: b };
         lastT = b.tIg; lastY = b.yaw;
         if (!best || b.mUsed < best.b.mUsed) best = { x: x.slice(), b: b };
@@ -370,6 +376,15 @@
         // best direction is near it; free mode: the reference is the horizontal at ignition, and the best fixed direction is
         // near the horizontal half-way round the burn's arc, which reads as pitched down by about half the arc
         var arc = sc.arcEst, lo = sc.mode === 'asymptote' ? -0.6 : -arc - 0.6, hi = 0.6, g = (Math.sqrt(5) - 1) / 2;
+        // (added by the independent review) a coarse scan first, then the golden section on the bracket round the best
+        // direction that flies: on a long, weak burn most directions never reach the C3, and a golden section started on
+        // two such points used to refuse ("no steering found") although the reference horizontal itself flies
+        var NS = 12, scan = [], ib = -1;
+        // each scan point from the cold guess (centred on idea 37's point), so a far-off root found for one direction does
+        // not carry over to the next; the golden section then warm-starts from the best of them
+        for (var si = 0; si <= NS; si++) { var xa = lo + (hi - lo) * si / NS; scan.push(f([xa], true).v); if (scan[si] < Infinity && (ib < 0 || scan[si] < scan[ib])) ib = si; }
+        if (best) { lastT = best.b.tIg; lastY = best.b.yaw; }
+        if (ib >= 0) { var step = (hi - lo) / NS, lo2 = lo + step * Math.max(0, ib - 1), hi2 = lo + step * Math.min(NS, ib + 1); lo = lo2; hi = hi2; }
         var c = hi - g * (hi - lo), d = lo + g * (hi - lo), fc = f([c]).v, fd = f([d]).v;
         for (var i = 0; i < (opts.iters || 40) && hi - lo > 1e-7; i++) {
           if (fc < fd) { hi = d; d = c; fd = fc; c = hi - g * (hi - lo); fc = f([c]).v; } else { lo = c; c = d; fc = fd; d = lo + g * (hi - lo); fd = f([d]).v; }
@@ -390,7 +405,11 @@
           }
         }
       }
-      if (!best) { var r0 = solveIgnition(sc, law, lawParams(sc, law, law === 'fixed' ? [0] : [0, 0])); return { refusal: r0.refusal || refusal('out_of_envelope', 'No steering found that reaches the target.', 'Another steering law.') }; }
+      if (!best) {
+        var x0 = law === 'fixed' ? [0] : [0, 0], r0 = solveIgnition(sc, law, lawParams(sc, law, x0));
+        if (!r0.refusal) return { x: x0, b: r0 };
+        return { refusal: r0.refusal };
+      }
       return best;
     }
 
@@ -412,7 +431,7 @@
         var b = fly({ t: t, r: s.r, v: s.v, m: m }, segs, k === N ? yawed(steer, yawLast) : steer, { E: Ek, efn: sc.efn, mFloor: opts.unlimited === false ? sc.m0 - sc.mp : 0.02 * sc.m0, tMax: sc.tMax }, { h: sc.h, j2: sc.j2, sampleEvery: opts.sampleEvery });
         b.tIg = t; b.m0 = m; b.mUsed = m - b.m; b.start = s; b.k = k; b.yaw = k === N ? yawLast : 0;
         burns.push(b);
-        if (b.ended !== 'target') return { burns: burns, coasts: coasts, final: b, ended: b.ended, refusal: b.ended === 'timeout' ? burnRefusal(sc, b) : null };
+        if (b.ended !== 'target') return { burns: burns, coasts: coasts, final: b, ended: b.ended, refusal: burnRefusal(sc, b) };
         m = b.m;
         if (k === N) break;
         var cc = conic(b.r, b.v);
@@ -435,14 +454,14 @@
     function solveMulti(sc, guess, inPlane) {
       if (sc.mode !== 'asymptote') { var fm = flyMulti(sc, sc.tIgFixed); return fm; }
       if (inPlane) {
-        var w1 = function (t) { var mm = flyMulti(sc, t); if (mm.refusal) return null; var f1 = mm.final; f1.phi = mm.phi; f1.beta = mm.beta; f1.multi = mm; return f1; };
+        var w1 = function (t) { var mm = flyMulti(sc, t); if (mm.refusal) return { refusal: mm.refusal }; var f1 = mm.final; f1.phi = mm.phi; f1.beta = mm.beta; f1.multi = mm; return f1; };
         var b1 = target1(sc, w1, guess ? guess[0] : sc.tGuessMulti);
         if (b1.refusal) return b1;
         var m1 = b1.multi; m1.t1 = m1.burns[0].tIg; m1.iterations = b1.iterations; return m1;
       }
       var wrap = function (x) {
         var m = flyMulti(sc, x[0], { yaw: x[1] });
-        if (m.refusal) return null;
+        if (m.refusal) return { refusal: m.refusal };
         var fin = m.final; fin.phi = m.phi; fin.beta = m.beta; fin.multi = m;
         return fin;
       };
@@ -483,7 +502,9 @@
       var d1 = burnTimeFor(sc.dvImp / sc.N, sc.m0, sc.eng, sc.k);
       sc.tGuessMulti = -d1 / 2;
       sc.refH = unit(cross(cross(ref.r, ref.v), ref.r)); sc.refUp = unit(ref.r);
-      sc.tw0 = tw(segsOf(sc.eng, sc.k)[segsOf(sc.eng, sc.k).length - 1].F, sc.m0);
+      // thrust-to-weight at the ignition mass; for a flown engine in segments (Apollo 17) at the burn's mean thrust, the
+      // engine the thrust sweep uses, so this burn's point sits on its curve (it read the EMR 5.0 thrust before review)
+      sc.tw0 = tw(sc.eng.segs ? sc.eng.meanF : segsOf(sc.eng, sc.k)[segsOf(sc.eng, sc.k).length - 1].F, sc.m0);
       return sc;
     }
 
@@ -569,7 +590,7 @@
     /** Apollo 17's translunar burn: the engine as flown, in three thrust segments. Start (STDV open to +2.5 s): section
      * 7.6's measured impulse over Table 16-7's ignition-to-mainstage mass. Mainstage: Table 7-2's thrust and flow for the
      * 5.0 mixture ratio after Table 2-2's valve shift; the 4.5 phase before it carries the rest of section 7.7's measured
-     * total impulse and of Table 16-7's mainstage mass over the flown durations [Likely: the split assumes the 5.0
+     * total impulse and of Table 16-9's mainstage mass over the flown durations [Likely: the split assumes the 5.0
      * phase ran at Table 7-2's standard-altitude values]. */
     function apollo17Engine() {
       var B = F512.stageTables['S-IVB burn 2'].events, E7 = F512.engines.sivbSecondBurn, ev = TLI.events;
@@ -703,8 +724,11 @@
         if (f1 == null) { out.finite = null; return out; }
         if (Math.abs(p1 - p0) < 1e-6) break;
       }
-      out.finite = p1 > 0 ? p1 : 0;
+      // (changed by the independent review) a payload at or below zero is not a capability: it used to be reported as
+      // 0 kg, a number where a refusal belongs; now finite is null and compute() refuses payload_capability
+      out.finite = p1 > 0 ? p1 : null;
       out.finiteRaw = p1;
+      if (!(p1 > 0)) out.noneFinite = true;
       return out;
     }
     /** Finite-burn loss against initial thrust-to-weight for N = 1, 2, 3 tangential burns (thrust and flow scaled
@@ -749,13 +773,14 @@
       if (sc.kind !== 'apollo17' && set.capability !== false) out.cap = capability(sc, set, sol);
       if (set.sweep !== false && opts.sweep !== false) out.sweep = sweep(sc, { h: 2 });
       // refusals of this module's own
-      var noPayload = out.cap && out.cap.none;
+      var noPayload = out.cap && (out.cap.none || out.cap.noneFinite);
       if (sol.short > 0 && sc.kind !== 'apollo17') {
         var dpl = sol.depleted;
-        out.refusals.push(refusal('out_of_envelope', 'The finite burn needs ' + fmt(sol.mUsed, 5) + ' kg of propellant and the ' + (sc.eng.stage || 'stage') + ' has ' + fmt(sc.mp, 5) + ' kg (short by ' + fmt(sol.short, 4) + ' kg): ' + (dpl ? 'burned to empty it reaches C3 ' + fmt(dpl.c3 / 1e6, 4) + ' km^2/s^2' + (dpl.apogeeAlt ? ', an orbit with apogee ' + fmt(dpl.apogeeAlt / 1000, 4) + ' km' : '') + ', not the ' + fmt(sc.c3 / 1e6, 4) + ' the transfer needs' : 'it cannot reach the C3') + '.',
-          noPayload ? 'More propellant in the stage (module 34) or a lower C3 (module 39): no payload, however light, gets there on this propellant.' : 'A payload of at most ' + fmt(out.cap && out.cap.finite, 5) + ' kg (the capability), more propellant in the stage (module 34), or a lower C3 (module 39).', { applies_to: 'departure_propellant', needed_kg: sol.mUsed, available_kg: sc.mp }));
+        out.refusals.push(refusal('out_of_envelope', 'The finite burn needs ' + fmt(sol.mUsed, 5) + ' kg of propellant and the ' + (sc.eng.stage || 'stage') + ' has ' + fmt(sc.mp, 5) + ' kg (short by ' + fmt(sol.short, 5) + ' kg): ' + (dpl ? 'burned to empty it reaches C3 ' + fmt(dpl.c3 / 1e6, 4) + ' km^2/s^2' + (dpl.apogeeAlt ? ', an orbit with apogee ' + fmt(dpl.apogeeAlt / 1000, 4) + ' km' : '') + ', not the ' + fmt(sc.c3 / 1e6, 4) + ' the transfer needs' : 'it cannot reach the C3') + '.',
+          noPayload ? 'More propellant in the stage (module 34)' + (out.cap.none ? '' : ', more thrust-to-weight or perigee burns') + ' or a lower C3 (module 39): no payload, however light, gets there on this propellant' + (out.cap.none ? '' : ' at this thrust') + '.' : 'A payload of at most ' + fmt(out.cap && out.cap.finite, 5) + ' kg (the capability), more propellant in the stage (module 34), or a lower C3 (module 39).', { applies_to: 'departure_propellant', needed_kg: sol.mUsed, available_kg: sc.mp }));
       }
-      if (noPayload) out.refusals.push(refusal('out_of_envelope', 'Even with no payload the stage cannot reach C3 ' + fmt(sc.c3 / 1e6, 4) + ' km^2/s^2: its ' + fmt(sc.mp, 5) + ' kg of propellant on its own ' + fmt(sc.inert, 5) + ' kg give at most ' + fmt(sc.ve * Math.log((sc.inert + sc.mp) / sc.inert), 4) + ' m/s against the ' + fmt(sc.dvImp, 4) + ' m/s an impulsive burn needs.', 'More propellant in the stage (module 34), or a lower C3 (module 39).', { applies_to: 'payload_capability' }));
+      if (noPayload && out.cap.none) out.refusals.push(refusal('out_of_envelope', 'Even with no payload the stage cannot reach C3 ' + fmt(sc.c3 / 1e6, 4) + ' km^2/s^2: its ' + fmt(sc.mp, 5) + ' kg of propellant on its own ' + fmt(sc.inert, 5) + ' kg give at most ' + fmt(sc.ve * Math.log((sc.inert + sc.mp) / sc.inert), 4) + ' m/s against the ' + fmt(sc.dvImp, 4) + ' m/s an impulsive burn needs.', 'More propellant in the stage (module 34), or a lower C3 (module 39).', { applies_to: 'payload_capability' }));
+      else if (noPayload) out.refusals.push(refusal('out_of_envelope', 'Even with no payload the stage cannot reach C3 ' + fmt(sc.c3 / 1e6, 4) + ' km^2/s^2 with a finite burn: an impulsive burn would leave room for ' + fmt(out.cap.impulsive, 4) + ' kg, but at this thrust the finite-burn loss uses all of it up.', 'More thrust-to-weight, perigee burns, more propellant in the stage (module 34), or a lower C3 (module 39).', { applies_to: 'payload_capability' }));
       if (sc.N > 1 && sc.kind === 'window') {
         var late = sol.final.t;
         out.refusals.push(refusal('insufficient_data', 'With ' + sc.N + ' perigee burns the last cutoff comes ' + fmt(late / 3600, 4) + ' h after idea 37\'s departure point, but the asymptote is the one for that day held fixed: the transfer leaving at the later time needs its own.', 'Module 39 (Lambert\'s Road) re-solving the transfer for the final burn\'s date.', { applies_to: 'asymptote_epoch', delay_s: late }));
@@ -840,7 +865,14 @@
         if (R.sweep) O.loss_vs_thrust_to_weight = qv(R.sweep.map(function (p) { return { burns: p.n, thrust_to_weight: p.tw, loss_m_s: p.loss, refused: p.refused || null }; }), 'm/s', 'derived', KERNEL + ' sweep() (tangential, RK4 at 2 s)');
       }
       (R.refusals || []).forEach(function (x) { h.refusals.push(x); });
-      if (src.window && sc && sc.k === 1) h.refusals.push(refusal('insufficient_data', 'No start or cutoff transient and no venting: the engine runs at its deck\'s vacuum thrust from ignition to cutoff, and nothing boils off in the coast. On Apollo 17 the start and cutoff transients gave ' + fmt(TLI.buildup.impulseLbfS * LBF / 1000, 4) + ' and ' + fmt(TLI.cutoff.impulseLbfS * LBF / 1000, 4) + ' kN s, and the S-IVB vented ' + fmt(-F512.sequence.filter(function (r) { return r[0] === 'FUEL TANK LOSS'; })[0][1], 4) + ' kg of hydrogen in its 3 h coast (MPR-SAT-FE-73-1 sections 7.6, 7.8, Table 16-9).', 'Transient and venting models for this engine and stage.', { applies_to: 'transients' }));
+      // (added by the independent review) say why module 39 gets no departure state: a bound target (Apollo 17's
+      // translunar ellipse, or a C3 at or below zero typed in), or a departure with no date and no J2000 orientation (the
+      // presets are not tied to idea 37's calendar); the propellant shortfall has its own refusal above
+      if (sc && sol && !R.refusal && !(sol.short > 0 && sc.kind !== 'apollo17')) {
+        if (!(sc.c3 > 0)) h.refusals.push(refusal('insufficient_data', 'The target C3 (' + fmt(sc.c3 / 1e6, 4) + ' km^2/s^2) is a bound orbit' + (sc.kind === 'apollo17' ? ' (Apollo 17\'s translunar ellipse)' : '') + ': there is no departure asymptote and no v-infinity to hand on.', 'A hyperbolic target (C3 > 0) from idea 37 (Window).', { applies_to: 'hyperbolic_departure_state' }));
+        else if (!src.window) h.refusals.push(refusal('insufficient_data', 'This departure is not tied to a date or to J2000 axes (it is not from idea 37), so its state at cutoff is handed on in the burn\'s own frame with no epoch: a transfer cannot start from it.', 'Idea 37\'s handoff for the launch day (Import).', { applies_to: 'hyperbolic_departure_state' }));
+      }
+      if ((src.window || src.custom) && sc) h.refusals.push(refusal('insufficient_data', 'No start or cutoff transient and no venting: the engine runs at ' + (src.window ? 'its deck\'s vacuum thrust' + (sc.k !== 1 ? ' (scaled by ' + fmt(sc.k, 4) + ')' : '') : 'the typed vacuum thrust') + ' from ignition to cutoff, and nothing boils off in the coast. On Apollo 17 the start and cutoff transients gave ' + fmt(TLI.buildup.impulseLbfS * LBF / 1000, 4) + ' and ' + fmt(TLI.cutoff.impulseLbfS * LBF / 1000, 4) + ' kN s, and the S-IVB vented ' + fmt(-F512.sequence.filter(function (r) { return r[0] === 'FUEL TANK LOSS'; })[0][1], 4) + ' kg of hydrogen in its 3 h coast (MPR-SAT-FE-73-1 sections 7.6, 7.8, Table 16-9).', 'Transient and venting models for this engine and stage.', { applies_to: 'transients' }));
       h.refusals.push(refusal('insufficient_data', 'The asymptote handed on has J2 followed out to 20 Earth radii but not the Moon or the Sun: their pull on the way out of the Earth\'s sphere of influence is not in it.', 'A propagation with the Moon and the Sun out of the Earth\'s sphere of influence (module 40).', { applies_to: 'post_cutoff' }));
       return h;
     }

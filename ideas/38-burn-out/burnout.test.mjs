@@ -275,3 +275,75 @@ test('handoff: the committed sample is what the kernel gives from idea 37\'s; un
   near(hs.tdb_s_past_j2000, L.WIN.outputs.departure_point.value.tdb_s_past_j2000 + R.sol.final.t, 1e-6);
   assert.ok(!B.parseHandoff(JSON.parse(JSON.stringify(h))).refusal, 'the closing departure round-trips');
 });
+
+// ------------------------------------------------------------------ added by the independent review
+test('review: the state handed to module 39 is in J2000, its v-infinity has idea 37\'s RLA and DLA, the scaled engine is what flew', () => {
+  const set = Object.assign(B.defaults(), { payloadKg: 25000, sweep: false }), R = B.compute({ window: ST }, set);
+  const h = JSON.parse(JSON.stringify(B.makeHandoff({ window: ST }, set, R, { produced: 'x' }))), hs = h.outputs.hyperbolic_departure_state.value, vi = h.outputs.v_infinity.value;
+  // turned back into idea 37's frame of date with its own precession matrix, the handed state is the burn's cutoff
+  const f = R.sol.final, rM = ST.toMod(hs.r_m), vM = ST.toMod(hs.v_m_s);
+  near(Math.hypot(rM[0] - f.r[0], rM[1] - f.r[1], rM[2] - f.r[2]), 0, 1e-6, 'r in J2000 (m)');
+  near(Math.hypot(vM[0] - f.v[0], vM[1] - f.v[1], vM[2] - f.v[2]), 0, 1e-9, 'v in J2000 (m/s)');
+  // and the v-infinity points where idea 37's asymptote points: Aster's RLA and DLA as idea 37 hands them on
+  const A = L.WIN.outputs.asymptote.value;
+  near(vi.rla_deg, A.rla_deg, 1e-6, 'RLA'); near(vi.dla_deg, A.dla_deg, 1e-6, 'DLA');
+  near(vi.magnitude_m_s, A.vinf_m_s, 1e-6, '|v-infinity| from the conserved energy is the target\'s');
+  // a scaled engine: the handoff names the thrust and flow that flew, and its T/W
+  const k = 0.5, Rk = B.compute({ window: ST }, Object.assign(B.defaults(), { thrustScale: k, sweep: false, capability: false })), hk = B.makeHandoff({ window: ST }, Object.assign(B.defaults(), { thrustScale: k }), Rk, { produced: 'x' });
+  const e = hk.outputs.engine.value;
+  near(e.thrust_N, ST.eng.F * k, 1e-6, 'scaled thrust'); near(e.mass_flow_kg_s, ST.eng.mdot * k, 1e-9, 'scaled flow');
+  near(e.thrust_to_weight_ignition, e.thrust_N / (e.mass_ignition_kg * B.G0), 1e-12, 'T/W');
+  assert.equal(hk.outputs.engine.confidence, 'assumed');
+  assert.ok(hk.refusals.some((r) => r.applies_to === 'transients' && /scaled/.test(r.reason)), 'a scaled engine still has no transients');
+  // the custom parking orbit has the typed inclination
+  const cs = B.customScenario({ altitudeKm: 400, inclinationDeg: 51.6, c3: 1e6, inertKg: 1e4, propellantKg: 5e4, payloadKg: 1e4, thrustN: 2e5, veMS: 4400, j2: true }, B.defaults());
+  const s0 = cs.stateAt(0), hh = [s0.r[1] * s0.v[2] - s0.r[2] * s0.v[1], s0.r[2] * s0.v[0] - s0.r[0] * s0.v[2], s0.r[0] * s0.v[1] - s0.r[1] * s0.v[0]];
+  near(Math.acos(hh[2] / Math.hypot(...hh)) / DEG, 51.6, 1e-9, 'custom inclination');
+  near(Math.hypot(...s0.r) - B.constants.RE, 400e3, 1e-6, 'custom altitude');
+});
+
+test('review: refusals instead of numbers where the review found placeholders, NaN and a false refusal', () => {
+  const cs = { altitudeKm: 200, inclinationDeg: 28.5, c3: 1e6, inertKg: 1e4, propellantKg: 5e4, payloadKg: 1e4, thrustN: 1e6, veMS: 4400, j2: true };
+  // (1) the impulsive rocket equation leaves 50 kg for a payload but the finite burn's loss eats it: no capability, a
+  // payload_capability refusal (it used to show "0 kg" and "a payload of at most 0 kg")
+  const sc0 = B.customScenario(cs, B.defaults()), inert = 5e4 / (Math.exp(sc0.dvImp / 4400) - 1) - 50;
+  const tight = Object.assign({}, cs, { inertKg: inert, payloadKg: 1000, thrustN: 3e4 });
+  const R1 = B.compute({ custom: tight }, Object.assign(B.defaults(), { sweep: false }));
+  near(R1.cap.impulsive, 50, 1e-6, 'impulsive margin'); assert.equal(R1.cap.finite, null);
+  assert.deepEqual(R1.refusals.map((r) => r.applies_to), ['departure_propellant', 'payload_capability']);
+  assert.match(R1.refusals[1].reason, /finite-burn loss uses all of it/);
+  assert.doesNotMatch(R1.refusals[0].what_would_help, /at most 0 kg/);
+  // (2) an engine that cannot reach the C3 at all: a sentence with the C3 it does reach, not "C3 NaN"
+  for (const set of [{}, { burns: 2 }, { steering: 'fixed' }]) {
+    const r = B.compute({ custom: Object.assign({}, cs, { c3: 10e6, veMS: 500 }) }, Object.assign(B.defaults(), { sweep: false }, set)).refusal;
+    assert.equal(r.applies_to, 'targeting', JSON.stringify(set)); assert.doesNotMatch(r.reason, /NaN/); assert.match(r.reason, /2 % of its ignition mass/);
+  }
+  // (3) fixed attitude on a weak engine: the burn flies (it used to be refused, "no steering found", although the
+  // reference direction itself flies), and costs more than along-velocity steering at the same thrust
+  const fx = solveWin({ steering: 'fixed', thrustScale: 0.18, capability: false }), tg = solveWin({ thrustScale: 0.18, capability: false });
+  assert.ok(!fx.refusal, fx.refusal && fx.refusal.reason);
+  assert.ok(fx.sol.loss > tg.sol.loss && fx.sol.loss < 1000, 'fixed ' + fx.sol.loss + ' vs along velocity ' + tg.sol.loss);
+  near(fx.sol.phi, 0, 1e-10); near(fx.sol.beta, 0, 1e-10);
+  // and it is the best fixed direction, not the reference horizontal (505.2 m/s there; 485.9 at 1 deg, 486.8 at 2 deg)
+  near(fx.sol.loss, 484.01, 0.05, 'fixed attitude at T/W 0.15'); near(fx.sol.params.alphaDeg, 1.45, 0.2, 'its direction above the reference');
+  // (4) handoffs that hand module 39 no departure say why
+  const hOf = (src, set) => { const s = Object.assign(B.defaults(), { sweep: false }, set || {}); return B.makeHandoff(src, s, B.compute(src, s), { produced: 'x' }); };
+  const codes = (h) => h.refusals.map((r) => r.applies_to);
+  const ha = hOf({ apollo17: true });
+  assert.ok(!ha.outputs.hyperbolic_departure_state && ha.refusals.some((r) => r.applies_to === 'hyperbolic_departure_state' && /bound orbit/.test(r.reason)), 'Apollo 17: a bound ellipse');
+  const hb = hOf({ custom: Object.assign({}, cs, { c3: -5e6 }) });
+  assert.ok(!hb.outputs.hyperbolic_departure_state && codes(hb).includes('hyperbolic_departure_state') && codes(hb).includes('transients'), 'custom C3 < 0');
+  const hc = hOf({ custom: cs });
+  assert.ok(hc.outputs.hyperbolic_departure_state && hc.outputs.hyperbolic_departure_state.value.tdb_s_past_j2000 === null && codes(hc).includes('hyperbolic_departure_state'), 'custom: no epoch');
+  assert.ok(!codes(hOf({ window: ST }, { payloadKg: 25000 })).includes('hyperbolic_departure_state'), 'the chain\'s closing departure hands it on');
+  // (5) a steering law that turns with time is integrated to RK4's order: 1 s and 0.1 s steps agree to a microsecond
+  // (the turn is evaluated at each stage's own time; at the step's start instead, they differ by 1e-4 s)
+  const spec = { altitudeKm: 171, inclinationDeg: 0, c3: 511358, inertKg: 12334, propellantKg: 111006, payloadKg: 0, thrustN: 204618, veMS: 4146, j2: false }, P = { a: -5 * DEG, b: 2 * DEG };
+  const d1 = B.solveIgnition(B.customScenario(spec, Object.assign(B.defaults(), { dt: 1 })), 'optimal', P), d01 = B.solveIgnition(B.customScenario(spec, Object.assign(B.defaults(), { dt: 0.1 })), 'optimal', P);
+  near(d1.dur, d01.dur, 1e-6, 'turned law: step-converged burn time');
+  // (6) Apollo's thrust-to-weight is at the burn's mean thrust, the engine its sweep flies, so the point sits on its curve
+  const Ra = B.compute({ apollo17: true }, B.defaults()), E = B.apollo17Engine();
+  near(Ra.sc.tw0, E.meanF / (E.mIg * B.G0), 1e-12, 'T/W at the mean thrust');
+  const sw = B.sweep(Ra.sc, { h: 2, ns: [1], tws: [Ra.sc.tw0] })[0];
+  near(sw.loss, B.compute({ apollo17: true }, Object.assign(B.defaults(), { engine: 'mean', sweep: false })).sol.loss, 0.05, 'the sweep at this T/W is the mean-thrust burn');
+});

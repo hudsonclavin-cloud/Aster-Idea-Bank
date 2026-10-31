@@ -29,7 +29,7 @@
     loxDepletionAfterCutoffS: 9.22,
     // Table 2-2, Significant Event Times Summary, printed pages 2-7 and 2-8 (PDF pages 40 and 41), ACTUAL range time (s)
     // and time from base (T6 for items 85 to 93, T7 = item 96, S-IVB engine cutoff interrupt at 11,907.9 s, for 94 and 98).
-    // Item 90's last digit is blurred; T6 + 671.2 = 11,649.85 settles it as 11,649.9.
+    // Item 90's last digit is blurred; T6 + 671.2 = 11,649.85 is consistent with 11,649.9 (the image reads as a 9).
     events: {
       restartCommand: { item: 85, t: 11548.6, fromT6: 570.0, text: 'S-IVB ENGINE RESTART COMMAND (FUEL LEAD INITIATION) (SECOND ESC)' },
       secondIgnition: { item: 88, t: 11556.6, fromT6: 578.0, text: 'S-IVB SECOND IGNITION (STDV OPEN)' },

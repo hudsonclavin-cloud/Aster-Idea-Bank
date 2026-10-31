@@ -118,6 +118,11 @@
     } else if (mine) {
       v.className = 'verdict red';
       v.textContent = 'Refused: this departure needs ' + fmt(sol.mUsed, 0) + ' kg of propellant and the stage has ' + fmt(sc.mp, 0) + ' kg. ' + (R.cap && num(R.cap.finite) ? 'With the propellant it has, the stage can send at most ' + fmt(R.cap.finite, 0) + ' kg to this C3 (finite burn; ' + fmt(R.cap.impulsive, 0) + ' kg if the burn were impulsive), against the ' + fmt(sc.payload, 0) + ' kg on it.' : 'No payload, however light, gets there on this propellant.');
+    } else if (!(sc.c3 > 0)) {
+      // a bound target (C3 at or below zero, typed in): nothing departs, so no v-infinity (added by the independent review)
+      var cb = B.conic(f.r, f.v);
+      v.className = 'verdict green';
+      v.textContent = 'Reaches C3 ' + fmt(c3far / 1e6, 4) + ' km²/s²: a bound orbit' + (cb.ra ? ' with apogee ' + fmt((cb.ra - RE) / 1000, 0) + ' km' : '') + ', not a departure (no asymptote, no v-infinity to hand on). ' + fmt(sol.loss, 2) + ' m/s (' + fmt(sol.loss / sol.dvImp * 100, 2) + ' %) over the impulsive delta-v, ' + fmt(sc.mp - sol.mUsed, 0) + ' kg of propellant to spare.';
     } else {
       v.className = 'verdict green';
       v.textContent = 'Departs: v-infinity ' + fmt(Math.sqrt(Math.max(0, c3far)), 1) + ' m/s' + (sc.kind === 'window' ? ' along idea 37\'s asymptote' : '') + ', ' + fmt(sol.loss, 2) + ' m/s (' + fmt(sol.loss / sol.dvImp * 100, 2) + ' %) over the impulsive delta-v, ' + fmt(sc.mp - sol.mUsed, 0) + ' kg of propellant to spare.';
@@ -133,16 +138,17 @@
       var ms = state.src.window.launchMs + (state.src.window.dp.tdb + b0.tIg - state.src.window.T.tdb) * 1000;
       tiles.appendChild(tile('Ignition', mmss(b0.tIg), '', conf, 'before idea 37\'s impulsive point (' + clock(ms) + ')'));
     } else if (sc.kind === 'apollo17') tiles.appendChild(tile('Ignition', '11,556.6', 's', 'measured', 'range time, as flown (Table 2-2 item 88)'));
-    var arc = Math.acos(Math.max(-1, Math.min(1, dot(unit(b0.start.r), unit(f.r))))) / DEG;
-    tiles.appendChild(tile('Burn arc', fmt(arc, 1), 'deg', conf, 'round the Earth from ignition to cutoff'));
-    tiles.appendChild(tile('Thrust-to-weight', fmt(sc.tw0, 3), '', sc.k === 1 ? conf : 'assumed', 'at ignition (' + fmt(B.segsOf(sc.eng, sc.k).slice(-1)[0].F / 1000, 0) + ' kN on ' + fmt(sc.m0, 0) + ' kg)'));
+    // the arc of one burn (the last, with perigee burns: first ignition to last cutoff spans hours of phasing orbits)
+    var arc = Math.acos(Math.max(-1, Math.min(1, dot(unit(f.start.r), unit(f.r))))) / DEG;
+    tiles.appendChild(tile('Burn arc', fmt(arc, 1), 'deg', conf, sol.burns.length > 1 ? 'round the Earth during the last burn' : 'round the Earth from ignition to cutoff'));
+    tiles.appendChild(tile('Thrust-to-weight', fmt(sc.tw0, 3), '', sc.k === 1 ? conf : 'assumed', sc.eng.segs ? 'the burn\'s mean thrust (' + fmt(sc.eng.meanF / 1000, 0) + ' kN) on the ignition mass (' + fmt(sc.m0, 0) + ' kg)' : 'at ignition (' + fmt(B.segsOf(sc.eng, sc.k).slice(-1)[0].F / 1000, 0) + ' kN on ' + fmt(sc.m0, 0) + ' kg)'));
     tiles.appendChild(tile('Altitude at cutoff', fmt((Math.sqrt(dot(f.r, f.r)) - RE) / 1000, 1), 'km', conf, 'above Aster\'s equatorial radius'));
-    if (sc.kind !== 'apollo17' && sol.short <= 0) tiles.appendChild(tile('C3 at infinity', fmt(c3far / 1e6, 4), 'km²/s²', conf, sc.efn === B.energyJ2 ? 'two-body at cutoff reads ' + fmt(2 * B.energy(f.r, f.v) / 1e6, 4) : 'two-body'));
+    if (sc.kind !== 'apollo17' && sol.short <= 0) tiles.appendChild(tile(sc.c3 > 0 ? 'C3 at infinity' : 'C3 reached (bound)', fmt(c3far / 1e6, 4), 'km²/s²', conf, sc.efn === B.energyJ2 ? 'two-body at cutoff reads ' + fmt(2 * B.energy(f.r, f.v) / 1e6, 4) : 'two-body'));
     if (sc.kind === 'window') tiles.appendChild(tile('Yaw to hold the asymptote', fmt((sol.yaw || 0) / DEG, 3), 'deg', conf, sol.burns.length > 1 && sol.inPlane ? 'J2 turned the plane ' + fmt(sol.inPlane.betaDeg, 3) + ' deg over the phasing' : 'J2 turns the plane during and after the burn'));
     if (sol.inPlane) tiles.appendChild(tile('Loss if the launch were aimed for the phasing', fmt(sol.inPlane.loss, 2), 'm/s', conf, 'no yaw; the yawed figure above is from idea 37\'s plane'));
     if (R.cap) {
       if (num(R.cap.finite)) tiles.appendChild(tile('Payload the stage can send', fmt(R.cap.finite, 0), 'kg', conf, 'finite burn; ' + fmt(R.cap.impulsive, 0) + ' kg impulsive (rocket equation); ' + fmt(sc.payload, 0) + ' kg on it', 'hero'));
-      else tiles.appendChild(tile('Payload the stage can send', 'none', '', conf, 'its propellant cannot reach this C3 even empty', 'refused'));
+      else tiles.appendChild(tile('Payload the stage can send', 'none', '', conf, R.cap.none ? 'its propellant cannot reach this C3 even empty' : 'impulsively ' + fmt(R.cap.impulsive, 0) + ' kg, but the finite-burn loss at this thrust uses it all', 'refused'));
     }
     if (sol.depleted) tiles.appendChild(tile('Where the tank runs dry', 'C3 ' + fmt(sol.depleted.c3 / 1e6, 2), 'km²/s²', conf, sol.depleted.apogeeAlt ? 'an orbit with apogee ' + fmt(sol.depleted.apogeeAlt / 1000, 0) + ' km' : ''));
     if (sol.burns.length > 1) sol.burns.forEach(function (b, i) { $('burnList').appendChild(el('li', { text: 'Burn ' + (i + 1) + ': ' + fmt(b.dur, 1) + ' s, ' + fmt(b.mUsed, 0) + ' kg, ' + fmt(B.dvOf(sc, b), 1) + ' m/s' + (i > 0 ? ', ' + fmt((b.tIg - sol.burns[i - 1].t) / 3600, 2) + ' h after the one before' : '') })); });
@@ -252,7 +258,7 @@
     svg.appendChild(sv('text', { class: 'lbl', x: pi[0] + (pi[0] < c[0] ? -8 : 8), y: pi[1] + 4, 'text-anchor': pi[0] < c[0] ? 'end' : 'start' }, 'ignition'));
     svg.appendChild(sv('text', { class: 'lbl', x: pc[0] + (pc[0] < c[0] ? -8 : 8), y: pc[1] + (pc[1] < c[1] ? -6 : 14), 'text-anchor': pc[0] < c[0] ? 'end' : 'start' }, 'cutoff'));
     var arc = Math.acos(Math.max(-1, Math.min(1, dot(unit(b0.start.r), unit(f.r))))) / DEG;
-    $('planeCap').textContent = 'In the plane of the orbit, Earth and altitudes to scale (the parking orbit is the dotted circle just above the surface), ' + (sc.kind === 'window' ? 'the asymptote to the right; the vehicle goes anticlockwise. The burn starts ' + fmt(-b0.tIg, 1) + ' s before idea 37\'s impulsive point (dot) and sweeps ' + fmt(arc, 1) + '° round the Earth.' : 'ignition on the right; the vehicle goes anticlockwise, sweeping ' + fmt(arc, 1) + '° round the Earth while it burns.') + (sol.burns.length > 1 ? ' The phasing orbits run off the picture.' : '');
+    $('planeCap').textContent = 'In the plane of the orbit, Earth and altitudes to scale (the parking orbit is the dotted circle just above the surface), ' + (sc.kind === 'window' ? 'the asymptote to the right; the vehicle goes anticlockwise. The burn starts ' + fmt(-b0.tIg, 1) + ' s before idea 37\'s impulsive point (dot) and sweeps ' + fmt(arc, 1) + '° round the Earth.' : 'ignition on the right; the vehicle goes anticlockwise, sweeping ' + fmt(arc, 1) + '° round the Earth while it burns.') + (sol.burns.length > 1 ? ' The phasing orbits run off the picture.' : '') + (sol.short > 0 && sc.kind !== 'apollo17' && sol.depleted ? ' The stage is short of propellant: this is the burn the departure needs; the tank would run dry ' + fmt(f.t - sol.depleted.t, 1) + ' s before this cutoff.' : '');
   }
   function drawSteer() {
     var svg = $('steerChart'); svg.textContent = '';
