@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/32-bell/snapshots/sp8120-table1.js",
+  "commit": "15f4bfe4ed21714af77d0b4c936ec4e524edd68e",
+  "commitDate": "2026-10-31T05:42:14+00:00",
+  "pathLastChanged": "3063d59 2026-10-31T05:15:40+00:00",
+  "committedBlob": "f039436007a45c7c5a3f39fa5988a91e467d29fa",
+  "readBlob": "f039436007a45c7c5a3f39fa5988a91e467d29fa",
+  "sourceSha256": "a115d9b46960fd04814c9eac382019f5d0eae1d230310f5b4568b711a8a379fb",
+  "sourceBytes": 8274,
+  "copiedAt": "2026-10-31T05:54:30.349Z",
+  "mode": "copy",
+  "note": "idea 32's transcription of NASA SP-8120 Table I (real engines' nozzles, thrusts, pressures and Isp), unmodified; the engine presets take their geometry from it",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a115d9b46960fd04814c9eac382019f5d0eae1d230310f5b4568b711a8a379fb",
+  "writtenBytes": 8274
+}

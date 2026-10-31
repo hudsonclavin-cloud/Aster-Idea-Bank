@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/32-bell/handoff.json",
+  "commit": "15f4bfe4ed21714af77d0b4c936ec4e524edd68e",
+  "commitDate": "2026-10-31T05:42:14+00:00",
+  "pathLastChanged": "7083b2c 2026-10-31T05:41:58+00:00",
+  "committedBlob": "c37542b256e06381f28577465bf816bf0a814317",
+  "readBlob": "c37542b256e06381f28577465bf816bf0a814317",
+  "sourceSha256": "60bbc5c4c779185662e7dc366d80310a2d1778485fd079b721d0f76a14753e2a",
+  "sourceBytes": 21750,
+  "copiedAt": "2026-10-31T05:54:30.418Z",
+  "mode": "copy",
+  "note": "idea 32's committed sample handoff: the import contract this module is tested against",
+  "readMatchesCommitted": true,
+  "writtenSha256": "60bbc5c4c779185662e7dc366d80310a2d1778485fd079b721d0f76a14753e2a",
+  "writtenBytes": 21750
+}

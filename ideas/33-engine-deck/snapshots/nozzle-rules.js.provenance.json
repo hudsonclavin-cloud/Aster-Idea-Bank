@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/32-bell/snapshots/nozzle-rules.js",
+  "commit": "15f4bfe4ed21714af77d0b4c936ec4e524edd68e",
+  "commitDate": "2026-10-31T05:42:14+00:00",
+  "pathLastChanged": "3063d59 2026-10-31T05:15:40+00:00",
+  "committedBlob": "e718f56b6feff7a6571b184f162229ddd5f243b9",
+  "readBlob": "e718f56b6feff7a6571b184f162229ddd5f243b9",
+  "sourceSha256": "bf613582fe4b1383a9a38382a235bd52f17e29efc1a482ccdc076770aaf2e9d2",
+  "sourceBytes": 2898,
+  "copiedAt": "2026-10-31T05:54:30.216Z",
+  "mode": "copy",
+  "note": "idea 32's NASA nozzle rules, unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "bf613582fe4b1383a9a38382a235bd52f17e29efc1a482ccdc076770aaf2e9d2",
+  "writtenBytes": 2898
+}

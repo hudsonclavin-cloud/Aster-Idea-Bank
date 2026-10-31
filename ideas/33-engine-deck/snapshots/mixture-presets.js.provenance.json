@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/presets.js",
+  "commit": "15f4bfe4ed21714af77d0b4c936ec4e524edd68e",
+  "commitDate": "2026-10-31T05:42:14+00:00",
+  "pathLastChanged": "158fe6b 2026-10-31T04:14:11+00:00",
+  "committedBlob": "a2a6dc146b82e39ed5817327ec2f7488cc1fcc63",
+  "readBlob": "a2a6dc146b82e39ed5817327ec2f7488cc1fcc63",
+  "sourceSha256": "e5c580d7e92f48a4abb9bb6f7597741998468d4bbc6b0bc141acd84baf31ecc1",
+  "sourceBytes": 3889,
+  "copiedAt": "2026-10-31T05:54:30.036Z",
+  "mode": "copy",
+  "note": "idea 31's propellant presets, unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e5c580d7e92f48a4abb9bb6f7597741998468d4bbc6b0bc141acd84baf31ecc1",
+  "writtenBytes": 3889
+}

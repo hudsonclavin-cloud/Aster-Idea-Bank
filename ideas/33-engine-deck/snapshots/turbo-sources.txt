@@ -1,0 +1,212 @@
+# Verbatim text-layer excerpts (pdftotext -layout; runs of spaces collapsed to one; OCR errors kept,
+# e.g. SP-8107 "t600" for 1600 and "106" for -106). snapshots/turbo-data.js transcribes the numbers from
+# the rendered pages; engine.test.mjs checks each legible one is here.
+
+## SP-8107 (NASA SP-8107, Turbopump Systems for Liquid Rocket Engines, 1974; NTRS 19750012398) Tables I-III, printed pages 3-5
+## sha256 9a66bf918211b1780448ea79c3635003a026bce6129b6726c6aeb8aa856568ea
+--- lines 595-660
+Table I. - Chief Features of Operational Turbopump Assemblies t
+Engine Turbopump Assembly
+Chamber Specific
+pressure, Efficiency, Weight, horsepower,
+Designation Application Thrust, lbf psia Arrangement percent Ibm hp/lbm Start system
+A-7 Redstone 78 000 318 Single shaft, turbine 26.4 332 2.22 Liquid monopropellant start
+in middle tank
+MB-3 Thor 170 000 594 i Geared turbine 46.0 562 5.40 Solid propellant start cartridge
+LR87-AJ-3 Titan I, 150 000 585 Geared turbine and 45.8 720 5.11 Liquid propellant start tanks
+I st stage pumps
+LR91-A J-3 Titan l, 80 000 682 Geared O 2 pump 34.0 204 7.25 Liquid propellant start tanks
+2nd stage
+H-1 Saturn IB 205 000 702 Geared turbine 47.0 520 7.98 Solid propellant start cartridge
+MA-5 sustainer Atlas 57 000 706 Geared turbine 35.0 229 7.27 Solid propellant start cartridge
+MA-5 booster Atlas 330 0002 577 Geared turbine 48.0 875 3.59 Solid propellant start cartridge
+L_
+44.6 3150 16.6 Tank head
+F-1 Saturn IC 1 522 000 1122 Single shaft, turbine
+on end
+YLR8 I-BA-11 Agena 16 000 506 Geared turbine and 20.0 60.5 5.81 Solid propellant start cartridge
+pumps
+YLR87-AJ-7 Gemini-Titan 215 000 784 Geared turbine and 38.1 484 10.70 Solid propellant start cartridge
+1st stage pumps
+YLR9 I-A J-7 Gemini-Titan 1O0 000 804 Geared N204 pump 256 8.30 Solid propellant start cartridge
+2 nd stage
+RLIOA-3-3 Centaur 15 000 400 Geared 02 pump 42.0 76.1 9.03 Tank head
+Saturn S-II 230 000 787 Dual turbopump, 37.4 305 7.73 Pressurized-gas start tank
+J-2
+and S-1VB series turbines
+44.9 369 21.60
+3237 56.5 555 50D Tank head
+SSME (EPL*) 3 Space Shuttle 512 300 Dual turbopump,
+high pressure parallel turbines
+58.5 701 108.9
+--- lines 667-735
+Table II. - Chief Features of Operational Turbopumps*
+Rated
+Propellant Number Discharge inlet Head Weight Volume Rotational
+Engine density, Pump of pressure, pre_ure, rise, flowrate, flowrate, speed, SPSHmin, NPSHc rit, Efficiency, Power,
+designation Propellant lbm/fta( i ) type stages psia psia ft lbm/sec gpm rpm ft 12) riO) percent hp
+A-7 Oxygen 71.4 Centrifugal 356 49.8 616 205 1 290 4 718 18 11 72.0 32O
+Alcohol (41 56.6 464 42.5 1 139 150 1 190 4 718 40 35 70.0 418
+MB-3 Oxygen 71.4 867 53.0 1 651 456 2 870 6 303 55 79.0 1830
+RJ-I 53.2 913 48.0 2 337 202 1 700 6 303 34 72.0 1 210
+LR87-AJ-3 Oxygen 71.4 I 798 53.0 t 510 412.7 2 600 7 949 40
+RP-I 50.5 1034 22.0 2 881 183.3 1 630 8 780 30
+i
+LR91 -A J-3 Oxygen 71.4 819 35.0 1613 175.6 1 100 8 945 31
+RP-I 50.5 1097 42.0 3 024 74.1 659 25 207 100
+i I
+H-1 Oxygen 70.8 980 65.0 1 851 537 3 410 6 680 35 25 77.8 2 340
+I
+RP-I 50.5 1020 57.0 2 719 240 2 130 6 680 35 28 71.8 1 670
+MA-5 sustainer Oxygen 71.4 982 53.0 1 879 193.2 1 200 10 160 30 14 64.2 1 018
+RP-I 50.5 996 77.0 2 616 91.6 745 10 160 85 60 64.5 62O
+MA-5 booster Oxygen 71.4 877 50.0 1 679 458 2 862 6 314 40 74.3 1800
+RP-I 50.5 839 73.0 2 184 211 1 867 6314 33 I 73.6 I 151
+F-I Oxygen 71.4 t600 65.0 3097 4070 25 200 5 488 65 ,60 74.6 30 200
+RP-I 50.5 1856 45.0 5 168 1715 15 250 5 488 70 55 72.6 22 I00
+YLR81-BA-I 1 IRFNA (s) 98.2 949 24.0 1 360 39.3 180 25 389 12 352
+UDMH (6) 49.4 749 24.0 2 110 15.3 139 14 410 34 352
+YLR87-AJ-7 N204 90.3 1182 84.0 1 740 550 2 700 8 382 44 68.0 2 560
+A-50 (7) 56.1 1363 33.5 3 381 274 2 180 9 209 43 68.0 2 480
+r
+YLRgI-AJ-7 N204 90.3 Mixed Flow 1112 41.0 1 713 207 1 010 8 405 30 67.4 960
+A-50 56.1 Mixed Flow 1201 44.5 2 981 115 904 23 685 100 57.1 1090
+RL I0A-3-3 Oxygen 68.8 Cent rifugal _r 597 60.5 t120 28.2 184 12 100 17 62.9 94
+Hydrogen 4.35 Centrifugal 2 990 30.0 31 800 5.6 581 30 250 132 55.0 592
+J-2 Oxygen 70.8 Centrifugal 1 1114 39.0 2 185 460.4 2 920 8 753 25 18 80.0 2 358
+Hydrogen 4.4 Axial 7+ inducer 1238 30.0 38 000 83.6 8 530 27 130 130 75 73.0 7 977
+stage
+SSME (EPL)** Oxygen 70.4 Centrifugal 1/2 Is) 5174/ 379/ 9640/ 1137/ 7250/ 31 000 (9) (9) 78.1/ 27 400
+high pressure 8491 4940 7100 120 633 69.6
+Hydrogen 4.38 Centrifugal 3 6981 188 193 900 160.5 16 450 37 400 (9) (9) 74.1 76 400
+*Bared on the best data as of mid-1973. Numbers presented are those for a turbopump operational system.
+(l)At temperature specified by the application. (6)Unsymmetrical dimetbylhydmzine, (CH3) 2 NNH 2.
+(2)Contraentatly specified pump NPSI{, maximum acceptable. (7)50 percent hydrazine and 50 percent UDMH,
+--- lines 739-822
+Table Ill. - Chief Features of Operational Turbines _
+Number Inlet Inlet Pitchline
+Engine Working of temperature, pressure, Pressure Flowrate, Rotational Efficiency, Power, veloc!ty,
+designation fluid stages Type °F psia ratio Ibm/see speed, rpm percent hp ft/sec
+A-7 2-row velocity 740 37I 21.2 6.68 4 718 37.2 758 412
+H202 I*
+compounded
+pressure 1204 523 17.6 15.4 30 540 - 3 162 1200
+MB-3 O2/RJ-I 2
+compounded
+LR87-AJ-3 pressure 1334 413 17.8 11.7 25 172 63.6 3 678 1035
+O2/RP-I 2
+conrpounded
+LR91-AJ-3 O2/RP-I 2 pressure 1240 560 28.2 6.31 25 207 63.1 1480 1020
+compounded
+622 17.7 18.0 32 700 70.2 4 141 1290
+H-1 O2/RP-1 2 pressure 1200
+compounded
+pressure 1075 692 25.0 9.73 38 000 46.3 1 663 995
+MA-5 sustainer O2/RP-I 2
+compounded
+MA-5 booster O2/RP-I 2 pressure 1240 497 15.7 14.07 30 986 66.9 3 140 1205
+compounded
+F-1 02/RP-I 1* 2-row velocity 1450 920 16.4 171.8 5 488 60.5 52 900 840
+compounded
+_q
+YLR81-BA-I 1 IRFNA/UDMH I impulse, par- 14130 480 37.7 1.58 24 800 41.0 352 855
+tial admission
+YLR87-AJ-7 pressure 1667 443 17.8 12.85 23 992 56.0 5 180 980
+N204/A-50 2
+compounded
+YLR9 I-A J-7 N204/A-50 2 pressure 1650 420 29.0 5.46 23 685 53.0 2 122 964
+compounded
+pressure 106 698 1.42 5.35 30 250 74.0 687 782
+RL10A-3-3 Hydrogen 2
+compounded
+J-2 - Oxidizer 2-row velocity 760 89.5 2.5 5.0 8 753 48.4 2 358 590
+O2/H 2 1"
+compounded
+2-row velocity 1200 657 7.3 7.0 27 130 60.1 7 977 1480
+Fuel O2/H 2 1"
+compounded
+SSME (EPL) (21
+High Pressure
+Oxidizer reaction 1101 5880 159"* 63.3 31000 72.9** 27 400 1363
+O2/H 2 2
+Fuel react ion 1391 5820 1.56"* 159.0 37 400 79.0** 76 400 1661
+
+## SP-8110 (NASA SP-8110, Liquid Rocket Engine Turbines, 1974; NTRS 19740026132) Table III, printed page 16
+## sha256 8e9b2d92b3fb2b02b5f656b5a5a65faba3304e304f41aa7eb7f720cc1faee368
+--- lines 1016-1057
+Table 111. - Turbine Working-Fluid Gas Properties
+Working fluid* Chamber pressure of Turbine inlet Ratio of Specific heat Specific gas
+workingfluid source, temperature specific at constant constant (R),
+psi heats pressure (ft-lbf)/(lbm-oRj
+(7) (C,)
+LOX/RP-I 1000 1100 1.097 0.635 44
+1300 1.115 0.648 52
+1500 1.132 0.656 59
+1600 1.140 0.660 63
+1700 1.148 0.662 67
+LOX/LH, 1500 1000 1.374 1.998 423
+1200 1.364 1.910 396
+1500 1.348 1.802 362
+1700 1.337 I .738 34 1
+1900 1.326 1.687 323
+LF,/LH, 750 900 1.395 2.765 626
+1100 1.388 2.608 574
+1300 1.380 2.509 529
+1500 1.373 2.318 49 1
+1700 1.366 2.192 457
+FLOX/CH, 750 1300 1.176 0.857 100
+1500 1.189 0.855 106
+1700 1.215 0.834 113
+1900 1.233 0.8 10 116
+2100 1.242 0.79i 117
+Hydrogen 700 1.396 3.481 766
+800 1.394 3.490 766
+900 1.392 3.501 766
+1000 1.390 3.516 766
+1100 1.388 3.531 766
+*A 1500 1700 1.248 0.726 112
+1750 1.249 0.719 111
+50-50** 1800 1.254 111
+0.708
+1850 1.260 0.694 111
+
+## TM-107318 (NASA TM-107318, RL10A-3-3A Rocket Engine Modeling Project, 1997; NTRS 19970010379) Tables 2.2.1 and 2.5.1, printed pages 4 and 6, and section 6.1, page 25 (Table 6.1.1 on page 37 is an image with no text layer: transcribed from the rendered page only)
+## sha256 2d25422c6b9d4635f3209cfb79c160d160d229aeded17a3e12abe4330153a8c7
+--- lines 366-398
+Table 2.2.1
+Summary of Fuel Turbopump Characteristics
+1st stage 2nd stage
+Pump Impeller Diameter 7.07 in 7.07 in
+Pump Exit Blade Height 0.230 in 0.220 in
+Pump Headl 16969 ft 17989 ft
+Pump Mass Howl 6.051 Ibm/see 6.008 lbm/sec
+Pump Temperature Risel 9.23 R 10.2 R
+Pump Efficiencyt 0.5810 0.5619
+Shaft Speedl 31537 rpm
+Combined stage
+Turbine Meanline Diameter 5.90 in
+Turbine Pressure Ratio (T-T)1 1.39
+Turbine Mass Flow1 5.89 Ibm/see
+Turbine Temperature Dropl 24.5 R
+Shaft Speedl 31537 rpm
+--- lines 490-512
+Summary of Combustion-Chamber / Nozzle Characteristics
+Chamber Diameter 5.13 in
+Throat Diameter 2.47 in
+Nozzle Area Ratio 61.0
+Combustion Pressure (injector face static)l 482.0 psia
+Combustion Temperature1 5888 R
+Mixture Ratio (O/F)I 5.26
+Mass Flowl 37.36 Ibm/see
+Gross Thrustl 16452 lbf
+c-starEfficicncyl 0.9892
+c-starl 7824 in/sec
+SpecificImpulsel 440.3 sec
+--- lines 1584-1590
+The model predictions match the measured values to within 10% for all parameters on all tests (a
+total of 90 values). Most predictions are within 4% of the test results. The most pronounced and
+consistent sources of error are in the turbine inlet temperature and the pump discharge pressures.
+The difference between the predicted and measured turbine inlet temperatures may be attributed to
+heat transfer uncertainties in the combustion chamber cooling jacket (discussed in section 4.2.2 of
+this report).The errors in the pump discharge pressuresappear to be associatedwith turbopump
+

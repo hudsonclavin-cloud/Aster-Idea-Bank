@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/32-bell/bell.js",
+  "commit": "15f4bfe4ed21714af77d0b4c936ec4e524edd68e",
+  "commitDate": "2026-10-31T05:42:14+00:00",
+  "pathLastChanged": "7083b2c 2026-10-31T05:41:58+00:00",
+  "committedBlob": "e6117eec9fe7d0074c9b71485f12b57d0c04c9cc",
+  "readBlob": "e6117eec9fe7d0074c9b71485f12b57d0c04c9cc",
+  "sourceSha256": "c7e8a9afb4d26b685b219e4a5b664b1a08cae72f2adafc744b436782f1c6bdac",
+  "sourceBytes": 54811,
+  "copiedAt": "2026-10-31T05:54:30.095Z",
+  "mode": "copy",
+  "note": "idea 32's nozzle kernel, unmodified; the deck calls its flow, stationAtArea, performance and separation at every throttle and altitude point",
+  "readMatchesCommitted": true,
+  "writtenSha256": "c7e8a9afb4d26b685b219e4a5b664b1a08cae72f2adafc744b436782f1c6bdac",
+  "writtenBytes": 54811
+}

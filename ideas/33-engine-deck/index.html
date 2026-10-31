@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engine Deck: a whole rocket engine</title>
+<meta name="description" content="A whole liquid rocket engine: thrust, specific impulse and mass flow against altitude and throttle on idea 31's chamber and idea 32's nozzle, and the turbopump power balance of a gas-generator, staged-combustion or expander cycle, with real engines (F-1, H-1, J-2, Atlas booster, RL10, a throttling sled engine, the SSME) set beside NASA's published figures.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Engine Deck</h1>
+  <p class="lede">Pick a real engine, or bring the chamber and nozzle you built in ideas 31 and 32. Move the throttle and the altitude and read thrust, specific impulse and mass flow, where the nozzle stops flowing full, and what the turbopumps must do: how much gas a gas generator burns to drive them, or how high the pumps must push for a staged-combustion or expander turbine to keep up.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 3 of 20. Previous: <a href="../32-bell/index.html">32 Bell</a>, the nozzle. Next: 34 Stack, the rocket.</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Engine</h2>
+    <label for="engine">Engine</label>
+    <select id="engine"></select>
+    <div id="engineSource" class="srcline" role="status" aria-live="polite"></div>
+    <div id="engineFacts" class="small"></div>
+
+    <h2 class="sub">Delivered performance</h2>
+    <div class="ctl">
+      <div class="ctl-head"><label for="etaC">c* efficiency</label><input id="etaC" type="number" min="0.5" max="1.1" step="0.001" inputmode="decimal"></div>
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="etaF">Thrust-coefficient efficiency</label><input id="etaF" type="number" min="0.5" max="1.1" step="0.001" inputmode="decimal"></div>
+      <small>Applied after idea 32's divergence efficiency.</small>
+    </div>
+    <div class="btnrow">
+      <button type="button" id="etaCal">Calibrated values</button>
+      <button type="button" id="etaIdeal">Ideal (1, 1)</button>
+    </div>
+    <p class="note" id="etaNote"></p>
+    <div class="ctl">
+      <span class="lab">Nozzle flow model</span>
+      <div class="seg" role="group" aria-label="Nozzle flow model">
+        <button type="button" data-mode="shifting" aria-pressed="true">Shifting</button>
+        <button type="button" data-mode="frozen" aria-pressed="false">Frozen</button>
+      </div>
+    </div>
+
+    <h2 class="sub">Cycle</h2>
+    <label for="cycleRef">Turbopump cycle, with parameters from</label>
+    <select id="cycleRef"></select>
+    <div class="ctl" id="richCtl" hidden>
+      <span class="lab">Preburner runs</span>
+      <div class="seg" role="group" aria-label="Preburner side">
+        <button type="button" data-rich="fuel" aria-pressed="true">Fuel-rich</button>
+        <button type="button" data-rich="ox" aria-pressed="false">Oxidizer-rich</button>
+      </div>
+    </div>
+    <div class="ctl" id="tinCtl" hidden>
+      <div class="ctl-head"><label for="tinNum">Turbine inlet temperature <small>(K, blank: the reference's)</small></label><input id="tinNum" type="number" min="150" max="1600" step="any" inputmode="decimal"></div>
+    </div>
+    <p class="note" id="cycleNote"></p>
+
+    <h2 class="sub">Throttle range in the handoff</h2>
+    <div class="ctl">
+      <div class="ctl-head"><label for="tmin">Lowest <small>(% of nominal chamber pressure)</small></label><input id="tmin" type="number" min="10" max="100" step="1" inputmode="decimal"></div>
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="tmax">Highest <small>(%)</small></label><input id="tmax" type="number" min="100" max="120" step="1" inputmode="decimal"></div>
+    </div>
+  </section>
+
+  <section id="results" class="card" aria-labelledby="h-results">
+    <h2 id="h-results">Operating point</h2>
+    <div class="ctl">
+      <div class="ctl-head"><label for="thrNum">Throttle <small>(% of nominal chamber pressure)</small></label><input id="thrNum" type="number" min="10" max="120" step="1" inputmode="decimal"></div>
+      <input id="thrRange" type="range" min="10" max="120" step="1" aria-label="Throttle slider, 10 to 120 percent">
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="altNum">Altitude <small>(km, standard day; blank or the button for vacuum)</small></label><input id="altNum" type="number" min="0" max="86" step="0.1" inputmode="decimal"></div>
+      <input id="altRange" type="range" min="0" max="86" step="0.5" aria-label="Altitude slider, 0 to 86 km">
+      <div class="btnrow"><button type="button" id="vacBtn" aria-pressed="false">Vacuum</button><button type="button" id="slBtn">Sea level</button></div>
+    </div>
+    <div id="verdict" class="verdict" role="status" aria-live="polite"></div>
+    <div id="refusals" class="refusals"></div>
+    <div id="tiles" class="tiles"></div>
+  </section>
+
+  <section id="altCard" class="card wide" aria-labelledby="h-alt">
+    <h2 id="h-alt">Against altitude</h2>
+    <div class="metric-row" role="group" aria-label="Quantity">
+      <button type="button" data-metric="isp" aria-pressed="true">Specific impulse</button>
+      <button type="button" data-metric="thrust" aria-pressed="false">Thrust</button>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chartAlt" class="chartsvg" viewBox="0 0 800 320" role="img" aria-label="Specific impulse or thrust against altitude; tap or drag to set the altitude" tabindex="0"></svg>
+      <div class="tip" id="tipAlt"></div>
+    </div>
+    <ul class="legend" id="legendAlt"></ul>
+    <p class="chart-cap" id="capAlt"></p>
+  </section>
+
+  <section id="thrCard" class="card wide" aria-labelledby="h-thr">
+    <h2 id="h-thr">Against throttle</h2>
+    <div class="chart-wrap">
+      <svg id="chartThr" class="chartsvg" viewBox="0 0 800 320" role="img" aria-label="Specific impulse or thrust against throttle; tap or drag to set the throttle" tabindex="0"></svg>
+      <div class="tip" id="tipThr"></div>
+    </div>
+    <ul class="legend" id="legendThr"></ul>
+    <p class="chart-cap" id="capThr"></p>
+  </section>
+
+  <section id="cycleCard" class="card wide" aria-labelledby="h-cycle">
+    <h2 id="h-cycle">Power balance</h2>
+    <div id="cycleVerdict" class="verdict" role="status" aria-live="polite"></div>
+    <div id="cycleTiles" class="tiles"></div>
+    <div id="balance" class="balance" aria-label="Pump power against turbine power"></div>
+    <div class="tablewrap"><table id="stageTable" class="stack"></table></div>
+    <h3>The cycle across the throttle range</h3>
+    <svg id="chartCyc" class="chartsvg" viewBox="0 0 800 260" role="img" aria-label="Cycle quantity against throttle"></svg>
+    <ul class="legend" id="legendCyc"></ul>
+    <p class="chart-cap" id="capCyc"></p>
+  </section>
+
+  <section id="recordCard" class="card wide" aria-labelledby="h-record">
+    <h2 id="h-record">Against the published record</h2>
+    <p class="small">Every check below runs the same kernel on numbers NASA printed, and compares with another number NASA printed. Nothing here is fitted to the comparison it is shown beside. Gaps are model / published &minus; 1.</p>
+    <div id="recordSummary" class="summary"></div>
+    <details open><summary>Engines: altitude, basis and throttle</summary>
+      <div class="tablewrap"><table id="tblAmbient" class="stack"></table></div>
+      <div class="tablewrap"><table id="tblBasis" class="stack"></table></div>
+      <div class="tablewrap"><table id="tblThrottle" class="stack"></table></div>
+    </details>
+    <details><summary>Cycles: gas-generator flow, staged-combustion and expander pressure ratios</summary>
+      <div class="tablewrap"><table id="tblCycle" class="stack"></table></div>
+    </details>
+    <details><summary>Turbines (SP-8107 Table III, 16 rows)</summary>
+      <div class="tablewrap"><table id="tblTurbines" class="stack"></table></div>
+    </details>
+    <details><summary>Pumps (SP-8107 Table II, 28 rows)</summary>
+      <div class="tablewrap"><table id="tblPumps" class="stack"></table></div>
+    </details>
+  </section>
+
+  <section id="handoffCard" class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">One JSON object: the engine deck (thrust and specific impulse at every throttle and altitude), the engine-level numbers module 34 needs, the cycle, each with SI units, a confidence class and a source, and every refusal. It carries idea 32's handoff (and so idea 31's) inside it.</p>
+    <div class="handoff-actions">
+      <button type="button" id="copyBtn">Copy JSON</button>
+      <button type="button" id="dlBtn">Download handoff.json</button>
+      <a id="nextLink" href="../34-stack/index.html">Open in 34 Stack (once it is built)</a>
+    </div>
+    <div class="status" id="exportStatus" aria-live="polite"></div>
+    <label for="exportText" class="small">Export</label>
+    <textarea id="exportText" rows="7" readonly></textarea>
+    <h3>Import</h3>
+    <label for="importText" class="small">Paste idea 32's handoff (or this page's), as JSON or a link with <code>#h=</code></label>
+    <textarea id="importText" rows="3"></textarea>
+    <div class="handoff-actions"><button type="button" id="importBtn">Import</button></div>
+    <div class="status" id="importStatus" aria-live="polite"></div>
+    <details>
+      <summary>Every number, with its source</summary>
+      <div class="tablewrap"><table id="allTable" class="stack"></table></div>
+    </details>
+  </section>
+
+  <section id="how" class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <p><b>The thrust chamber</b> is ideas 31 and 32, copied unmodified: chemical equilibrium in an infinite-area combustor, then isentropic expansion through the nozzle (shifting or frozen) to the area ratio, with idea 32's divergence efficiency &lambda;. At every throttle setting the page re-runs both at the new chamber pressure, at the same mixture ratio and geometry, so the gas chemistry changes with throttle as it should.</p>
+    <p><b>Delivered, not ideal.</b> Real engines fall short of the ideal (idea 32 measured 2.1 to 9.0 % in Isp across twelve engines). Two factors carry that here: c*<sub>del</sub> = &eta;<sub>c*</sub>&thinsp;c*, which sets the mass flow &#7745; = p<sub>c</sub>A<sub>t</sub>/c*<sub>del</sub>, and C<sub>F,vac,del</sub> = &eta;<sub>CF</sub>&thinsp;&lambda;&thinsp;C<sub>F,vac</sub>. A preset is calibrated so both reproduce its published thrust and Isp at one condition (SP-8120 Table I). Above 1 they are calibration factors, not efficiencies: the table's pressures and throat areas are not all on one basis. Thrust at ambient p<sub>a</sub> is then F = F<sub>vac</sub> &minus; p<sub>a</sub>A<sub>e</sub>, while the nozzle flows full by SP-8120's criterion; past it the thrust is refused.</p>
+    <p><b>The turbopumps.</b> A pump needs &#7745;&thinsp;&Delta;p/(&rho;&thinsp;&eta;<sub>p</sub>), with the densities idea 31 measured. A turbine gives &#7745;<sub>t</sub>&thinsp;&eta;<sub>t</sub>&thinsp;&Delta;h<sub>s</sub>, where &Delta;h<sub>s</sub> is the isentropic enthalpy drop over its pressure ratio: idea 31's shifting equilibrium for gas it can compute (fuel-rich hydrogen-oxygen, for instance), NASA SP-8110's tabulated gas where idea 31 must refuse (fuel-rich kerosene would deposit graphite), and ideal hydrogen for an expander. A <i>gas generator</i> burns a little propellant to drive the turbine and throws it away: the page solves for the flow that balances the pumps, and brackets the engine's Isp between dumping it with no thrust and expanding it completely. In a <i>staged-combustion</i> or <i>expander</i> engine the turbine sits between the pumps and the chamber, so a higher turbine pressure ratio needs higher pump pressures: the page solves for the pressure ratio that balances, or says the cycle cannot close. Every pressure-ladder ratio, efficiency and inlet temperature comes from the reference engine you choose (NASA SP-8107's 1973 tables, or the RL10A-3-3A cycle in NASA TM-107318), held fixed over the throttle range.</p>
+    <h3>How far to trust it</h3>
+    <ul id="trustList"></ul>
+    <p class="small">Confidence classes: <b>measured</b> is a value from a measured or published source; <b>derived</b> is computed here from such inputs; <b>assumed</b> is your input or a choice. Every number on the page traces to the kernel (<code>engine.js</code>), ideas 31 and 32's kernels, a snapshot, or a cited NASA document (see the README). This is an idea-bank prototype; it has not been through Aster's multi-agent math audit.</p>
+  </section>
+</main>
+
+<footer>Idea 33 of the Aster Idea Bank. Runs with nothing installed; no network requests. Sources: NASA SP-8107, SP-8110, SP-8120, TM-107318 (public domain), NASA Glenn's thermodynamic data and NIST densities via idea 31. Source of every number: README and <code>snapshots/</code>.</footer>
+
+<script src="snapshots/thermo-excerpt.js"></script>
+<script src="snapshots/propellant-densities.js"></script>
+<script src="snapshots/mixture.js"></script>
+<script src="snapshots/mixture-presets.js"></script>
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/nozzle-charts.js"></script>
+<script src="snapshots/nozzle-rules.js"></script>
+<script src="snapshots/sp8120-table1.js"></script>
+<script src="snapshots/bell.js"></script>
+<script src="snapshots/turbo-data.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

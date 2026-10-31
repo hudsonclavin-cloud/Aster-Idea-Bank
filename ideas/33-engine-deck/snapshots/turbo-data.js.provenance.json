@@ -1,0 +1,14 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19750012398 (NASA SP-8107, 1974) Tables I-III, printed pages 3-5 (PDF pages 17-19); NTRS 19740026132 (NASA SP-8110, 1974) Table III, printed page 16 (PDF page 29); NTRS 19970010379 (NASA TM-107318, 1997) Table 6.1.1, printed page 37 (PDF page 43), and Table 2.5.1, printed page 6",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": {
+  "19750012398.pdf (SP-8107)": "9a66bf918211b1780448ea79c3635003a026bce6129b6726c6aeb8aa856568ea",
+  "19740026132.pdf (SP-8110)": "8e9b2d92b3fb2b02b5f656b5a5a65faba3304e304f41aa7eb7f720cc1faee368",
+  "19970010379.pdf (TM-107318)": "2d25422c6b9d4635f3209cfb79c160d160d229aeded17a3e12abe4330153a8c7"
+ },
+ "license": "NASA Special Publications and Technical Memoranda, US-government works (public domain in the US)",
+ "note": "Hand-transcribed from the pages rendered at 150-220 dpi with pdftoppm; every row of SP-8107 Tables I-III and SP-8110 Table III, and the RL10A-3-3A cycle state of TM-107318 Table 6.1.1 (no text layer). Where the text layer is legible, engine.test.mjs finds each transcribed number in turbo-sources.txt; numbers the text layer garbles (F-1 oxygen discharge 1600, RL10A-3-3 turbine inlet -106 degF, SSME oxidizer turbine pressure ratio 1.59) were read off the rendered page.",
+ "writtenSha256": "52c0c7c829870efa34340b7dc6a1ace1a2eb9bc4558edf8444364b85f5f8a83e"
+}

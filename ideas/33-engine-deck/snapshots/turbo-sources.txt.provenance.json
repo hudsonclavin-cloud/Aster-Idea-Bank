@@ -1,0 +1,14 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "pdftotext -layout of NTRS 19750012398 (SP-8107) lines 595-660, 667-735, 739-822; NTRS 19740026132 (SP-8110) lines 1016-1057; NTRS 19970010379 (TM-107318) lines 366-398, 490-512, 1584-1590",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": {
+  "19750012398.pdf (SP-8107)": "9a66bf918211b1780448ea79c3635003a026bce6129b6726c6aeb8aa856568ea",
+  "19740026132.pdf (SP-8110)": "8e9b2d92b3fb2b02b5f656b5a5a65faba3304e304f41aa7eb7f720cc1faee368",
+  "19970010379.pdf (TM-107318)": "2d25422c6b9d4635f3209cfb79c160d160d229aeded17a3e12abe4330153a8c7"
+ },
+ "license": "US-government works (public domain in the US)",
+ "note": "Verbatim text-layer lines written by oracle/build_sources.py (runs of spaces collapsed to one; OCR errors kept).",
+ "writtenSha256": "68bd227641b37ee829938ba8e9ce789f86adf1dbca29c00c2486fb911168bdea"
+}
