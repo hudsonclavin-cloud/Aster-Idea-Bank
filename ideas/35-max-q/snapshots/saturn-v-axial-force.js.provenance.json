@@ -1,0 +1,12 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19690009748/downloads/19690009748.pdf",
+ "sourceSha256": "f60fed99deaf8228fa2490e4eb68097f752d871ddbb77e9841700ec9c3670a9d",
+ "license": "NASA technical memorandum (TM X-53770), a US-government work: public domain in the US",
+ "path": "NTRS 19690009748, C. E. Walker, NASA TM X-53770 (21 Aug 1968): Figure 28 (printed page 147, PDF page 157), Definition of Symbols (PDF page 9)",
+ "note": "Digitized by hand from the 300 dpi 1-bit scan: affine grid calibration (largest residual 1.6 px), dark-run listing at each station, solid fairing picked on zoomed crops (oracle/digitize_fig28.py; its overlay of this table on the figure was inspected). Reading uncertainty +-0.01 above Mach 1.5, +-0.02 below.",
+ "writtenSha256": "8dd7b32b92b864643a1ce70fdddcd38ac6402bd319ea325b201cb23fb6a55399",
+ "writtenBytes": 4087
+}

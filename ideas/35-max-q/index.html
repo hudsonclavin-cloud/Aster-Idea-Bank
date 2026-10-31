@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Max Q: a rocket through the air</title>
+<meta name="description" content="Fly idea 34's rocket from the pad through the 1976 standard atmosphere over a rotating round Earth: Saturn V drag against Mach, thrust falling with ambient pressure, a pitch kick and a gravity turn, a throttle bucket, staging; read max Q, Mach 1, the burnout state and where the delta-v went, set beside Apollo 17's flight report.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Max Q</h1>
+  <p class="lede">Light the stack and fly it. Choose the launch azimuth, when it pitches over and how far, how the upper stages steer, whether the first stage throttles back through the worst of the air; read the moment of maximum dynamic pressure, where it goes supersonic, where each stage burns out and how fast, and where the ideal delta-v went: gravity, drag, steering, back pressure. It opens on the Saturn V that flew Apollo 17 and sets every number beside NASA's reconstruction of that flight.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 5 of 20. Previous: <a href="../34-stack/index.html">34 Stack</a>, the rocket. Next: 36 Closed Loop, guidance to a chosen orbit.</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Flight</h2>
+    <label for="vehicle">Vehicle</label>
+    <select id="vehicle"></select>
+    <div id="vehSource" class="srcline" role="status" aria-live="polite"></div>
+    <div class="ctl" id="calCtl">
+      <span class="lab">F-1 flow</span>
+      <div class="seg" role="group" aria-label="F-1 flow">
+        <button type="button" data-cal="flight" aria-pressed="true">Flight average</button>
+        <button type="button" data-cal="model" aria-pressed="false">Idea 33's F-1</button>
+      </div>
+      <small id="calNote"></small>
+    </div>
+
+    <h2 class="sub">Launch</h2>
+    <label for="site">Site</label>
+    <select id="site"></select>
+    <div class="ctl">
+      <div class="ctl-head"><label for="azNum">Azimuth <small>(deg from north)</small></label><input id="azNum" type="number" step="0.001" inputmode="decimal"></div>
+      <input id="azRange" type="range" step="0.1" aria-label="Azimuth slider, degrees">
+    </div>
+    <label class="check"><input type="checkbox" id="rotation" checked> Earth rotates</label>
+
+    <h2 class="sub">Pitch-over</h2>
+    <div class="grid2">
+      <div class="ctl"><label for="tpNum">Starts <small>(s)</small></label><input id="tpNum" type="number" min="0" step="0.01" inputmode="decimal"></div>
+      <div class="ctl"><label for="tkNum">Takes <small>(s)</small></label><input id="tkNum" type="number" min="0.1" step="0.1" inputmode="decimal"></div>
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="kickNum">Kick <small>(deg from vertical)</small></label><input id="kickNum" type="number" min="0" max="20" step="0.001" inputmode="decimal"></div>
+      <input id="kickRange" type="range" min="0" max="5" step="0.001" aria-label="Kick angle slider, degrees">
+    </div>
+    <div class="inline"><label for="fpaTarget">Solve the kick for a first-stage cutoff angle of</label><input id="fpaTarget" type="number" min="1" max="80" step="0.001" inputmode="decimal"><small>deg</small><button type="button" id="solveKick">Solve</button></div>
+    <div id="kickNote" class="fitnote" role="status" aria-live="polite"></div>
+
+    <h2 class="sub">Upper stages</h2>
+    <div class="seg" role="group" aria-label="Upper-stage steering">
+      <button type="button" data-upper="gravity" aria-pressed="false">Gravity turn</button>
+      <button type="button" data-upper="hold" aria-pressed="false">Hold a pitch</button>
+      <button type="button" data-upper="linear" aria-pressed="true">Linear pitch</button>
+    </div>
+    <div class="grid2" id="upperAngles">
+      <div class="ctl"><label for="upStart">From <small>(deg above horizon)</small></label><input id="upStart" type="number" min="-44" max="88" step="0.01" inputmode="decimal"></div>
+      <div class="ctl" id="upEndCtl"><label for="upEnd">To, at the last cutoff <small>(deg)</small></label><input id="upEnd" type="number" min="-44" max="88" step="0.1" inputmode="decimal"></div>
+    </div>
+    <div class="inline"><button type="button" id="solveLevel">Solve "from" for a level burnout</button></div>
+    <div id="upperNote" class="fitnote" role="status" aria-live="polite"></div>
+
+    <h2 class="sub">Air</h2>
+    <label class="check"><input type="checkbox" id="bucketOn"> Throttle bucket (first stage)</label>
+    <div id="bucketCtl" hidden>
+      <div class="grid2">
+        <div class="ctl"><label for="bStart">From <small>(s)</small></label><input id="bStart" type="number" min="0" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="bEnd">To <small>(s)</small></label><input id="bEnd" type="number" min="0" step="1" inputmode="decimal"></div>
+      </div>
+      <div class="ctl">
+        <div class="ctl-head"><label for="bLevelNum">Throttle <small>(%)</small></label><input id="bLevelNum" type="number" step="1" inputmode="decimal"></div>
+        <input id="bLevel" type="range" step="1" aria-label="Throttle in the bucket, percent">
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="lab">Drag coefficient</span>
+      <div class="seg" role="group" aria-label="Drag coefficient">
+        <button type="button" data-drag="forebody" aria-pressed="true">Forebody</button>
+        <button type="button" data-drag="total" aria-pressed="false">Power-off total</button>
+        <button type="button" data-drag="none" aria-pressed="false">No drag</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="ctl"><label for="diaNum">Diameter <small>(m)</small></label><input id="diaNum" type="number" min="0.1" step="0.01" inputmode="decimal"></div>
+      <div class="ctl"><label for="dragScale">C<sub>A</sub> factor</label><input id="dragScale" type="number" min="0" max="3" step="0.05" inputmode="decimal"></div>
+    </div>
+    <div id="coasts"></div>
+  </section>
+
+  <div id="right" class="col">
+  <section id="results" class="card" aria-labelledby="h-results">
+    <h2 id="h-results">What it does</h2>
+    <div id="refusals" class="refusals" role="status" aria-live="polite"></div>
+    <div id="tiles" class="tiles"></div>
+    <div class="tablewrap"><table id="stageTable" class="stack"></table></div>
+    <p class="note" id="warnings"></p>
+  </section>
+
+  <section id="chartCard" class="card" aria-labelledby="h-chart">
+    <h2 id="h-chart">Through the air</h2>
+    <div class="metric-row" role="group" aria-label="Quantity">
+      <button type="button" data-metric="q" aria-pressed="true">Dynamic pressure</button>
+      <button type="button" data-metric="alt" aria-pressed="false">Altitude</button>
+      <button type="button" data-metric="v" aria-pressed="false">Speed</button>
+      <button type="button" data-metric="a" aria-pressed="false">Acceleration</button>
+      <button type="button" data-metric="mach" aria-pressed="false">Mach</button>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chart" class="chartsvg" viewBox="0 0 800 320" role="img" aria-label="The flight against time or range; tap, drag or use the arrow keys to read a point" tabindex="0"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <ul class="legend" id="legend"></ul>
+    <p class="chart-cap" id="cap"></p>
+  </section>
+
+  <section id="wfCard" class="card" aria-labelledby="h-wf">
+    <h2 id="h-wf">Where the delta-v went</h2>
+    <div class="metric-row" role="group" aria-label="Measured against">
+      <button type="button" data-budget="rel" aria-pressed="true">Against Earth-relative speed</button>
+      <button type="button" data-budget="inertial" aria-pressed="false">Against inertial speed</button>
+    </div>
+    <div id="wf" class="wf"></div>
+    <p class="chart-cap" id="wfCap"></p>
+  </section>
+  </div>
+
+  <section id="recordCard" class="card wide" aria-labelledby="h-record">
+    <h2 id="h-record">Against Apollo 17</h2>
+    <p class="small">The Saturn V AS-512 ascent as this page flies it, against what NASA reconstructed from tracking (MPR-SAT-FE-73-1, Tables 4-1, 4-2, 4-4). One number is fitted when you press Solve: the kick, to the first stage's cutoff flight-path angle. Gaps are model &minus; flight, or model / flight &minus; 1 for dynamic pressure. Times are range time (liftoff at 0.24 s).</p>
+    <div id="recordSummary" class="summary"></div>
+    <div class="tablewrap"><table id="tblRecord" class="stack"></table></div>
+  </section>
+
+  <section id="handoffCard" class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">One JSON object: idea 34's vehicle handoff whole (and so idea 33's engines), the flight plan, the burnout state (position and velocity in an Earth-centred inertial frame fixed at liftoff), the orbit it is in, max Q, every stage's cutoff, the losses, and every refusal, each number with SI units, a confidence class and a source.</p>
+    <div class="handoff-actions">
+      <button type="button" id="copyBtn">Copy JSON</button>
+      <button type="button" id="dlBtn">Download handoff.json</button>
+      <a id="nextLink" href="../36-closed-loop/index.html">Open in 36 Closed Loop (once it is built)</a>
+    </div>
+    <div class="status" id="exportStatus" aria-live="polite"></div>
+    <label for="exportText" class="small">Export</label>
+    <textarea id="exportText" rows="7" readonly></textarea>
+    <h3>Import</h3>
+    <label for="importText" class="small">Paste idea 34's handoff (a vehicle) or this page's (a flight), as JSON or a link with <code>#h=</code></label>
+    <textarea id="importText" rows="3"></textarea>
+    <div class="handoff-actions"><button type="button" id="importBtn">Import</button></div>
+    <div class="status" id="importStatus" aria-live="polite"></div>
+  </section>
+
+  <section id="how" class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <p><b>The vehicle is idea 34's.</b> Its stages, burns, jettisons, engine cutoffs and every kilogram come in its handoff, and its own ledger is re-run here and must give the handoff's numbers before anything flies. The engines are idea 33's: vacuum thrust, mass flow, exit area, a throttle deck and the ambient pressure at which the nozzle's flow separates.</p>
+    <p><b>The flight.</b> A point mass over a spherical Earth (Aster's radius and GM) that rotates at the rate in NASA/NAIF's pck00010, integrated with fourth-order Runge-Kutta in an Earth-centred inertial frame fixed at liftoff, landing exactly on every event. Thrust is n[F<sub>vac</sub> &minus; p<sub>a</sub>A<sub>e</sub>], so it grows as the air thins; drag is q&thinsp;S&thinsp;C<sub>A</sub>(M) along the Earth-relative velocity, with q = &frac12;&rho;v<sup>2</sup> and &rho;, p<sub>a</sub> and the speed of sound from the 1976 US Standard Atmosphere (zero above 86 km, where that table ends). C<sub>A</sub> is the Apollo/Saturn V's measured in six wind tunnels (Walker, NASA TM X-53770, 1968), digitized from his Figure 28: the forebody coefficient, or the power-off total as a bound on base drag.</p>
+    <p><b>Steering.</b> Straight up until the pitch-over, then the thrust tilts toward the launch azimuth by the kick angle and holds until the Earth-relative velocity has turned as far; from there it follows that velocity (zero angle of attack: the gravity turn), all in a plane fixed in space at liftoff. Upper stages continue the gravity turn, hold one pitch above the horizon, or pitch linearly from one angle to another. This is open loop: nothing aims at an orbit. Module 36 adds guidance.</p>
+    <p><b>Where the delta-v went.</b> Along the flight the page integrates the ideal delta-v (vacuum thrust over mass: exactly idea 34's rocket equation), and what was lost to gravity (the component of g along the velocity), drag, steering (thrust not along the velocity) and back pressure (p<sub>a</sub>A<sub>e</sub>). Measured against the Earth-relative speed, ideal &minus; losses + a small centrifugal term = Earth-relative speed at burnout; against the inertial speed, ideal &minus; losses = inertial speed gained since the pad, which already moved at &omega;R&thinsp;cos(latitude). Both budgets close to under a millimetre per second; the split between gravity and steering depends on which speed you measure against, and the page shows both.</p>
+    <h3>How far to trust it</h3>
+    <ul id="trustList"></ul>
+    <p class="small">Confidence classes: <b>measured</b> is from a measured or published source (the flight report, the wind tunnel); <b>derived</b> is computed here from such inputs; <b>assumed</b> is your input or a choice. Every number on the page traces to the kernel (<code>ascent.js</code>), idea 34's kernel and handoff, the snapshots in <code>snapshots/</code>, or your input. This is an idea-bank prototype; it has not been through Aster's multi-agent math audit.</p>
+  </section>
+</main>
+
+<footer>Idea 35 of the Aster Idea Bank. Runs with nothing installed; no network requests. Sources: NASA MPR-SAT-FE-73-1 (the AS-512 flight evaluation report), NASA TM X-53770 (Walker, Saturn V wind-tunnel aerodynamics), PartForge's 1976 atmosphere, Aster's Earth constants and launch sites, NASA/NAIF pck00010; through idea 34, everything ideas 31 to 33 used. Source of every number: README and <code>snapshots/</code>.</footer>
+
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/stack.js"></script>
+<script src="snapshots/as512-flight.js"></script>
+<script src="snapshots/as512-trajectory.js"></script>
+<script src="snapshots/earth.js"></script>
+<script src="snapshots/saturn-v-axial-force.js"></script>
+<script src="snapshots/data-json.js"></script>
+<script src="ascent.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

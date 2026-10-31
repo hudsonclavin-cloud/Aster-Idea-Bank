@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/34-stack/stack.js",
+  "commit": "da6c3254f6e6c60568d65f78f7d35f92d370079e",
+  "commitDate": "2026-10-31T07:57:25+00:00",
+  "pathLastChanged": "c579d2f 2026-10-31T07:57:14+00:00",
+  "committedBlob": "8c0eaa58e6441ab7efa153e09a242cccdb7072f8",
+  "readBlob": "8c0eaa58e6441ab7efa153e09a242cccdb7072f8",
+  "sourceSha256": "662d4ebab3ac5d98abe6f8174883638c9a6d8b7863bfd495526be7bb13bb2db3",
+  "sourceBytes": 53733,
+  "copiedAt": "2026-10-31T08:16:03.031Z",
+  "mode": "copy",
+  "note": "idea 34's kernel, unmodified: the vehicle ledger (evaluate, fromAS512, simplify) this module flies",
+  "readMatchesCommitted": true,
+  "writtenSha256": "662d4ebab3ac5d98abe6f8174883638c9a6d8b7863bfd495526be7bb13bb2db3",
+  "writtenBytes": 53733
+}

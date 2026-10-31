@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/34-stack/handoff.json",
+  "commit": "da6c3254f6e6c60568d65f78f7d35f92d370079e",
+  "commitDate": "2026-10-31T07:57:25+00:00",
+  "pathLastChanged": "c579d2f 2026-10-31T07:57:14+00:00",
+  "committedBlob": "b9fdfd2940ccfa33335d7d0157a8f4d487f878f2",
+  "readBlob": "b9fdfd2940ccfa33335d7d0157a8f4d487f878f2",
+  "sourceSha256": "4759b8ef610210d03586f7c153b0bb7c17f6273625239bc6ba5a4adb66ea0a93",
+  "sourceBytes": 42872,
+  "copiedAt": "2026-10-31T08:42:32.378Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: idea 34 handoff.json parsed unchanged (sample34), and from idea 34 committed kernel its AS-512 handoff (as512) and five preset engines (engines34)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "31157feb0c71a26642ec083c2cca6b0360466c5b6906596dff25819fd6eb5987",
+  "writtenBytes": 63659
+}

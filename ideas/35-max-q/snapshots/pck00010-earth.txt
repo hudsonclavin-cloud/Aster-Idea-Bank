@@ -1,0 +1,9 @@
+# Excerpt of vendor/naif/pck00010.tpc (Aster), every line assigning BODY399_RADII, _PM, _POLE_RA, _POLE_DEC,
+# prefixed with its line number. Units in pck00010: radii km; PM = W0 (deg), rate (deg/day), 0.
+  555:         BODY399_RADII     = ( 6378.1366   6378.1366   6356.7519 )
+  562:         BODY399_RADII     = ( 6378.1366  
+  831:         BODY399_RADII     = ( 6378.1366   6378.1366   6356.7519 )
+ 1032:         BODY399_POLE_RA        = (    0.      -0.641         0. )
+ 1033:         BODY399_POLE_DEC       = (   90.      -0.557         0. )
+ 1034:         BODY399_PM             = (  190.147  360.9856235     0. )
+ 3362:         BODY399_RADII     = ( 6378.1366   6378.1366   6356.7519 )

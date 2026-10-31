@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/34-stack/snapshots/as512-flight.js",
+  "commit": "da6c3254f6e6c60568d65f78f7d35f92d370079e",
+  "commitDate": "2026-10-31T07:57:25+00:00",
+  "pathLastChanged": "c579d2f 2026-10-31T07:57:14+00:00",
+  "committedBlob": "439cdcdbbf53ce6ee0f22ce68bde6cba91172be9",
+  "readBlob": "439cdcdbbf53ce6ee0f22ce68bde6cba91172be9",
+  "sourceSha256": "34f8a6e682b4e932949224ad58731081f8049e52f126a4ebd451cee1dd2cf871",
+  "sourceBytes": 12745,
+  "copiedAt": "2026-10-31T08:16:03.173Z",
+  "mode": "copy",
+  "note": "idea 34's AS-512 mass and event transcription (MPR-SAT-FE-73-1), unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "34f8a6e682b4e932949224ad58731081f8049e52f126a4ebd451cee1dd2cf871",
+  "writtenBytes": 12745
+}

@@ -1,0 +1,12 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19730025089/downloads/19730025089.pdf",
+ "sourceSha256": "8e543894efef0d9a3862ded599001d1d9c83b0e5684f85dbe85abd981f2eaa42",
+ "license": "NASA technical memorandum (MPR-SAT-FE-73-1 / NASA-TM-X-69534), a US-government work: public domain in the US",
+ "path": "NTRS 19730025089, MPR-SAT-FE-73-1: Table 2-2 items 10-22 (PDF page 37), section 4.1 (PDF page 56), section 4.2.1 (PDF page 57), Table 4-1 (PDF page 60), Table 4-2 (PDF page 61), Table 4-4 (PDF page 63), Appendix A.4.1 and A.4.3 (PDF page 278)",
+ "note": "Hand-transcribed from the pages rendered at 300 and 500 dpi with pdftoppm (the tables have no legible text layer); prose from the text layer. ACTUAL columns only; four smudged ACTUAL entries reconstructed as NOMINAL + ACT-NOM and marked in the file. ascent.test.mjs checks every m/s against its ft/s and every km against its n mi.",
+ "writtenSha256": "fffd457b1cacacd1edadca6502e90c3057430ec1e617b8b2dd1176324bbd0648",
+ "writtenBytes": 6907
+}
