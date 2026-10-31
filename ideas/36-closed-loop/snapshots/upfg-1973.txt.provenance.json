@@ -1,0 +1,12 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19740004402, Brand, Brown and Higgins, Space Shuttle GN&C Equation Document No. 24: Unified Powered Flight Guidance (Draper Laboratory, June 1973): sections 4.3 to 4.8, printed pages 4-6 to 4-16, Figure 5-9a (printed 5-13)",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19740004402/downloads/19740004402.pdf",
+ "sourceSha256": "290a960789b73f1aabd358520aa0afb48b29a141ff72e0e82be3ea0b75d715d0",
+ "license": "Technical report prepared for NASA JSC under contract NAS9-10268, distributed by NTRS without restriction; US-government-funded (treated as public domain in the US)",
+ "note": "The equations idea 36 implements, transcribed by hand from the page images (the text layer is unusable OCR), with two readings resolved by derivation (a blurred sign in Q_i, the 1/10 coefficient), both checked in closedloop.test.mjs.",
+ "writtenSha256": "dec3d9af04d96df6bc7f6ed3e51dc8fec8f246372dd80e4c18d4663423b2d2ac",
+ "writtenBytes": 4385
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/data-json.js",
+  "commit": "4465bba4a497062f3fc1e3e105cd1a9781318ea8",
+  "commitDate": "2026-10-31T09:25:46+00:00",
+  "pathLastChanged": "3335518 2026-10-31T08:57:06+00:00",
+  "committedBlob": "c323f70f4e66328f34cf1322e0b20e0f8112bc44",
+  "readBlob": "c323f70f4e66328f34cf1322e0b20e0f8112bc44",
+  "sourceSha256": "31157feb0c71a26642ec083c2cca6b0360466c5b6906596dff25819fd6eb5987",
+  "sourceBytes": 63659,
+  "copiedAt": "2026-10-31T09:42:29.565Z",
+  "mode": "copy",
+  "note": "idea 35's copy of idea 34's data (preset engines, AS-512 handoff, sample handoff), unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "31157feb0c71a26642ec083c2cca6b0360466c5b6906596dff25819fd6eb5987",
+  "writtenBytes": 63659
+}

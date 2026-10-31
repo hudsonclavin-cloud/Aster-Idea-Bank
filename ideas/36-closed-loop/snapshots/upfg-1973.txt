@@ -1,0 +1,62 @@
+Unified Powered Flight Guidance: the equations idea 36 implements, transcribed from the primary source.
+
+Source: T. J. Brand, D. W. Brown, J. P. Higgins, "Space Shuttle GN&C Equation Document No. 24: Unified Powered
+Flight Guidance", Charles Stark Draper Laboratory for NASA JSC, June 1973 (contract NAS9-10268). NTRS 19740004402,
+https://ntrs.nasa.gov/api/citations/19740004402/downloads/19740004402.pdf
+(69 pages, sha256 290a960789b73f1aabd358520aa0afb48b29a141ff72e0e82be3ea0b75d715d0). Read as page images at 100-110
+dpi (the text layer is unusable OCR). Printed page numbers; PDF page = printed 4-n page + 28.
+US-government-funded technical report; public domain in the US.
+
+Section 4 opens: "The guidance scheme presented in this document evolved from a rather extensive modification of the
+Linear Tangent Guidance (LTG) concept" (ref. 1: Jaggers, "Multi-Stage Linear Tangent Ascent Guidance as Baselined for
+the Space Shuttle Vehicle", MSC Internal Note 72-FM-?, not fetched).
+
+4.3 Time-to-go (pp. 4-5 to 4-7). Phases i = k..n (k the current). Constant-thrust phase i:
+    L_i = -v_ex,i ln(1 - t_b,i / tau_i)                        (velocity a full phase gives)
+    the phase where the velocity-to-be-gained runs out burns  t_b,j = tau_j (1 - exp(-L_j / v_ex,j)),
+    L_j = |v_go| - (sum of the L_i before it)
+    t_go,i = t_go,i-1 + t_b,i;  t_go = t_go,n = t_go,n-1 + t_b,n + t_c   (t_c a coast before the last phase)
+
+4.4 Integrals of thrust (pp. 4-7 to 4-9), f/m the thrust acceleration, over 0..t_go:
+    L = int f/m dt,  J = int (f/m) t dt,  H = int (f/m) t^2 dt,
+    S = int_0^t_go [int_0^t f/m ds] dt,  Q = int [int (f/m) s ds] dt,  P = int [int (f/m) s^2 ds] dt
+  step 1, constant-thrust phase i:
+    J_i = L_i tau_i - v_ex,i t_b,i
+    S_i = -J_i + t_b,i L_i
+    Q_i = S_i (tau_i + t_go,i-1) - (1/2) v_ex,i t_b,i^2      (the printed sign is blurred; the integral's definition
+                                                          makes it a minus, which closedloop.test.mjs checks)
+    P_i = Q_i (tau_i + t_go,i-1) - (1/2) v_ex,i t_b,i^2 ((1/3) t_b,i + t_go,i-1)
+  step 2:  J_i += L_i t_go,i-1;  S_i += L t_b,i;  Q_i += J t_b,i;  P_i += H t_b,i
+    (L, J, H the totals from the current phase to phase i-1);  coast t_c before phase n: S_n += L t_c, Q_n += J t_c,
+    P_n += H t_c;  totals are the sums;  H = t_go J - Q.
+
+4.5 Turning rate (pp. 4-10 to 4-12):
+    lambda = unit(v_go)
+    r_grav(new) = (t_go(new) / t_go(previous))^2 r_grav(previous)
+    r_go = r_d - (r + v t_go + r_grav)
+    i_z = unit(r_d x i_y);  r_goxy = r_go - (i_z . r_go) i_z;  r_goz = (S - lambda . r_goxy) / (lambda . i_z)
+    r_go = r_goxy + r_goz i_z + r_bias
+    lambda_dot = (r_go - S lambda) / (Q - S J / L)
+    i_F = unit(lambda - (J / L) lambda_dot)                   (the commanded thrust direction)
+    phi = acos(i_F . lambda);  phi_dot = -phi L / J
+    v_thrust = (L - L phi^2/2 - J phi phi_dot - H phi_dot^2/2) lambda - (L phi + J phi_dot) unit(lambda_dot)
+    r_thrust = (S - S phi^2/2 - Q phi phi_dot - P phi_dot^2/2) lambda - (S phi + Q phi_dot) unit(lambda_dot)
+    v_bias = v_go - v_thrust;  r_bias = r_go - r_thrust
+
+4.7 Prediction of gravity effects (pp. 4-13 to 4-16): a coasting trajectory that stays close to the powered one
+  (its mean position error, and its error weighted by t_go - t, both zero against a cubic powered path):
+    r_c1 = r - r_thrust/10 - v_thrust t_go/30
+    v_c1 = v + (6/5) r_thrust / t_go - v_thrust/10       (the printed "1/1?" is 1/10; derived in closedloop.test.mjs)
+    (r_c2, v_c2) = Kepler(r_c1, v_c1, t_go)
+    v_grav = v_c2 - v_c1;  r_grav = r_c2 - r_c1 - v_c1 t_go
+
+4.8 Velocity-to-be-gained, standard ascent (s_mode = 1) (p. 4-16; Figure 5-9a, p. 5-13):
+    r_p = r + v t_go + r_grav + r_thrust;  r_d = r_d unit(r_p)
+    i_x = unit(r_d);  i_z = i_x x i_y;  v_d = v_d (sin(gamma_d) i_x + cos(gamma_d) i_z)
+    "The input normal to the transfer plane, i_y, is directed in the opposite sense to the current orbital angular
+    velocity vector."
+    v_go = v_d - v - v_grav + v_bias                       (Figure 5-9a/b)
+  Block 2 (Figure 5-3a, p. 5-5): v_go = v_go - Delta v_sensed (accelerometers) at the start of each call.
+
+Not used here: modes 2-8 (reference trajectory, aborts, on-orbit, Lambert, deorbit), the constant-acceleration
+(g-limited) phase, throttling (4.9). Idea 36's additions are listed in its README under How it works.

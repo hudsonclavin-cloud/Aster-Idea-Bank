@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/earth.js",
+  "commit": "4465bba4a497062f3fc1e3e105cd1a9781318ea8",
+  "commitDate": "2026-10-31T09:25:46+00:00",
+  "pathLastChanged": "3335518 2026-10-31T08:57:06+00:00",
+  "committedBlob": "35b6a330bf98f11ae7330677beecb21050063318",
+  "readBlob": "35b6a330bf98f11ae7330677beecb21050063318",
+  "sourceSha256": "80297e10fcc1386b7e0f4258249ac6ac62c923488b719e88089581aea1a7760a",
+  "sourceBytes": 1702,
+  "copiedAt": "2026-10-31T09:42:29.485Z",
+  "mode": "copy",
+  "note": "idea 35's Earth constants (Aster GM, pck00010 radius and rotation, Aster launch sites), unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "80297e10fcc1386b7e0f4258249ac6ac62c923488b719e88089581aea1a7760a",
+  "writtenBytes": 1702
+}

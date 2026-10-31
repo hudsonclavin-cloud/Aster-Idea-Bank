@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/aster-delta-v.ts.txt",
+  "commit": "4465bba4a497062f3fc1e3e105cd1a9781318ea8",
+  "commitDate": "2026-10-31T09:25:46+00:00",
+  "pathLastChanged": "3335518 2026-10-31T08:57:06+00:00",
+  "committedBlob": "8d8646b179df0ecdde23d4fdf9d9a456478e4a55",
+  "readBlob": "8d8646b179df0ecdde23d4fdf9d9a456478e4a55",
+  "sourceSha256": "a58421c647110c0cbe2eea4a4d16ab53eeb7336f21b484c295911c6e63b6a2db",
+  "sourceBytes": 1963,
+  "copiedAt": "2026-10-31T09:42:29.927Z",
+  "mode": "copy",
+  "note": "Aster src/v2/porkchop/delta-v.ts at 62ddb17 via idea 35's verbatim snapshot: LEO_PARKING_RADIUS_KM, the parking orbit Aster assumes, is this module's default target for vehicles other than AS-512",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a58421c647110c0cbe2eea4a4d16ab53eeb7336f21b484c295911c6e63b6a2db",
+  "writtenBytes": 1963
+}

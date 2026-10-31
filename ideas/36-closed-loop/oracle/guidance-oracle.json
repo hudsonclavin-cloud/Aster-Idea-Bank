@@ -1,0 +1,93 @@
+{
+ "generated": "python3 -I ideas/36-closed-loop/oracle/guidance_oracle.py",
+ "numpy": "2.5.4",
+ "scipy": "1.18.1",
+ "integrator": "scipy solve_ivp DOP853, rtol 1e-11, atol 1e-06",
+ "flat": {
+  "gentle": {
+   "linear_tangent": {
+    "T_s": 54.09821736117027,
+    "b": 0.841691487076671,
+    "c_per_s": 0.013960667800338212,
+    "pitch0_deg": 40.08703364516288,
+    "pitchT_deg": 4.940608471501359,
+    "residual": 3.7834979593753813e-13,
+    "propellant_kg": 40048.89154645495
+   },
+   "direct": {
+    "T_s": 54.264376459730265,
+    "converged": false,
+    "message": "Rank-deficient equality constraint subproblem HFTI",
+    "K": 24,
+    "max_constraint": 8.09100644261207e-10,
+    "pitch0_deg": 28.627209606434935,
+    "pitchT_deg": 2.877791288887089
+   }
+  },
+  "steep": {
+   "linear_tangent": {
+    "T_s": 71.72194405476165,
+    "b": 3.6069172686650135,
+    "c_per_s": 0.06716584030115445,
+    "pitch0_deg": 74.50422887028265,
+    "pitchT_deg": -50.43617297192644,
+    "residual": 5.820766091346741e-14,
+    "propellant_kg": 53095.730304262324
+   }
+  }
+ },
+ "replay": {
+  "t_s": 686.9330253534064,
+  "r_m": [
+   5237506.03085016,
+   2776582.5888106716,
+   2773571.153856855
+  ],
+  "v_m_s": [
+   -2835.555532353937,
+   7065.018395623184,
+   -1718.10984285435
+  ],
+  "mass_kg": 138027.0048829639,
+  "radius_m": 6544736.605944139,
+  "speed_m_s": 7804.278412490806,
+  "flight_path_angle_deg": 7.624126032458202e-05,
+  "sII_cutoff_s": 548.0608119325334,
+  "sIVB_ignition_s": 553.6208119325335,
+  "mass_after_sII_cutoff_kg": 171197.99999998824,
+  "mass_at_sIVB_ignition_kg": 170984.99999998824,
+  "energy_m2_s2": -30450589.213919315
+ },
+ "optimum": [
+  {
+   "K": 8,
+   "converged": false,
+   "message": "Rank-deficient equality constraint subproblem HFTI",
+   "iterations": 270,
+   "sIVB_burn_s": 133.3083476448346,
+   "sIVB_propellant_kg": 32896.041172804136,
+   "max_constraint": 1.210719347000122e-11,
+   "final_mass_kg": 138027.9588271844
+  },
+  {
+   "K": 16,
+   "converged": false,
+   "message": "Iteration limit reached",
+   "iterations": 300,
+   "sIVB_burn_s": 133.30833954716311,
+   "sIVB_propellant_kg": 32896.03917456967,
+   "max_constraint": 1.1175870895385742e-11,
+   "final_mass_kg": 138027.9608254186
+  },
+  {
+   "K": 24,
+   "converged": false,
+   "message": "Iteration limit reached",
+   "iterations": 300,
+   "sIVB_burn_s": 133.30833920824253,
+   "sIVB_propellant_kg": 32896.0390909354,
+   "max_constraint": 9.313225746154785e-12,
+   "final_mass_kg": 138027.9609090528
+  }
+ ]
+}

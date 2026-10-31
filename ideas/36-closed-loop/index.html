@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closed Loop: guidance to orbit</title>
+<meta name="description" content="Fly idea 35's rocket to a chosen orbit with the Space Shuttle's Unified Powered Flight Guidance, set it beside open-loop pitch programmes, and fly both through Monte Carlo dispersions sized from Apollo 17's flight report: the orbit reached, how close, what it cost, and the propellant reserve the scatter demands.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Closed Loop</h1>
+  <p class="lede">Choose an orbit and let the rocket aim for it. Above the air the upper stages are flown by the Space Shuttle's Unified Powered Flight Guidance, which re-solves a linear-tangent steering law every two seconds from where the vehicle is and what its engines are doing, and cuts the engine when the orbit's energy is reached. Set it beside open-loop pitch programmes, then shake the rocket: thrust, flow, propellant, dry mass and air density drawn at random, the closed loop and the open loop flown through the same dispersions. It opens on the Saturn V that flew Apollo 17, aiming for the parking orbit that flight reached.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 6 of 20. Previous: <a href="../35-max-q/index.html">35 Max Q</a>, the ascent through the air. Next: 37 Window, the launch window and the departure asymptote.</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Vehicle and target</h2>
+    <label for="vehicle">Vehicle</label>
+    <select id="vehicle"></select>
+    <div id="vehSource" class="srcline" role="status" aria-live="polite"></div>
+
+    <h2 class="sub">Target orbit</h2>
+    <div class="btnrow" role="group" aria-label="Target presets">
+      <button type="button" id="tgtFlight">Apollo 17's (Table 4-4)</button>
+      <button type="button" id="tgtAster">Aster's parking orbit</button>
+    </div>
+    <div class="grid2">
+      <div class="ctl"><label for="perNum">Perigee <small>(km)</small></label><input id="perNum" type="number" min="90" step="0.1" inputmode="decimal"></div>
+      <div class="ctl"><label for="apoNum">Apogee <small>(km)</small></label><input id="apoNum" type="number" min="90" step="0.1" inputmode="decimal"></div>
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="incNum">Inclination <small>(deg)</small></label><input id="incNum" type="number" min="0" max="180" step="0.001" inputmode="decimal"></div>
+      <input id="incRange" type="range" min="28" max="60" step="0.05" aria-label="Inclination slider, degrees">
+    </div>
+    <div class="ctl">
+      <span class="lab">Heading over the pad</span>
+      <div class="seg" role="group" aria-label="Heading branch">
+        <button type="button" data-branch="north" aria-pressed="false">North of east</button>
+        <button type="button" data-branch="south" aria-pressed="false">South of east</button>
+      </div>
+    </div>
+    <p id="tgtLine" class="tgtline" role="status" aria-live="polite"></p>
+
+    <h2 class="sub">Guidance</h2>
+    <div class="grid2">
+      <div class="ctl"><label for="startNum">Starts <small>(s after first-stage cutoff)</small></label><input id="startNum" type="number" min="0" step="0.1" inputmode="decimal"></div>
+      <div class="ctl"><label for="cycleSel">Cycle <small>(s)</small></label><select id="cycleSel"><option value="0.5">0.5</option><option value="1">1</option><option value="2">2</option><option value="4">4</option></select></div>
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="kickNum">First-stage kick <small>(deg, idea 35)</small></label><input id="kickNum" type="number" min="0" max="10" step="0.001" inputmode="decimal"></div>
+      <input id="kickRange" type="range" min="0.2" max="4" step="0.001" aria-label="First-stage kick slider, degrees">
+    </div>
+    <p class="note" id="kickNote"></p>
+  </section>
+
+  <div id="right" class="col">
+  <section id="results" class="card" aria-labelledby="h-results">
+    <h2 id="h-results">What guidance does</h2>
+    <div id="refusals" class="refusals" role="status" aria-live="polite"></div>
+    <div id="tiles" class="tiles"></div>
+    <div class="tablewrap"><table id="stageTable" class="stack"></table></div>
+    <p class="note" id="warnings"></p>
+  </section>
+
+  <section id="chartCard" class="card" aria-labelledby="h-chart">
+    <h2 id="h-chart">The climb</h2>
+    <div class="metric-row" role="group" aria-label="Quantity">
+      <button type="button" data-metric="alt" aria-pressed="true">Altitude</button>
+      <button type="button" data-metric="pitch" aria-pressed="false">Pitch</button>
+      <button type="button" data-metric="yaw" aria-pressed="false">Yaw</button>
+      <button type="button" data-metric="v" aria-pressed="false">Speed</button>
+      <button type="button" data-metric="tgo" aria-pressed="false">Time to go</button>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chart" class="chartsvg" viewBox="0 0 800 320" role="img" aria-label="The guided and open-loop flights against time; tap, drag or use the arrow keys to read a point" tabindex="0"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <ul class="legend" id="legend"></ul>
+    <p class="chart-cap" id="cap"></p>
+  </section>
+  </div>
+
+  <section id="mcCard" class="card wide" aria-labelledby="h-mc">
+    <h2 id="h-mc">Shake it: Monte Carlo</h2>
+    <p class="small">Each flight draws every dispersion below from a normal distribution, flies the first stage open loop (idea 35), then flies the upper stages twice on the same draws: closed loop (guidance on a nominal model of the vehicle, sensing only its own acceleration) and open loop (the nominal guided flight's attitude history replayed on the clock, cut off by a timer). Reproducible from the seed.</p>
+    <div class="mcrow">
+      <div class="ctl"><label for="mcN">Flights</label><select id="mcN"><option>50</option><option selected>100</option><option>200</option><option>400</option></select></div>
+      <div class="ctl"><label for="mcScale">Dispersion size</label><select id="mcScale"><option value="as512">AS-512's own deviations</option><option value="msfc">Scaled to MSFC's S-IC band</option></select></div>
+      <div class="ctl"><label for="mcSeed">Seed</label><input id="mcSeed" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
+      <button type="button" id="mcRun">Fly them</button>
+    </div>
+    <div class="progress" aria-hidden="true"><span id="mcBar"></span></div>
+    <div class="status" id="mcStatus" aria-live="polite"></div>
+    <div class="metric-row" role="group" aria-label="Scatter view">
+      <button type="button" data-mcview="orbit" aria-pressed="true">Orbits reached</button>
+      <button type="button" data-mcview="prop" aria-pressed="false">Propellant left</button>
+    </div>
+    <div class="chart-wrap">
+      <svg id="mcChart" class="chartsvg" viewBox="0 0 800 320" role="img" aria-label="Monte Carlo scatter: perigee against apogee, or the guided stage's propellant left" tabindex="0"></svg>
+      <div class="tip" id="mcTip"></div>
+    </div>
+    <ul class="legend" id="mcLegend"></ul>
+    <p class="chart-cap" id="mcCap"></p>
+    <div id="mcSummary" class="summary"></div>
+    <div class="tablewrap"><table id="mcTable" class="stack"></table></div>
+    <details>
+      <summary>The dispersions (one sigma) and where each size comes from</summary>
+      <p class="small">Each default is how far Apollo 17 itself strayed from MSFC's prediction (MPR-SAT-FE-73-1), used as one standard deviation: one flight is one draw, so these sizes are <b>assumed</b>. "Scaled to MSFC's S-IC band" multiplies every one by the factor that makes three standard deviations of the first stage's burn time equal the report's pre-flight three-sigma band (+5.99/&minus;4.22 s). Edit any of them.</p>
+      <div class="tablewrap"><table id="sigTable" class="stack sigtable"></table></div>
+    </details>
+  </section>
+
+  <section id="tornCard" class="card wide" aria-labelledby="h-torn">
+    <h2 id="h-torn">What the reserve pays for</h2>
+    <p class="small">Each dispersion alone at minus and plus one sigma (the size chosen above): how much more or less propellant the guided stage has left at cutoff than on the nominal flight. A quantity that loses on both sides is not linear, and a linear covariance would miss it.</p>
+    <div class="handoff-actions"><button type="button" id="tornRun">Fly each one (two flights per row)</button></div>
+    <div class="status" id="tornStatus" aria-live="polite"></div>
+    <div id="tornado" class="tornado"></div>
+    <p class="chart-cap" id="tornCap"></p>
+  </section>
+
+  <section id="recordCard" class="card wide" aria-labelledby="h-record">
+    <h2 id="h-record">Against Apollo 17</h2>
+    <p class="small">The guided Saturn V AS-512 against what NASA reconstructed (MPR-SAT-FE-73-1, Tables 4-2 and 4-4, sections 7.3 and 9.3). The orbit is the target, so agreement there is the guidance working; the S-II cutoff, the S-IVB burn and what is left for the translunar burn are predictions. Times are range time (liftoff at 0.24 s).</p>
+    <div id="recordSummary" class="summary"></div>
+    <div class="tablewrap"><table id="tblRecord" class="stack"></table></div>
+  </section>
+
+  <section id="handoffCard" class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">One JSON object: idea 35's ascent handoff whole (and so 34's vehicle and 33's engines), the target and guidance settings, the parking orbit reached and the state at insertion (Earth-centred inertial, fixed at liftoff), how far from the target, the propellant left for the departure burn, the open-loop comparison, the Monte Carlo scatter if you ran one, and every refusal; each number with SI units, a confidence class and a source.</p>
+    <div class="handoff-actions">
+      <button type="button" id="copyBtn">Copy JSON</button>
+      <button type="button" id="dlBtn">Download handoff.json</button>
+      <a id="nextLink" href="../37-window/index.html">Open in 37 Window (once it is built)</a>
+    </div>
+    <div class="status" id="exportStatus" aria-live="polite"></div>
+    <label for="exportText" class="small">Export</label>
+    <textarea id="exportText" rows="7" readonly></textarea>
+    <h3>Import</h3>
+    <label for="importText" class="small">Paste idea 34's handoff (a vehicle), idea 35's (an ascent) or this page's, as JSON or a link with <code>#h=</code></label>
+    <textarea id="importText" rows="3"></textarea>
+    <div class="handoff-actions"><button type="button" id="importBtn">Import</button></div>
+    <div class="status" id="importStatus" aria-live="polite"></div>
+  </section>
+
+  <section id="how" class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <p><b>The first stage is idea 35's, unchanged.</b> Its kernel flies the vehicle off the pad through the 1976 atmosphere with the pitch kick and gravity turn of its plan; nothing aims at an orbit there, as on the Saturn V, whose first stage flew a fixed tilt programme. At first-stage cutoff the attitude is held until guidance starts (for AS-512, 42.9 s later, when the flight's iterative guidance began: Table 2-2).</p>
+    <p><b>Guidance.</b> Unified Powered Flight Guidance (Brand, Brown and Higgins, Draper Laboratory for NASA, 1973) aims for a cutoff radius, speed, flight-path angle and plane. Each cycle it predicts how long the remaining stages must burn to supply the velocity still to be gained (the rocket equation over each stage, from idea 34's masses), integrates the thrust acceleration over that time, chooses a thrust direction that turns linearly in time (the linear-tangent law, optimal in uniform gravity) so that the burn also ends at the right height, estimates gravity's share along a coasting arc that shadows the powered one, and corrects. It senses only the vehicle's thrust acceleration and velocity change; its model of what is still to burn is the nominal one. The command is held fixed in space between cycles. When the cutoff is under two cycles away the steering is frozen, and the engine stops when the orbit's energy reaches the target's.</p>
+    <p><b>Open loop.</b> Idea 35's linear pitch programme, solved for a level burnout, is flown unchanged (for AS-512 it does not reach orbit). Under dispersions the open loop is the nominal guided flight's own attitude history replayed on the clock, with a timer cutoff: the same steering, without the feedback.</p>
+    <h3>How far to trust it</h3>
+    <ul id="trustList"></ul>
+    <p class="small">Confidence classes: <b>measured</b> is from a measured or published source (the flight report); <b>derived</b> is computed here from such inputs; <b>assumed</b> is your input or a choice. Every number on the page traces to the kernel (<code>closedloop.js</code>), idea 35's kernel and handoff, the snapshots in <code>snapshots/</code>, or your input. This is an idea-bank prototype; it has not been through Aster's multi-agent math audit.</p>
+  </section>
+</main>
+
+<footer>Idea 36 of the Aster Idea Bank. Runs with nothing installed; no network requests. Sources: NASA NTRS 19740004402 (Unified Powered Flight Guidance, 1973), NASA MPR-SAT-FE-73-1 (the AS-512 flight evaluation report), Aster's Earth constants, launch sites and parking radius; through idea 35, everything ideas 31 to 35 used. Source of every number: README and <code>snapshots/</code>.</footer>
+
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/stack.js"></script>
+<script src="snapshots/as512-flight.js"></script>
+<script src="snapshots/as512-trajectory.js"></script>
+<script src="snapshots/as512-guidance.js"></script>
+<script src="snapshots/earth.js"></script>
+<script src="snapshots/saturn-v-axial-force.js"></script>
+<script src="snapshots/data-json.js"></script>
+<script src="snapshots/aster-parking.js"></script>
+<script src="snapshots/ascent.js"></script>
+<script src="closedloop.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

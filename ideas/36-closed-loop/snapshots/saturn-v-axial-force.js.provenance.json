@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/saturn-v-axial-force.js",
+  "commit": "4465bba4a497062f3fc1e3e105cd1a9781318ea8",
+  "commitDate": "2026-10-31T09:25:46+00:00",
+  "pathLastChanged": "c7cabd8 2026-10-31T09:25:38+00:00",
+  "committedBlob": "b6e8cd6e0e5ae1e931639a8b739689a1d4644f58",
+  "readBlob": "b6e8cd6e0e5ae1e931639a8b739689a1d4644f58",
+  "sourceSha256": "66af3f196f924affd7ca0dff12fa07448831e1e4018fff3e8fa7826dcb5ce825",
+  "sourceBytes": 4784,
+  "copiedAt": "2026-10-31T09:42:29.821Z",
+  "mode": "copy",
+  "note": "idea 35's digitized Saturn V axial-force coefficient (Walker, NASA TM X-53770, Fig. 28), unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "66af3f196f924affd7ca0dff12fa07448831e1e4018fff3e8fa7826dcb5ce825",
+  "writtenBytes": 4784
+}

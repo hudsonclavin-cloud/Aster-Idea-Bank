@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/as512-trajectory.js",
+  "commit": "4465bba4a497062f3fc1e3e105cd1a9781318ea8",
+  "commitDate": "2026-10-31T09:25:46+00:00",
+  "pathLastChanged": "3335518 2026-10-31T08:57:06+00:00",
+  "committedBlob": "7ea51712a4e98eb86d51f2fbf2514995648c604b",
+  "readBlob": "7ea51712a4e98eb86d51f2fbf2514995648c604b",
+  "sourceSha256": "fffd457b1cacacd1edadca6502e90c3057430ec1e617b8b2dd1176324bbd0648",
+  "sourceBytes": 6907,
+  "copiedAt": "2026-10-31T09:42:29.693Z",
+  "mode": "copy",
+  "note": "idea 35's AS-512 trajectory transcription (Tables 2-2, 4-1, 4-2, 4-4 of MPR-SAT-FE-73-1), unmodified: the cutoffs and parking orbit this module's guided flight is compared with",
+  "readMatchesCommitted": true,
+  "writtenSha256": "fffd457b1cacacd1edadca6502e90c3057430ec1e617b8b2dd1176324bbd0648",
+  "writtenBytes": 6907
+}

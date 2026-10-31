@@ -1,0 +1,12 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19730025089, MPR-SAT-FE-73-1: Table 2-2 items 36-41 (PDF page 38), section 5.1 (PDF page 66), section 6.3 (PDF page 84), Table 7-1 and section 7.3/7.4 (PDF page 103), section 7.9 (PDF page 109), section 9.3 (PDF page 142), section 16.2 (PDF page 225), Appendix A.5.3 (PDF page 286)",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19730025089/downloads/19730025089.pdf",
+ "sourceSha256": "8e543894efef0d9a3862ded599001d1d9c83b0e5684f85dbe85abd981f2eaa42",
+ "license": "NASA technical memorandum (MPR-SAT-FE-73-1 / NASA-TM-X-69534), a US-government work: public domain in the US",
+ "note": "Hand-transcribed by idea 36: pages 38, 66, 84, 103, 142 and 286 rendered with pdftoppm and read as images; pages 109 and 225 from the clean text layer. The same PDF ideas 34 and 35 used (same sha256). closedloop.test.mjs cross-checks every figure that can be (lbf against percent, ft against m, time bases against idea 35's Table 4-2).",
+ "writtenSha256": "b06c52542951bbdf2d1384ad6caf27ee2c270a8c27eae3199c8ef9e5c0a66ead",
+ "writtenBytes": 6863
+}

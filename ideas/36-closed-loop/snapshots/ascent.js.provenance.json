@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/ascent.js",
+  "commit": "4465bba4a497062f3fc1e3e105cd1a9781318ea8",
+  "commitDate": "2026-10-31T09:25:46+00:00",
+  "pathLastChanged": "c7cabd8 2026-10-31T09:25:38+00:00",
+  "committedBlob": "96117402a2d7dd5552ceb1cefd944f18b918c2ec",
+  "readBlob": "96117402a2d7dd5552ceb1cefd944f18b918c2ec",
+  "sourceSha256": "14dbd65e034882cd5b2c00a1e13fafec1363d466d4cd2ca131a08c5f8b307a96",
+  "sourceBytes": 64530,
+  "copiedAt": "2026-10-31T09:42:29.220Z",
+  "mode": "copy",
+  "note": "idea 35's kernel, unmodified: the ascent (vehicle import, first-stage flight, integrator, deriv, orbitOf, makeHandoff/parseHandoff) that this module guides the upper stages of",
+  "readMatchesCommitted": true,
+  "writtenSha256": "14dbd65e034882cd5b2c00a1e13fafec1363d466d4cd2ca131a08c5f8b307a96",
+  "writtenBytes": 64530
+}
