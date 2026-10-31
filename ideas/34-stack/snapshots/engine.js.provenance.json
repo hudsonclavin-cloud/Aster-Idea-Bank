@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/33-engine-deck/engine.js",
+  "commit": "fc4a5c6f5e78fc19cdc5f9d3b3ab1edfd43aebf2",
+  "commitDate": "2026-10-31T06:50:11+00:00",
+  "pathLastChanged": "06e4b10 2026-10-31T06:50:01+00:00",
+  "committedBlob": "75035118ccdee71f5c534678829afb07175f2cc0",
+  "readBlob": "75035118ccdee71f5c534678829afb07175f2cc0",
+  "sourceSha256": "31bd6e36b9017315fef02d5af513bf9f4c14bf5a3bc0a06f41144b0a5e6d2533",
+  "sourceBytes": 73611,
+  "copiedAt": "2026-10-31T07:10:07.766Z",
+  "mode": "copy",
+  "note": "idea 33's engine-deck kernel, unmodified: every engine in this module (presets and imports) is its output",
+  "readMatchesCommitted": true,
+  "writtenSha256": "31bd6e36b9017315fef02d5af513bf9f4c14bf5a3bc0a06f41144b0a5e6d2533",
+  "writtenBytes": 73611
+}

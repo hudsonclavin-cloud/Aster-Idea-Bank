@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stack: a whole rocket</title>
+<meta name="description" content="A rocket stage by stage: engines from idea 33, propellant loads, tank volumes, dry masses and payload; staged ideal delta-v, burn times and thrust-to-weight, with the Saturn V that flew Apollo 17 as a preset and set beside NASA's flight evaluation report.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Stack</h1>
+  <p class="lede">Put engines under propellant and stack the stages. Change the engines, the loads, the dry masses or the payload and read the ideal delta-v of every burn, how long each burns, how hard it pushes, and how big its propellant is. It opens on the Saturn V that flew Apollo 17, every kilogram from NASA's flight report, and sets this module's numbers beside what that rocket actually did.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 4 of 20. Previous: <a href="../33-engine-deck/index.html">33 Engine Deck</a>, the engines. Next: 35 Max Q, the ascent.</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Vehicle</h2>
+    <label for="vehicle">Start from</label>
+    <select id="vehicle"></select>
+    <div id="vehSource" class="srcline" role="status" aria-live="polite"></div>
+    <div class="ctl">
+      <span class="lab">In-flight events</span>
+      <div class="seg" role="group" aria-label="In-flight events">
+        <button type="button" data-events="flown" aria-pressed="true">As scheduled</button>
+        <button type="button" data-events="simple" aria-pressed="false">None</button>
+      </div>
+      <small id="eventsNote"></small>
+    </div>
+    <div id="stages"></div>
+    <div class="btnrow"><button type="button" id="addStage">Add a stage on top</button></div>
+    <h2 class="sub">Payload</h2>
+    <div class="ctl">
+      <div class="ctl-head"><label for="plNum">Payload <small>(t, above the top stage)</small></label><input id="plNum" type="number" min="0" step="0.1" inputmode="decimal"></div>
+      <input id="plRange" type="range" min="0" max="200" step="0.1" aria-label="Payload slider, tonnes">
+    </div>
+  </section>
+
+  <div id="right" class="col">
+  <section id="results" class="card" aria-labelledby="h-results">
+    <h2 id="h-results">What it does</h2>
+    <div id="refusals" class="refusals" role="status" aria-live="polite"></div>
+    <div id="tiles" class="tiles"></div>
+    <div class="tablewrap"><table id="stageTable" class="stack"></table></div>
+    <p class="note" id="warnings"></p>
+  </section>
+
+  <section id="flyCard" class="card" aria-labelledby="h-fly">
+    <h2 id="h-fly">Through the burns</h2>
+    <div class="metric-row" role="group" aria-label="Quantity">
+      <button type="button" data-fly="v" aria-pressed="true">Ideal velocity</button>
+      <button type="button" data-fly="a" aria-pressed="false">Acceleration</button>
+      <button type="button" data-fly="m" aria-pressed="false">Mass</button>
+    </div>
+    <div class="chart-wrap">
+      <svg id="chartFly" class="chartsvg" viewBox="0 0 800 320" role="img" aria-label="Ideal velocity, acceleration or mass against burning time; tap, drag or use the arrow keys to read a point" tabindex="0"></svg>
+      <div class="tip" id="tipFly"></div>
+    </div>
+    <ul class="legend" id="legendFly"></ul>
+    <p class="chart-cap" id="capFly"></p>
+  </section>
+
+  <section id="payCard" class="card" aria-labelledby="h-pay">
+    <h2 id="h-pay">Payload against delta-v</h2>
+    <div class="ctl-row">
+      <label for="target">Target</label>
+      <select id="target"></select>
+      <input id="targetNum" type="number" min="100" max="30000" step="10" inputmode="decimal" aria-label="Typed target delta-v, m/s" hidden>
+    </div>
+    <div id="solve" class="verdict" role="status" aria-live="polite"></div>
+    <div class="chart-wrap">
+      <svg id="chartPay" class="chartsvg" viewBox="0 0 800 300" role="img" aria-label="Total ideal delta-v against payload; tap, drag or use the arrow keys to set the payload" tabindex="0"></svg>
+      <div class="tip" id="tipPay"></div>
+    </div>
+    <ul class="legend" id="legendPay"></ul>
+    <p class="chart-cap" id="capPay"></p>
+  </section>
+  </div>
+
+  <section id="recordCard" class="card wide" aria-labelledby="h-record">
+    <h2 id="h-record">Against Apollo 17</h2>
+    <p class="small">The Saturn V AS-512 stack as flown (every mass from NASA's flight evaluation report, MPR-SAT-FE-73-1), with idea 33's F-1 and J-2, against what the report reconstructed from the flight. Nothing here is fitted to the flight. Gaps are model / flight &minus; 1, or model &minus; flight for velocities.</p>
+    <div id="recordSummary" class="summary"></div>
+    <div class="tablewrap"><table id="tblRecord" class="stack"></table></div>
+  </section>
+
+  <section id="handoffCard" class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">One JSON object: the vehicle (every stage's engines, masses, burns and events), each engine's numbers for module 35 (thrust in vacuum and against ambient pressure through the exit area, mass flow, Isp, a throttle deck), the delta-v, burn times and thrust-to-weight, each with SI units, a confidence class and a source, and every refusal. An imported engine carries idea 33's handoff whole (and so ideas 32 and 31's); a preset engine names how to re-compute it with idea 33's kernel.</p>
+    <div class="handoff-actions">
+      <button type="button" id="copyBtn">Copy JSON</button>
+      <button type="button" id="dlBtn">Download handoff.json</button>
+      <a id="nextLink" href="../35-max-q/index.html">Open in 35 Max Q (once it is built)</a>
+    </div>
+    <div class="status" id="exportStatus" aria-live="polite"></div>
+    <label for="exportText" class="small">Export</label>
+    <textarea id="exportText" rows="7" readonly></textarea>
+    <h3>Import</h3>
+    <label for="importText" class="small">Paste idea 33's handoff (an engine) or this page's (a vehicle), as JSON or a link with <code>#h=</code></label>
+    <textarea id="importText" rows="3"></textarea>
+    <div class="handoff-actions"><button type="button" id="importBtn">Import</button></div>
+    <div class="status" id="importStatus" aria-live="polite"></div>
+    <details>
+      <summary>Every engine, with its source</summary>
+      <div class="tablewrap"><table id="engTable" class="stack"></table></div>
+    </details>
+  </section>
+
+  <section id="how" class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <p><b>Engines are idea 33's.</b> A preset (F-1, H-1, J-2, Atlas LR89 booster pair, RL10) is built by idea 33's kernel, unmodified: NASA SP-8120's chamber and nozzle, calibrated to its published thrust and Isp, with the gas-generator or expander cycle NASA SP-8107 or TM-107318 describes. An imported engine is re-computed from its handoff and refused unless the numbers match. Each gives a vacuum and a sea-level thrust, an engine-level mass flow (chamber plus gas generator) and so an engine-level Isp, the mixture ratio at the engine's inlets, and the propellant densities idea 31 measured.</p>
+    <p><b>A burn</b> is cut into segments by its events: an engine shut down early (the Saturn V's centre engines), or something dropped mid-burn (the S-II's aft interstage, the launch escape tower, the S-IVB's ullage rocket cases). Within a segment every engine is the same engine, so the exhaust velocity c = F/&#7745; is constant and the rocket equation is exact: &Delta;v = c&thinsp;ln(m<sub>start</sub>/m<sub>end</sub>), time = propellant / (n&thinsp;&#7745;). <b>The ledger</b>: every kilogram of a stage leaves the vehicle one way: burned, lost without thrust (thrust build-up, frost, purges, venting between burns), jettisoned, or dropped at separation with the dry stage. Liftoff mass is their sum plus the payload, and nothing is left at the end but the payload.</p>
+    <p><b>Ideal, not flown.</b> The headline delta-v uses each engine's vacuum Isp at the engine level (a gas generator's exhaust giving no extra thrust, idea 33's lower bound, which is where the F-1 matches its flight data). The first stage is also given at its sea-level Isp (a floor: the atmosphere thins as it climbs) and gas-generator stages at idea 33's upper bound. Gravity, drag and steering losses are module 35's; the Apollo 17 comparison shows how big they were. Tank sizes are propellant volumes at idea 31's densities (no ullage).</p>
+    <h3>How far to trust it</h3>
+    <ul id="trustList"></ul>
+    <p class="small">Confidence classes: <b>measured</b> is a value from a measured or published source (here, the flight report's masses); <b>derived</b> is computed here from such inputs; <b>assumed</b> is your input or a choice. Every number on the page traces to the kernel (<code>stack.js</code>), idea 33's kernel and its sources, the flight report transcription (<code>snapshots/as512-flight.js</code>), or your input. This is an idea-bank prototype; it has not been through Aster's multi-agent math audit.</p>
+  </section>
+</main>
+
+<footer>Idea 34 of the Aster Idea Bank. Runs with nothing installed; no network requests. Sources: NASA MPR-SAT-FE-73-1 (the AS-512 flight evaluation report, public domain), and through idea 33 NASA SP-8107, SP-8110, SP-8120, TM-107318, NASA Glenn thermodynamic data and NIST densities. Source of every number: README and <code>snapshots/</code>.</footer>
+
+<script src="snapshots/thermo-excerpt.js"></script>
+<script src="snapshots/propellant-densities.js"></script>
+<script src="snapshots/mixture.js"></script>
+<script src="snapshots/mixture-presets.js"></script>
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/nozzle-charts.js"></script>
+<script src="snapshots/nozzle-rules.js"></script>
+<script src="snapshots/sp8120-table1.js"></script>
+<script src="snapshots/bell.js"></script>
+<script src="snapshots/turbo-data.js"></script>
+<script src="snapshots/engine.js"></script>
+<script src="snapshots/as512-flight.js"></script>
+<script src="stack.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

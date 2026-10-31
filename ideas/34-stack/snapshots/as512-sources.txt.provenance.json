@@ -1,0 +1,12 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19730025089/downloads/19730025089.pdf",
+ "sourceSha256": "8e543894efef0d9a3862ded599001d1d9c83b0e5684f85dbe85abd981f2eaa42",
+ "license": "NASA technical memorandum (MPR-SAT-FE-73-1 / NASA-TM-X-69534), a US-government work: public domain in the US",
+ "path": "pdftotext -layout of NTRS 19730025089, PDF pages 66, 72, 84, 98, 103, 111 (windows listed in oracle/build_sources.py)",
+ "note": "Verbatim text-layer lines (OCR errors kept), written by oracle/build_sources.py, so the tests can find the prose numbers in what the PDF itself says.",
+ "writtenSha256": "cf84d96bd4b151512b31818074ffffa3de2416f66274b113632290782b6881e3",
+ "writtenBytes": 7152
+}

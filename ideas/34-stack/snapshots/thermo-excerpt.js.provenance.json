@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/snapshots/thermo-excerpt.js",
+  "commit": "fc4a5c6f5e78fc19cdc5f9d3b3ab1edfd43aebf2",
+  "commitDate": "2026-10-31T06:50:11+00:00",
+  "pathLastChanged": "6a34026 2026-10-31T03:43:38+00:00",
+  "committedBlob": "b9a2ab8d137b9131989c0aa02a5947f51080c0e0",
+  "readBlob": "b9a2ab8d137b9131989c0aa02a5947f51080c0e0",
+  "sourceSha256": "0d49d96b535b51efef55de2be054eb15cfc3f228237a262ff07dc4ecef2fb416",
+  "sourceBytes": 38589,
+  "copiedAt": "2026-10-31T07:10:07.293Z",
+  "mode": "copy",
+  "note": "NASA Glenn thermo excerpt idea 31's kernel reads, unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "0d49d96b535b51efef55de2be054eb15cfc3f228237a262ff07dc4ecef2fb416",
+  "writtenBytes": 38589
+}

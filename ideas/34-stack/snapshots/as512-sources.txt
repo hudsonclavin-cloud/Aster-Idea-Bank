@@ -1,0 +1,140 @@
+# Verbatim text-layer excerpts of NTRS 19730025089 (MPR-SAT-FE-73-1, AS-512 flight evaluation report):
+# pdftotext -layout per page, runs of spaces collapsed to one, OCR errors kept (e.g. "1.156.694" for
+# 1,156,694). snapshots/as512-flight.js transcribes from the rendered pages; stack.test.mjs finds the
+# prose numbers here.
+## sha256 8e543894efef0d9a3862ded599001d1d9c83b0e5684f85dbe85abd981f2eaa42
+
+--- PDF page 66: Section 5.1, S-IC propulsion summary
+All S-IC propulsion systems performed satisfactorily. In all cases, the
+propulsion performance was very close to the predicted nominal. Overall
+stage site thrust was 0.30 percent higher than predicted. Total pro-
+pellant consumption rate was 0.16 percent higher than predicted and the
+total consumed mixture ratio was 0.002 percent higher than predicted.
+Specific-; mpulse was 0.14 percent higher than predicted. Total propellant
+4 consumption from Holddown Arm (HDA) release to Outboard Engines Cutoff
+(DECO) was low by 0.14 percent.
+s Center Engine Cutoff (CECO) was initiated by the Instrument Unit (IU)
+s
+at 139.30-second-, 0.02 seconds earlier than planned. CECO was initiated
+s^
+by the fuel depletion sensors at 161.20 seconds, 0.47 seconds earlier than
+t. predicted. This is well within the +5.99, -4.22 second 3-sigma limits.
+At OECD, the LOX residual was 36,479 lbm compared to the predicted 37,235
+s
+{ lbm and the fuel residual was 26,305 lbm compared to the predicted 29,956
+1bm.
+}
+i The S-IC hydraulic system performed satisfactorily.
+
+--- PDF page 72: Section 5.4, S-IC cutoff
+reasured !.rom Cutoff signal to zero thrust. was E69,642 ltf-s fcr tee
+center encire (0.1 -ercent Less than predicted) and 2,593,423 itf-s
+fcr all outtoard eraires (3.0 percent greater than predicted). The
+total stage cutoff irpulse of 3,2E3,055 ;bf-s was 2.3 percent greater
+than predicted.
+Certer engine cutoff was initiated by the IU at 1;9.20 seconds. 0.02
+seccrd earlier than p ianred. Cutoff s 4^cnal to tt.e outboard engines
+was initiated by fuel depletion and occurred 0.47 second earlier than
+the norinal Lredicted t're cf 161.67 seconds. The fuel deoleticn cutoff
+
+--- PDF page 84: Section 6.3, S-II mainstage performance
+The prcoulsion reconstruction analysis shoved that state ,*rfcr-ante
+durine -airstaee operation was satisfactory. A ccrparis,-n of predicted a
+and rp ccrstructed thrust. s pecific — culse. *_otai flcwrate. and rixture
+ratio versus time is shorn in Fieure 6- 71.-5tac_e performance -was very close
+to predicted. At ESC +61 seconds, total staee thrust was 1.156.694 lbf
+which was 1585 lbf (0.14 p ercent) below the p refli g ht prediction. Total
+pro pellant flowrate includinc p ressurization flow, was 2743.4 ibr /s. 0.19
+percent telew predicted. Stace specific irpuise. includin g the effect
+of pressurization cas fiowrate. was 421.6 lbf-s/lbc. O.CS percent above
+pr edicted. The state propellant mixture ratio was 0.-?6 percent below
+predicted.
+Center Errire Cuto f f was initiated at ESC +297.62 seccncs. 0.47 secenis
+earlier than piar.red. This action reduced total state trust by 234.121
+lbf to a level of 920,7 4 6 lbf. The EwP shift frer hi gh to low occurred
+325.6 seconds after ESC and the reduction in state thrust occurred as
+ex pected. At ESC + 351 seconds. the total sta ge thrust was 787,009 lbf;
+thus, a decrease in thrust of 133,737 lbf was indicated Cetween hicn
+and low POR operation. S-II burn duration was 396.1 seconds.
+
+--- PDF page 98: Section 7.1, S-IVB propulsion summary
+S-IVB first burn time was 138.8 seconds, 3.7 seconds shorter than pre-
+dic..jd for the actual flight azimuth of 91.5 degrees. This difference is
+com p osed of -4.1 seconds due to the higher than expected S-II/S-IVB
+separat;on velocity and +0.4 second due to lower than predicted S-IVB
+performance. The engine performance during first burn, as determined
+from standard altitude reconstruction analysis, deviated from the pre-
+dicted Start Tank Discharge Valve (STDV) open +135-second time slice by
+-0.68 percen. for thrust and -0.14 percent for specific impulse. The
+S-IVB stage first burn En g ine Cutoff (ECO) was initiated by the Launch
+Vehicle Digital Computer (LVDC) at 702.65 seconds.
+The Continuous Vent System (CVS) adeaudtely regulated LH2 tank ullage
+pre:sure at an avera g e level of 19.1 psia during orbit and the Oxygen/
+hydro g en (02/H2) burner satisfactorily achieved LH2 and LOX tank repres-
+surization for restart. Engine restart conditions were within specified
+limits.
+S-IVB seccod burn time was 351.0 seconds, 4.0 seconds lon g er than predicted
+for the 91.5 degree fli g ht azimuth. This difference is primarily due to
+the lower S-IVB o p rformance and heavier vehicle mass during second burn.
+The engine 'performance during second burn, as determined from the standard
+altitude reconstruction analysis, deviated from the STDV open +172-second
+cime slice by -0.77 percent for thrust and -O.IE percent for specific
+impulse. Second burn ECO was initiated by the LVDC at 11,907.64 seconds,
+(08:51:27.64).
+Subseouent to second burn, the stage propellant tanks and helium spheres
+were safed satisfactorily. Sufficient impulse was derived from LOX
+
+--- PDF page 103: Table 7-1, S-IVB steady state performance, first burn
+Table 7-1. S-IVB Steady State Performance - First Burn
+(STDV Open, +135-Second Time Slice at Standard Altitude Conditions)
+crDrENT
+FLIAT I
+PAP.h1ETEP PPEDICTED RECONSTRUCTION DEVIaT104
+DE'/I On I
+FP0'APPEDICTED
+Thrust, lbf 207,197 205,797 -1,400 i -0.63
+Specific Impulse. 428.3 427.7 -O.6 I -0.14
+lbf-s /lbm
+I
+LOX Flowrate, 403.40 401.26 -2.14 -0.53
+1 bm /s
+Fuel Flcwrate, 80.37 79.96 -0.41 -0.51
+lbm /s
+Engine `fixture 5.019 5.018 -.001 -0.02
+Ratio, LOX/Fuel
+The first burn time was 133.8 seconds, terminated by a guidance velocity
+cutoff command, which was 3.7 seconds less than predicted for the actual
+flight azimuth of 91.5 degrees. This difference is composed of 4.1
+seconds less due to the higher than expected S-II/S-IVB separation
+velocity and 0.4 second longer due to lower S-IVBperformance. Total
+impulse from STDV open +2.5-seconds to ECO was 28.23 x 10 6 lbf-s which
+was 874,949 lbf-s less than predicted.
+The engine helium control system performed satisfactoril y during main-
+stage operation. An estimated 0.30 lbm of helium was consumed during
+
+--- PDF page 111: Table 7-2, S-IVB steady state performance, second burn
+Table 7-2. S-IVB Steady State Performance - Second Burn
+(STDV Open +172-Second Time Slice at Standard Altitude Conditions)
+PERCENT
+FLIGHT
+PARNIETER PREDICTED RECONSTRUCTION DEVIATION
+DEVIATIM
+FPN PREDICTED
+Thrust, lbf 207,197 205,608 -1,589 -9.77
+Specific Impulse, 428.3 427.6 -0.7 -0.16
+1bf-s/lbm
+LOX Flowrate, 403.40 400.95 -2.45 -0.61
+lbm/s
+Fuel Flowrate, 80.37 79.91 -.46 -0.57
+1 bm/s
+Enqine Aixture 5.019 5.018 -•001
+Ratio, LOX/Fuel
+Table 7-3. S-IVB Stage Propellant Mass History
+Pu
+:ImICATED PU FLOW BEST
+PREDICTED (CORRECTED) VOLUME'.RIC INTEGRAL ESTIMATE
+EVENT UNITS
+LOX LH2 LOX LH2 LOX LH2 LOX LH2 LOX LH
+S-IC Liftcff lbw 195,584 43,750 195,421 43,724 195,421 43,944 195,49S 43,600 195,636 43,752
+First S-IV8 ESC lbw 195,574 43,749 195,421 43,724 195,421 43,944 195,495 43,600 195,636 43,750
+

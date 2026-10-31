@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/32-bell/snapshots/sp8120-table1.js",
+  "commit": "fc4a5c6f5e78fc19cdc5f9d3b3ab1edfd43aebf2",
+  "commitDate": "2026-10-31T06:50:11+00:00",
+  "pathLastChanged": "3063d59 2026-10-31T05:15:40+00:00",
+  "committedBlob": "f039436007a45c7c5a3f39fa5988a91e467d29fa",
+  "readBlob": "f039436007a45c7c5a3f39fa5988a91e467d29fa",
+  "sourceSha256": "a115d9b46960fd04814c9eac382019f5d0eae1d230310f5b4568b711a8a379fb",
+  "sourceBytes": 8274,
+  "copiedAt": "2026-10-31T07:10:07.700Z",
+  "mode": "copy",
+  "note": "NASA SP-8120 Table I as idea 32 transcribed it; idea 33's engine presets read it",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a115d9b46960fd04814c9eac382019f5d0eae1d230310f5b4568b711a8a379fb",
+  "writtenBytes": 8274
+}

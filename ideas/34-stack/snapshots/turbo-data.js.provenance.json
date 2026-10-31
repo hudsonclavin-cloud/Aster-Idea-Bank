@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/33-engine-deck/snapshots/turbo-data.js",
+  "commit": "fc4a5c6f5e78fc19cdc5f9d3b3ab1edfd43aebf2",
+  "commitDate": "2026-10-31T06:50:11+00:00",
+  "pathLastChanged": "0462376 2026-10-31T06:31:59+00:00",
+  "committedBlob": "097b999c7925797b1d06e93a457e0325fe3407ff",
+  "readBlob": "097b999c7925797b1d06e93a457e0325fe3407ff",
+  "sourceSha256": "52c0c7c829870efa34340b7dc6a1ace1a2eb9bc4558edf8444364b85f5f8a83e",
+  "sourceBytes": 15767,
+  "copiedAt": "2026-10-31T07:10:07.825Z",
+  "mode": "copy",
+  "note": "idea 33's transcription of SP-8107/SP-8110/TM-107318, unmodified; its gas-generator cycle sets the engine-level flow",
+  "readMatchesCommitted": true,
+  "writtenSha256": "52c0c7c829870efa34340b7dc6a1ace1a2eb9bc4558edf8444364b85f5f8a83e",
+  "writtenBytes": 15767
+}

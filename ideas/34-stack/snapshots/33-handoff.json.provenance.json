@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/33-engine-deck/handoff.json",
+  "commit": "fc4a5c6f5e78fc19cdc5f9d3b3ab1edfd43aebf2",
+  "commitDate": "2026-10-31T06:50:11+00:00",
+  "pathLastChanged": "0462376 2026-10-31T06:31:59+00:00",
+  "committedBlob": "ee27531ffda6fb0ca6af0a0bd7181993e5e33d57",
+  "readBlob": "ee27531ffda6fb0ca6af0a0bd7181993e5e33d57",
+  "sourceSha256": "edeeabbf9f9c5670f5fb0d9f673fe6164c216123590c532a35428960bf5718ca",
+  "sourceBytes": 33014,
+  "copiedAt": "2026-10-31T07:10:07.884Z",
+  "mode": "copy",
+  "note": "idea 33's committed sample handoff (the engine-deck export this module imports); tests check it imports and re-computes",
+  "readMatchesCommitted": true,
+  "writtenSha256": "edeeabbf9f9c5670f5fb0d9f673fe6164c216123590c532a35428960bf5718ca",
+  "writtenBytes": 33014
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/32-bell/snapshots/nozzle-charts.js",
+  "commit": "fc4a5c6f5e78fc19cdc5f9d3b3ab1edfd43aebf2",
+  "commitDate": "2026-10-31T06:50:11+00:00",
+  "pathLastChanged": "7083b2c 2026-10-31T05:41:58+00:00",
+  "committedBlob": "0d5e2bbb2c7df3e33248c5671cf84dd728448f57",
+  "readBlob": "0d5e2bbb2c7df3e33248c5671cf84dd728448f57",
+  "sourceSha256": "cd48fb059566fad91be0c0e5beb7d8765173f0ba08be55b8842f6970d1432a14",
+  "sourceBytes": 7494,
+  "copiedAt": "2026-10-31T07:10:07.579Z",
+  "mode": "copy",
+  "note": "idea 32's digitized SP-125 charts, unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "cd48fb059566fad91be0c0e5beb7d8765173f0ba08be55b8842f6970d1432a14",
+  "writtenBytes": 7494
+}

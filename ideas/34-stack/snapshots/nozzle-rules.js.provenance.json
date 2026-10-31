@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/32-bell/snapshots/nozzle-rules.js",
+  "commit": "fc4a5c6f5e78fc19cdc5f9d3b3ab1edfd43aebf2",
+  "commitDate": "2026-10-31T06:50:11+00:00",
+  "pathLastChanged": "3063d59 2026-10-31T05:15:40+00:00",
+  "committedBlob": "e718f56b6feff7a6571b184f162229ddd5f243b9",
+  "readBlob": "e718f56b6feff7a6571b184f162229ddd5f243b9",
+  "sourceSha256": "bf613582fe4b1383a9a38382a235bd52f17e29efc1a482ccdc076770aaf2e9d2",
+  "sourceBytes": 2898,
+  "copiedAt": "2026-10-31T07:10:07.637Z",
+  "mode": "copy",
+  "note": "idea 32's SP-8120 separation rules, unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "bf613582fe4b1383a9a38382a235bd52f17e29efc1a482ccdc076770aaf2e9d2",
+  "writtenBytes": 2898
+}
