@@ -1,0 +1,67 @@
+{
+ "note": "Numbers transcribed by script from oracle/published-excerpts.txt; each quoted line is an exact (trimmed) line of that file. The hot-fire runs moved to snapshots/measured-cstar.js (the page shows them).",
+ "rp1311_example8": {
+  "source": "RP-1311 Part II (1996) Example 8, legacy CEA with its 1996 thermodynamic data",
+  "inputs": {
+   "oxidizer": "O2(L) at 90.17 K",
+   "fuel": "H2(L) at 20.27 K",
+   "of": 5.55157,
+   "pc_Pa": 5331720
+  },
+  "lines": {
+   "O/F=": "O/F=                       5.55157                %FUEL=      15.263517               R,EQ.RATIO=               1.429629            PHI,EQ.RATIO=            1.429628",
+   "P,        BAR": "P,        BAR                                    53.317               30.652                  5.3317         0.53317           0.05332               48.381         0.20462     0.08135",
+   "T,        K": "T,        K                                  3389.27                3190.21               2568.40            1759.12           1115.28           3353.97            1467.04     1218.63",
+   "M, (lln)": "M, (lln)                                         12.723              12.849                   13.125           13.206            13.207              12.746           13.207      13.207",
+   "Cp,           KJ/(KG)": "Cp,           KJ/(KG)         (K)                8.2837              7.4299                   4.8447           3.4332            2.9621              8.1390           3.2226      3.0413",
+   "GAMMAs": "GAMMAs                                           1.1449              1.1472                   1.1732           1.2254            1.2699              1.1451           1.2429      1.2610",
+   "SON           VEL": "SON           VEL,M/SEC                          1592.4              1538.9                   1381.6           1165.0               944.3            1582.8           1071.4        983.6",
+   "CSTAR,": "CSTAR,             M/SEC                                             2333.4                   2333.4           2333.4            2333.4              2333.4           2333.4      2333.4",
+   "Pinf/P": "Pinf/P                                           1.0000               1.7394                  i0.000           i00.00          i000.00               1.1020           260.57      655.41"
+  },
+  "phi": 1.429628,
+  "chamber": {
+   "T": 3389.27,
+   "M_g_per_mol": 12.723,
+   "cp_kJ_per_kgK": 8.2837,
+   "gamma_s": 1.1449,
+   "a": 1592.4
+  },
+  "throat": {
+   "P_bar": 30.652,
+   "T": 3190.21,
+   "pinf_over_p": 1.7394
+  },
+  "cstar": 2333.4
+ },
+ "tp2002_table3": {
+  "source": "NASA/TP-2002-211729 Table 3, theoretical C* (ft/s) of RP-1 with gaseous oxygen at 175 psia, equilibrium",
+  "line": "RP-175    5,150    5,361          5,531               5,665        5,766         5,839            5,887      5,914      5,924           5,920     5,906",
+  "mixture_ratio": [
+   1.3,
+   1.4,
+   1.5,
+   1.6,
+   1.7,
+   1.8,
+   1.9,
+   2.0,
+   2.1,
+   2.2,
+   2.3
+  ],
+  "cstar_ft_s": [
+   5150.0,
+   5361.0,
+   5531.0,
+   5665.0,
+   5766.0,
+   5839.0,
+   5887.0,
+   5914.0,
+   5924.0,
+   5920.0,
+   5906.0
+  ]
+ }
+}

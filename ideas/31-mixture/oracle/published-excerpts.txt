@@ -1,0 +1,123 @@
+# Published figures the tests compare the kernel with, copied verbatim (pdftotext -layout of scanned NASA reports;
+# OCR errors kept). oracle/published.json transcribes the numbers used; mixture.test.mjs checks every quote is here.
+
+## [RP1311-II] Gordon & McBride, NASA RP-1311 Part II (1996), Users Manual, Example 8 output (legacy CEA, 1996 thermo data)
+## NTRS 19960044559, https://ntrs.nasa.gov/api/citations/19960044559/downloads/19960044559.pdf, sha256 09bc8a8d215daa8d7902c194e812a67466074f8154c81fb4c94f95a42b435a1a
+## pdftotext lines 8549-8600
+--- lines 8549-8600
+
+
+                                          THEORETICAL               ROCKET          PERFORMANCE            ASSUMING           EQUILIBRIUM
+
+
+                                   COMPOSITION                DURING            EXPANSION        FROM         INFINITE        AREA      COMBUSTOR
+
+
+  Pinj              =             773.3         PSIA
+  CASE              =    8
+
+
+                                        REACTANT                                                   WT     FRACTION                    ENERGY              TEMP
+                                                                                                       (SEE     NOTE)                KJ/KG-MOL                 K
+  FUEL                                  H2(L)                                                          1.0000000                 -9012.000                20.270
+  OXIDANT                               O2(L)                                                          1.0000000               -12979.000                 90.170
+
+
+  O/F=                       5.55157                %FUEL=      15.263517               R,EQ.RATIO=               1.429629            PHI,EQ.RATIO=            1.429628
+
+
+
+
+144
+                                           CHAMBER                  THROAT                     EXIT             EXIT                EXIT               EXIT            EXIT         EXIT
+Pinf/P                                           1.0000               1.7394                  i0.000           i00.00          i000.00               1.1020           260.57      655.41
+P,        BAR                                    53.317               30.652                  5.3317         0.53317           0.05332               48.381         0.20462     0.08135
+T,        K                                  3389.27                3190.21               2568.40            1759.12           1115.28           3353.97            1467.04     1218.63
+RHO,            KG/CU         M            2.4071             0   1.4848          0     3.2770-1           4.8139-2           7.5938-3        2.2113           0   2.2155-2    1.0604-2
+H,        KJ/KG                             -1026.05              -2210.09              -5432.07           -8564.25           -10623.5        -1239.91             -9535.06    -10313.3
+U,        KJ/KG                             -3241.04              -4274.40              -7059.06           -9671.81           -11325.7        -3427.81             -10458.6    -11080.5
+G,        KJ/KG                            -64259.7               -61729.8              -53350.7           -41384.1           -31431.3        -63814.9             -36905.6    -33049.3
+S,        KJI(KG)(K)                         18.6570                18.6570               18.6570            18.6570           18.6570           18.6570            18.6570     18.6570
+
+
+M, (lln)                                         12.723              12.849                   13.125           13.206            13.207              12.746           13.207      13.207
+ (dLV/dLP)t                                -1.01996               -1.01459              -1.00317           -1.00005          -1.00000         -1.01897             -I.00000    -i.00000
+
+ (dLV/dLT)p                                      1.3627              1.2808                   1.0739           1.0017            1.0000              1.3482           1.0001      1.0000
+Cp,           KJ/(KG)         (K)                8.2837              7.4299                   4.8447           3.4332            2.9621              8.1390           3.2226      3.0413
+GAMMAs                                           1.1449              1.1472                   1.1732           1.2254            1.2699              1.1451           1.2429      1.2610
+SON           VEL,M/SEC                          1592.4              1538.9                   1381.6           1165.0               944.3            1582.8           1071.4        983.6
+MACH            NUMBER                             0.000                 1.000                 2.149            3.333               4.640              0.413           3.850        4.382
+
+
+PERFORMANCE                       PARAMETERS
+
+
+
+Ae/At                                                                1.0000                   2.3489           12.225            68.680              1.5800           25.000      50.000
+CSTAR,             M/SEC                                             2333.4                   2333.4           2333.4            2333.4              2333.4           2333.4      2333.4
+CF                                                                   0.6595                   1.2722           1.6640            1.8776              0.2803           1.7679      1.8470
+## [TP2002] Bai, Dumbacher & Cole, NASA/TP-2002-211729 (2002), Table 3 (theoretical C* of fuels at 175 psia, equilibrium)
+## and Tables 11 and 13 (GOX/RP-1 1,000-lbf hot-fire tests, theoretical vs experimental C*).
+## NTRS 20020052436, https://ntrs.nasa.gov/api/citations/20020052436/downloads/20020052436.pdf, sha256 5739c9a0ed9d4695c3dd00eeee71b780992beba10cd8ad98c6f6d0b3ef7051a9
+## pdftotext lines 530-534, 579-586, 1666-1681, 1777-1791, 1546-1556
+--- lines 530-534
+
+
+              The     theoretical              performance,                    C*,      and    Isp,     of these        fuels      at 175        psia      chamber             pressure         at equilibrium
+conditions           are     tabulated            in table             3 and       shown           in figures          1 and      2.
+
+--- lines 579-586
+                                  Table          3.        Theoretical          C* and Isp of fuels.
+
+
+                                                                         C* (ft/s)
+Mixture
+ Ratio     1.3      1.4             1.5                1.6          1.7            1.8             l.g            2      2.1            2.2        2.3
+RP-175    5,150    5,361          5,531               5,665        5,766         5,839            5,887      5,914      5,924           5,920     5,906
+O-175     5,936    6,009          6,052               6,071        6,070         6,055            6,030      5,998      5,962           5,925     5,888
+--- lines 1666-1681
+
+
+                       Table    11.    Test results      of RP-1      and quadricyclane.
+
+
+                               RP-1 (No. 18)          RP-1 (No. 20)         RP-1 (No. 17)          RP-1 (No. 35)
+         Mixture Ratio                1.92                  2                      1.9                 2.19
+
+         C* (theory)            5,893 (100%)          5,919 (100%)          5,887 (100%)           5,919 (100%)
+         C* (experiment)       5,359 (90.9%)          5,406 (91.3%)         5,350 (90.9%)          5,465 (92.3%)
+
+         Isp(theory)            256.6 (100%)          257.5 (100%)          256.4 (100%)           257.0 (100%)
+         Isp(experiment)       196.0 (76.4%)          200.6 (77.9%)         196.0 (76.4%)          199.9 (77.8%)
+         Pc(psig)                  157.74                155.63                157.56                  154.4
+
+
+--- lines 1777-1791
+
+
+                                     Table 13. Test results         of RP-1    and 1-7 octadiyne          runs.
+
+                                       RP-1 (No. 22)       RP-1 (No. 23)      1-70ctadiyne (No. 22) 1-70ctadiyne (No. 23)
+                Mixture Ratio                 2.08                2.09                   2.08                     2.10
+
+                 C* (theory)           5,922 (100%)        5,923 (100%)            6,006 (100%)               5,999 (100%)
+                 C* (experiment) 5,432.10 (91.7%) 5,446.70 (91.96%)               5,486.40 (91.3%)          5,496.20 (91.6%)
+
+                 Isp(theory)           257.50 (100%)       257.50 (100%)           260.20(100%)              259.80 (100%)
+
+                 Isp(experiment)       199.30(77.4%)       199.20 (77.4%)          203.60 (78.3%)            202.20 (77.8%)
+                 Pc(psig)                     156.75             158.10                 159.28                    160.25
+
+--- lines 1546-1556
+
+
+                                                                                                       Mixture
+                                                                 Gox               RP-1                 Ratio              Isp                  C*                 Pc
+
+                                     Mean                     0.1538               0.0808                1.904             196.0           5,337.3             157.56
+                                     Standard Dev.            0.0002                  -                  0.003                0.2               259.5              0.18
+
+                                     Uncertainty                  -                   -                     -                     -             13.0               0.01
+
+                                     N                           400                400                   400                 400                400                400

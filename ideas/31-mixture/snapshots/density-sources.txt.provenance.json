@@ -1,0 +1,22 @@
+{
+  "repo": "https://ntrs.nasa.gov ; https://webbook.nist.gov ; https://pubchem.ncbi.nlm.nih.gov",
+  "path": "NTRS 19710019929 (NASA SP-125, Tables 1-4 and 1-5, PDF pages 31-33); NTRS 20020052436 (NASA/TP-2002-211729, Table 12 and text p. near Table 16); NIST WebBook fluid.cgi SatP/IsoBar for O2 C7782447, para-H2 B5000001, normal H2 C1333740, CH4 C74828, H2O C7732185; PubChem PUG-View heading=Density for CIDs 25352, 6061, 5976, 9321, 702",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "sourceSha256": {
+    "NTRS-19710019929.pdf": "471e590a0c8e99c36a98132104a3ddcc7097b0b7c561fb2638ce9d3c80e26c87",
+    "NTRS-20020052436.pdf": "5739c9a0ed9d4695c3dd00eeee71b780992beba10cd8ad98c6f6d0b3ef7051a9",
+    "NIST O2 SatP 90.17 K": "a00ad0fd0e27498722aba25542c5bfab71be755869df0d8ca84eeaf2c3391e0a",
+    "NIST para-H2 SatP 20.27 K": "b400671d31bb62c34d503dcf31ce61d3ef79c6b0db7aa991dbc9ed8fb5bcf1a6",
+    "NIST normal-H2 SatP 20.27 K": "9a1ff4b03816e0e1a3704453de7da75ee944f727841ae482225e0c41878b13f5",
+    "NIST CH4 SatP 111.643 K": "d64e0675367180fdba98be0053fe44eff921a783cbe6922ebbbe65ea9c3847b5",
+    "NIST H2O IsoBar 298.15 K": "c901fe11743fd5daabeef7b91adb996f147fe911426420c0876da8ccd9970d64",
+    "PubChem 25352 N2O4": "599e56adaaf241e17509f9e1bb2ad24381bbf8461bde973e5590dd705f9a9909",
+    "PubChem 6061 MMH": "5e8b9418a130855849fea1a94489b8672fc35b11204564358baffce479322498",
+    "PubChem 5976 UDMH": "9c87de3780a0f5bf69f113097b75b442e40d884782a1d7e4286028c46d17b777",
+    "PubChem 9321 N2H4": "37bf48f645a193a3f67e288112b5977fb2e15ab5f468c7e7d807d2dbfd2c8651",
+    "PubChem 702 ethanol": "0e9fca493710414dad556b91f10609b489a41662de99dfd3d2acb5890578208c"
+  },
+  "license": "NASA reports: US-government works, public domain in the US. NIST SRD 69: US-government work (NIST asserts rights outside the US; short factual excerpt). PubChem: public-domain compilation; HSDB/CAMEO/DOE PAC are US-government sources.",
+  "note": "Verbatim excerpts (lines copied, not retyped) of the rows the densities in propellant-densities.js are read from. The NASA reports are scanned; their lines are pdftotext -layout output and keep the OCR errors."
+}

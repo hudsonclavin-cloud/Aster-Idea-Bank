@@ -1,0 +1,135 @@
+# Verbatim excerpts behind snapshots/propellant-densities.json. Nothing below is retyped: each block is
+# copied from the fetched file named in its header (pdftotext -layout output for the scanned NASA report,
+# so its OCR errors are kept as they are; the values used are read from these lines).
+
+## [SP125] NASA SP-125, Huzel & Huang, "Design of Liquid Propellant Rocket Engines", 2nd ed. (1971),
+## NTRS 19710019929, https://ntrs.nasa.gov/api/citations/19710019929/downloads/19710019929.pdf
+## sha256 471e590a0c8e99c36a98132104a3ddcc7097b0b7c561fb2638ce9d3c80e26c87; Table 1-4 (PDF pages 31-32) and Table 1-5 (PDF page 33).
+## pdftotext lines 1726-1736, 1757-1759, 1771-1775, 1787-1788, 1795-1801, 1820-1822, 1868-1869, 1883-1897, 1913-1913, 1921-1921
+--- lines 1726-1736
+                                             TABLE        1-4.-General Data of Some Storable Liquid Rocket Propellants                                                                     .....,
+                                                                                                                                                                                           I'-J
+
+
+
+
+                                                                                        Vapor
+                                                             Mol.    Freezing BOiling             Density                Handling                       Materials             Cost
+           Propellant             Formula        Use                                   press ..             Stability               StorabiIi ty
+                                                             wt.     point of point of            gmlcc                   hazard                      compatibihty            $/lb
+                                                                                        psi a
+--- lines 1757-1759
+      Hydrazine               N,II.           Fuel.         32.05    34.5      235.4    2.8 at   1.01 at    Up to       Toxic.    Good             AI.. 304.307 stain-   O.5(}-3.00        -u
+                                                                                                                                                                                            m
+                                               oxid ..                                    160° F 68° F       300° F      nammable                   less steel.                             r
+--- lines 1771-1775
+'"'   98"i, hydrogen          11,0,           Same as       3:1.42   27.5      299.2    0.043 at 1.432 at Same as       Same as     SamE' as       Same as ahove         1.00
+                                                                                                                                                                                            m
+                                                                                                                                                                                            z
+                                                                                                                                                                                            ~
+        peroxide                               above                                      77° F   77° F    above         above        ahove                                                 z
+--- lines 1787-1788
+      MMH (monomethyl-        CH1NH-NH,       Fuel.         46.08    -63       187      8.S at    0.878 at Good         Toxic       Good           AI.. 304.307 stain- 0.62-6.25
+       hydrazine)                              coolant                                    160 0 F 68 0 F                                            less steel. Tenon.
+--- lines 1795-1801
+                                                    Mol.   Freezing Bolling            Density                Handling                       Materials             Cost
+     Propellant           Formula          Use                              press ..             Stability                Storability
+                                                    wt.    point OF point"F            gmlcc                   hazard                      compatibility           5/1b
+                                                                             psia
+
+Nitrogen tetroxide    N2O.             OXid.       92.02   11       70       111 at   1.44 at    Function    Very toxic. Good when      AI.. stainless steel. 0.075
+                                                                               160° F 68° F       of temp.    hazardous dry              nickel alloy.
+--- lines 1820-1822
+Rp·l (rocket pro-     Mil-Spec.-        Fuel.      165 to -47 to    342 to   0.33 at 0.8 to  Auto. ig- Flammable          Good          AI.. steel. nickel      0.015          D
+                                                                                                                                                                               C
+ pellant)              F25576B           coolant    195     -64      507       160° F 0.82at nition at                                   alloy. copper.                        o
+--- lines 1868-1869
+UDMIi (unsymmetri-    (CH JhNNH2        Fuel.      60.08   -72      146      17.6 at 0.789 at Good           Toxic        Good          AI.. stainless steel. 0.50-2.00
+ cal dimethyl-                           coolant                              160° F 68° F                                               Teflon. Kel-F
+--- lines 1883-1897
+                                           TABLE 1-5.-General Data of Some Cryogenic Liquid Rocket Propellants
+
+                                             -              --
+                                                                                             Dcnsity
+                                                         freezing BOiling Critical Critical
+                                                  Mol.                                      at hailing
+                                                                                                         Stability
+                                                                                                                       lIandle
+                                                                                                                                      Materials compatibility
+                                                                                                                                                                    Cm      o
+    Propellants         formula        Use                 point. point. press .. temp ..                                                                                   m
+                                                  wt.       of     oF'               oF'       point                    hazard                                      $/1
+                                                                                                                                                                            !C
+                                                                           pSia                                                                                             Q
+                                                                                              !(III/CC
+--- lines 1913-1913
+Liquid hydro~en         H,        F'uel. coolant 2.016   -434.6   -422.9   1878     -400.3   0.071       Good        flammable Stainless steel. nickel alloy.       7.C o
+--- lines 1921-1921
+Liquid oxy~en           O2        Oxid.          32.00   -362     -297.4   735      -182     1142        Good        Good        AI.. stainless steel. nickel       O.C     ;u
+## [NIST] NIST Chemistry WebBook, SRD 69, Thermophysical Properties of Fluid Systems (Lemmon, McLinden & Friend),
+## https://webbook.nist.gov/cgi/fluid.cgi (Action=Data, Type=SatP or IsoBar, Digits=6, SI units), retrieved 2026-10-31
+--- O2 ID=C7782447 T=90.17 K Type=SatP sha256 a00ad0fd0e27498722aba25542c5bfab71be755869df0d8ca84eeaf2c3391e0a
+Temperature (K)	Pressure (MPa)	Density (l, kg/m3)	Volume (l, m3/kg)
+90.1700	0.101136	1141.26	0.000876224
+--- pH2 ID=B5000001 T=20.27 K Type=SatP sha256 b400671d31bb62c34d503dcf31ce61d3ef79c6b0db7aa991dbc9ed8fb5bcf1a6
+Temperature (K)	Pressure (MPa)	Density (l, kg/m3)	Volume (l, m3/kg)
+20.2700	0.101287	70.8295	0.0141184
+--- nH2 ID=C1333740 T=20.27 K Type=SatP sha256 9a1ff4b03816e0e1a3704453de7da75ee944f727841ae482225e0c41878b13f5
+Temperature (K)	Pressure (MPa)	Density (l, kg/m3)	Volume (l, m3/kg)
+20.2700	0.0983977	70.9608	0.0140923
+--- CH4 ID=C74828 T=111.643 K Type=SatP sha256 d64e0675367180fdba98be0053fe44eff921a783cbe6922ebbbe65ea9c3847b5
+Temperature (K)	Pressure (MPa)	Density (l, kg/m3)	Volume (l, m3/kg)
+111.643	0.101123	422.391	0.00236747
+--- H2O-iso ID=C7732185 T=298.15 at 0.101325 MPa K Type=IsoBar sha256 c901fe11743fd5daabeef7b91adb996f147fe911426420c0876da8ccd9970d64
+Temperature (K)	Pressure (MPa)	Density (kg/m3)	Volume (m3/kg)
+298.150	0.101325	997.048	0.00100296
+
+## [PubChem] PubChem PUG-View, heading "Density", https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/<CID>/JSON?heading=Density, retrieved 2026-10-31
+--- N2O4 CID 25352 sha256 599e56adaaf241e17509f9e1bb2ad24381bbf8461bde973e5590dd705f9a9909
+CAMEO Chemicals :: 1.45 at 68 °F (USCG, 1999) - Denser than water; will sink
+Hazardous Substances Data Bank (HSDB) :: 1.45 g/cu cm at 20 °C
+PAC Chemical Database, U.S. Department of Energy :: 1.493 @ 20°C
+--- MMH CID 6061 sha256 5e8b9418a130855849fea1a94489b8672fc35b11204564358baffce479322498
+CAMEO Chemicals :: 0.874 at 77 °F (EPA, 1998) - Less dense than water; will float
+Hazardous Substances Data Bank (HSDB) :: 0.874 at 25 °C
+ILO-WHO International Chemical Safety Cards (ICSCs) :: Relative density (water = 1): 0.87
+Occupational Safety and Health Administration (OSHA) :: 0.874 at 77 °F
+PAC Chemical Database, U.S. Department of Energy :: 0.874 @25 °C
+The National Institute for Occupational Safety and Health (NIOSH) :: (77 °F): 0.87
+--- UDMH CID 5976 sha256 9c87de3780a0f5bf69f113097b75b442e40d884782a1d7e4286028c46d17b777
+CAMEO Chemicals :: 0.7914 at 71.6 °F (EPA, 1998) - Less dense than water; will float
+Hazardous Substances Data Bank (HSDB) :: 0.782 at 25 °C/25 °C; 0.791 at 22 °C/4 °C
+ILO-WHO International Chemical Safety Cards (ICSCs) :: Relative density (water = 1): 0.8
+Occupational Safety and Health Administration (OSHA) :: 0.79
+PAC Chemical Database, U.S. Department of Energy :: 0.791 @ 22°C
+The National Institute for Occupational Safety and Health (NIOSH) :: 0.79
+--- N2H4 CID 9321 sha256 37bf48f645a193a3f67e288112b5977fb2e15ab5f468c7e7d807d2dbfd2c8651
+CAMEO Chemicals :: 1.011 at 59 °F (EPA, 1998) - Denser than water; will sink
+Hazardous Substances Data Bank (HSDB) :: 1.0036 g/cu cm
+Hazardous Substances Data Bank (HSDB) :: Density: 1.146 at -5 °C/4 °C; 1.0253 at 0 °C/4 °C; 1.024 at 2 °C/4 °C; 1.011 at 15 °C/4 °C; 1.0036 at 25 °C/4 °C; 0.9955 at 35 °C/4 °C
+Hazardous Substances Data Bank (HSDB) :: White crystalline powder. MP 198 °C. Density: 1.42. Corrosive. Freely soluble in water, slightly soluble in alcohol /Hydrazine dihydrochloride/
+ILO-WHO International Chemical Safety Cards (ICSCs) :: Relative density (water = 1): 1.01
+Occupational Safety and Health Administration (OSHA) :: 1.01
+PAC Chemical Database, U.S. Department of Energy :: 1.0036 @25 °C
+The National Institute for Occupational Safety and Health (NIOSH) :: 1.01
+--- EtOH CID 702 sha256 0e9fca493710414dad556b91f10609b489a41662de99dfd3d2acb5890578208c
+CAMEO Chemicals :: 0.79 at 68 °F (USCG, 1999) - Less dense than water; will float
+Hazardous Substances Data Bank (HSDB) :: 0.7893 g/cu cm at 20 °C
+ILO-WHO International Chemical Safety Cards (ICSCs) :: Relative density (water = 1): 0.79
+Joint FAO/WHO Expert Committee on Food Additives (JECFA) :: < 0.810
+Occupational Safety and Health Administration (OSHA) :: 0.79
+PAC Chemical Database, U.S. Department of Energy :: 0.7893 @ 20°C
+The National Institute for Occupational Safety and Health (NIOSH) :: 0.79
+
+## [TP2002] NASA/TP-2002-211729, Bai, Dumbacher & Cole, "Development of Advanced Hydrocarbon Fuels at Marshall Space
+## Flight Center" (May 2002), NTRS 20020052436, https://ntrs.nasa.gov/api/citations/20020052436/downloads/20020052436.pdf
+## sha256 5739c9a0ed9d4695c3dd00eeee71b780992beba10cd8ad98c6f6d0b3ef7051a9; pdftotext lines 1712-1716 and 1929-1930
+--- lines 1712-1716
+
+                               Theory
+                                 RP-1                          2.10       160.30           275.53              3.88            Specific gravity:
+                                 Quadricyclane                 1.60       160.30           264.31              3.78              RP-I: 0.832
+                                                                                                                                 Quadricyclane:0.98
+--- lines 1929-1930
+a density      penalty        since       the specific         gravity       of AFRL-1            is less than      RP-1.          The specific           gravity     of RP-1          and
+AFRL-1    is 0.82 and 0.775,                        respectively.      As in the 1-7 octadiyne      case,                     the slightly higher AFRL-1                           Isp is

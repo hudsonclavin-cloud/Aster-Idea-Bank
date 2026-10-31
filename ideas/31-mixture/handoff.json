@@ -1,0 +1,256 @@
+{
+  "handoff": "long-way-round",
+  "version": 1,
+  "from": "31-mixture",
+  "produced": "2026-10-31T12:00:00Z",
+  "inputs": {
+    "preset": "lox-rp1",
+    "oxidizer": [
+      {
+        "name": "O2(L)",
+        "massFraction": 1,
+        "T": 90.17
+      }
+    ],
+    "fuel": [
+      {
+        "name": "RP-1",
+        "massFraction": 1,
+        "T": 298.15
+      }
+    ],
+    "mixture_ratio": 2.6,
+    "chamber_pressure_Pa": 10000000
+  },
+  "outputs": {
+    "mixture_ratio": {
+      "value": 2.6,
+      "units": "1",
+      "confidence": "assumed",
+      "source": "user input (oxidizer mass / fuel mass)"
+    },
+    "chamber_pressure": {
+      "value": 10000000,
+      "units": "Pa",
+      "confidence": "assumed",
+      "source": "user input"
+    },
+    "chamber_temperature": {
+      "value": 3723.6346265000243,
+      "units": "K",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "chamber_molar_mass": {
+      "value": 0.02360290328248359,
+      "units": "kg/mol",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "chamber_gamma_s": {
+      "value": 1.1392301019540576,
+      "units": "1",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (equilibrium isentropic exponent, RP-1311 eq 2.71)"
+    },
+    "chamber_gamma_frozen": {
+      "value": 1.209029160544308,
+      "units": "1",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (frozen cp/cv)"
+    },
+    "chamber_cp_equilibrium": {
+      "value": 6026.2657764587475,
+      "units": "J/(kg K)",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "chamber_cp_frozen": {
+      "value": 2037.5164910500594,
+      "units": "J/(kg K)",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "chamber_enthalpy": {
+      "value": -784206.1094985013,
+      "units": "J/kg",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (equals the reactant enthalpy)"
+    },
+    "chamber_entropy": {
+      "value": 11127.501797398047,
+      "units": "J/(kg K)",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (thermo.inp reference state; conserved along an isentropic nozzle)"
+    },
+    "chamber_density": {
+      "value": 7.6236281779843695,
+      "units": "kg/m^3",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "chamber_sound_speed": {
+      "value": 1222.4324575973028,
+      "units": "m/s",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "chamber_composition": {
+      "value": {
+        "H2O": 0.3332923,
+        "CO": 0.3152115,
+        "CO2": 0.1538303,
+        "H2": 0.07953537,
+        "OH": 0.06202065,
+        "H": 0.02686314,
+        "O2": 0.01785264,
+        "O": 0.01119341,
+        "HO2": 0.0001138842,
+        "HCO": 0.00003535647,
+        "COOH": 0.00002731135,
+        "H2O2": 0.00001879932,
+        "HCOOH": 0.000004125677,
+        "HCHO,formaldehy": 0.000001069396
+      },
+      "units": "mol/mol",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (mole fractions >= 1e-6)"
+    },
+    "throat_pressure": {
+      "value": 5773167.984618349,
+      "units": "Pa",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (sonic point of the shifting-equilibrium isentrope)"
+    },
+    "throat_temperature": {
+      "value": 3531.8683904452496,
+      "units": "K",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "throat_molar_mass": {
+      "value": 0.023924193193000452,
+      "units": "kg/mol",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "throat_gamma_s": {
+      "value": 1.1358888572795984,
+      "units": "1",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "throat_density": {
+      "value": 4.703382765387418,
+      "units": "kg/m^3",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    },
+    "throat_velocity": {
+      "value": 1180.782356430353,
+      "units": "m/s",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (equals the throat sound speed)"
+    },
+    "cstar": {
+      "value": 1800.6106784018045,
+      "units": "m/s",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js rocket(); NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js (c* = pc / (rho_t u_t), RP-1311 eq 6.13 form)"
+    },
+    "element_amounts": {
+      "value": {
+        "O": 45.14058166,
+        "C": 19.87508161,
+        "H": 38.75640915
+      },
+      "units": "mol/kg",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js composeReactants(); molecular formulas from thermo.inp"
+    },
+    "reactant_enthalpy": {
+      "value": -784206.109498511,
+      "units": "J/kg",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js composeReactants(); assigned enthalpies from thermo.inp"
+    },
+    "species_set": {
+      "value": [
+        "H2O",
+        "H2",
+        "CO",
+        "CO2",
+        "O2",
+        "OH",
+        "CH4",
+        "H",
+        "O",
+        "HO2",
+        "C2H4",
+        "H2O2",
+        "HCO",
+        "COOH",
+        "C2H6",
+        "C2H2,acetylene",
+        "HCHO,formaldehy",
+        "CH3",
+        "CH2CO,ketene",
+        "HCOOH",
+        "O3",
+        "C3H6,propylene",
+        "CH3OH",
+        "CH3CHO,ethanal",
+        "C3H4,propyne",
+        "C3H4,allene",
+        "C3H8",
+        "C2H5"
+      ],
+      "units": "-",
+      "confidence": "derived",
+      "source": "gas products considered (thermo.inp names); module 32 should equilibrate with the same set"
+    },
+    "stoichiometric_mixture_ratio": {
+      "value": 3.40566626810768,
+      "units": "1",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js stoichiometricOF() (valences C+4 H+1 O-2 N0)"
+    },
+    "oxidizer_density": {
+      "value": 1141.26,
+      "units": "kg/m^3",
+      "confidence": "measured",
+      "source": "NIST Chemistry WebBook SRD 69, Thermophysical Properties of Fluid Systems (retrieved 2026-10-31); single component; at 90.17 K"
+    },
+    "fuel_density": {
+      "value": 810,
+      "units": "kg/m^3",
+      "confidence": "measured",
+      "source": "NASA SP-125, Huzel & Huang, Design of Liquid Propellant Rocket Engines, 2nd ed. (1971), Tables 1-4 and 1-5 (NTRS 19710019929); single component; at 293.15 K"
+    },
+    "bulk_density": {
+      "value": 1024.8376046266699,
+      "units": "kg/m^3",
+      "confidence": "derived",
+      "source": "31-mixture/mixture.js bulkDensity(): (1+O/F)/(O/F/rho_o + 1/rho_f)"
+    },
+    "thermo_database": {
+      "value": {
+        "repo": "https://github.com/nasa/cea",
+        "commit": "2f79a647e85737742fb08a127da00d1ea1d069da",
+        "path": "data/thermo.inp",
+        "sha256": "fa7746572952d74e249e818a82a35c113829742fb421a308e167185528884363"
+      },
+      "units": "-",
+      "confidence": "measured",
+      "source": "NASA Glenn thermo.inp (McBride, Zehe & Gordon, NASA/TP-2002-211556) at github.com/nasa/cea 2f79a64, via snapshots/thermo-excerpt.js"
+    }
+  },
+  "refusals": [],
+  "assumptions": [
+    "Chemical equilibrium in the chamber and at the throat (shifting), infinite-area combustor, adiabatic, ideal gases (NASA RP-1311 Part I).",
+    "Gas-phase products only: 28 species from the excerpt; a condensed phase that would be stable is refused, not modelled.",
+    "Reactant enthalpies at the temperatures thermo.inp assigns (cryogens at their listed temperature, storables at 298.15 K).",
+    "Frames and time scales: none (a thermochemical state has no position or epoch).",
+    "Sample: the inputs are an arbitrary illustration, not a claim about any engine."
+  ]
+}

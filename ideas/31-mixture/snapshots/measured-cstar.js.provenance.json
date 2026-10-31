@@ -1,0 +1,9 @@
+{
+  "repo": "https://ntrs.nasa.gov",
+  "path": "NTRS 20020052436, NASA/TP-2002-211729, Tables 11 and 13 (pdftotext lines 1666-1681 and 1777-1791)",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "sourceSha256": "5739c9a0ed9d4695c3dd00eeee71b780992beba10cd8ad98c6f6d0b3ef7051a9",
+  "license": "NASA Technical Paper, a US-government work (public domain in the US)",
+  "note": "derived by script from the verbatim lines kept in oracle/published-excerpts.txt: mixture ratio, chamber pressure (psig), theoretical and experimental C* of the six RP-1 runs; the quadricyclane and 1-7 octadiyne columns are left out"
+}

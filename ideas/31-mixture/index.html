@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mixture: rocket propellant equilibrium</title>
+<meta name="description" content="Chemical-equilibrium combustion of real bipropellants by Gibbs-energy minimisation with NASA Glenn thermodynamic data: chamber temperature, molar mass, gamma, c* and composition against mixture ratio and chamber pressure, checked against NASA CEA.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Mixture</h1>
+  <p class="lede">Choose an oxidizer and a fuel (or blend your own), a mixture ratio and a chamber pressure. The page burns them to chemical equilibrium by minimising Gibbs energy over 43 gas species with NASA Glenn's thermodynamic data, finds the sonic throat, and hands the chamber state to the nozzle module.</p>
+  <p class="series">The Long Way Round, module 31 of 50 (launch to asteroid and back). Next: 32 Bell, the nozzle.</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Propellant</h2>
+    <label for="preset">Preset</label>
+    <select id="preset"></select>
+    <p class="note" id="presetNote"></p>
+
+    <fieldset id="side-oxidizer">
+      <legend>Oxidizer <span class="small">(mass %)</span></legend>
+      <div class="rows"></div>
+      <div class="side-foot"><button type="button" class="add" data-side="oxidizer">Add component</button><span class="side-sum" aria-live="polite"></span></div>
+    </fieldset>
+    <fieldset id="side-fuel">
+      <legend>Fuel <span class="small">(mass %)</span></legend>
+      <div class="rows"></div>
+      <div class="side-foot"><button type="button" class="add" data-side="fuel">Add component</button><span class="side-sum" aria-live="polite"></span></div>
+    </fieldset>
+
+    <div class="ctl">
+      <div class="ctl-head"><label for="ofNum">Mixture ratio O/F <small>(oxidizer mass / fuel mass)</small></label><input id="ofNum" type="number" min="0.05" max="50" step="0.01" inputmode="decimal"></div>
+      <input id="ofRange" type="range" min="0" max="1000" step="1" aria-label="Mixture ratio O/F slider">
+    </div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="pcNum">Chamber pressure <small>(bar)</small></label><input id="pcNum" type="number" min="1" max="300" step="any" inputmode="decimal"></div>
+      <input id="pcRange" type="range" min="0" max="1000" step="1" aria-label="Chamber pressure slider, logarithmic from 1 to 300 bar">
+      <small id="pcNote"></small>
+    </div>
+    <div class="btnrow">
+      <button type="button" id="toMax">Go to the c* peak</button>
+      <button type="button" id="toStoich">Go to stoichiometric</button>
+    </div>
+  </section>
+
+  <section id="results" class="card" aria-labelledby="h-results">
+    <h2 id="h-results">Chamber state</h2>
+    <div id="refusals" class="refusals" role="status" aria-live="polite"></div>
+    <div id="tiles" class="tiles"></div>
+    <details>
+      <summary>Every number, with its source</summary>
+      <div class="tablewrap"><table id="allTable"></table></div>
+    </details>
+  </section>
+
+  <section id="compCard" class="card" aria-labelledby="h-comp">
+    <h2 id="h-comp">What is in the chamber</h2>
+    <p class="small" id="compCap">Mole fractions at equilibrium; species under 0.0001 are summed.</p>
+    <div id="comp" class="comp"></div>
+  </section>
+
+  <section id="chartCard" class="card wide" aria-labelledby="h-chart">
+    <h2 id="h-chart">Across the mixture ratio</h2>
+    <div class="metric-row" role="group" aria-label="Quantity to plot" id="metrics"></div>
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 800 340" role="img" aria-label="Chart of the chosen quantity against mixture ratio" tabindex="0"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+    <ul class="legend" id="legend"></ul>
+    <p class="chart-cap" id="chartCap">Tap or drag on the chart to set the mixture ratio.</p>
+    <details>
+      <summary>Table view of the curves</summary>
+      <div class="tablewrap"><table id="curveTable"></table></div>
+    </details>
+  </section>
+
+  <section id="handoffCard" class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff to the next module</h2>
+    <p class="small">One JSON object: every number with SI units, a confidence class (measured, derived or assumed) and its source; refusals travel with it. Module 32 imports it.</p>
+    <div class="handoff-actions">
+      <button type="button" id="copyBtn">Copy JSON</button>
+      <button type="button" id="dlBtn">Download handoff.json</button>
+      <a id="nextLink" href="../32-bell/index.html">Open in 32 Bell (once it is built)</a>
+    </div>
+    <div class="status" id="exportStatus" aria-live="polite"></div>
+    <label for="exportText" class="small">Export</label>
+    <textarea id="exportText" rows="7" readonly></textarea>
+    <h3>Import</h3>
+    <label for="importText" class="small">Paste a handoff (JSON, or a link with <code>#h=</code>)</label>
+    <textarea id="importText" rows="3"></textarea>
+    <div class="handoff-actions"><button type="button" id="importBtn">Import</button></div>
+    <div class="status" id="importStatus" aria-live="polite"></div>
+  </section>
+
+  <section id="how" class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <p><b>The chemistry.</b> Each reactant brings atoms and an enthalpy. At a fixed pressure and that total enthalpy, the products settle where their Gibbs energy is lowest. The page finds that point the way NASA's CEA does (Gordon &amp; McBride, NASA RP-1311, 1994): one Lagrange multiplier per element, Newton steps on the moles of every species and on temperature, CEA's step limiter and convergence tests. Each species' heat capacity, enthalpy and entropy come from its NASA Glenn 9-coefficient fit (McBride, Zehe &amp; Gordon, NASA/TP-2002-211556), copied verbatim from <code>thermo.inp</code> in NASA's own CEA repository (github.com/nasa/cea at 2f79a64, sha256 fa774657&hellip;).</p>
+    <p><b>The species.</b> 43 gas species: every C/H/O/N gas product that NASA CEA puts above one part in ten million anywhere in a survey of ten propellant pairs, 1 to 300 bar, chamber to a thousandfold expansion. Solids and liquids are not modelled. Instead, at every answer the page asks whether graphite, liquid water or ice would be stable; if one would, it refuses rather than show a wrong number. For LOX/RP-1 that happens below O/F 1.13 to 1.15 (1 to 300 bar); for LOX/methane below 0.94 to 1.18, under the preset's range.</p>
+    <p><b>The rocket.</b> The chamber is an infinite-area combustor (no flow speed in the chamber). From the chamber, the gas expands at constant entropy, its composition shifting as it cools, until its speed equals the local sound speed: that is the throat. c* is chamber pressure divided by the mass flux there. The equilibrium &gamma;<sub>s</sub> includes the shifting chemistry (RP-1311 eq. 2.71); the frozen &gamma; does not. The closed-form c* with the chamber &gamma;<sub>s</sub> is shown for comparison only.</p>
+    <p><b>Densities.</b> Liquid densities come from fetched primary sources: NIST's fluid tables at the temperature the thermodynamic data assume for the cryogens; NASA SP-125 (Huzel &amp; Huang, 1971) Table 1-4 at 68&nbsp;&deg;F for the storables and RP-1 (0.80 to 0.82, the midpoint is used); HSDB via PubChem for ethanol. A blend measured as a blend (98&nbsp;% hydrogen peroxide) uses its measured value; any other blend gets a volume-additive estimate, labelled derived. With no density on file, the page refuses the density and the bulk density, and keeps the rest.</p>
+    <h3>How far to trust it</h3>
+    <ul>
+      <li><b>Against NASA CEA</b> (version 3.3.4, the same data) at 177 points over ten propellant pairs and 1, 20 and 200 bar: with the same 43 gas species, chamber temperature, molar mass and &gamma;<sub>s</sub> agree to better than one part per million and c* to five; letting CEA use all 158 C/H/O/N gas products and graphite moves c* by less than five parts per million. [Certain]</li>
+      <li><b>Against the 1996 printout</b> of RP-1311's Example 8 (LOX/LH2, O/F 5.55157, 53.3 bar): chamber temperature 0.16 % lower and c* 0.046 % lower. The 1996 run used the thermodynamic data of its day. [Likely, for the cause]</li>
+      <li><b>Against NASA/TP-2002-211729's theory table</b> for gaseous oxygen and RP-1 at 175 psia: c* 0.21 to 0.61 % lower. The report does not state its oxygen temperature or data version. [Speculative, for the cause]</li>
+      <li><b>Against a real chamber.</b> NASA Marshall's 1,000-lbf GOX/RP-1 test chamber measured 91.2 to 92.5 % of this page's equilibrium c* (six runs, Tables 11 and 13 of the same report): equilibrium overstated that engine by 8.1 to 9.7 %. Equilibrium c* is an upper bound; a real injector and chamber deliver less, by an efficiency only testing measures. [Certain, for that engine]</li>
+    </ul>
+    <p class="small">Confidence classes: <b>measured</b> is a value read from a measurement source; <b>derived</b> is computed here from measured inputs; <b>assumed</b> is your input or a stated assumption. Every page number traces to the kernel (<code>mixture.js</code>), the excerpt, or a cited source. This is an idea-bank prototype; it has not been through Aster's multi-agent math audit.</p>
+  </section>
+</main>
+
+<footer>Idea 31 of the Aster Idea Bank. Runs with nothing installed; no network requests. Thermodynamic data: NASA Glenn (public, Apache-2.0 distribution). Source of every number: README and <code>snapshots/</code>.</footer>
+
+<script src="snapshots/thermo-excerpt.js"></script>
+<script src="snapshots/propellant-densities.js"></script>
+<script src="snapshots/measured-cstar.js"></script>
+<script src="mixture.js"></script>
+<script src="presets.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

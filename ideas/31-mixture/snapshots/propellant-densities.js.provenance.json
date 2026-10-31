@@ -1,0 +1,9 @@
+{
+  "repo": "https://ntrs.nasa.gov ; https://webbook.nist.gov ; https://pubchem.ncbi.nlm.nih.gov",
+  "path": "see density-sources.txt.provenance.json; each row of propellant-densities.js names its source tag and an exact quote from density-sources.txt",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "sourceSha256": "see density-sources.txt.provenance.json",
+  "license": "as density-sources.txt",
+  "note": "Hand-transcribed from snapshots/density-sources.txt (the verbatim excerpts). mixture.test.mjs checks that every quote occurs in that file and that each value is the quoted number converted to kg/m^3. Primary choice per row: NIST at the temperature thermo.inp assigns the cryogens; NASA SP-125 Table 1-4 (68 F) for the storables and RP-1; HSDB via PubChem for ethanol; NIST for water."
+}

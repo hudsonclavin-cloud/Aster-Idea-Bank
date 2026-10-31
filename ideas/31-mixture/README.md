@@ -1,0 +1,123 @@
+# Mixture
+> Burn any C/H/O/N bipropellant, or a blend you mix, to chemical equilibrium by Gibbs-energy minimisation on NASA's own thermodynamic data, and read chamber temperature, molar mass, γ, c* and composition as you drag the mixture ratio and chamber pressure: against NASA CEA 3.3.4 at 177 points it agrees to 1 ppm in chamber temperature and 5 ppm in c*, and against a real NASA test chamber it overstates c* by 8.1 to 9.7 %, which is the number to remember. It refuses where graphite would form (LOX/RP-1 below O/F 1.13 to 1.15) and hands the state to the nozzle module.
+
+**Kind:** explorable tool
+**For:** Aster + PartForge
+**Run:** open `ideas/31-mixture/index.html` in a browser (classic scripts, `file://` works, no network). Tests from the bank root: `node --test ideas/31-mixture/mixture.test.mjs` (22 tests, under 1 s) and `node ideas/31-mixture/ui-check.mjs` (55 checks in headless Chromium; `check.mjs` runs it for `tools/check.mjs`). Oracle regeneration (not needed to run anything): `python3 -m venv <scratch>/venv && <scratch>/venv/bin/pip install cea && <scratch>/venv/bin/python ideas/31-mixture/oracle/cea_oracle.py`; data regeneration: `node ideas/31-mixture/build-data.mjs <path to nasa/cea data/thermo.inp at 2f79a64>`.
+**Made by:** Retort
+
+## What it is
+
+Module 31 of *The Long Way Round*, the series that flies launch to asteroid and back in twenty working modules. It is the first link: the propellant and what it turns into in the combustion chamber.
+
+You pick a preset (LOX/LH2, LOX/RP-1, LOX/methane, N2O4 with MMH, UDMH, Aerozine 50 or hydrazine, LOX with 75 % ethanol, 98 % hydrogen peroxide with RP-1, and the gaseous-oxygen/RP-1 pair NASA Marshall hot-fired), or build your own blend on either side from twelve components by mass percent. Then a mixture ratio (slider, typed value, or tap and drag on the chart) and a chamber pressure (1 to 300 bar, logarithmic slider or typed). The page shows, each with units and a confidence class:
+
+- **c\***, chamber temperature, molar mass, equilibrium γ<sub>s</sub> and frozen γ, equilibrium c<sub>p</sub>, the throat pressure ratio and temperature, and the textbook closed-form c\* beside the real one;
+- the **composition** over the species that carry the mixture's elements (9 for LOX/LH2, 28 for C/H/O, all 43 with carbon and nitrogen), as bars;
+- **liquid densities** of each side and the **bulk density** of the load at that ratio, from fetched primary sources, or a refusal when no density is on file;
+- the stoichiometric O/F and equivalence ratio;
+- a **chart across the mixture ratio** of c\*, chamber temperature, molar mass, γ<sub>s</sub>, bulk density or density × c\*, at your pressure and at a tenth of it (so you see dissociation), with the c\* peak ringed, the stoichiometric line, grey bands where the answer is refused, and, for the GOX/RP-1 preset, NASA's six measured c\* values as dots;
+- **Import/Export** of the series handoff (copy, download, a `#h=` link to module 32, paste or open a link to import).
+
+Every preset opens at its own computed c\* peak, not at a remembered "typical" ratio, and at an arbitrary 100 bar (the GOX preset at the report's 175 psia).
+
+## Why I made it
+
+- **The series needs it first.** `queue/SERIES_LONG_WAY_ROUND.md` row 31: "chemical-equilibrium chamber state by Gibbs-energy minimisation for real bipropellant pairs … hands on chamber state (Tc, molar mass, γ, c\*, composition, propellant densities)". Modules 32 (shifting nozzle expansion), 33 (engine deck), 34 (tank volumes from densities) and 46 (the mixture ratio you can burn from asteroid water, "back to 31") all consume it.
+- **PartForge has a placeholder this fills.** `/home/user/Partforge/engine-study.html:651` (at `0974a62`), ledger row L-02: "Theoretical performance of the declared reactant set at the declared conditions", source "the NASA CEA rocket-performance model (RP-1311)", version "solver release + thermodynamic database hash (placeholder)", status "verified against reference cases — not validated on hardware". This module is that row made concrete: a solver checked against CEA 3.3.4, a database hash (`thermo.inp` sha256 `fa774657…`), and, unlike the row, one validation number on hardware.
+- **Aster's propulsion number is an assumption.** `src/v2/porkchop/launch-vehicles.ts:56-57` (at `62ddb17`): `SCREENING_ISP_S = 320`, "DEC-13-5: representative of 300-350 s storable bipropellant class". Module 31 alone does not compute Isp (that needs the nozzle, module 32), but it is the first half of the computation that could put a derived number beside DEC-13-5.
+
+Alternatives weighed. (1) *Closed-form "ideal rocket" with a fixed γ*: one line, but every input (T<sub>c</sub>, M, γ) would have to be typed from memory, which the series forbids, and it cannot say why LOX/LH2 peaks far fuel-rich. (2) *Frozen-composition or one-reaction (water-gas) model*: cheaper, but wrong by percents at 3,500 K where OH, H and O carry real enthalpy. (3) *Port CEA*: not allowed (oracles are never sources), and 30,000 lines of Fortran. (4) *The element-potential method from RP-1311, written from the report's equations, gas phase only, refusing condensed phases*: a few hundred lines, exactly checkable against CEA, honest at its edge. I built (4). Within it I chose to iterate the real sonic throat for c\* (RP-1311 chapter 6) rather than use the closed form with chamber γ, because c\* is what the series hands on and the throat is where CEA defines it; the closed form is shown beside it (it differs by 0.002 to 0.19 % at the presets' peaks).
+
+## How it works
+
+**Data.** `snapshots/thermo-excerpt.js` is a verbatim excerpt of NASA Glenn's `thermo.inp` (McBride, Zehe & Gordon, NASA/TP-2002-211556) from NASA's CEA repository, https://github.com/nasa/cea at `2f79a647` (`data/thermo.inp`, sha256 `fa7746572952d74e249e818a82a35c113829742fb421a308e167185528884363`, identical to the file at tag v3.3.4): 46 product records and 10 reactant records, copied line for line by `build-data.mjs`, which refuses any other file. The kernel parses the fixed-column records itself (RP-1311 Part II Appendix A layout) and evaluates c<sub>p</sub>/R, H/RT and S/R from the 9-coefficient fits. Which species: `oracle/cea_oracle.py` ran NASA CEA with every C/H/O/N product it would consider (158 gas species plus graphite, liquid water and ice) over 10 propellant pairs × 25 O/F × 1, 10, 30, 100 and 300 bar, at the chamber, throat and pressure ratios 10, 100 and 1000, and kept the **43 gas species** whose mole fraction ever exceeded 1 × 10⁻⁷ (`oracle/species-survey.json`). The gas constant is CEA's, 8.31451 J/(mol·K) (`cea/constants.py`, "used internally by CEA"; CODATA 2018 is 8.314462618, and the tests show the difference matters at the ppm level).
+
+**Reactants.** Each component's assigned enthalpy comes from its `thermo.inp` record: a fixed value at a fixed temperature for O2(L) 90.17 K, H2(L) 20.27 K, CH4(L) 111.643 K, RP-1, N2O4(L), MMH and UDMH at 298.15 K; a fit evaluated at 298.15 K for hydrazine, ethanol, hydrogen peroxide and water; gaseous oxygen at 298.15 K from the O2 product fit. Element amounts b⁰ (mol/kg) and enthalpy h⁰ (J/kg) follow by mass fraction. Stoichiometric O/F uses RP-1311's valences (C +4, H +1, O −2, N 0).
+
+**Equilibrium.** Gordon & McBride, NASA RP-1311 Part I (1994): unknowns are one Lagrange multiplier π per element, Δln n (total moles), and Δln T for the assigned-enthalpy (HP) and assigned-entropy (SP) problems; species corrections follow from them (eqs 2.18, 2.24, 2.26-2.28). CEA's control factor limits each step (eqs 3.1-3.3), CEA's tests decide convergence (§3.4), and CEA's starting point is used (§3.5). Then the derivatives (∂lnV/∂lnT)<sub>P</sub> and (∂lnV/∂lnP)<sub>T</sub>, equilibrium c<sub>p</sub>, c<sub>v</sub> and γ<sub>s</sub> = −γ/(∂lnV/∂lnP)<sub>T</sub> (eqs 2.50-2.71). I derived the right-hand sides of the two derivative systems by differentiating ln n<sub>j</sub> = Σa<sub>ij</sub>π<sub>i</sub> − μ°<sub>j</sub>/RT + ln n − ln(P/P°) under the element and Σn<sub>j</sub> = n constraints (the OCR of the scanned report is unreadable at that table); the first attempt had the pressure system's last right-hand side as 0 instead of n and gave (∂lnV/∂lnP)<sub>T</sub> = 0, which the tests now catch 13 ways.
+
+**Condensed phases.** Not modelled. At every converged state the kernel computes μ°<sub>c</sub>/RT − Σa<sub>ic</sub>π<sub>i</sub> for graphite, liquid water and ice (RP-1311's test for adding a condensed species); if it is negative the phase would be stable and the result is refused with `out_of_envelope`. For LOX/RP-1 that starts below O/F 1.13 to 1.15 between 1 and 300 bar; for LOX/methane below 0.94 to 1.18 (under the preset's range).
+
+**Rocket.** Infinite-area combustor: HP equilibrium at p<sub>c</sub>; then SP equilibria at falling pressure, the composition shifting, Newton on x = ln(p<sub>c</sub>/p<sub>t</sub>) with dx = −(u² − a²)/(nRT(γ<sub>s</sub>+1)) until |u² − a²|/u² < 10⁻⁹ (CEA stops at 4 × 10⁻⁵), with u² = 2(h<sub>c</sub> − h<sub>t</sub>) and a² = nRTγ<sub>s</sub>. c\* = p<sub>c</sub>/(ρ<sub>t</sub>u<sub>t</sub>). The c\* peak is a golden-section search on that function.
+
+**Densities** (`snapshots/propellant-densities.js`, every value with an exact quote that the tests find in `snapshots/density-sources.txt`, which holds the fetched lines verbatim):
+
+| Component | kg/m³ | at | Primary source | Cross-check (gap) |
+|---|---|---|---|---|
+| O2(L) | 1141.26 | 90.17 K | NIST WebBook SRD 69, saturated liquid | SP-125 Table 1-5: 1142 (+0.06 %) |
+| H2(L) | 70.8295 | 20.27 K | NIST, saturated **para**-hydrogen | normal H₂ 70.9608 (+0.19 %); SP-125 0.071 g/cc (+0.24 %) |
+| CH4(L) | 422.391 | 111.643 K | NIST, saturated liquid | none fetched |
+| RP-1 | 810 (range 800–820) | 293.15 K | NASA SP-125 Table 1-4, "0.8 to 0.82 at 68 °F" | NASA/TP-2002-211729: 0.82 (+1.2 %) and 0.832 (+2.7 %) in the same report |
+| N2O4(L) | 1440 | 293.15 K | SP-125 Table 1-4 | HSDB 1.45 (+0.7 %); DOE PAC 1.493 (+3.7 %) |
+| MMH | 878 | 293.15 K | SP-125 Table 1-4 | HSDB 0.874 at 25 °C (−0.5 %) |
+| UDMH | 789 | 293.15 K | SP-125 Table 1-4 | HSDB 0.791 at 22 °C (+0.3 %) |
+| hydrazine | 1010 | 293.15 K | SP-125 Table 1-4 | HSDB 1.0036 at 25 °C (−0.6 %) |
+| ethanol | 789.3 | 293.15 K | HSDB via PubChem | CAMEO 0.79 (+0.1 %) |
+| water | 997.048 | 298.15 K | NIST, 1 atm | none |
+| 98 % H2O2 (blend) | 1432 | 298.15 K | SP-125 Table 1-4, "1.432 at 77 °F" | none |
+| H2O2 (pure), GOX | refused | | nothing measured on file | |
+
+A blend that was measured as a blend uses its value (measured); any other blend gets 1/ρ = Σ w<sub>k</sub>/ρ<sub>k</sub> (derived, "ideal mixing assumed"); a component with no row refuses the density and the bulk density, and nothing else. Bulk density = (1 + O/F)/(O/F/ρ<sub>o</sub> + 1/ρ<sub>f</sub>).
+
+**Handoff schema (version 1, `from: "31-mixture"`).** The series envelope `{handoff, version, from, produced, inputs, outputs, refusals, assumptions}`; `handoff.json` is a sample (LOX/RP-1, O/F 2.6, 10 MPa: c\* 1800.61 m/s, T<sub>c</sub> 3723.63 K, bulk 1024.8 kg/m³). Every output is `{value, units, confidence, source}`, SI:
+
+| inputs | |
+|---|---|
+| `preset` | preset id or `custom` |
+| `oxidizer`, `fuel` | `[{name (thermo.inp name), massFraction, T (K)}]` |
+| `mixture_ratio` | oxidizer mass / fuel mass |
+| `chamber_pressure_Pa` | Pa |
+
+| outputs | units | confidence |
+|---|---|---|
+| `mixture_ratio`, `chamber_pressure` | 1, Pa | assumed (inputs) |
+| `chamber_temperature`, `chamber_molar_mass`, `chamber_gamma_s`, `chamber_gamma_frozen`, `chamber_cp_equilibrium`, `chamber_cp_frozen`, `chamber_enthalpy`, `chamber_entropy`, `chamber_density`, `chamber_sound_speed` | K, kg/mol, 1, 1, J/(kg K), J/(kg K), J/kg, J/(kg K), kg/m³, m/s | derived |
+| `chamber_composition` | mol/mol (species ≥ 10⁻⁶) | derived |
+| `throat_pressure`, `throat_temperature`, `throat_molar_mass`, `throat_gamma_s`, `throat_density`, `throat_velocity` | Pa, K, kg/mol, 1, kg/m³, m/s | derived |
+| `cstar` | m/s | derived |
+| `element_amounts` | mol/kg (b⁰ by element) | derived |
+| `reactant_enthalpy` | J/kg | derived |
+| `species_set` | thermo.inp names | derived |
+| `stoichiometric_mixture_ratio` | 1 | derived |
+| `oxidizer_density`, `fuel_density`, `bulk_density` | kg/m³ | measured, or derived for unmeasured blends and the bulk |
+| `thermo_database` | `{repo, commit, path, sha256}` | measured |
+
+`refusals[]` carries `{code, reason, what_would_help}` (plus `applies_to` for a density); a refused chamber state exports no chamber, throat or c\* numbers. **For module 32:** shifting expansion is `Mixture.equilibrate(db, element_amounts, p, {mode: 'SP', s: chamber_entropy, species: species_set})` on a snapshot of this `mixture.js` and `thermo-excerpt.js`; frozen expansion uses `chamber_composition` with `Mixture.thermoAt`. Entropy and enthalpy are on `thermo.inp`'s reference state, so the two modules must use the same excerpt. 27 of the 43 fits start at 300 K, and the kernel refuses rather than extrapolate below a species' range; a deep expansion that cools below 300 K will need 32 to drop those (trace) species explicitly and say so. Frames and time scales: none (a thermochemical state has no position or epoch).
+
+## Tests
+
+`mixture.test.mjs`, 22 tests, Node built-ins, about 0.6 s:
+
+- **Data.** The excerpt's sha256 matches its sidecar and its gas species are exactly the oracle's selection; H<sub>2</sub>O's parsed fields; for the 16 species whose fits reach 298.15 K, H(298.15) from the polynomial equals the listed heat of formation within 2 J/mol (an identity of the data, independent of the solver), zero for H₂, O₂, N₂; every fit continuous at 1000 K; no extrapolation outside a fit. Every density quote is in the verbatim excerpt and every value is the quoted number. Presets equal `oracle/pairs.py` (components, fractions, temperatures, O/F ranges) and the temperatures `thermo.inp` assigns.
+- **Reactants.** RP-1311 Example 8's printed chamber enthalpy (−1026.05 kJ/kg) and equivalence ratio (1.429628); stoichiometric O/F against the balanced equations for H₂ and CH<sub>1.95</sub>; the nitrogen balance of Aerozine 50.
+- **NASA CEA 3.3.4, same species** (`oracle/cea-oracle.json`, 177 points: 10 pairs × 6 O/F × 1, 20, 200 bar, less 3 graphite points): chamber T, M, γ<sub>s</sub>, c<sub>p</sub> (equilibrium and frozen), s, ρ, a within 1 ppm; h within 5 J/kg; c\* within 5 ppm; mole fractions above 10⁻⁴ within 10 ppm; throat pressure within 30 ppm (CEA's own throat tolerance). **Full CEA product set:** c\* within 5 ppm, T<sub>c</sub> within 1 ppm, γ<sub>s</sub> within 2 ppm, so the 43-species cut costs nothing measurable. **Graphite:** refuses at exactly the 3 points where CEA deposits C(gr) in chamber or throat and at no other, and the boundary the page states (O/F 1.13 to 1.15).
+- **Published figures.** RP-1311 Part II (1996) Example 8 printout: T<sub>c</sub> −0.16 %, c\* −0.046 %, M −0.06 %, γ<sub>s</sub> −0.02 %, throat T −0.14 %, throat p +0.01 %, equilibrium c<sub>p</sub> +0.50 % (all pinned). NASA/TP-2002-211729 Table 3 (GOX/RP-1, 175 psia, theory): −0.61 % at O/F 1.3 closing monotonically to −0.21 % at 2.3. **Hardware:** the six GOX/RP-1 hot-fire runs of Tables 11 and 13 measured 91.2 to 92.5 % of this kernel's c\* at their own O/F and pressure.
+- **The solution's own properties.** Element-conserving moves (CO + H₂O → CO₂ + H₂, 2 OH → H₂O + O, H₂ → 2 H, 2 O → O₂, each way) all raise G; TP at the HP temperature reproduces composition and enthalpy; SP at chamber entropy returns the chamber; elements are conserved to 10⁻⁶; γ<sub>s</sub> and c<sub>p,eq</sub> match finite differences of the equilibrium itself to 10⁻⁵; at the throat u = a and the mass flux is a maximum against ±1 % pressure; for N₂ at 300 K every derivative takes its ideal-gas limit exactly; each preset's c\* peak is a maximum and lies fuel-rich of stoichiometric.
+- **Densities in use, refusals, handoff.** Measured, measured-blend, volume-additive and refused cases (an unmeasured 95 % peroxide cannot borrow the 98 % value; GOX has no density); bad O/F, pressure, fractions, unknown reactant, a reactant temperature `thermo.inp` does not give, and graphite all come back as structured refusals with no numbers; every handoff output has value, units, confidence and source; `#h=` round-trips; foreign objects are refused; `handoff.json` is what the kernel computes for its inputs; the page states the numbers the tests pin.
+
+**Teeth** (each sabotage run against the suite, then reverted): the pressure-derivative right-hand side set to 0, the bug I actually made, fails 13 tests; frozen c<sub>p</sub> left out of c<sub>p,eq</sub>, 12; pressure dropped from the chemical potential, 10; c\* from the closed form instead of the throat, 7; the CODATA gas constant instead of CEA's, 5; the sign of the temperature term in the species correction flipped, 5; oxygen valence −1, 2; the graphite test loosened to g < −1, 1; bulk density as a mass-weighted mean, 1; measured blends ignored, 1.
+
+`ui-check.mjs`, 55 checks in headless Chromium: the default preset and its computed starting O/F; the page's c\* and T<sub>c</sub> equal the kernel's for the exported inputs (to 10⁻¹⁰: Chromium and Node differ by 1.4 × 10⁻¹⁴ in the last bits); every numeric tile has a confidence chip; LOX/LH2 opens at its peak; O/F 1.0 is refused with the graphite reason, the hero tile shows no number, the handoff carries the refusal and the chart a grey band; a fuel side at 50 % is flagged and refused, and a 50/50 RP-1/methane blend computes with a derived density and turns the preset to Custom; all six chart quantities; arrow keys and mouse drag on the chart move O/F and the tooltip shows; GOX/RP-1 draws six measured points, refuses only the oxidizer density and starts at 175 psia; importing `handoff.json` restores its inputs and its c\*; a foreign object is refused; copy and download work and the next-module link carries `#h=`; a `#h=` link opens on its inputs; at 390 px in dark and light no horizontal overflow (also with every section open), the right background, chart text at least 11 px, and a tap on the chart sets O/F; no console errors anywhere.
+
+`node tools/check.mjs ideas/31-mixture` passes (README, size, sidecars, tests, `check.mjs`, smoke at 1280 and 390 px).
+
+## Honest assessment
+
+- **[Certain] It reproduces NASA CEA.** Same data, same method, 177 points across ten propellant pairs and three pressures: chamber state to 1 ppm, c\* to 5 ppm. This is verification (the equations are solved right), not validation.
+- **[Certain] The species cut is free.** CEA with all 158 C/H/O/N gas species and the condensed ones moves c\* by under 5 ppm inside the presets' envelopes.
+- **[Certain] Equilibrium c\* is an upper bound, and on the one engine I could check it overstated c\* by 8.1 to 9.7 %.** NASA Marshall's 1,000-lbf GOX/RP-1 research chamber (NASA/TP-2002-211729, Tables 11 and 13, six runs). That is a small research chamber; flight engines are designed for much higher combustion efficiency, so the gap for them is very likely smaller [Likely], but I have no fetched measurement to put a number on it. Engine figures belong to module 33.
+- **[Likely] The 0.16 % chamber-temperature gap to the 1996 Example 8 printout is the thermodynamic data.** The 1996 run used the data of its day; this kernel and CEA 3.3.4 agree to 1 ppm on the 2021 file. I did not fetch the 1996 data to prove it.
+- **[Speculative] Why NASA's 2002 theory table sits 0.21 to 0.61 % above.** The report states neither its oxygen temperature nor its data version; RP-1's record in today's file is dated 2000 (Mehta et al., AIAA 95-2962). The gap is stated, the cause is a guess.
+- **[Likely] Gas-only is the right cut for a chamber.** Graphite forms only far fuel-rich (O/F < 1.15 for LOX/RP-1), where real gas generators run and where equilibrium is not the right model anyway; the kernel refuses there. It is not the right cut for deep nozzle expansions (water condenses, and CEA finds graphite downstream at O/F up to 1.75 for RP-1): module 32 inherits the refusal, not a model.
+- **[Certain] Densities are measured values with stated spreads, at stated temperatures.** RP-1 is a 2.5 % range in its own source and disagrees by up to 2.7 % with NASA's 2002 report; N2O4's DOE PAC entry disagrees with HSDB and SP-125 by 3.7 %. Storable densities are at 293.15 K while their enthalpies are at 298.15 K (the handoff says so). N2O4 boils at 70 °F (SP-125), so at 298.15 K it is liquid only under pressure. Blend densities other than 98 % peroxide are ideal-mixing estimates; ethanol and water contract on mixing, so the 75 % ethanol estimate is probably low [Likely].
+- **What works:** any C/H/O/N blend from the twelve components, 1 to 300 bar checked, smooth sweeps (about 0.3 ms per chamber-and-throat point), structured refusals for every input or data gap I could provoke, exact agreement between the page, the kernel and the exported handoff.
+- **What is rough or cut:** no condensed phases (refused instead); no ions; no finite-area combustor; no frozen-composition c\* (32 will need frozen expansion and can do it from the composition); no transport properties; reactant temperatures are fixed where `thermo.inp` gives a single value, so subcooled or densified propellants are refused, not modelled; only twelve components, C/H/O/N only (no fluorine, boron, metals, nitrous oxide is not offered); pressures above 300 bar compute but are flagged unchecked; species fits that start at 300 K make the kernel refuse below 300 K; the hollow c\* peak ring hides under the current-point dot when you sit on the peak; the "every number" table is long at phone width.
+- **Findings about the source repos.** None that are defects. Two gaps this module speaks to: PartForge `engine-study.html:651` (L-02) carries "solver release + thermodynamic database hash (placeholder)", for which this module is a worked instance (CEA 3.3.4 and `thermo.inp` sha256 `fa774657…`); Aster `src/v2/porkchop/launch-vehicles.ts:56-57` (DEC-13-5) assumes 320 s for the storable class, which modules 31 and 32 together could derive for N2O4/MMH at a stated area ratio. **Findings about the external sources:** SP-125's scanned Table 1-5 has lost the decimal point in LOX's density ("1142"); NASA/TP-2002-211729 gives RP-1 two specific gravities (0.82 in the text, 0.832 in Table 12); DOE PAC's N2O4 density (1.493) disagrees with HSDB and SP-125; RP-1311's 1996 Example 8 equilibrium c<sub>p</sub> differs by 0.50 % from CEA 3.3.4 at the same inputs.
+- **Gates not passed.** Aster: the multi-agent math audit (this is new math), the founding-doc DEC process, and the protected-core rules (this would not live in `src/v2/core/` as written). PartForge: the skeptic review and the data provenance pipeline (its densities are not in PartForge's table format with `confidence` rows). No independent reviewer has attacked this deposit yet.
+
+## Where it would land
+
+- **Aster**, as a propulsion lens under `src/v2/` (a `propulsion/` module beside `porkchop/`), feeding a derived screening Isp to the delivered-mass card in place of the DEC-13-5 assumption once module 32 adds the nozzle. To ship: port `mixture.js` to TypeScript with the `thermo-excerpt` as a committed fixture and its sha256 pinned, keep `cea-oracle.json` as the oracle fixture (CEA is an oracle, never a dependency, per INV-024), wrap outputs in the evidence envelope (`mcp/src/tools/envelope-schema.ts`: the handoff already uses its confidence classes and refusal codes), pass the multi-agent math audit, and record the choice in a slice founding doc.
+- **PartForge**, as the computed half of `engine-study.html`'s L-02 row: the row's "version" field becomes `nasa/cea 2f79a64 thermo.inp sha256 fa774657…`, and its status gains the hardware number (equilibrium overstated a real chamber's c\* by 8.1 to 9.7 %). To ship: move the density table into `data/tables/` with `confidence` per row (the RP-1 range and the N2O4 disagreement kept), and pass PartForge's skeptic review.
+- **The Long Way Round**: module 32 (Bell) snapshots `mixture.js` and `thermo-excerpt.js` unmodified and imports `handoff.json`'s schema as above.

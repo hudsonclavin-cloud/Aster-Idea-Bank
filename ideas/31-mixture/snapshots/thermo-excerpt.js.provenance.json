@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/nasa/cea",
+  "path": "data/thermo.inp",
+  "commit": "2f79a647e85737742fb08a127da00d1ea1d069da",
+  "url": "https://raw.githubusercontent.com/nasa/cea/2f79a647e85737742fb08a127da00d1ea1d069da/data/thermo.inp",
+  "retrieved": "2026-10-31",
+  "sourceSha256": "fa7746572952d74e249e818a82a35c113829742fb421a308e167185528884363",
+  "excerptSha256": "e0910dc87501934556e957516890e30ce81a6f17f6413fa6968ef06b27c1021a",
+  "license": "Apache-2.0 (nasa/cea LICENSE.txt); the data are NASA Glenn thermodynamic data, NASA/TP-2002-211556, a US-government work",
+  "note": "derived by build-data.mjs: verbatim records for the 43 gas products in oracle/species-survey.json \"selected\" (CEA mole fraction >= 1e-7 anywhere in the survey grid), the condensed C(gr), H2O(L), H2O(cr) (stability test only) and the reactants O2(L), H2(L), CH4(L), RP-1, N2O4(L), CH6N2(L), C2H8N2(L),UDMH, N2H4(L), C2H5OH(L), H2O2(L)",
+  "copiedAt": "2026-10-31T03:28:39.321Z"
+}
