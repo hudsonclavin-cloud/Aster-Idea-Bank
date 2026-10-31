@@ -142,6 +142,32 @@ const same = (a, b) => Math.abs(a - b) <= 1e-10 * Math.abs(b);
   ok(h.outputs.cstar && !h.outputs.bulk_density && h.refusals.length === 1, 'GOX handoff: c* present, bulk density absent, one refusal');
   ok(Math.abs(h.inputs.chamber_pressure_Pa - 175 * P.PSI) < 1e-6, 'GOX preset starts at the report\'s 175 psia');
 
+  // Added by the independent review. Leaving GOX goes back to 100 bar; the c* peak ring stays visible on the dot.
+  await page.selectOption('#preset', 'lox-rp1');
+  await page.waitForTimeout(150);
+  h = await handoff(page);
+  ok(h.inputs.chamber_pressure_Pa === P.PC_DEFAULT, `leaving the GOX preset returns to 100 bar (${h.inputs.chamber_pressure_Pa})`);
+  ok(await page.evaluate(() => { const c = [...document.querySelectorAll('#chart circle')]; const pk = c.findIndex((e) => e.classList.contains('peak')), d = c.findIndex((e) => e.classList.contains('dot1')); return pk > d && +c[pk].getAttribute('r') > +c[d].getAttribute('r') && getComputedStyle(c[pk]).fill === 'none'; }),
+    'the hollow peak ring is drawn around the current dot, not under it');
+  // a typed pressure outside the checked 0.1-300 bar is refused, not computed
+  await page.fill('#pcNum', '1000000');
+  await page.locator('#pcNum').press('Enter');
+  await page.locator('#ofNum').focus();
+  await page.waitForTimeout(200);
+  ok(/out_of_envelope/.test(await page.locator('#refusals').textContent()) && (await page.locator('.tile.hero .v').textContent()).includes('refused'), 'a million bar is refused');
+  h = await handoff(page);
+  ok(!h.outputs.cstar && h.refusals.some((x) => x.code === 'out_of_envelope'), 'and the handoff carries no c*');
+  await page.fill('#pcNum', '100');
+  await page.locator('#pcNum').press('Enter');
+  await page.locator('#ofNum').focus();
+  // an emptied O/F field: a refusal, never NaN on the page or null in the handoff's outputs
+  await page.evaluate(() => { const e = document.getElementById('ofNum'); e.value = ''; e.dispatchEvent(new Event('change')); });
+  await page.waitForTimeout(150);
+  await page.locator('#metrics button').first().click();
+  ok(!/NaN|Infinity|undefined/.test(await page.evaluate(() => document.body.innerText)), 'an empty O/F shows no NaN anywhere');
+  h = await handoff(page);
+  ok(!h.outputs.mixture_ratio && h.refusals.some((x) => x.code === 'invalid_input'), 'and the handoff has a refusal, not a null O/F output');
+
   // import: paste the sample handoff
   const sample = fs.readFileSync(path.join(here, 'handoff.json'), 'utf8');
   await page.fill('#importText', sample);

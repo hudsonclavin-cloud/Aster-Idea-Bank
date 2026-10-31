@@ -5,5 +5,5 @@
   "retrieved": "2026-10-31",
   "sourceSha256": "see density-sources.txt.provenance.json",
   "license": "as density-sources.txt",
-  "note": "Hand-transcribed from snapshots/density-sources.txt (the verbatim excerpts). mixture.test.mjs checks that every quote occurs in that file and that each value is the quoted number converted to kg/m^3. Primary choice per row: NIST at the temperature thermo.inp assigns the cryogens; NASA SP-125 Table 1-4 (68 F) for the storables and RP-1; HSDB via PubChem for ethanol; NIST for water."
+  "note": "Hand-transcribed from snapshots/density-sources.txt (the verbatim excerpts). mixture.test.mjs checks that every quote occurs in that file and that each value is the quoted number converted to kg/m^3. Primary choice per row: NIST at the temperature thermo.inp assigns the cryogens; NASA SP-125 Table 1-4 (68 F) for the storables and RP-1; HSDB via PubChem for ethanol; NIST for water. Independent review (2026-10-31): added the measured 95 % hydrogen peroxide blend (SP-125 Table 1-4, 1.414 g/cc at 77 F) and corrected the LOX cross-check note (the scan has the decimal point; the PDF text layer drops it)."
 }

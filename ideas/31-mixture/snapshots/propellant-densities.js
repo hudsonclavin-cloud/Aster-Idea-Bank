@@ -9,7 +9,7 @@
     components: {
       'O2(L)': { value: 1141.26, T: 90.17, src: 'NIST', quote: '90.1700\t0.101136\t1141.26',
         note: 'saturated liquid at the 90.17 K thermo.inp assigns O2(L)',
-        cross: [{ src: 'SP125', value: 1142, quote: '-182     1142', note: 'Table 1-5, at the boiling point; the scan lost the decimal point (1.142 g/cc)' }] },
+        cross: [{ src: 'SP125', value: 1142, quote: '-182     1142', note: 'Table 1-5, at the boiling point; the scanned page prints 1.142 g/cc, the PDF text layer drops the decimal point' }] },
       'H2(L)': { value: 70.8295, T: 20.27, src: 'NIST', quote: '20.2700\t0.101287\t70.8295',
         note: 'saturated para-hydrogen at 20.27 K (stored liquid hydrogen converts to para; normal hydrogen is the cross-check)',
         cross: [{ src: 'NIST', value: 70.9608, quote: '20.2700\t0.0983977\t70.9608', note: 'normal hydrogen' },
@@ -43,7 +43,10 @@
     // Blends whose density was measured as a blend. A blend not listed here gets a volume-additive estimate.
     blends: [
       { name: 'HTP-98', parts: { 'H2O2(L)': 0.98, 'H2O(L)': 0.02 }, value: 1432, T: 298.15, src: 'SP125',
-        quote: '0.043 at 1.432 at', note: '98 % hydrogen peroxide, Table 1-4, "1.432 at 77 F"', cross: [] }
+        quote: '0.043 at 1.432 at', note: '98 % hydrogen peroxide, Table 1-4, "1.432 at 77 F"', cross: [] },
+      // Added by the independent review: SP-125 Table 1-4 also measures the 95 % grade (same fetched page).
+      { name: 'HTP-95', parts: { 'H2O2(L)': 0.95, 'H2O(L)': 0.05 }, value: 1414, T: 298.15, src: 'SP125',
+        quote: '0.05 at   1.414 at', note: '95 % hydrogen peroxide, Table 1-4, "1.414 at 77 F"', cross: [] }
     ],
     sources: {
       SP125: 'NASA SP-125, Huzel & Huang, Design of Liquid Propellant Rocket Engines, 2nd ed. (1971), Tables 1-4 and 1-5 (NTRS 19710019929)',

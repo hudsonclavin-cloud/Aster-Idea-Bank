@@ -5,7 +5,8 @@
  * was compared with NASA CEA over. No preset carries a remembered "typical" O/F or chamber pressure: the
  * page starts each preset at its computed maximum-c* O/F and at an arbitrary 100 bar. */
 (function (root) {
-  var PSI = 4.4482216152605 / (0.0254 * 0.0254); // Pa per lbf/in^2, from the definitions of lbf and inch
+  // Pa per lbf/in^2 from the exact definitions: 1 lb = 0.45359237 kg, standard gravity 9.80665 m/s^2, 1 in = 0.0254 m.
+  var PSI = 0.45359237 * 9.80665 / (0.0254 * 0.0254);
   var PRESETS = [
     { id: 'lox-lh2', label: 'LOX / LH2', oxidizer: [{ name: 'O2(L)', w: 1, T: 90.17 }], fuel: [{ name: 'H2(L)', w: 1, T: 20.27 }], ofRange: [2, 12] },
     { id: 'lox-rp1', label: 'LOX / RP-1', oxidizer: [{ name: 'O2(L)', w: 1, T: 90.17 }], fuel: [{ name: 'RP-1', w: 1, T: 298.15 }], ofRange: [1, 4] },

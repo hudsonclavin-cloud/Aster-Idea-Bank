@@ -169,8 +169,9 @@
     if (document.activeElement !== ofN) ofN.value = +state.of.toFixed(3);
     pcR.value = Math.max(0, Math.min(1000, pcToSlider(state.pc)));
     if (document.activeElement !== pcN) pcN.value = +(state.pc / 1e5).toFixed(3);
-    var inEnv = state.pc >= P.PC_MIN && state.pc <= P.PC_MAX;
-    $('pcNote').textContent = (state.pc / 1e6).toFixed(3) + ' MPa' + (inEnv ? '' : ' — outside the 1–300 bar range checked against NASA CEA');
+    var env = M.PC_ENVELOPE;
+    $('pcNote').textContent = !isFinite(state.pc) ? 'Type a pressure in bar.' :
+      String(+(state.pc / 1e6).toPrecision(4)) + ' MPa' + (state.pc >= env[0] && state.pc <= env[1] ? '' : ' — outside the ' + env[0] / 1e5 + '–' + env[1] / 1e5 + ' bar checked against NASA CEA, so refused');
   }
 
   function tile(k, v, u, c, opts) {
@@ -210,13 +211,13 @@
     tiles.appendChild(R('Throat temperature', function () { return th.T; }, 1, 'K'));
     tiles.appendChild(R('Closed-form c* with γs', function () { return current.cstarClosedForm; }, 1, 'm/s'));
     var b = bulkAt(state.of);
-    tiles.appendChild(isFinite(b) ? tile('Bulk propellant density', fmt(b, 1), 'kg/m³', dens.oxidizer.confidence === 'measured' && dens.fuel.confidence === 'measured' ? 'derived from measured' : 'derived') : tile('Bulk propellant density', 'refused: no density on file', '', null, { refused: true }));
+    tiles.appendChild(isFinite(b) ? tile('Bulk propellant density', fmt(b, 1), 'kg/m³', dens.oxidizer.confidence === 'measured' && dens.fuel.confidence === 'measured' ? 'derived from measured' : 'derived') : tile('Bulk propellant density', 'refused', '', null, { refused: true }));
     ['oxidizer', 'fuel'].forEach(function (s) {
       var d = dens[s];
       tiles.appendChild(d.refusal ? tile(s[0].toUpperCase() + s.slice(1) + ' density', 'refused', '', null, { refused: true }) : tile(s[0].toUpperCase() + s.slice(1) + ' density', fmt(d.value, 1), 'kg/m³', d.confidence, { title: d.source + '; ' + d.mixing + (d.range ? '; range ' + d.range.join('–') : '') }));
     });
     tiles.appendChild(isFinite(stoich) ? tile('Stoichiometric O/F', fmt(stoich, 3), '', 'derived') : tile('Stoichiometric O/F', 'n/a', '', null, { refused: true }));
-    tiles.appendChild(isFinite(stoich) ? tile('Equivalence ratio φ', fmt(stoich / state.of, 3), '', 'derived', { title: 'φ > 1 is fuel-rich' }) : tile('Equivalence ratio φ', 'n/a', '', null, { refused: true }));
+    tiles.appendChild(isFinite(stoich) && state.of > 0 && isFinite(state.of) ? tile('Equivalence ratio φ', fmt(stoich / state.of, 3), '', 'derived', { title: 'φ > 1 is fuel-rich' }) : tile('Equivalence ratio φ', 'n/a', '', null, { refused: true }));
     renderComposition();
     renderHandoff();
   }
@@ -269,11 +270,14 @@
     var xs = curves.xs;
     var main = xs.map(function (x, i) { return metricValue(m, curves.main[i], x); });
     var low = m.dens && m.id === 'rho' ? null : xs.map(function (x, i) { return metricValue(m, curves.low[i], x); });
+    var lowGone = !!low && !low.some(isFinite) && curves.main.some(function (r) { return !r.refusal; });
+    if (lowGone) low = null;
     var meas = measuredPoints();
     var vals = main.concat(low || []).concat(meas.map(function (p) { return p.v; })).filter(isFinite);
     var cv = metricValue(m, current, state.of);
     if (isFinite(cv)) vals.push(cv);
-    var x0 = Math.min(state.range[0], state.of), x1 = Math.max(state.range[1], state.of);
+    var ofOk = state.of > 0 && isFinite(state.of);
+    var x0 = ofOk ? Math.min(state.range[0], state.of) : state.range[0], x1 = ofOk ? Math.max(state.range[1], state.of) : state.range[1];
     var X = function (v) { return CH.l + (v - x0) / (x1 - x0) * (W - CH.l - CH.r); };
     svg._X = X; svg._x0 = x0; svg._x1 = x1;
     var legend = $('legend');
@@ -339,10 +343,10 @@
       endLabel(main, pcLbl, mainAbove ? -8 : 16);
       endLabel(low, pcLowLbl, mainAbove ? 16 : -8);
     }
-    // peak marker
-    var peakTxt = '';
+    // peak marker (drawn after the current point, below, so the ring stays visible around the dot)
+    var peakTxt = '', peakRing = null;
     if (state.metric === 'cstar' && peak) {
-      svg.appendChild(svgEl('circle', { cx: X(peak.of), cy: Y(peak.cstar), r: 5, class: 'peak' }));
+      peakRing = svgEl('circle', { cx: X(peak.of), cy: Y(peak.cstar), r: 8, class: 'peak' });
       peakTxt = 'Hollow ring: c* peak at O/F ' + fmt(peak.of, 3) + ' (' + fmt(peak.cstar, 1) + ' m/s at ' + pcLbl + '). ';
     }
     if (state.metric === 'rhoc') {
@@ -359,15 +363,17 @@
       svg.appendChild(svgEl('text', { x: X(mm.of), y: Y(mm.v) + 20, 'text-anchor': 'middle', class: 'lbl' }, 'measured'));
     }
     // current point
-    svg.appendChild(svgEl('line', { x1: X(state.of), x2: X(state.of), y1: CH.t, y2: H - CH.b, class: 'cursor' }));
+    if (ofOk) svg.appendChild(svgEl('line', { x1: X(state.of), x2: X(state.of), y1: CH.t, y2: H - CH.b, class: 'cursor' }));
     if (isFinite(cv)) svg.appendChild(svgEl('circle', { cx: X(state.of), cy: Y(cv), r: 5, class: 'dot1' }));
+    if (peakRing) svg.appendChild(peakRing);
     svg._Y = Y; svg._main = main; svg._low = low;
     // legend (HTML, never colour alone: line style and words)
     var li = function (cls, txt) { var k = el('span', { class: 'key ' + cls }); return el('li', {}, [k, txt]); };
     var k1 = li('', 'at ' + pcLbl + ' (your chamber pressure)'); k1.firstChild.style.borderTopColor = 'var(--s1)'; legend.appendChild(k1);
     if (low) { var k2 = li('dash', 'at ' + pcLowLbl + ' (one tenth: more dissociation)'); k2.firstChild.style.borderTopColor = 'var(--s2)'; legend.appendChild(k2); }
     if (meas.length) { var k3 = li('dot', 'measured c*, NASA MSFC 1,000-lbf chamber, about ' + fmt(meas[0].pc / 1e5, 1) + ' bar (NASA/TP-2002-211729)'); k3.firstChild.style.background = 'var(--s3)'; legend.appendChild(k3); }
-    $('chartCap').textContent = peakTxt + (firstRef ? 'Grey bands: refused (' + firstRef.refusal.reason.split(';')[0] + '). ' : '') + 'Tap or drag on the chart to set the mixture ratio; arrow keys move it when the chart has focus.';
+    $('chartCap').textContent = peakTxt + (firstRef ? 'Grey bands: refused (' + firstRef.refusal.reason.split(';')[0] + '). ' : '') +
+      (lowGone ? 'No one-tenth-pressure curve: ' + pcLowLbl + ' is outside the pressures checked against NASA CEA. ' : '') + 'Tap or drag on the chart to set the mixture ratio; arrow keys move it when the chart has focus.';
     fillTable(m, main, low);
   }
 
@@ -447,8 +453,9 @@
   function buildHandoff() {
     var pr = presetById(state.presetId);
     var asm = [];
-    var inEnv = pr && state.of >= pr.ofRange[0] && state.of <= pr.ofRange[1] && state.pc >= P.PC_MIN && state.pc <= P.PC_MAX;
-    asm.push(inEnv ? 'Inside the envelope checked against NASA CEA 3.3.4 for this propellant (O/F ' + pr.ofRange[0] + '-' + pr.ofRange[1] + ', 1-300 bar).'
+    var env = M.PC_ENVELOPE;
+    var inEnv = pr && state.of >= pr.ofRange[0] && state.of <= pr.ofRange[1] && state.pc >= env[0] && state.pc <= env[1];
+    asm.push(inEnv ? 'Inside the envelope checked against NASA CEA 3.3.4 for this propellant (O/F ' + pr.ofRange[0] + '-' + pr.ofRange[1] + ', ' + env[0] / 1e5 + '-' + env[1] / 1e5 + ' bar).'
       : 'Outside the envelope this propellant was checked against NASA CEA over (or a custom blend): the method applies, but this point was not compared.');
     ['oxidizer', 'fuel'].forEach(function (s) {
       var d = dens[s];
@@ -523,12 +530,14 @@
   function applyPreset(id) {
     var pr = presetById(id);
     if (!pr) return;
+    var prev = presetById(state.presetId);
+    if (pr.pc) state.pc = pr.pc;
+    else if (prev && prev.pc && state.pc === prev.pc) state.pc = P.PC_DEFAULT;
     state.presetId = id;
     $('preset').value = id;
     state.oxidizer = clone(pr.oxidizer);
     state.fuel = clone(pr.fuel);
     state.range = pr.ofRange.slice();
-    if (pr.pc) state.pc = pr.pc;
     var pk = M.maxCstar(db, prop(), state.pc, pr.ofRange[0], pr.ofRange[1]);
     state.of = isFinite(pk.cstar) ? +pk.of.toFixed(3) : (pr.ofRange[0] + pr.ofRange[1]) / 2;
     renderSide('oxidizer'); renderSide('fuel');

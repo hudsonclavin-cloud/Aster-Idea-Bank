@@ -27,7 +27,10 @@
   var R = 8.31451;
   var P0 = 1e5; // [Certain] thermo.inp standard-state pressure, 1 bar
   var SIZE = 18.420681; // RP-1311 eq 3.2: ln(1e8); trace-species bound in the control factor
-  var VALENCE = { C: 4, H: 1, O: -2, N: 0 }; // RP-1311 eq 9.18 convention for the equivalence ratio
+  var VALENCE = { C: 4, H: 1, O: -2, N: 0 }; // RP-1311 section 9 oxidation states (eqs 9.14-9.15), as in CEA's PHI
+  // [Certain] Chamber pressures (Pa) compared with NASA CEA: oracle/cea-oracle.json (1-200 bar) and cea-review.json
+  // (0.1, 300 bar). rocket() refuses outside unless opts.envelope widens it.
+  var PC_ENVELOPE = [1e4, 3e7];
   var ELEMENT_ORDER = ['C', 'H', 'O', 'N'];
 
   // ---------------------------------------------------------------- thermo.inp parsing (RP-1311 Part II, App. A)
@@ -131,6 +134,12 @@
   function refusal(code, reason, help) {
     return { code: code, reason: reason, what_would_help: help };
   }
+  /** How an input value reads in a refusal: never 'NaN' or 'Infinity' on the page. */
+  function shown(v, unit) {
+    if (typeof v === 'number' && isFinite(v)) return 'got ' + v + (unit ? ' ' + unit : '');
+    if (typeof v === 'number' && !isNaN(v)) return 'got an infinite value';
+    return 'the value is empty or not a number';
+  }
 
   // ---------------------------------------------------------------- reactants
   function reactantRecord(db, name) {
@@ -169,7 +178,7 @@
    * given oxidizer-to-fuel mass ratio. ox and fuel are lists of {name, w (mass fraction), T?}.
    */
   function composeReactants(db, ox, fuel, of) {
-    if (!(typeof of === 'number' && isFinite(of) && of > 0)) return { refusal: refusal('invalid_input', 'The mixture ratio O/F must be a positive number (got ' + of + ').', 'An O/F above zero.') };
+    if (!(typeof of === 'number' && isFinite(of) && of > 0)) return { refusal: refusal('invalid_input', 'The mixture ratio O/F must be a positive number (' + shown(of) + ').', 'An O/F above zero.') };
     var o = normaliseSide(ox, 'oxidizer'); if (o.refusal) return o;
     var f = normaliseSide(fuel, 'fuel'); if (f.refusal) return f;
     var b0 = {}, h0 = 0, parts = [];
@@ -254,6 +263,13 @@
     });
   }
 
+  /** [lowest T, highest T] at which every one of these records has fitted data. */
+  function fittedSpan(recs) {
+    var lo = -Infinity, hi = Infinity;
+    recs.forEach(function (r) { lo = Math.max(lo, r.intervals[0].Tmin); hi = Math.min(hi, r.intervals[r.intervals.length - 1].Tmax); });
+    return [lo, hi];
+  }
+
   /**
    * Gas-phase chemical equilibrium of a mixture with element amounts b0 at pressure P (Pa).
    * opts.mode: 'TP' (opts.T fixed), 'HP' (opts.h, J/kg, fixed) or 'SP' (opts.s, J/(kg K), fixed).
@@ -302,7 +318,11 @@
       var n = Math.exp(lnn);
       for (j = 0; j < ns; j++) {
         var th = thermoAt(recs[j], T);
-        if (!th) return { refusal: refusal('out_of_envelope', 'The solution reached ' + T.toFixed(0) + ' K, outside the fitted range of ' + names[j] + ' (' + recs[j].intervals[0].Tmin + '-' + recs[j].intervals[recs[j].intervals.length - 1].Tmax + ' K).', 'Conditions whose temperature stays within the thermo.inp ranges (200-6000 K for most species).'), T: T };
+        if (!th) {
+          var span = fittedSpan(recs);
+          return { refusal: refusal('out_of_envelope', 'The solution reached ' + T.toFixed(0) + ' K, outside the fitted range of ' + names[j] + ' (' + recs[j].intervals[0].Tmin + '-' + recs[j].intervals[recs[j].intervals.length - 1].Tmax + ' K); the kernel does not extrapolate a fit.',
+            'Conditions whose temperature stays between ' + span[0] + ' and ' + span[1] + ' K, where all ' + ns + ' species considered here have data, or a species list (opts.species) that leaves out, and says it leaves out, the trace species whose fits stop sooner.'), T: T };
+        }
         cp[j] = th.cp; hRT[j] = th.h; s0[j] = th.s;
         nj[j] = Math.exp(lnnj[j]);
         var lnx = lnnj[j] - lnn;
@@ -488,7 +508,13 @@
    */
   function rocket(db, prop, of, pc, opts) {
     opts = opts || {};
-    if (!(typeof pc === 'number' && isFinite(pc) && pc > 0)) return { refusal: refusal('invalid_input', 'Chamber pressure must be a positive number of pascals (got ' + pc + ').', 'A chamber pressure above zero.') };
+    if (!(typeof pc === 'number' && isFinite(pc) && pc > 0)) return { refusal: refusal('invalid_input', 'Chamber pressure must be a positive number of pascals (' + shown(pc, 'Pa') + ').', 'A chamber pressure above zero.') };
+    var env = opts.envelope || PC_ENVELOPE;
+    if (pc < env[0] || pc > env[1]) {
+      return { refusal: refusal('out_of_envelope', 'A chamber pressure of ' + +(pc / 1e5).toPrecision(6) + ' bar is outside the ' + env[0] / 1e5 + ' to ' + env[1] / 1e5 +
+        ' bar this kernel was compared with NASA CEA over; beyond it nothing here is checked, and at high pressure the ideal-gas equation of state that CEA and this kernel share is itself an unchecked assumption.',
+        'A chamber pressure between ' + env[0] / 1e5 + ' and ' + env[1] / 1e5 + ' bar, or a comparison with NASA CEA at this pressure (oracle/cea_review.py) before widening opts.envelope.') };
+    }
     var mix = composeReactants(db, prop.oxidizer, prop.fuel, of);
     if (mix.refusal) return mix;
     var ch = equilibrate(db, mix.b0, pc, { mode: 'HP', h: mix.h0, species: opts.species, start: opts.start && opts.start.chamber });
@@ -530,17 +556,17 @@
   function sweep(db, prop, pc, ofs, opts) {
     var out = [], start = null;
     for (var i = 0; i < ofs.length; i++) {
-      var r = rocket(db, prop, ofs[i], pc, { species: opts && opts.species, start: start });
+      var r = rocket(db, prop, ofs[i], pc, { species: opts && opts.species, envelope: opts && opts.envelope, start: start });
       out.push(r);
       start = r.refusal ? null : r;
     }
     return out;
   }
 
-  /** O/F of maximum c* inside [lo, hi] by golden-section search (unimodal assumed). */
-  function maxCstar(db, prop, pc, lo, hi) {
+  /** O/F of maximum c* inside [lo, hi] by golden-section search (unimodal assumed). opts as for rocket(). */
+  function maxCstar(db, prop, pc, lo, hi, opts) {
     var gr = (Math.sqrt(5) - 1) / 2;
-    var f = function (x) { var r = rocket(db, prop, x, pc); return r.refusal ? -Infinity : r.cstar; };
+    var f = function (x) { var r = rocket(db, prop, x, pc, opts && { species: opts.species, envelope: opts.envelope }); return r.refusal ? -Infinity : r.cstar; };
     var a = lo, b = hi, c = b - gr * (b - a), d = a + gr * (b - a), fc = f(c), fd = f(d);
     for (var i = 0; i < 40 && b - a > 1e-4; i++) {
       if (fc >= fd) { b = d; d = c; fd = fc; c = b - gr * (b - a); fc = f(c); }
@@ -624,8 +650,8 @@
         preset: inputs.preset || null,
         oxidizer: inputs.oxidizer.map(function (p) { return { name: p.name, massFraction: p.w, T: p.T == null ? null : p.T }; }),
         fuel: inputs.fuel.map(function (p) { return { name: p.name, massFraction: p.w, T: p.T == null ? null : p.T }; }),
-        mixture_ratio: inputs.of,
-        chamber_pressure_Pa: inputs.pc,
+        mixture_ratio: isFinite(inputs.of) ? inputs.of : null,
+        chamber_pressure_Pa: isFinite(inputs.pc) ? inputs.pc : null,
       },
       outputs: {},
       refusals: [],
@@ -637,8 +663,8 @@
       ].concat(extra.assumptions || []),
     };
     var O = out.outputs;
-    O.mixture_ratio = q(inputs.of, '1', 'assumed', 'user input (oxidizer mass / fuel mass)');
-    O.chamber_pressure = q(inputs.pc, 'Pa', 'assumed', 'user input');
+    if (isFinite(inputs.of)) O.mixture_ratio = q(inputs.of, '1', 'assumed', 'user input (oxidizer mass / fuel mass)');
+    if (isFinite(inputs.pc)) O.chamber_pressure = q(inputs.pc, 'Pa', 'assumed', 'user input');
     if (r && !r.refusal) {
       var ch = r.chamber, th = r.throat, src = KERNEL + ' rocket(); ' + THERMO_SRC;
       O.chamber_temperature = q(ch.T, 'K', 'derived', src);
@@ -658,7 +684,7 @@
       O.throat_gamma_s = q(th.gamma_s, '1', 'derived', src);
       O.throat_density = q(th.rho, 'kg/m^3', 'derived', src);
       O.throat_velocity = q(r.throatVelocity, 'm/s', 'derived', src + ' (equals the throat sound speed)');
-      O.cstar = q(r.cstar, 'm/s', 'derived', src + ' (c* = pc / (rho_t u_t), RP-1311 eq 6.13 form)');
+      O.cstar = q(r.cstar, 'm/s', 'derived', src + ' (c* = pc / (rho_t u_t), RP-1311 eqs 6.11-6.12)');
       O.element_amounts = q(roundObj(r.mixture.b0, 10), 'mol/kg', 'derived', KERNEL + ' composeReactants(); molecular formulas from thermo.inp');
       O.reactant_enthalpy = q(r.mixture.h0, 'J/kg', 'derived', KERNEL + ' composeReactants(); assigned enthalpies from thermo.inp');
       O.species_set = q(ch.names.slice(), '-', 'derived', 'gas products considered (thermo.inp names); module 32 should equilibrate with the same set');
@@ -672,7 +698,7 @@
       if (d.refusal) { out.refusals.push(Object.assign({ applies_to: side + '_density' }, d.refusal)); return; }
       O[side + '_density'] = q(d.value, 'kg/m^3', d.confidence, d.source + '; ' + d.mixing + '; at ' + [].concat(d.T).join('/') + ' K');
     });
-    if (O.oxidizer_density && O.fuel_density) {
+    if (O.oxidizer_density && O.fuel_density && inputs.of > 0 && isFinite(inputs.of)) {
       O.bulk_density = q(bulkDensity(O.oxidizer_density.value, O.fuel_density.value, inputs.of), 'kg/m^3', 'derived', KERNEL + ' bulkDensity(): (1+O/F)/(O/F/rho_o + 1/rho_f)');
     }
     if (extra.thermo) O.thermo_database = q(extra.thermo, '-', 'measured', THERMO_SRC);
@@ -722,7 +748,7 @@
   }
 
   return {
-    R: R, P0: P0, VALENCE: VALENCE,
+    R: R, P0: P0, VALENCE: VALENCE, PC_ENVELOPE: PC_ENVELOPE,
     parseThermo: parseThermo, thermoAt: thermoAt, reactantEnthalpy: reactantEnthalpy,
     composeReactants: composeReactants, stoichiometricOF: stoichiometricOF,
     equilibrate: equilibrate, rocket: rocket, sweep: sweep, maxCstar: maxCstar,

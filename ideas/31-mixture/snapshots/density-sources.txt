@@ -1,11 +1,12 @@
-# Verbatim excerpts behind snapshots/propellant-densities.json. Nothing below is retyped: each block is
+# Verbatim excerpts behind snapshots/propellant-densities.js. Nothing below is retyped: each block is
 # copied from the fetched file named in its header (pdftotext -layout output for the scanned NASA report,
 # so its OCR errors are kept as they are; the values used are read from these lines).
 
 ## [SP125] NASA SP-125, Huzel & Huang, "Design of Liquid Propellant Rocket Engines", 2nd ed. (1971),
 ## NTRS 19710019929, https://ntrs.nasa.gov/api/citations/19710019929/downloads/19710019929.pdf
 ## sha256 471e590a0c8e99c36a98132104a3ddcc7097b0b7c561fb2638ce9d3c80e26c87; Table 1-4 (PDF pages 31-32) and Table 1-5 (PDF page 33).
-## pdftotext lines 1726-1736, 1757-1759, 1771-1775, 1787-1788, 1795-1801, 1820-1822, 1868-1869, 1883-1897, 1913-1913, 1921-1921
+## pdftotext lines 1726-1736, 1757-1759, 1765-1766, 1771-1775, 1787-1788, 1795-1801, 1820-1823, 1868-1869, 1883-1897, 1913-1913, 1921-1921
+## (lines 1765-1766 and 1823 added by the independent review: the 95 % peroxide row, and the "68 F" under RP-1's density)
 --- lines 1726-1736
                                              TABLE        1-4.-General Data of Some Storable Liquid Rocket Propellants                                                                     .....,
                                                                                                                                                                                            I'-J
@@ -22,6 +23,9 @@
       Hydrazine               N,II.           Fuel.         32.05    34.5      235.4    2.8 at   1.01 at    Up to       Toxic.    Good             AI.. 304.307 stain-   O.5(}-3.00        -u
                                                                                                                                                                                             m
                                                oxid ..                                    160° F 68° F       300° F      nammable                   less steel.                             r
+--- lines 1765-1766
+      95% hydrogen            H,O,            Monoprop .. 32.57      21.9      294.8    0.05 at   1.414 at Unstable Hazardous Deteriorates AI.. stainless steel. 0.50                       o
+        peroxide                               oxid ..                                    77° F     77° F   decomp.  skin con- at 1%/yr.    Tenon. Kel-F                                    n
 --- lines 1771-1775
 '"'   98"i, hydrogen          11,0,           Same as       3:1.42   27.5      299.2    0.043 at 1.432 at Same as       Same as     SamE' as       Same as ahove         1.00
                                                                                                                                                                                             m
@@ -39,10 +43,11 @@
 
 Nitrogen tetroxide    N2O.             OXid.       92.02   11       70       111 at   1.44 at    Function    Very toxic. Good when      AI.. stainless steel. 0.075
                                                                                160° F 68° F       of temp.    hazardous dry              nickel alloy.
---- lines 1820-1822
+--- lines 1820-1823
 Rp·l (rocket pro-     Mil-Spec.-        Fuel.      165 to -47 to    342 to   0.33 at 0.8 to  Auto. ig- Flammable          Good          AI.. steel. nickel      0.015          D
                                                                                                                                                                                C
  pellant)              F25576B           coolant    195     -64      507       160° F 0.82at nition at                                   alloy. copper.                        o
+                                                                                      68° F   470° F                                     Teflon, Kel-F.
 --- lines 1868-1869
 UDMIi (unsymmetri-    (CH JhNNH2        Fuel.      60.08   -72      146      17.6 at 0.789 at Good           Toxic        Good          AI.. stainless steel. 0.50-2.00
  cal dimethyl-                           coolant                              160° F 68° F                                               Teflon. Kel-F

@@ -20,6 +20,7 @@ const P = require('./presets.js');
 const FX = JSON.parse(fs.readFileSync(path.join(here, 'oracle', 'cea-oracle.json'), 'utf8'));
 const PUB = JSON.parse(fs.readFileSync(path.join(here, 'oracle', 'published.json'), 'utf8'));
 const SURVEY = JSON.parse(fs.readFileSync(path.join(here, 'oracle', 'species-survey.json'), 'utf8'));
+const REV = JSON.parse(fs.readFileSync(path.join(here, 'oracle', 'cea-review.json'), 'utf8'));
 const db = M.parseThermo(TEXT);
 const K = FX.station_keys;
 const FT = 0.3048;
@@ -338,8 +339,11 @@ test('densities: single, measured blend, volume-additive blend, and refusals', (
   assert.ok(Math.abs(a50.value - 1 / (0.5 / 1010 + 0.5 / 789)) < 1e-9); assert.equal(a50.confidence, 'derived');
   const pure = M.sideDensity(D, [{ name: 'H2O2(L)', w: 1 }]);
   assert.equal(pure.refusal.code, 'insufficient_data');
+  // SP-125 Table 1-4 also measured the 95 % grade (added by the review); 90 % was never measured
   const htp95 = M.sideDensity(D, [{ name: 'H2O2(L)', w: 0.95 }, { name: 'H2O(L)', w: 0.05 }]);
-  assert.equal(htp95.refusal.code, 'insufficient_data', 'a blend that was not measured cannot borrow the 98 % value');
+  assert.equal(htp95.value, 1414); assert.equal(htp95.confidence, 'measured');
+  const htp90 = M.sideDensity(D, [{ name: 'H2O2(L)', w: 0.90 }, { name: 'H2O(L)', w: 0.10 }]);
+  assert.equal(htp90.refusal.code, 'insufficient_data', 'no borrowed blend value');
   assert.equal(M.sideDensity(D, [{ name: 'O2', w: 1 }]).refusal.code, 'insufficient_data', 'gaseous oxygen has no liquid density');
   // bulk density: equal volumes of 1000 and 500 kg/m^3 at O/F 2 -> 750
   assert.ok(Math.abs(M.bulkDensity(1000, 500, 2) - 750) < 1e-12);
@@ -406,4 +410,126 @@ test('sample handoff.json is what the kernel computes for its own inputs', () =>
 test('page text: the validation numbers index.html states are the ones these tests pin', () => {
   const html = fs.readFileSync(path.join(here, 'index.html'), 'utf8');
   for (const s of ['0.16 %', '0.046 %', '0.21', '0.61 %', '91.2', '92.5 %', '8.1', '9.7 %', '43 gas species', 'below O/F 1.13 to 1.15']) assert.ok(html.includes(s), s);
+});
+
+// ------------------------------------------------------------------ added by the independent review
+// oracle/cea-review.json: the reviewer's own CEA script (oracle/cea_review.py); envelope edges, off-grid points,
+// graphite boundaries by bisection.
+test('review oracle: CEA at 0.1 and 300 bar and 12 off-grid points, same tolerances', () => {
+  const worst = {};
+  const up = (k, v) => { worst[k] = Math.max(worst[k] || 0, Math.abs(v)); };
+  let n = 0;
+  // rows: [pair, of, pc_Pa, condensed, [T, M, gamma_s, cp_eq, s, cstar, Pt, Tt] (same species), [T, cstar] (full set)]
+  for (const [pair, of, pc, condensed, o, full] of [...REV.edges, ...REV.offgrid]) {
+    if (condensed) continue;
+    const r = M.rocket(db, prop(pair), of, pc);
+    assert.ok(!r.refusal, `${pair} ${of} ${pc}: ${r.refusal && r.refusal.reason}`);
+    up('T', rel(r.chamber.T, o[0])); up('M', rel(r.chamber.M, o[1])); up('gamma_s', rel(r.chamber.gamma_s, o[2]));
+    up('cp_eq', rel(r.chamber.cp_eq, o[3])); up('s', rel(r.chamber.s, o[4])); up('cstar', rel(r.cstar, o[5]));
+    up('Pt', rel(r.throat.P, o[6])); up('Tt', rel(r.throat.T, o[7])); up('full_T', rel(r.chamber.T, full[0])); up('full_cstar', rel(r.cstar, full[1]));
+    n++;
+  }
+  assert.equal(n, 72);
+  for (const k of ['T', 'M', 'gamma_s', 'cp_eq', 's', 'full_T']) assert.ok(worst[k] < 1e-6, `${k} ${worst[k]}`);
+  assert.ok(worst.cstar < 5e-6 && worst.full_cstar < 5e-6, `c* ${worst.cstar} / full ${worst.full_cstar}`);
+  assert.ok(worst.Pt < 3e-5 && worst.Tt < 1e-5, `throat P ${worst.Pt}, T ${worst.Tt}`);
+  assert.ok(REV.edges.some((p) => p[2] === 1e4) && REV.edges.some((p) => p[2] === 3e7));
+  assert.deepEqual(M.PC_ENVELOPE, [1e4, 3e7]);
+});
+
+test('graphite: the kernel\'s boundary is CEA\'s or up to 0.0015 leaner, never richer', () => {
+  for (const b of REV.graphite_chamber_or_throat) {
+    const p = { oxidizer: [{ name: 'O2(L)', w: 1 }], fuel: [{ name: b.fuel, w: 1 }] };
+    const ref = (of) => !!M.rocket(db, p, of, b.pc_Pa).refusal;
+    let lo = 0.5, hi = 1.5;
+    for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (ref(m)) lo = m; else hi = m; }
+    const d = hi - b.of[1];
+    assert.ok(d > -1e-6 && d < 1.5e-3, `${b.fuel} ${b.pc_Pa} Pa: kernel ${hi} vs CEA ${b.of[1]}`);
+  }
+  // the nozzle-graphite O/F the README gives module 32
+  const top = Math.max(...REV.nozzle_graphite_lox_rp1_to_1000.map((b) => b.of[1]));
+  const readme = fs.readFileSync(path.join(here, 'README.md'), 'utf8');
+  assert.ok(readme.includes(`O/F ${top.toFixed(2)}`), `README states ${top.toFixed(2)}`);
+});
+
+test('pressure envelope: outside 0.1-300 bar refused with no numbers; opts.envelope widens it', () => {
+  for (const pc of [9.99e3, 3.0001e7, 1e11]) {
+    const r = M.rocket(db, lox, 2.3, pc);
+    assert.equal(r.refusal && r.refusal.code, 'out_of_envelope', `${pc}`);
+    assert.equal(r.cstar, undefined); assert.equal(r.chamber, undefined);
+  }
+  assert.ok(!M.rocket(db, lox, 2.3, 1e4).refusal && !M.rocket(db, lox, 2.3, 3e7).refusal);
+  assert.ok(M.rocket(db, lox, 2.3, 4e7, { envelope: [1e4, 5e7] }).cstar > 0);
+  // the slider and its one-tenth curve stay inside
+  assert.ok(P.PC_MIN / 10 >= M.PC_ENVELOPE[0] && P.PC_MAX <= M.PC_ENVELOPE[1]);
+  // psi from the definitions of the pound, standard gravity and the inch
+  assert.equal(P.PSI, 0.45359237 * 9.80665 / 0.0254 ** 2);
+});
+
+test('module 32\'s recipe works from the exported JSON alone', () => {
+  for (const src of ['file', 'fresh']) {
+    let h;
+    if (src === 'file') h = JSON.parse(fs.readFileSync(path.join(here, 'handoff.json'), 'utf8'));
+    else {
+      const pr = P.PRESETS.find((x) => x.id === 'nto-mmh');
+      const inputs = { preset: pr.id, oxidizer: pr.oxidizer, fuel: pr.fuel, of: 1.9, pc: 7e6 };
+      const r = M.rocket(db, inputs, inputs.of, inputs.pc);
+      h = JSON.parse(JSON.stringify(M.makeHandoff(inputs, r, { oxidizer: M.sideDensity(D, pr.oxidizer), fuel: M.sideDensity(D, pr.fuel) },
+        { stoichiometric_mixture_ratio: M.stoichiometricOF(db, pr.oxidizer, pr.fuel) })));
+    }
+    const O = h.outputs;
+    const opt = (s) => ({ mode: 'SP', s: O.chamber_entropy.value, species: O.species_set.value });
+    const c = M.equilibrate(db, O.element_amounts.value, O.chamber_pressure.value, opt());
+    assert.ok(Math.abs(rel(c.T, O.chamber_temperature.value)) < 1e-8, `${src}: Tc ${c.T}`);
+    assert.ok(Math.abs(rel(c.M, O.chamber_molar_mass.value)) < 1e-8 && Math.abs(rel(c.gamma_s, O.chamber_gamma_s.value)) < 1e-7);
+    const t = M.equilibrate(db, O.element_amounts.value, O.throat_pressure.value, opt());
+    assert.ok(Math.abs(rel(t.T, O.throat_temperature.value)) < 1e-8, `${src}: Tt`);
+    assert.ok(Math.abs(rel(Math.sqrt(2 * (O.chamber_enthalpy.value - t.h)), O.throat_velocity.value)) < 1e-6, `${src}: u_t`);
+    assert.ok(Math.abs(rel(O.chamber_pressure.value / (O.throat_density.value * O.throat_velocity.value), O.cstar.value)) < 1e-12);
+    // frozen composition rebuilds the frozen cp
+    const x = O.chamber_composition.value;
+    const sum = Object.values(x).reduce((a, b) => a + b, 0);
+    assert.ok(Math.abs(sum - 1) < 1e-5, `${src}: sum x ${sum}`);
+    let cpf = 0;
+    for (const [k, v] of Object.entries(x)) cpf += v * M.thermoAt(db.products[k], O.chamber_temperature.value).cp;
+    assert.ok(Math.abs(rel(cpf * M.R / O.chamber_molar_mass.value, O.chamber_cp_frozen.value)) < 1e-5, `${src}: frozen cp`);
+    assert.ok(O.stoichiometric_mixture_ratio.value > 0 && O.species_set.value.length >= 9);
+  }
+});
+
+test('refusal texts: no NaN or Infinity; the temperature span quoted is the species\' own', () => {
+  for (const r of [M.rocket(db, lox, NaN, 1e7), M.rocket(db, lox, 2, NaN), M.rocket(db, lox, Infinity, 1e7), M.rocket(db, lox, 2, -Infinity)]) {
+    assert.equal(r.refusal.code, 'invalid_input');
+    assert.doesNotMatch(r.refusal.reason + r.refusal.what_would_help, /NaN|Infinity/);
+  }
+  const hn = M.makeHandoff({ oxidizer: lox.oxidizer, fuel: lox.fuel, of: NaN, pc: 1e7 }, M.rocket(db, lox, NaN, 1e7), {
+    oxidizer: M.sideDensity(D, lox.oxidizer), fuel: M.sideDensity(D, lox.fuel) });
+  for (const [k, o] of Object.entries(hn.outputs)) assert.ok(typeof o.value !== 'number' || isFinite(o.value), k);
+  assert.equal(hn.outputs.mixture_ratio, undefined); assert.equal(hn.outputs.bulk_density, undefined);
+  const b0 = M.composeReactants(db, lox.oxidizer, lox.fuel, 2.5).b0;
+  const cold = M.equilibrate(db, b0, 1e5, { mode: 'TP', T: 250 });
+  assert.match(cold.refusal.what_would_help, /between 300 and 6000 K, where all 28 species/);
+  const h2 = M.equilibrate(db, { H: 100 }, 1e5, { mode: 'TP', T: 150 });
+  assert.match(h2.refusal.what_would_help, /between 200 and 20000 K, where all 2 species/);
+});
+
+test('closed-form c* differs by 0.008 to 0.19 % at the presets\' opening points', () => {
+  const gaps = P.PRESETS.map((pr) => {
+    const pc = pr.pc || P.PC_DEFAULT;
+    const m = M.maxCstar(db, pr, pc, pr.ofRange[0], pr.ofRange[1]);
+    const r = M.rocket(db, pr, +m.of.toFixed(3), pc);
+    return rel(r.cstarClosedForm, r.cstar) * 100;
+  });
+  assert.equal(Math.min(...gaps).toFixed(3), '0.008');
+  assert.equal(Math.max(...gaps).toFixed(2), '0.19');
+  const readme = fs.readFileSync(path.join(here, 'README.md'), 'utf8');
+  assert.ok(readme.includes('0.008 to 0.19 %'));
+});
+
+test('reactant temperature: a fitted reactant\'s enthalpy follows its own cp', () => {
+  // an imported handoff may carry T for a fitted reactant
+  const h = (T) => M.reactantEnthalpy(db, 'N2H4(L)', T).H;
+  const cp = M.thermoAt(db.reactants['N2H4(L)'], 300).cp * M.R;
+  assert.ok(Math.abs(rel((h(300.5) - h(299.5)) / 1, cp)) < 1e-4, 'dH/dT = cp at 300 K');
+  assert.ok(h(320) - h(298.15) > 1000);
 });

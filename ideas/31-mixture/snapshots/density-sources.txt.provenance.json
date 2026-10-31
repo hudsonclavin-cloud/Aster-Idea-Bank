@@ -18,5 +18,5 @@
     "PubChem 702 ethanol": "0e9fca493710414dad556b91f10609b489a41662de99dfd3d2acb5890578208c"
   },
   "license": "NASA reports: US-government works, public domain in the US. NIST SRD 69: US-government work (NIST asserts rights outside the US; short factual excerpt). PubChem: public-domain compilation; HSDB/CAMEO/DOE PAC are US-government sources.",
-  "note": "Verbatim excerpts (lines copied, not retyped) of the rows the densities in propellant-densities.js are read from. The NASA reports are scanned; their lines are pdftotext -layout output and keep the OCR errors."
+  "note": "Verbatim excerpts (lines copied, not retyped) of the rows the densities in propellant-densities.js are read from. The NASA reports are scanned; their lines are pdftotext -layout output and keep the OCR errors. Independent review (2026-10-31): lines 1765-1766 (95 % hydrogen peroxide) and 1823 (the \"68 F\" under RP-1's density) of the same pdftotext output added verbatim, from the same PDF (sha256 above, re-fetched and unchanged); the review also rendered PDF page 33 and found the scan prints LOX's density as 1.142 where the text layer reads \"1142\"."
 }
