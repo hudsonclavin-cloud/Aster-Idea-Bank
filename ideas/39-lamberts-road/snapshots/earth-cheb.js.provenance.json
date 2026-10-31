@@ -8,10 +8,10 @@
   "readBlob": "20ea55d10d7d079fc6961b3ddf0d771595d93d2f",
   "sourceSha256": "b278dd5567f30266593c49bf4fef203e7570d3613187fd112dc7015109a39c15",
   "sourceBytes": 7214102,
-  "copiedAt": "2026-10-31T15:48:21.058Z",
+  "copiedAt": "2026-10-31T16:29:00.375Z",
   "mode": "derived",
-  "note": "derived by build-data.mjs: targets.earth's 5479 daily records fitted by least squares (positions and velocities together) with Chebyshev series of degree 18 on 32-day segments, coefficients rounded to 1 m; worst residual at a record 0.4488 km, 1.312 mm/s",
+  "note": "derived by build-data.mjs: targets.earth's 5479 daily records fitted by least squares (positions and velocities together) with Chebyshev series of degree 24 on 32-day segments, coefficients rounded to 1 m; worst residual at a record 0.0697 km, 1.077 mm/s",
   "readMatchesCommitted": true,
-  "writtenSha256": "130398c90d2e8c7802cf3d5cd501f914c6eeb02c9091ce3271ed8426294fc686",
-  "writtenBytes": 81163
+  "writtenSha256": "2e55c502999977d68501c8ba1f2ac63aabc9383ceab46e0a6032fbfd8ba28611",
+  "writtenBytes": 73531
 }

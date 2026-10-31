@@ -8,10 +8,10 @@
   "readBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
   "sourceSha256": "bd27b9bd882a65343399f772e37218b5fb05644bea5a822aafcb65e81e750206",
   "sourceBytes": 34499477,
-  "copiedAt": "2026-10-31T15:47:03.260Z",
+  "copiedAt": "2026-10-31T16:33:53.303Z",
   "mode": "derived",
-  "note": "derived by study-encounters.mjs: for every body's bestWindows[0] in this cache (with its elements from tests/fixtures/v2/nea-catalog-slice9.json at the same commit), whether lambert.js's targetRefusals() refuses the arrival (past an Earth encounter closer than 0.05 au after the element epoch, or inside Earth's sphere of influence); counts and the 25 lowest-C3 refused windows",
+  "note": "derived by study-encounters.mjs: for every body's bestWindows[0] in this cache (with its elements from tests/fixtures/v2/nea-catalog-slice9.json at the same commit), whether lambert.js's targetRefusals() refuses the arrival (past an Earth encounter closer than 0.05 au after the element epoch, or inside Earth's sphere of influence); counts and the 25 lowest-C3 refused windows (re-run by the review with the degree-24 Earth: the counts are unchanged, encounter distances moved by under 0.05 km)",
   "readMatchesCommitted": true,
-  "writtenSha256": "1ad822a0f6ccf316170aad9ebecc34a29f5d316929a4b48873d80f79ee07d000",
-  "writtenBytes": 6955
+  "writtenSha256": "38f94b8f8c4cfcbb323cbbc0f0b0b3d6125a14aec695b7f1594bd4c84df17edb",
+  "writtenBytes": 6947
 }

@@ -142,13 +142,37 @@ test('Earth: the Chebyshev fit against Horizons between the daily records, and A
   // at whole days the fetched records are Aster's exactly
   for (const r of H.asterDaily) { const f = H.records.find((q) => q[0] === r[0]); if (f) assert.deepEqual(f, r); }
   assert.equal(H.records.length, 81);
-  // measured at these 81 epochs: Chebyshev 17.8 m and 1.12 mm/s; Aster's daily Hermite 87.8 m and 3.14 mm/s
-  assert.ok(cp < 25 && cv < 1.3e-3, 'cheb ' + cp + ' m ' + cv + ' m/s');
+  // measured at these 81 epochs: Chebyshev (degree 24) 3.6 m and 0.47 mm/s; Aster's daily Hermite 87.8 m and 3.14 mm/s
+  assert.ok(cp < 6 && cv < 0.6e-3, 'cheb ' + cp + ' m ' + cv + ' m/s');
   assert.ok(hp > 80 && hp < 95 && hv > 3.0e-3 && hv < 3.3e-3, 'hermite ' + hp + ' m ' + hv + ' m/s');
-  // the fit is 9,786 numbers for 15 years, against Aster's 32,874; its worst residual at any daily record is recorded
-  assert.equal(EARTH.fit.numbers, 9786);
+  // the fit is 12,864 numbers for 15 years, against Aster's 32,874; its worst residual at any daily record is recorded
+  // (0.070 km and 1.08 mm/s; the degree-18 fit first built had 0.449 km there, in December 2035)
+  assert.equal(EARTH.fit.numbers, 12864);
   assert.equal(EARTH.fit.hermiteNumbers, 32874);
-  assert.ok(EARTH.fit.maxPos_km < 0.5 && EARTH.fit.maxVel_m_s < 0.0015);
+  assert.equal(EARTH.degree, 24);
+  assert.ok(EARTH.fit.maxPos_km < 0.075 && EARTH.fit.maxVel_m_s < 0.0012, JSON.stringify(EARTH.fit));
+  // the C0 question over three hourly windows (2026, the fit's worst in late 2035, and 2037): measured at build over
+  // every hour; the excerpts around each late window's worst point are re-measured here and must agree with that record
+  const HW = req('snapshots/horizons-earth-windows.js');
+  assert.equal(HW.windows.length, 3);
+  assert.equal(HW.fit.degree, EARTH.degree);
+  for (const w of HW.windows) {
+    const M = w.measured;
+    assert.ok(w.hourlyRecords > 1400, w.file);
+    // as close as Aster's Hermite in position (within 6 %) and closer in velocity, in every window
+    assert.ok(M.cheb_m < 1.06 * M.hermite_m && M.cheb_mm_s < M.hermite_mm_s, w.file + ' ' + JSON.stringify(M));
+    assert.ok(M.cheb_m < 75 && M.cheb_mm_s < 1.8 && M.hermite_m > 55 && M.hermite_mm_s > 2, w.file + ' ' + JSON.stringify(M));
+    if (!w.records) continue;
+    const hw = K.hermiteEphemeris(w.asterDaily);
+    let a1 = 0, a2 = 0, b1 = 0;
+    for (const r of w.records) {
+      const tt = (r[0] - 2451545) * DAY, a = K.earthState(tt), h = hw(tt);
+      a1 = Math.max(a1, norm(sub(a.r, km(r.slice(1, 4))))); a2 = Math.max(a2, norm(sub(a.v, km(r.slice(4, 7))))); b1 = Math.max(b1, norm(sub(h.r, km(r.slice(1, 4)))));
+    }
+    assert.equal(w.records.length, 25);
+    assert.ok(Math.abs(a1 - M.cheb_m) < 1e-3, w.file + ': the excerpt holds the window\'s worst Chebyshev position ' + a1 + ' vs ' + M.cheb_m);
+    assert.ok(a2 * 1e3 <= M.cheb_mm_s + 1e-6 && b1 <= M.hermite_m + 1e-3, w.file + ' excerpt within the window\'s worst');
+  }
   // outside the span: no state, and the cell refuses
   assert.equal(K.earthState(K.parseUtc('2041-01-02')), null);
   assert.equal(K.cell(K.findBody('99942'), K.parseUtc('2041-01-02'), 300 * DAY).refusal.applies_to, 'departure_date');
@@ -188,7 +212,7 @@ test('Aster\'s DLA cell, the chain\'s asymptote: reproduced to 1e-12 with Aster\
   assert.ok(Math.abs(viaAster.dlaDeg - rc.dlaDeg) < 1e-9);
   assert.ok(norm(sub(viaAster.vinfDep, rc.poliastroVinfDep_m_s)) < 1e-8, 'vs poliastro');
   const dp = norm(sub(viaPage.vinfDep, rc.vinfDep_m_s));
-  assert.ok(dp > 1e-5 && dp < 2e-4, 'page Earth: ' + dp);   // measured 0.116 mm/s
+  assert.ok(dp > 1e-5 && dp < 2e-4, 'page Earth: ' + dp);   // measured 0.135 mm/s (0.116 with the degree-18 fit first built)
   assert.ok(Math.abs(viaPage.c3 / 1e6 - 0.51136) < 1e-4 && viaPage.band === 'AMBER');
 });
 
@@ -202,14 +226,14 @@ test('Aster\'s screening cache: the best M = 0 window of all 61 bodies reproduce
     n++;
   }
   assert.equal(n, 61);
-  assert.ok(wd < 1e-3 && wa < 1e-4, wd + ' ' + wa);   // measured 0.88 and 0.056 mm/s: the Earth interpolation, nothing else
+  assert.ok(wd < 4e-4 && wa < 1e-5, wd + ' ' + wa);   // measured 0.24 and 0.0013 mm/s (0.88 and 0.056 at degree 18): the Earth interpolation, nothing else
 });
 
 test('JPL\'s own mission-design maps (independent ephemerides, orbit solutions and solver): the gap, and where it explodes', () => {
   const J = req('snapshots/jpl-mdesign.js');
   const out = {};
   for (const [key, des] of [['apophis', '99942'], ['bennu', '101955']]) {
-    const b = K.findBody(des), dv = [], dla = [], post = [];
+    const b = K.findBody(des), dv = [], dla = [], post = [], ridge = [];
     let refused = 0;
     for (const [mjd, tof, vd, va, dec] of J[key].sample) {
       const t = (mjd + 2400000.5 - 2451545) * DAY, c = K.cell(b, t, tof * DAY, { revs: [0, 1, 2, 3] }), q = c.sols[c.best];
@@ -219,16 +243,18 @@ test('JPL\'s own mission-design maps (independent ephemerides, orbit solutions a
         continue;
       }
       const th = ((c.theta / DEG) % 180 + 180) % 180;
-      if (Math.min(th, 180 - th) < 10) continue;          // the 0/180-deg ridge, where the plane is ill-set
+      if (Math.min(th, 180 - th) < 10) { ridge.push(Math.abs(q.vInfDep / 1000 - vd)); continue; }   // the 0/180-deg ridge, where the plane is ill-set
       dv.push(Math.abs(q.vInfDep / 1000 - vd) * 1000); dla.push(Math.abs(q.dlaDeg - dec));
     }
-    out[key] = { dv: stats(dv), dla: stats(dla), post: post.length ? stats(post) : null, refused };
+    out[key] = { dv: stats(dv), dla: stats(dla), post: post.length ? stats(post) : null, refused, ridge: stats(ridge) };
   }
   const A = out.apophis, B = out.bennu;
   assert.equal(A.dv.n, 140); assert.equal(B.dv.n, 138);
   assert.ok(A.dv.med > 1 && A.dv.med < 3 && A.dv.p90 < 8, JSON.stringify(A.dv));       // measured median 1.86, p90 6.0 m/s
   assert.ok(A.dla.med < 0.02 && A.dla.p90 < 0.1, JSON.stringify(A.dla));              // 0.011 and 0.063 deg
   assert.ok(B.dv.med > 4 && B.dv.med < 9 && B.dv.p90 < 30, JSON.stringify(B.dv));       // 6.5 and 23 m/s (JPL used Bennu orbit 97, Aster's is later)
+  // on the ridge (10 Apophis cells, 12 Bennu) the two disagree by up to 3.39 and 2.22 km/s: why near-180 cells are refused
+  assert.ok(A.ridge.n === 10 && Math.abs(A.ridge.max - 3.39) < 0.01 && B.ridge.n === 12 && Math.abs(B.ridge.max - 2.22) < 0.01, JSON.stringify([A.ridge, B.ridge]));
   assert.equal(A.post.n, 60); assert.equal(A.refused, 60);                              // every post-encounter cell is refused here...
   assert.ok(A.post.med > 3, 'post-encounter median ' + A.post.med + ' km/s');          // ...and is off by 6.0 km/s (median) from JPL's
 });
@@ -314,12 +340,13 @@ test('Chain: a departure that closes (idea 38\'s kernel, 25 t) is flown on: the 
   assert.equal(ch.departure.utc, '2026-07-02T04:06:59.700Z');
   const R = K.run(K.defaults(), { chain: ch }), F = R.flown;
   assert.ok(F && F.reaim);
-  // idea 38 leaves 9.9 h before 14:00 UTC, the epoch Aster's asymptote is for; flown as it is, it is 318,455 km from
-  // Apophis at the planned arrival (closest 287,332 km, 9.2 h early); re-aimed from its own epoch to the same arrival
-  // it needs a 3.31 m/s correction, C3 0.5142 instead of 0.5114.
+  // idea 38 leaves 9.9 h before 14:00 UTC, the epoch Aster's asymptote is for; flown as it is, it is 318,449 km from
+  // Apophis at the planned arrival (closest 287,327 km, 9.2 h early); re-aimed from its own epoch to the same arrival
+  // it needs a 3.31 m/s correction, C3 0.5142 instead of 0.5114. (The review's own pipeline, Aster's Hermite Earth,
+  // its own Kepler and hapsira's Lambert, gives 318,404 km, 287,287 km and 3.3115 m/s: the Earth interpolation alone.)
   assert.ok(Math.abs((R.selection.depTdb - ch.departure.tdb) / 3600 - 9.884) < 0.01);
-  assert.ok(Math.abs(F.missAtArrival_m / 1e3 - 318455) < 50, F.missAtArrival_m);
-  assert.ok(Math.abs(F.closest.distance_m / 1e3 - 287332) < 50, F.closest.distance_m);
+  assert.ok(Math.abs(F.missAtArrival_m / 1e3 - 318449) < 10, F.missAtArrival_m);
+  assert.ok(Math.abs(F.closest.distance_m / 1e3 - 287327) < 10, F.closest.distance_m);
   assert.equal(K.utcOf(F.closest.tdb).slice(0, 13), '2028-05-09T09');
   assert.ok(Math.abs(F.reaim.correction_m_s - 3.312) < 0.01, F.reaim.correction_m_s);
   assert.ok(Math.abs(F.reaim.c3Needed / 1e6 - 0.51424) < 1e-4);
@@ -359,13 +386,22 @@ test('Handoff: the committed sample is what the kernel makes; it round-trips; ed
   assert.match(K.parseHandoff(e1).refusal.reason, /v_infinity_arrival/);
   const e2 = JSON.parse(JSON.stringify(committed)); e2.refusals.pop();
   assert.match(K.parseHandoff(e2).refusal.reason, /refusals/);
+  // (review) edits the 1e-6 relative tolerance first used let through: an epoch moved by 10 min, a position by 1 km
+  const e5 = JSON.parse(JSON.stringify(committed)); e5.outputs.transfer.value.departure_tdb_s_past_j2000 += 600;
+  assert.match(K.parseHandoff(e5).refusal.reason, /departure_tdb_s_past_j2000/);
+  const e6 = JSON.parse(JSON.stringify(committed)); e6.outputs.heliocentric_arrival_state.value.r_m[0] += 1000;
+  assert.match(K.parseHandoff(e6).refusal.reason, /heliocentric_arrival_state/);
+  const e7 = JSON.parse(JSON.stringify(committed)); e7.outputs.transfer.value.departure_utc = '2026-07-02T14:00:01.000Z';
+  assert.match(K.parseHandoff(e7).refusal.reason, /departure_utc/);
+  const e8 = JSON.parse(JSON.stringify(committed)); e8.refusals.find((r) => r.applies_to === 'dynamics').applies_to = 'settings';
+  assert.match(K.parseHandoff(e8).refusal.reason, /refusals/);
   const e3 = JSON.parse(JSON.stringify(committed)); e3.inputs.settings.target = '101955';
   assert.ok(K.parseHandoff(e3).refusal);
   assert.equal(K.parseHandoff('{').refusal.code, 'invalid_input');
 });
 
 test('Refusals for settings out of the envelope, structured, never a number', () => {
-  const bad = [{ target: 'nowhere' }, { depStartUtc: '2027-01-01', depEndUtc: '2026-01-01' }, { tofMinDays: -3 }, { tofMaxDays: 5000 }, { nDep: 1 }, { revs: [3] }, { objective: 'cheapest' }, { site: 'kourou' }];
+  const bad = [{ target: 'nowhere' }, { depStartUtc: '2027-01-01', depEndUtc: '2026-01-01' }, { tofMinDays: -3 }, { tofMaxDays: 5000 }, { nDep: 1 }, { nTof: 301 }, { nDep: 401 }, { revs: [3] }, { objective: 'cheapest' }, { site: 'kourou' }];
   for (const b of bad) {
     const R = K.run(Object.assign(K.defaults(), b), null);
     assert.equal(R.refusal.code, 'invalid_input', JSON.stringify(b));
@@ -379,6 +415,59 @@ test('Refusals for settings out of the envelope, structured, never a number', ()
   assert.ok(poor);
   const Rp = K.run(Object.assign(K.defaults(), { target: poor.designation, depStartUtc: '2027-01-01', depEndUtc: '2028-01-01', nDep: 30, nTof: 20 }), null);
   assert.ok(Rp.refusals.some((r) => r.applies_to === 'target_orbit'));
+});
+
+test('The grid follows the site, and its best is never a cell the page refuses (review)', () => {
+  // the DLA band is the chosen site's: Phaethon (i 22 deg) has 495 cells beyond Cape Canaveral's 57 deg and none beyond
+  // Vandenberg's 90 deg on a 60 x 40 grid; the count, the hatch and the handoff follow the site
+  const at = (site) => K.run(Object.assign(K.defaults(), { target: '3200', site, nDep: 60, nTof: 40 }), null);
+  const cape = at('cape'), vafb = at('vandenberg');
+  assert.equal(cape.grid.red, 495); assert.equal(cape.grid.excludedCounts.dla, 495);
+  assert.equal(vafb.grid.red, 0); assert.equal(vafb.grid.excludedCounts.dla, 0);
+  assert.equal(K.buildHandoff(vafb, 'x').outputs.porkchop.value.red_cells, 0);
+  // and so does the chosen window's band: Phaethon's best at Vandenberg leaves at DLA 79.9 deg, AMBER there (RED at the
+  // Cape); before the review the window took the Cape's band whatever the site and refused it as 'beyond 90 deg'
+  const qv = vafb.transfer.sol, hv = K.buildHandoff(vafb, 'x').outputs.v_infinity_departure.value;
+  assert.ok(Math.abs(qv.dlaDeg) > 57 && Math.abs(qv.dlaDeg) < 90 && qv.band === 'AMBER' && hv.band === 'AMBER' && hv.site === 'Vandenberg SFB', qv.dlaDeg + ' ' + qv.band);
+  assert.ok(!vafb.refusals.some((r) => r.applies_to === 'dla'));
+  // selecting each grid's best (Apophis, Bennu, Phaethon at both sites, 2000 SG344) draws none of the per-cell refusals
+  const PER_CELL = ['target_ephemeris', 'arrival_geometry', 'dla', 'transfer_plane', 'transfer_orbit'];
+  for (const [des, site] of [['99942', 'cape'], ['101955', 'cape'], ['3200', 'cape'], ['3200', 'vandenberg'], ['2000 SG344', 'cape']]) {
+    const R = K.run(Object.assign(K.defaults(), { target: des, site, nDep: 60, nTof: 40 }), null), g = R.grid, f = K.famOf(g.min.fam);
+    const S = Object.assign(K.defaults(), { target: des, site, nDep: 60, nTof: 40, selection: { depTdb: g.min.depTdb, tofS: g.min.tofS, M: f.M, branch: f.branch } });
+    const own = K.run(S, null, { grid: false }).refusals.filter((r) => !r.from && PER_CELL.includes(r.applies_to)).map((r) => r.applies_to);
+    assert.deepEqual(own, [], des + ' ' + site + ': the grid best is refused for ' + own);
+  }
+  // excluded cells are flagged with their reason, and each one is refused when selected
+  const g = cape.grid, codes = { 2: 'dla', 3: 'transfer_plane', 4: 'transfer_orbit' };
+  for (const code of [2, 3]) {
+    const k = g.excluded.findIndex((x) => x === code), f = K.famOf(g.fam[k]);
+    const S = Object.assign(K.defaults(), { target: '3200', nDep: 60, nTof: 40, selection: { depTdb: g.deps[k % g.nDep], tofS: g.tofs[Math.floor(k / g.nDep)], M: f.M, branch: f.branch } });
+    assert.ok(K.run(S, null, { grid: false }).refusals.some((r) => r.applies_to === codes[code]), 'code ' + code);
+  }
+  // a grid of 5-10 day flights is all unbound about the Sun: nothing to select, said so, and a picked cell is refused
+  const R5 = K.run(Object.assign(K.defaults(), { tofMinDays: 5, tofMaxDays: 10, nDep: 20, nTof: 10 }), null);
+  assert.equal(R5.grid.excludedCounts.unbound, 200);
+  assert.ok(!R5.transfer && R5.refusals.some((r) => r.applies_to === 'selection' && /All 200 solved cells/.test(r.reason)));
+  const R6 = K.run(Object.assign(K.defaults(), { tofMinDays: 5, tofMaxDays: 10, selection: { depTdb: K.parseUtc('2026-03-01'), tofS: 8 * DAY, M: 0, branch: 'single' } }), null, { grid: false });
+  assert.ok(R6.transfer.elements.e > 1 && R6.refusals.some((r) => r.applies_to === 'transfer_orbit'));
+});
+
+test('Refusals the excerpt cannot reach, and import edits that only one check catches (review)', () => {
+  // Aster's not-kepler-safe tier (no body in the excerpt carries it): a copy of Apophis so tagged is refused
+  const ap = K.findBody('99942'), fake = Object.assign({}, ap, { designation: 'test-nks', tier: 'not-kepler-safe' });
+  assert.ok(K.targetRefusals(fake, K.parseUtc('2026-07-02'), K.parseUtc('2027-07-02')).some((r) => r.applies_to === 'target_ephemeris' && /not-kepler-safe/.test(r.reason)));
+  assert.ok(!K.targetRefusals(ap, K.parseUtc('2026-07-02'), K.parseUtc('2027-07-02')).some((r) => /not-kepler-safe/.test(r.reason)));
+  const h38 = closingH38();
+  // the UTC moved by one second, the TDB epoch left alone
+  const e1 = JSON.parse(JSON.stringify(h38)), S1 = e1.outputs.hyperbolic_departure_state.value;
+  S1.utc = new Date(Date.parse(S1.utc) + 1000).toISOString();
+  assert.match(K.importBurnOut(e1).refusal.reason, /UTC and TDB/);
+  // v-infinity turned by 0.01 deg about z with its magnitude, C3, RLA and DLA kept consistent: only idea 37's asymptote catches it
+  const e2 = JSON.parse(JSON.stringify(h38)), V = e2.outputs.v_infinity.value, a = 0.01 * DEG, v = V.vector_m_s;
+  V.vector_m_s = [v[0] * Math.cos(a) - v[1] * Math.sin(a), v[0] * Math.sin(a) + v[1] * Math.cos(a), v[2]];
+  V.magnitude_m_s = norm(V.vector_m_s); V.c3_m2_s2 = V.magnitude_m_s ** 2; V.rla_deg = K.rlaDeg(V.vector_m_s); V.dla_deg = K.dlaDeg(V.vector_m_s);
+  assert.match(K.importBurnOut(e2).refusal.reason, /asymptote/);
 });
 
 test('The encounter study over Aster\'s whole screening cache: its numbers, and its cases re-refused by this kernel', () => {

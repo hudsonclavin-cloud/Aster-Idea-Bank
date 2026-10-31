@@ -73,7 +73,8 @@ async function clickCell(page, i, j, tap) {
   const rows = await page.evaluate(() => [...document.querySelectorAll('#checkTable tbody tr')].map((r) => r.textContent));
   ok(rows.some((r) => r.includes('is that window real?') && r.includes('refused')), 'Aster cache best window refused row');
   ok(rows.some((r) => r.includes('JPL\'s integrated orbit') && /[0-9] km/.test(r)), 'drift row present');
-  ok(rows.some((r) => r.includes('Earth between Aster') && r.includes('9,786')), 'Earth C0 row');
+  ok(rows.some((r) => r.includes('Earth between Aster') && r.includes('12,864')), 'Earth C0 row');
+  ok(rows.filter((r) => r.includes('Earth at the fit\'s worst point')).length === 2, 'late-window Earth rows');
   ok((await text(page, '#refusals')).includes('dynamics'), 'patched-conic refusal shown');
   ok(!(await page.evaluate(() => document.body.innerText.includes('NaN'))), 'no NaN');
   // click a cell: the tiles follow the kernel
@@ -105,6 +106,20 @@ async function clickCell(page, i, j, tap) {
   // out of envelope: a flight time above the page's 3,000 days
   await page.fill('#tofZ', '5000'); await page.dispatchEvent('#tofZ', 'change');
   ok((await text(page, '#refusals')).includes('invalid_input') && !(await page.evaluate(() => document.body.innerText.includes('NaN'))), 'settings refusal, no NaN');
+  // (review) nothing computed for the earlier settings stays on screen beside the refusal, and export says why it cannot
+  ok(await page.evaluate(() => document.querySelectorAll('#selTiles .tile, #chainTiles .tile, #checkTable tbody tr').length === 0), 'no stale tiles or rows after a settings refusal');
+  ok(await inkPixels(page, 'pork') === 0 && await inkPixels(page, 'orbit') === 0, 'charts cleared after a settings refusal');
+  for (const id of ['#copyBtn', '#dlBtn', '#linkBtn']) { await page.click(id); ok((await text(page, '#status')).startsWith('Nothing to export'), id + ' on a refused state'); }
+  await page.click('#resetBtn');
+  // (review) a grid with no converged transfer shows that refusal, not the previous selection's
+  await page.fill('#tofA', '20'); await page.dispatchEvent('#tofA', 'change'); await page.fill('#tofZ', '60'); await page.dispatchEvent('#tofZ', 'change'); await page.click('[data-revs="1"]');
+  ok((await text(page, '#refusals')).includes('No transfer in this grid converged') && !(await text(page, '#refusals')).includes('dynamics') && (await page.$$('#selTiles .tile')).length === 0, 'no-transfer refusal shown, nothing stale');
+  await page.click('#resetBtn');
+  // (review) the DLA band and the hatch follow the site: Phaethon at Vandenberg
+  await page.selectOption('#tgtSel', '3200'); await page.selectOption('#siteSel', 'vandenberg'); await page.waitForTimeout(300);
+  ok(!(await text(page, '#gridNote')).includes('DLA ceiling') && (await tileVal(page, 'DLA (declination)')).includes('AMBER') && !(await text(page, '#refusals')).includes('dla:'), 'Vandenberg: no cell beyond 90 deg, the window AMBER');
+  await page.selectOption('#siteSel', 'cape'); await page.waitForTimeout(300);
+  ok((await text(page, '#gridNote')).includes('beyond Cape Canaveral\'s DLA ceiling') && !(await text(page, '#refusals')).includes('dla:'), 'Cape: RED cells counted, the best is not one of them');
   await page.click('#resetBtn');
   ok((await tileVal(page, 'Departure (UTC)')).startsWith('2026-07-02 14:00'), 'reset');
   ok(errors.length === 0, 'desktop errors: ' + errors.join(' | '));
@@ -123,7 +138,7 @@ async function clickCell(page, i, j, tap) {
   await page.fill('#importText', JSON.stringify(h38)); await page.click('#importBtn');
   ok((await text(page, '#status')).includes('departs 2026-07-02 04:06'), 'import closing 38');
   ok(Math.abs(num(await tileVal(page, 'Correction to re-aim')) - 3.312) < 0.002, 're-aim correction tile');
-  ok(Math.abs(num(await tileVal(page, 'Uncorrected, at arrival')) - 318455) < 50, 'uncorrected miss tile');
+  ok(Math.abs(num(await tileVal(page, 'Uncorrected, at arrival')) - 318449) < 10, 'uncorrected miss tile');
   ok(Math.abs(num(await tileVal(page, 'Before the transfer\'s epoch by')) - 9.88) < 0.01, 'hours early');
   ok((await page.evaluate(() => document.getElementById('orbitLegend').textContent)).includes('flown uncorrected'), 'flown arc in the orbit view');
   // download, parse back with the kernel

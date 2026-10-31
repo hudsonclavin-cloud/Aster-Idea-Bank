@@ -261,7 +261,7 @@
     function tdbDateOfJd(jd) { return new Date((jd - 2440587.5) * DAY * 1000).toISOString().slice(0, 10) + ' TDB'; }
 
     // -------------------------------------------------------------- Earth (Chebyshev fit of Horizons, build-data.mjs)
-    var SEG = CHEB.segDays * DAY, T0 = CHEB.t0_tdb_s, NSEG = CHEB.segs.length, T_END = CHEB.tEnd_tdb_s;
+    var SEG = CHEB.segDays * DAY, T0 = CHEB.t0_tdb_s, NSEG = CHEB.segs.length, T_END = CHEB.tEnd_tdb_s, CU = CHEB.coefUnit_m || 1000;
     function chebEarth(t) {
       if (!(t >= T0 && t <= T_END)) return null;
       var k = Math.min(NSEG - 1, Math.floor((t - T0) / SEG)), a = T0 + k * SEG, b = Math.min(a + SEG, T_END), half = (b - a) / 2;
@@ -274,7 +274,7 @@
           var t2 = 2 * tau * t1 - t0; p += co[j] * t2; t0 = t1; t1 = t2;
           d += co[j] * j * u1; var u2 = 2 * tau * u1 - u0; u0 = u1; u1 = u2;
         }
-        r[c] = p * 1000; v[c] = d * 1000 / half;     // coefficients are km
+        r[c] = p * CU; v[c] = d * CU / half;         // coefficients in whole metres (CU 1; km before the review)
       }
       return { r: r, v: v };
     }
@@ -379,14 +379,27 @@
 
     // -------------------------------------------------------------- the porkchop grid
     function linspace(a, b, n) { var o = []; for (var i = 0; i < n; i++) o.push(n === 1 ? a : a + (b - a) * i / (n - 1)); return o; }
+    /** Why a solved cell is refused as a selection, without the encounter test (which grid() does once per body):
+     * 0 none, 2 DLA beyond the site's ceiling or undefined, 3 within nearPiDeg of 180 deg, 4 unbound about the Sun.
+     * The same rules run() applies to a selected transfer, so the grid's "best" is never a cell the page refuses. */
+    function cellExclusion(c, q) {
+      if (q.dlaDeg === null || q.band === 'RED') return 2;
+      var th = ((c.theta / DEG) % 360 + 360) % 360;
+      if (Math.abs(th - 180) < C.nearPiDeg) return 3;
+      if (dot(q.v1, q.v1) / 2 - MU_SUN / norm(c.earth.r) >= 0) return 4;
+      return 0;
+    }
     /**
-     * P: {depStart, depEnd (TDB s), tofMin, tofMax (s), nDep, nTof, revs, objective}. Returns typed arrays over
-     * index j*nDep + i (i departure, j time of flight): the objective, C3, arrival v-infinity, DLA, and the chosen family.
+     * P: {depStart, depEnd (TDB s), tofMin, tofMax (s), nDep, nTof, revs, objective, site}. Returns typed arrays over
+     * index j*nDep + i (i departure, j time of flight): the objective, C3, arrival v-infinity, DLA, the chosen family,
+     * unreliable (1: arrival past an Earth encounter or inside its sphere of influence) and excluded (cellExclusion's
+     * code). min and minC3 skip both; rawMin does not.
      */
     function grid(b, P) {
       var nD = P.nDep, nT = P.nTof, deps = linspace(P.depStart, P.depEnd, nD), tofs = linspace(P.tofMin, P.tofMax, nT);
-      var n = nD * nT, val = new Float64Array(n), c3 = new Float64Array(n), va = new Float64Array(n), dla = new Float64Array(n), fam = new Int8Array(n), bad = new Uint8Array(n);
+      var n = nD * nT, val = new Float64Array(n), c3 = new Float64Array(n), va = new Float64Array(n), dla = new Float64Array(n), fam = new Int8Array(n), bad = new Uint8Array(n), excl = new Uint8Array(n);
       var best = { k: -1, v: Infinity }, bestC3 = { k: -1, v: Infinity }, rawBest = { k: -1, v: Infinity }, solved = 0, unsolved = 0, red = 0, flagged = 0;
+      var excluded = { dla: 0, plane: 0, unbound: 0 }, site = P.site || 'cape';
       var tEp = jdTdbToTdb(b.elements.epochTdbJd), enc = encounters(b, Math.min(tEp, P.depStart), Math.max(tEp, P.depEnd + P.tofMax));
       function crossed(tArr, A) {
         for (var e = 0; e < enc.length; e++) if ((enc[e].t - tEp) * (enc[e].t - tArr) < 0) return true;
@@ -399,7 +412,7 @@
           var k = j * nD + i;
           val[k] = c3[k] = va[k] = dla[k] = NaN; fam[k] = -1;
           if (!E) { unsolved++; continue; }
-          var c = cell(b, deps[i], tofs[j], { revs: P.revs, objective: P.objective, earth: function () { return E; } });
+          var c = cell(b, deps[i], tofs[j], { revs: P.revs, objective: P.objective, site: site, earth: function () { return E; } });
           if (!c.ok) { unsolved++; continue; }
           var q = c.sols[c.best];
           val[k] = objectiveOf(q, P.objective); c3[k] = q.c3; va[k] = q.vInfArr; dla[k] = q.dlaDeg === null ? NaN : q.dlaDeg;
@@ -408,12 +421,14 @@
           if (q.band === 'RED') red++;
           if (val[k] < rawBest.v) rawBest = { k: k, v: val[k] };
           if (enc.length && crossed(deps[i] + tofs[j], c.target)) { bad[k] = 1; flagged++; continue; }
+          var why = cellExclusion(c, q);
+          if (why) { excl[k] = why; excluded[why === 2 ? 'dla' : why === 3 ? 'plane' : 'unbound']++; continue; }
           if (val[k] < best.v) best = { k: k, v: val[k] };
           if (q.c3 < bestC3.v) bestC3 = { k: k, v: q.c3 };
         }
       }
       function at(kk) { return kk < 0 ? null : { i: kk % nD, j: Math.floor(kk / nD), depTdb: deps[kk % nD], tofS: tofs[Math.floor(kk / nD)], value: val[kk], c3: c3[kk], fam: fam[kk] }; }
-      return { nDep: nD, nTof: nT, deps: deps, tofs: tofs, val: val, c3: c3, vinfArr: va, dla: dla, fam: fam, unreliable: bad, solved: solved, unsolved: unsolved, red: red, flagged: flagged, encounters: enc, elementEpoch: tEp,
+      return { nDep: nD, nTof: nT, deps: deps, tofs: tofs, val: val, c3: c3, vinfArr: va, dla: dla, fam: fam, unreliable: bad, excluded: excl, excludedCounts: excluded, site: site, solved: solved, unsolved: unsolved, red: red, flagged: flagged, encounters: enc, elementEpoch: tEp,
         min: at(best.k), minC3: at(bestC3.k), rawMin: at(rawBest.k), objective: P.objective, revs: P.revs };
     }
     function famOf(code) { if (code < 0) return null; var M = Math.floor(code / 3), r = code % 3; return { M: M, branch: r === 0 ? 'single' : r === 1 ? 'left' : 'right' }; }
@@ -485,7 +500,7 @@
     function toEcliptic(v) { return [v[0], v[1] * CE + v[2] * SE, -v[1] * SE + v[2] * CE]; }
     function transfer(b, depTdb, tofS, M, branch, opts) {
       opts = opts || {};
-      var c = cell(b, depTdb, tofS, { revs: [M], earth: opts.earth });
+      var c = cell(b, depTdb, tofS, { revs: [M], earth: opts.earth, site: opts.site });
       if (!c.sols) return { refusal: c.refusal };
       var q = null;
       c.sols.forEach(function (s) { if (s.converged && s.branch === branch) q = s; });
@@ -615,7 +630,7 @@
       opts = opts || {};
       var S = clone(Sin), errs = validSettings(S);
       if (errs.length) return { refusal: refusal('invalid_input', 'Settings: ' + errs.join('; ') + '.', 'Values inside the stated ranges.', { applies_to: 'settings' }), S: S };
-      var b = findBody(S.target), P = { depStart: parseUtc(S.depStartUtc), depEnd: parseUtc(S.depEndUtc), tofMin: S.tofMinDays * DAY, tofMax: S.tofMaxDays * DAY, nDep: S.nDep, nTof: S.nTof, revs: S.revs, objective: S.objective };
+      var b = findBody(S.target), P = { depStart: parseUtc(S.depStartUtc), depEnd: parseUtc(S.depEndUtc), tofMin: S.tofMinDays * DAY, tofMax: S.tofMaxDays * DAY, nDep: S.nDep, nTof: S.nTof, revs: S.revs, objective: S.objective, site: S.site };
       var R = { S: S, body: b, P: P, refusals: [], chain: src && src.chain ? src.chain : null };
       if (P.depStart < T0 || P.depEnd > T_END) R.refusals.push(refusal('out_of_envelope', 'Departures from ' + S.depStartUtc + ' to ' + S.depEndUtc + ' run outside the Earth ephemeris (' + tdbDate(T0) + ' to ' + tdbDate(T_END) + '); those columns are left empty.', 'Departures inside that span, or a longer Horizons span (Aster\'s H0 item).', { applies_to: 'departure_date' }));
       if (opts.gridCache && opts.gridCache.key === JSON.stringify([S.target, P, S.site])) R.grid = opts.gridCache.grid;
@@ -627,13 +642,19 @@
         if (!sel && rc.designation === b.designation && rc.depTdb >= P.depStart && rc.depTdb <= P.depEnd && rc.tofDays * DAY >= P.tofMin && rc.tofDays * DAY <= P.tofMax && S.revs.indexOf(rc.M) >= 0) sel = chainCellSelection(rc);
       });
       if (!sel && R.grid && R.grid.min) { var f = famOf(R.grid.min.fam); sel = { depTdb: R.grid.min.depTdb, tofS: R.grid.min.tofS, M: f.M, branch: f.branch, source: 'grid_minimum' }; }
-      if (!sel) { R.refusals.push(refusal('not_found', 'No transfer in this grid converged.', 'Wider ranges, or more revolutions.', { applies_to: 'selection' })); return R; }
+      if (!sel) {
+        var G0 = R.grid, X = G0 ? G0.excludedCounts : null;
+        if (G0 && G0.solved > 0) R.refusals.push(refusal('out_of_envelope', 'All ' + G0.solved + ' solved cells of this grid are refused (' + [[G0.flagged, 'arrive past an Earth encounter or inside its sphere of influence'], [X.dla, 'DLA beyond ' + C.sites[S.site].name + '\'s ceiling'], [X.plane, 'within ' + C.nearPiDeg + ' deg of 180'], [X.unbound, 'unbound about the Sun']].filter(function (p) { return p[0] > 0; }).map(function (p) { return p[0] + ' ' + p[1]; }).join('; ') + '): there is no transfer here to select.', 'Other departure dates or flight times, another site, or more revolutions.', { applies_to: 'selection' }));
+        else R.refusals.push(refusal('not_found', 'No transfer in this grid converged.', 'Wider ranges, or more revolutions.', { applies_to: 'selection' }));
+        return R;
+      }
       R.selection = sel;
-      var tr = transfer(b, sel.depTdb, sel.tofS, sel.M, sel.branch);
+      var tr = transfer(b, sel.depTdb, sel.tofS, sel.M, sel.branch, { site: S.site });
       if (tr.refusal) { R.refusals.push(tr.refusal); return R; }
       R.transfer = tr;
       targetRefusals(b, sel.depTdb, tr.arrTdb).forEach(function (r) { R.refusals.push(r); });
       var np = nearPiRefusal(tr); if (np) R.refusals.push(np);
+      if (!(tr.elements.e < 1)) R.refusals.push(refusal('out_of_envelope', 'This transfer is a hyperbola about the Sun (e ' + fmt(tr.elements.e, 4) + ', C3 ' + fmt(tr.sol.c3 / 1e6, 4) + ' km^2/s^2): this page\'s coast propagator and orbit view are elliptic only, so the arc is not drawn and the transfer is not one this page carries on.', 'A longer time of flight (a bound transfer orbit).', { applies_to: 'transfer_orbit' }));
       if (tr.sol.dlaDeg === null) R.refusals.push(refusal('insufficient_data', 'The departure v-infinity is below ' + C.dlaEpsilon_m_s + ' m/s: its declination is undefined (Aster\'s dla.ts guard).', 'A cell with a larger C3.', { applies_to: 'dla' }));
       else if (tr.sol.band === 'RED') R.refusals.push(refusal('out_of_envelope', 'DLA ' + fmt(tr.sol.dlaDeg, 4) + ' deg is beyond ' + C.sites[S.site].name + '\'s ' + C.sites[S.site].dlaCeilingDeg + ' deg ceiling (Aster\'s band model): this departure needs a dogleg or a plane change Aster does not price.', 'A cell with |DLA| under the ceiling, or the other site.', { applies_to: 'dla' }));
       // Aster's cell, when the target is the one in Aster's DLA oracle
@@ -684,7 +705,7 @@
       }
       if (R.grid) {
         var g = R.grid, mm = function (p) { if (!p) return null; var f = famOf(p.fam); return { departure_utc: utcOf(p.depTdb), departure_tdb_s_past_j2000: p.depTdb, time_of_flight_s: p.tofS, revolutions: f.M, branch: f.branch, c3_m2_s2: p.c3, objective_value: p.value }; };
-        O.porkchop = qv({ objective: g.objective, revolutions: g.revs, n_departure: g.nDep, n_time_of_flight: g.nTof, solved_cells: g.solved, unsolved_cells: g.unsolved, red_cells: g.red, minimum: mm(g.min), minimum_c3: mm(g.minC3) }, 's, m^2/s^2, m/s', 'derived', KERNEL + ' grid()');
+        O.porkchop = qv({ objective: g.objective, revolutions: g.revs, n_departure: g.nDep, n_time_of_flight: g.nTof, solved_cells: g.solved, unsolved_cells: g.unsolved, site: C.sites[g.site].name, red_cells: g.red, refused_cells: { encounter_or_soi: g.flagged, dla: g.excludedCounts.dla, near_180_deg: g.excludedCounts.plane, unbound: g.excludedCounts.unbound }, minimum: mm(g.min), minimum_c3: mm(g.minC3), raw_minimum: mm(g.rawMin) }, 's, m^2/s^2, m/s', 'derived', KERNEL + ' grid(): minimum and minimum_c3 skip every refused cell; raw_minimum does not');
       }
       if (R.asterCell) {
         var ac = R.asterCell;
@@ -713,12 +734,21 @@
       if (JSON.stringify(a.revs) !== JSON.stringify(b.revs)) return 'revs';
       return null;
     }
+    // Tolerances for reading a handoff back. Epochs are compared in seconds (1 ms; 60 s for the closest approach, whose
+    // distance is flat to a metre over several seconds, so its time is ill-conditioned and differs between engines);
+    // every other number to 1e-9 relative. (Before the review, 1e-6 relative everywhere let an epoch move by 14 min or a
+    // heliocentric position by 150 km unnoticed.)
+    var REL_TOL = 1e-9, EPOCH_TOL_S = 1e-3, CLOSEST_TOL_S = 60;
+    function epochTol(path) { return /closest_approach/.test(path) ? CLOSEST_TOL_S : EPOCH_TOL_S; }
+    var ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
     function numDiff(a, b, path) {
       if (typeof a === 'number' || typeof b === 'number') {
         if (!(typeof a === 'number' && typeof b === 'number')) return path;
         if (a === b) return null;
-        return Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b)) ? null : path;
+        if (/tdb_s_past_j2000$/.test(path)) return Math.abs(a - b) <= epochTol(path) ? null : path;
+        return Math.abs(a - b) <= REL_TOL * Math.max(1, Math.abs(a), Math.abs(b)) ? null : path;
       }
+      if (typeof a === 'string' && typeof b === 'string' && ISO_RE.test(a) && ISO_RE.test(b)) return Math.abs(Date.parse(a) - Date.parse(b)) <= 1000 * epochTol(path) ? null : path;
       if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') return a === b ? null : path;
       if (Array.isArray(a) !== Array.isArray(b)) return path;
       var ks = {}; Object.keys(a).forEach(function (k) { ks[k] = 1; }); Object.keys(b).forEach(function (k) { ks[k] = 1; });

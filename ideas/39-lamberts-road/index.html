@@ -125,9 +125,10 @@
   <section class="card wide" id="how" aria-labelledby="h-how">
     <h2 id="h-how">How this works</h2>
     <ul>
-      <li><b>Earth</b> is NASA/JPL Horizons' geocentre about the Sun (ICRF, TDB), the daily records 2026-2040 that Aster's porkchop uses, fitted here with Chebyshev series on 32-day segments. Between the daily records it is about as close to Horizons as Aster's own cubic Hermite, in 9,786 numbers instead of 32,874: against Horizons every hour for June and July 2026 the worst errors are 0.13 km and 3.2 mm/s (Aster's Hermite: 0.09 km and 3.2 mm/s); the table below re-measures it live at 81 of those epochs.</li>
+      <li><b>Earth</b> is NASA/JPL Horizons' geocentre about the Sun (ICRF, TDB), the daily records 2026-2040 that Aster's porkchop uses, fitted here with Chebyshev series of degree 24 on 32-day segments, 12,864 numbers instead of the 32,874 Aster interpolates. Against Horizons every hour in three fetched windows (mid-2026, late 2035, early 2037) the worst errors are 70 m and 1.8 mm/s; Aster's own cubic Hermite between the same daily records: 90 m and 3.2 mm/s. The table below re-measures both live at the fetched epochs it keeps.</li>
       <li><b>The asteroid</b> is Aster's catalog orbit, propagated about the Sun alone exactly as Aster's <code>keplerian.ts</code> does (ecliptic elements, Kepler's equation, then the J2000 obliquity to ICRF). At the element epoch it reproduces Aster's anchor state to 6 mm. It does not know the planets: Apophis drifts 93,000 km from JPL's integrated orbit by April 2028, and after its 13 April 2029 Earth encounter it is millions of km off. So every arrival after an Earth encounter closer than 0.05 au (Aster's own screening distance), or inside the Earth's sphere of influence, is hatched and refused.</li>
       <li><b>Lambert's problem</b>: Izzo's 2015 method (the λ, x formulation, Householder iterations), for direct transfers and for one and two revolutions on both branches. It matches Aster's pinned cells to 1e-15 and two independent libraries (hapsira's Izzo, lamberthub's Gooding 1990) to 7e-13 over 75 cases.</li>
+      <li><b>What is refused, cell by cell</b>: an arrival past an Earth encounter closer than 0.05 au or inside Earth's sphere of influence (red hatch), a DLA beyond the chosen site's ceiling (dark hatch), a transfer within 5° of 180° or unbound about the Sun (grey hatch). None of these is ever the grid's best; the raw minimum is named beside it.</li>
       <li><b>What each cell shows</b>: departure v∞ = transfer velocity minus Earth's, C3 = |v∞|², DLA = asin(v∞z/|v∞|) in ICRF (Aster's convention, no rotation), arrival v∞ = transfer minus asteroid velocity, and Aster's ΔV stack: vis-viva injection from a 6,578 km parking orbit, rendezvous at the arrival v∞, the same again home for sample return, 150 m/s station-keeping and 10 % margin. With several families allowed, each cell shows the one the chosen quantity prefers.</li>
       <li><b>The chain</b>: idea 38's handoff gives the departure epoch and v∞ as flown. This page coasts that state about the Sun to the asteroid (the miss, uncorrected) and solves Lambert again from that epoch to the same arrival (the correction module 40 must fly).</li>
       <li><b>Not modelled</b>: the planets, the Moon and Earth's pull during the transfer (patched conics), solar radiation pressure, low thrust, gravity assists, broken-plane manoeuvres, orbit uncertainty beyond the condition-code refusal, Venus encounters.</li>
@@ -144,6 +145,7 @@
 <script src="snapshots/drift-truth.js"></script>
 <script src="snapshots/jpl-mdesign.js"></script>
 <script src="snapshots/horizons-earth-9h.js"></script>
+<script src="snapshots/horizons-earth-windows.js"></script>
 <script src="lambert.js"></script>
 <script src="app.js"></script>
 </body>

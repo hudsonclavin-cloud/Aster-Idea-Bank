@@ -1,0 +1,13 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+ "path": "horizons.api?format=json&COMMAND='399'&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2026-06-01'&STOP_TIME='2026-08-01'&STEP_SIZE='1 h'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES' ; horizons.api?format=json&COMMAND='399'&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2035-11-27'&STOP_TIME='2036-01-28'&STEP_SIZE='1 h'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES' ; horizons.api?format=json&COMMAND='399'&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2037-01-20'&STOP_TIME='2037-03-20'&STEP_SIZE='1 h'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES'",
+ "sourceSha256": {
+  "horizons-earth-1h-2026.json": "60bbd2872151d31b7fc3f62ba126b985c48a9e0d7a037e273908b63c049ae1b2",
+  "horizons-earth-1h-2035.json": "29f7c5deb895a58d1240a61c5d9ebcadd932c7280b10bc9838e3649f5b3a5bbc",
+  "horizons-earth-1h-2037.json": "1fcf3ebc648aac14407be906ec144dd7445d387045e2fed9653537aea59f6086"
+ },
+ "license": "NASA/JPL Horizons; US-government work, public domain in the US",
+ "note": "Derived by build-data.mjs from three hourly Horizons responses (Earth about the Sun, ICRF, TDB): per window, the worst error of this page's Chebyshev Earth (snapshots/earth-cheb.js) and of Aster's daily Hermite over every hourly record; for the 2035 and 2037 windows, the records every 2 h within a day of the Chebyshev series' worst point, with Aster's daily records around them. Ephemeris DE441 per the response headers. Added by the independent review, retrieved 2026-10-31."
+}

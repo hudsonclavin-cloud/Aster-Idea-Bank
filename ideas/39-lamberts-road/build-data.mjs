@@ -7,17 +7,22 @@
 // The fetched directory holds what the README's provenance names (each sha256 is recorded in its sidecar):
 //   horizons-earth-1h-2026.json  JPL Horizons API, Earth (399) about the Sun's centre (500@10), ICRF, TDB, 1 h,
 //                                2026-06-01 to 2026-08-01 (the query string is in its sidecar)
+//   horizons-earth-1h-2035.json, horizons-earth-1h-2037.json  the same query for 2035-11-27 to 2036-01-28 and
+//                                2037-01-20 to 2037-03-20 (added by the review: the two windows around the
+//                                Chebyshev fit's worst daily residuals, where a degree-18 fit lost to Aster's Hermite)
 //   md-apophis.json, md-bennu.json  JPL Small-Body Mission Design API v1.2, mode M (porkchop maps), mjd0 61041,
 //                                span 2191 d, tof 180-1100 d, step 5 d
 //
 // Writes into snapshots/:
 //   aster-constants.js   constants parsed from the verbatim Aster files beside it (.ts.txt) and two more Aster lines
-//   earth-cheb.js        Chebyshev fit of Aster's daily Horizons Earth 2026-2040 (32-day segments, degree 18)
+//   earth-cheb.js        Chebyshev fit of Aster's daily Horizons Earth 2026-2040 (32-day segments, degree 24)
 //   neo-excerpt.js       an excerpt of Aster's 41,906-body catalog with Aster's own screening-cache best window
 //   aster-refs.js        Aster's DLA-oracle cell (the chain's asymptote) and the two Horizons records around it
 //   drift-truth.js       JPL-integrated states of Apophis and Eros from Aster's Slice 18 drift-truth fixture
 //   jpl-mdesign.js       a seeded sample of JPL's porkchop maps for Apophis and Bennu, and JPL's selected missions
 //   horizons-earth-9h.js the fetched hourly Earth every 9 h over 2026-06-15 to 2026-07-15 (the C0 measurement)
+//   horizons-earth-windows.js  the C0 measurement over all three fetched hourly windows (every hour, both Earths),
+//                        with a two-hourly excerpt around each late window's worst segment boundary
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -100,7 +105,10 @@ const hz = JSON.parse(read(HZ));
 const E = hz.targets.earth;
 if (E.targetId !== '399' || E.center !== '@sun' || hz.frame !== 'ICRF/J2000' || hz.timeScale !== 'TDB') throw new Error('unexpected Horizons fixture metadata');
 const REC = E.records;
-const SEG_DAYS = 32, DEG_MAX = 18;
+// Degree 24, not the 18 first built: at 18 the fit's worst residual at a daily record was 0.449 km (December 2035), and
+// against hourly Horizons it lost to Aster's Hermite after 2030 (0.449 km and 11.1 mm/s against 0.066 km and 2.35 mm/s,
+// 2035-11-27 to 2036-01-28). The review measured degrees 18 and 24 against all three fetched windows (README, Tests).
+const SEG_DAYS = 32, DEG_MAX = 24;
 const cheb = (tau, deg) => { const T = [1, tau]; for (let k = 2; k <= deg; k++) T.push(2 * tau * T[k - 1] - T[k - 2]); return T.slice(0, deg + 1); };
 const chebD = (tau, deg) => { // d/dtau T_k = k U_{k-1}
   const U = [1, 2 * tau]; for (let k = 2; k < deg; k++) U.push(2 * tau * U[k - 1] - U[k - 2]);
@@ -133,14 +141,14 @@ for (let i0 = 0; i0 < REC.length - 1; i0 += SEG_DAYS) {
   rows.forEach((r) => A.push(chebD((r[0] - (a + half)) / half, deg)));
   for (let c = 0; c < 3; c++) {
     const bvec = rows.map((r) => r[1 + c]).concat(rows.map((r) => r[4 + c] * w));
-    coef.push(lstsq(A, bvec).map((x) => Math.round(x * 1000) / 1000)); // km to the metre
+    coef.push(lstsq(A, bvec).map((x) => Math.round(x * 1000))); // km to whole metres (integers keep the file small)
   }
   segs.push(coef);
 }
 const T0 = (jd0 - 2451545) * 86400, TEND = (jdEnd - 2451545) * 86400;
 // residuals at every Horizons record, evaluated exactly as lambert.js evaluates the series (so the README's numbers are the page's)
 const LR = (await import(path.join(here, 'lambert.js'))).default;
-const chebData = { source: 'JPL Horizons via Aster ' + HZ + ' (targets.earth: 399 about @sun, ICRF/J2000, TDB, daily)', t0_tdb_s: T0, tEnd_tdb_s: TEND, segDays: SEG_DAYS, degree: DEG_MAX, units: 'coefficients in km over tau in [-1, 1] per segment; segment k spans t0 + 32 d k to the next (the last is shorter)', fit: null, segs };
+const chebData = { source: 'JPL Horizons via Aster ' + HZ + ' (targets.earth: 399 about @sun, ICRF/J2000, TDB, daily)', t0_tdb_s: T0, tEnd_tdb_s: TEND, segDays: SEG_DAYS, degree: DEG_MAX, units: 'coefficients in whole metres over tau in [-1, 1] per segment; segment k spans t0 + 32 d k to the next (the last is shorter)', coefUnit_m: 1, fit: null, segs };
 const LRk = LR.create({ constants, bodies: { list: [] }, earth: chebData });
 let maxP = 0, maxV = 0, at = null;
 for (const r of REC) {
@@ -244,4 +252,38 @@ writeData('horizons-earth-9h.js', 'LambertHorizons9h', 'JPL Horizons Earth (399)
 fetchedSidecar('horizons-earth-9h.js', { repo: 'https://ssd.jpl.nasa.gov/api/horizons.api', path: "horizons.api?format=json&COMMAND='399'&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2026-06-01'&STOP_TIME='2026-08-01'&STEP_SIZE='1 h'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES'",
   sourceSha256: sha256(hbuf), license: 'NASA/JPL Horizons; US-government work, public domain in the US',
   note: 'Excerpted by build-data.mjs: every 9th hourly record from JD 2461206.5 to 2461236.5 (' + sel.length + ' records); asterDaily carries Aster\'s own 31 daily records of that month from ' + HZ + ' at 62ddb17 for comparison. Ephemeris DE441 per the response header. At whole days these equal Aster\'s daily records exactly (checked when this was built: maximum difference 0).' });
+// ------------------------------------------------------------------ the C0 measurement over three hourly windows (review)
+function hourlyRows(file) {
+  const buf = fs.readFileSync(path.join(fetched, file)), res = JSON.parse(buf).result;
+  const rows = res.slice(res.indexOf('$$SOE') + 5, res.indexOf('$$EOE')).trim().split('\n').map((l) => { const f = l.split(','); return [Number(f[0])].concat(f.slice(2, 8).map(Number)); });
+  return { buf, rows, eph: /\{source: (DE\d+)\}/.exec(res)[1] };
+}
+const HQ = (a, z) => `horizons.api?format=json&COMMAND='399'&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='${a}'&STOP_TIME='${z}'&STEP_SIZE='1 h'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES'`;
+const WINDOWS = [['horizons-earth-1h-2026.json', '2026-06-01', '2026-08-01', false], ['horizons-earth-1h-2035.json', '2035-11-27', '2036-01-28', true], ['horizons-earth-1h-2037.json', '2037-01-20', '2037-03-20', true]];
+const herAll = LRk.hermiteEphemeris(REC), shaW = {}, windows = [];
+for (const [file, a, z, excerpt] of WINDOWS) {
+  const { buf, rows, eph } = hourlyRows(file);
+  shaW[file] = sha256(buf);
+  const m = { cheb_m: 0, cheb_mm_s: 0, hermite_m: 0, hermite_mm_s: 0 };
+  let worstJd = rows[0][0];
+  for (const r of rows) {
+    const t = (r[0] - 2451545) * 86400, c = LRk.earthState(t), h = herAll(t);
+    const dc = Math.hypot(c.r[0] / 1000 - r[1], c.r[1] / 1000 - r[2], c.r[2] / 1000 - r[3]) * 1000;
+    if (dc > m.cheb_m) { m.cheb_m = dc; worstJd = r[0]; }
+    m.cheb_mm_s = Math.max(m.cheb_mm_s, Math.hypot(c.v[0] / 1000 - r[4], c.v[1] / 1000 - r[5], c.v[2] / 1000 - r[6]) * 1e6);
+    m.hermite_m = Math.max(m.hermite_m, Math.hypot(h.r[0] / 1000 - r[1], h.r[1] / 1000 - r[2], h.r[2] / 1000 - r[3]) * 1000);
+    m.hermite_mm_s = Math.max(m.hermite_mm_s, Math.hypot(h.v[0] / 1000 - r[4], h.v[1] / 1000 - r[5], h.v[2] / 1000 - r[6]) * 1e6);
+  }
+  const w = { file, query: HQ(a, z), ephemeris: eph, hourlyRecords: rows.length, firstJdTdb: rows[0][0], lastJdTdb: rows[rows.length - 1][0], measured: m, chebWorstAtJdTdb: worstJd };
+  if (excerpt) {   // every 2 h from a day before to a day after the record where the Chebyshev series is worst
+    w.records = rows.filter((r) => Math.abs(r[0] - worstJd) <= 1 + 1e-9 && Math.abs((r[0] - worstJd) * 12 - Math.round((r[0] - worstJd) * 12)) < 1e-6);
+    w.asterDaily = REC.filter((r) => r[0] >= worstJd - 1 - 1e-9 && r[0] <= worstJd + 1 + 1e-9);
+  }
+  windows.push(w);
+  console.log('window', file, rows.length, m);
+}
+writeData('horizons-earth-windows.js', 'LambertHorizonsWindows', 'JPL Horizons Earth (399) about the Sun (500@10), ICRF, TDB, hourly in three fetched windows: the worst position and velocity error of this page\'s Chebyshev Earth and of Aster\'s daily Hermite over every hour (measured here at build), and a two-hourly excerpt around the worst point of each late window.', {
+  fit: { segDays: SEG_DAYS, degree: DEG_MAX, numbers: chebData.fit.numbers, hermiteNumbers: chebData.fit.hermiteNumbers }, recordShape: ['jdTdb', 'xKm', 'yKm', 'zKm', 'vxKmS', 'vyKmS', 'vzKmS'], units: { measured: 'm and mm/s, worst over every hourly record' }, windows });
+fetchedSidecar('horizons-earth-windows.js', { repo: 'https://ssd.jpl.nasa.gov/api/horizons.api', path: WINDOWS.map((w) => HQ(w[1], w[2])).join(' ; '), sourceSha256: shaW, license: 'NASA/JPL Horizons; US-government work, public domain in the US',
+  note: 'Derived by build-data.mjs from three hourly Horizons responses (Earth about the Sun, ICRF, TDB): per window, the worst error of this page\'s Chebyshev Earth (snapshots/earth-cheb.js) and of Aster\'s daily Hermite over every hourly record; for the 2035 and 2037 windows, the records every 2 h within a day of the Chebyshev series\' worst point, with Aster\'s daily records around them. Ephemeris DE441 per the response headers. Added by the independent review, retrieved 2026-10-31.' });
 console.log('done');

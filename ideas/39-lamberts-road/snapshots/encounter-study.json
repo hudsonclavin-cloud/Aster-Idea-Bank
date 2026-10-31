@@ -10,7 +10,7 @@
  "notKeplerSafeAmongAll": 347,
  "bestC3Below1": 17603,
  "bestC3Below1Refused": 1721,
- "seconds": 59,
+ "seconds": 66,
  "lowestRefused": [
   {
    "designation": "99942",
@@ -29,7 +29,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2032-04-06T15:53:06.981Z",
-    "distance_km": 560037.9569365944
+    "distance_km": 560037.971294723
    },
    "conditionCode": 6
   },
@@ -41,7 +41,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2026-10-31T03:26:25.727Z",
-    "distance_km": 328052.15138269495
+    "distance_km": 328052.14820713195
    },
    "conditionCode": 6
   },
@@ -53,7 +53,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2034-10-04T04:22:37.044Z",
-    "distance_km": 768053.1854547069
+    "distance_km": 768053.182231243
    },
    "conditionCode": 6
   },
@@ -65,7 +65,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2034-10-05T20:35:24.681Z",
-    "distance_km": 1030894.883060628
+    "distance_km": 1030894.836665301
    },
    "conditionCode": 6
   },
@@ -77,7 +77,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2035-04-07T21:36:23.038Z",
-    "distance_km": 1028710.5570421091
+    "distance_km": 1028710.559523313
    },
    "conditionCode": 6
   },
@@ -88,8 +88,8 @@
    "tofDays": 272,
    "inSoi": false,
    "encounter": {
-    "utc": "2030-10-20T07:47:32.467Z",
-    "distance_km": 2256672.4692582474
+    "utc": "2030-10-20T07:47:32.456Z",
+    "distance_km": 2256672.4698488
    },
    "conditionCode": 6
   },
@@ -101,7 +101,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2039-01-27T12:27:59.710Z",
-    "distance_km": 611259.1579806953
+    "distance_km": 611259.1569606514
    },
    "conditionCode": 3
   },
@@ -112,8 +112,8 @@
    "tofDays": 302,
    "inSoi": false,
    "encounter": {
-    "utc": "2036-03-13T09:22:42.209Z",
-    "distance_km": 1946204.6981321308
+    "utc": "2036-03-13T09:22:42.116Z",
+    "distance_km": 1946204.7200403397
    },
    "conditionCode": 0
   },
@@ -125,7 +125,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2028-04-29T17:06:31.373Z",
-    "distance_km": 1609584.6622879244
+    "distance_km": 1609584.6683822782
    },
    "conditionCode": 6
   },
@@ -155,7 +155,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2036-10-19T19:46:45.364Z",
-    "distance_km": 2075805.2071887536
+    "distance_km": 2075805.210865919
    },
    "conditionCode": 6
   },
@@ -176,7 +176,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2036-05-21T22:45:24.249Z",
-    "distance_km": 2326491.88959916
+    "distance_km": 2326491.895832305
    },
    "conditionCode": 6
   },
@@ -188,7 +188,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2027-12-02T13:58:49.474Z",
-    "distance_km": 728209.6941667326
+    "distance_km": 728209.6913194257
    },
    "conditionCode": 5
   },
@@ -200,7 +200,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2038-12-10T08:23:24.617Z",
-    "distance_km": 907532.008607952
+    "distance_km": 907531.9950204664
    },
    "conditionCode": 7
   },
@@ -212,7 +212,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2038-05-17T23:51:24.174Z",
-    "distance_km": 585469.4340409441
+    "distance_km": 585469.423714297
    },
    "conditionCode": 7
   },
@@ -223,8 +223,8 @@
    "tofDays": 272,
    "inSoi": true,
    "encounter": {
-    "utc": "2036-09-09T09:47:08.798Z",
-    "distance_km": 317802.5993614523
+    "utc": "2036-09-09T09:47:08.796Z",
+    "distance_km": 317802.6087178115
    },
    "conditionCode": 4
   },
@@ -235,8 +235,8 @@
    "tofDays": 302,
    "inSoi": false,
    "encounter": {
-    "utc": "2028-09-12T06:22:03.852Z",
-    "distance_km": 3354003.9885469093
+    "utc": "2028-09-12T06:22:03.844Z",
+    "distance_km": 3354003.9875363396
    },
    "conditionCode": 6
   },
@@ -248,7 +248,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2032-02-09T11:34:03.616Z",
-    "distance_km": 525716.9523813133
+    "distance_km": 525716.9465047444
    },
    "conditionCode": 6
   },
@@ -260,7 +260,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2029-02-25T23:06:29.244Z",
-    "distance_km": 528680.6840343723
+    "distance_km": 528680.7167147162
    },
    "conditionCode": 3
   },
@@ -272,7 +272,7 @@
    "inSoi": false,
    "encounter": {
     "utc": "2034-01-13T00:23:54.965Z",
-    "distance_km": 2359563.4121439382
+    "distance_km": 2359563.399746895
    },
    "conditionCode": 7
   },
@@ -284,7 +284,7 @@
    "inSoi": true,
    "encounter": {
     "utc": "2029-02-09T04:49:30.258Z",
-    "distance_km": 382792.1153939203
+    "distance_km": 382792.1149494379
    },
    "conditionCode": 5
   },
@@ -295,8 +295,8 @@
    "tofDays": 242,
    "inSoi": false,
    "encounter": {
-    "utc": "2032-06-25T23:17:34.668Z",
-    "distance_km": 2300303.9629926095
+    "utc": "2032-06-25T23:17:34.659Z",
+    "distance_km": 2300303.950626989
    },
    "conditionCode": 6
   }

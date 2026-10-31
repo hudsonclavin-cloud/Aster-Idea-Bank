@@ -144,13 +144,15 @@
     var off = document.createElement('canvas'); off.width = nD; off.height = nT; off.getContext('2d').putImageData(img, 0, 0);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(off, m.l, m.t, pw, ph);
-    // overlays: RED DLA (dark hatch), unreliable (red cross-hatch)
-    var red = patternOf(ctx, 'rgba(0,0,0,0.55)', 1), bad = patternOf(ctx, css('--crit'), -1);
+    // overlays, all refused cells (left out of the grid's best): past an encounter (red hatch), DLA beyond the site's
+    // ceiling (dark hatch), within 5 deg of 180 or unbound about the Sun (grey hatch the other way)
+    var red = patternOf(ctx, 'rgba(0,0,0,0.55)', 1), bad = patternOf(ctx, css('--crit'), -1), other = patternOf(ctx, 'rgba(255,255,255,0.8)', -1);
     for (j = 0; j < nT; j++) for (i = 0; i < nD; i++) {
       k = j * nD + i;
-      var x = m.l + i * cw, y = m.t + (nT - 1 - j) * chh;
+      var x = m.l + i * cw, y = m.t + (nT - 1 - j) * chh, ex = G.excluded ? G.excluded[k] : 0;
       if (G.unreliable[k]) { ctx.fillStyle = bad; ctx.fillRect(x, y, cw + 0.5, chh + 0.5); }
-      else if (isFinite(G.dla[k]) && K.band(G.dla[k], state.S.site) === 'RED') { ctx.fillStyle = red; ctx.fillRect(x, y, cw + 0.5, chh + 0.5); }
+      else if (ex === 2) { ctx.fillStyle = red; ctx.fillRect(x, y, cw + 0.5, chh + 0.5); }
+      else if (ex === 3 || ex === 4) { ctx.fillStyle = other; ctx.fillRect(x, y, cw + 0.5, chh + 0.5); }
     }
     // contours (marching squares on the scaled value)
     var X = function (i) { return m.l + (i + 0.5) * cw; }, Y = function (j) { return m.t + (nT - 1 - j + 0.5) * chh; };
@@ -212,6 +214,7 @@
     var rw = rz.w - m.l - m.r;
     for (var s = 0; s < rw; s++) { var cc = rampColor(s / rw); rx.fillStyle = 'rgb(' + cc.map(Math.round).join(',') + ')'; rx.fillRect(m.l + s, 2, 1.5, 12); }
     rx.fillStyle = css('--muted'); rx.font = '11px system-ui, sans-serif'; rx.textBaseline = 'top';
+    if (!G.solved) { rx.textAlign = 'center'; rx.fillText('no solved cells: nothing to colour', m.l + rw / 2, 17); return; }
     rx.textAlign = 'left'; rx.fillText(g(sc.lo, 3) + ' ' + o.unit, m.l, 17);
     rx.textAlign = 'right'; rx.fillText('≥ ' + g(sc.hi, 3) + (sc.log ? ' (log scale)' : ''), m.l + rw, 17);
     rx.textAlign = 'center'; rx.fillText(o.name, m.l + rw / 2, 17);
@@ -228,7 +231,11 @@
     var s = K.dateOf(G.deps[i]) + ' + ' + Math.round(G.tofs[j] / DAY) + ' d';
     if (!fam) return s + ': no transfer in these families';
     s += ': ' + o.name + ' ' + g(G.val[k] * o.scale, 3) + ' ' + o.unit + (state.S.objective === 'c3' ? '' : ' · C3 ' + g(G.c3[k] / 1e6, 3)) + ' · v∞ arr ' + g(G.vinfArr[k] / 1000, 3) + ' km/s · DLA ' + (isFinite(G.dla[k]) ? f(G.dla[k], 1) + '°' : '—') + ' · ' + (fam.M ? fam.M + ' rev ' + fam.branch : 'direct');
-    if (G.unreliable[k]) s += ' · REFUSED: arrives past an Earth encounter';
+    var ex = G.excluded ? G.excluded[k] : 0;
+    if (G.unreliable[k]) s += ' · REFUSED: arrives past an Earth encounter or inside Earth\'s sphere of influence';
+    else if (ex === 2) s += ' · REFUSED: DLA beyond the site\'s ceiling';
+    else if (ex === 3) s += ' · REFUSED: within ' + LambertAster.nearPiDeg + '° of 180°';
+    else if (ex === 4) s += ' · REFUSED: unbound about the Sun';
     return s;
   }
   function selectCell(i, j) {
@@ -278,7 +285,12 @@
   // ------------------------------------------------------------------ the chosen window
   function renderSelection() {
     var R = state.R, tr = R.transfer, T = clear($('selTiles'));
-    if (!tr) { $('selLine').textContent = 'No transfer selected.'; return; }
+    var own = R.refusals.filter(function (r) { return !r.from; }), carried = R.refusals.filter(function (r) { return r.from; });
+    var box = clear($('refusals')); own.forEach(function (r) { box.appendChild(refusalBox(r)); });
+    var cl = clear($('carriedList')); carried.forEach(function (r) { cl.appendChild(refusalBox(r)); });
+    $('carried').style.display = carried.length ? '' : 'none';
+    $('carriedSum').textContent = carried.length + ' refusal' + (carried.length === 1 ? '' : 's') + ' carried from ideas ' + Array.from(new Set(carried.map(function (r) { return r.from.slice(0, 2); }))).sort().join(', ');
+    if (!tr) { $('selLine').textContent = 'No transfer selected: the refusals below say why.'; return; }
     var q = tr.sol, sl = R.selection;
     $('selLine').textContent = (sl.source === 'aster_cell' ? 'Aster\'s cell, the one ideas 37 and 38 flew' : sl.source === 'grid_minimum' ? 'The grid\'s best (reliable) cell' : sl.source === 'refined' ? 'Refined to the local minimum' : 'Your cell') + ': ' + bodyLabel(R.body) + '.';
     T.appendChild(tile('Departure (UTC)', utcShort(tr.depTdb), '', 'derived', 'TDB ' + f(tr.depTdb, 0) + ' s past J2000', 'hero date'));
@@ -293,11 +305,6 @@
     T.appendChild(tile('Transfer orbit', f(tr.elements.a / AU, 4), 'au', 'derived', 'e ' + f(tr.elements.e, 4) + ', i ' + f(tr.elements.i / DEG, 3) + '°, q ' + f(tr.elements.q / AU, 3) + ', Q ' + f(tr.elements.Q / AU, 3) + ' au'));
     T.appendChild(tile('Earth distance at arrival', tr.earthDistanceArrival_m == null ? '—' : f(tr.earthDistanceArrival_m / AU, 3), 'au', 'derived', tr.elongationArrivalDeg == null ? null : 'solar elongation ' + f(tr.elongationArrivalDeg, 1) + '°'));
     if (R.asterCell && R.asterCell.sol) T.appendChild(tile('Against Aster\'s cell', f(R.asterCell.dv_m_s * 1000, 3), 'mm/s', 'measured', 'v∞ difference from Aster\'s vector, ' + R.asterCell.ref.depDate));
-    var own = R.refusals.filter(function (r) { return !r.from; }), carried = R.refusals.filter(function (r) { return r.from; });
-    var box = clear($('refusals')); own.forEach(function (r) { box.appendChild(refusalBox(r)); });
-    var cl = clear($('carriedList')); carried.forEach(function (r) { cl.appendChild(refusalBox(r)); });
-    $('carried').style.display = carried.length ? '' : 'none';
-    $('carriedSum').textContent = carried.length + ' refusal' + (carried.length === 1 ? '' : 's') + ' carried from ideas ' + Array.from(new Set(carried.map(function (r) { return r.from.slice(0, 2); }))).sort().join(', ');
   }
 
   // ------------------------------------------------------------------ the chain card
@@ -374,22 +381,45 @@
         cp = Math.max(cp, Math.hypot(a.r[0] / 1000 - r[1], a.r[1] / 1000 - r[2], a.r[2] / 1000 - r[3])); cv = Math.max(cv, Math.hypot(a.v[0] / 1000 - r[4], a.v[1] / 1000 - r[5], a.v[2] / 1000 - r[6]));
         hp = Math.max(hp, Math.hypot(h.r[0] / 1000 - r[1], h.r[1] / 1000 - r[2], h.r[2] / 1000 - r[3])); hv = Math.max(hv, Math.hypot(h.v[0] / 1000 - r[4], h.v[1] / 1000 - r[5], h.v[2] / 1000 - r[6]));
       });
-      row('Earth between Aster\'s daily records', 'JPL Horizons every 9 h, 15 June to 15 July 2026 (fetched): worst position and velocity error', 'Aster\'s Hermite: ' + f(hp, 3) + ' km, ' + f(hv * 1e6, 2) + ' mm/s', 'Chebyshev: ' + f(cp, 3) + ' km, ' + f(cv * 1e6, 2) + ' mm/s', LambertEarth.fit.numbers.toLocaleString('en-US') + ' numbers vs ' + LambertEarth.fit.hermiteNumbers.toLocaleString('en-US'));
+      row('Earth between Aster\'s daily records', 'JPL Horizons every 9 h, 15 June to 15 July 2026 (fetched): worst position and velocity error', 'Aster\'s Hermite: ' + f(hp * 1000, 1) + ' m, ' + f(hv * 1e6, 2) + ' mm/s', 'Chebyshev: ' + f(cp * 1000, 1) + ' m, ' + f(cv * 1e6, 2) + ' mm/s', LambertEarth.fit.numbers.toLocaleString('en-US') + ' numbers vs ' + LambertEarth.fit.hermiteNumbers.toLocaleString('en-US'));
       n++;
     }
+    var HW = typeof LambertHorizonsWindows !== 'undefined' ? LambertHorizonsWindows : null;
+    if (HW) HW.windows.forEach(function (w) {
+      if (!w.records) return;
+      var hw = K.hermiteEphemeris(w.asterDaily), a1 = 0, a2 = 0, b1 = 0, b2 = 0;
+      w.records.forEach(function (r) {
+        var t = (r[0] - 2451545) * DAY, a = K.earthState(t), h = hw(t);
+        a1 = Math.max(a1, Math.hypot(a.r[0] / 1000 - r[1], a.r[1] / 1000 - r[2], a.r[2] / 1000 - r[3])); a2 = Math.max(a2, Math.hypot(a.v[0] / 1000 - r[4], a.v[1] / 1000 - r[5], a.v[2] / 1000 - r[6]));
+        b1 = Math.max(b1, Math.hypot(h.r[0] / 1000 - r[1], h.r[1] / 1000 - r[2], h.r[2] / 1000 - r[3])); b2 = Math.max(b2, Math.hypot(h.v[0] / 1000 - r[4], h.v[1] / 1000 - r[5], h.v[2] / 1000 - r[6]));
+      });
+      var M = w.measured;
+      row('Earth at the fit\'s worst point, ' + K.tdbDateOfJd(w.chebWorstAtJdTdb), 'JPL Horizons every 2 h for a day either side (fetched); over the whole hourly window ' + K.tdbDateOfJd(w.firstJdTdb) + ' to ' + K.tdbDateOfJd(w.lastJdTdb) + ': Chebyshev ' + f(M.cheb_m, 1) + ' m, ' + f(M.cheb_mm_s, 2) + ' mm/s; Hermite ' + f(M.hermite_m, 1) + ' m, ' + f(M.hermite_mm_s, 2) + ' mm/s (measured at build)', 'Aster\'s Hermite: ' + f(b1 * 1000, 1) + ' m, ' + f(b2 * 1e6, 2) + ' mm/s', 'Chebyshev: ' + f(a1 * 1000, 1) + ' m, ' + f(a2 * 1e6, 2) + ' mm/s', 'degree ' + HW.fit.degree + ' on ' + HW.fit.segDays + '-day segments');
+      n++;
+    });
     $('checkCap').textContent = n + ' live comparisons for ' + bodyLabel(b) + '. Gaps in green are what the model leaves; red rows are where it would mislead, and this page refuses them.';
   }
 
   // ------------------------------------------------------------------ render
+  // A refused setting computes nothing, so nothing computed earlier may stay on screen beside the refusal.
+  function showRefused(rf) {
+    clear($('selTiles')); clear($('chainTiles')); clear($('carriedList')); $('carried').style.display = 'none';
+    clear($('refusals')).appendChild(refusalBox(rf));
+    $('selLine').textContent = 'Nothing computed: the settings are refused.';
+    $('gridNote').textContent = ''; $('porkCap').textContent = ''; $('orbitCap').textContent = ''; clear($('porkLegend')); clear($('orbitLegend'));
+    clear($('chainBody')).appendChild(el('p', { text: 'Nothing computed: the settings are refused.' }));
+    clear($('checkTable').querySelector('tbody')); $('checkCap').textContent = 'No comparisons: the settings are refused.';
+    ['pork', 'orbit', 'ramp'].forEach(function (id) { var cv = $(id), x = cv.getContext('2d'); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height); });
+  }
   var pending = false;
   function render(selOnly) {
     syncControls();
     var R = compute();
-    if (R.refusal) { clear($('refusals')).appendChild(refusalBox(R.refusal)); $('gridNote').textContent = ''; return; }
+    if (R.refusal) { showRefused(R.refusal); return; }
     var G = R.grid, o = OBJ[state.S.objective];
-    $('gridNote').textContent = G ? G.solved + ' of ' + (G.nDep * G.nTof) + ' cells solved' + (G.flagged ? ', ' + G.flagged + ' hatched in red (arrival past an Earth encounter or inside Earth\'s sphere of influence: refused)' : '') + (G.red ? ', ' + G.red + ' beyond the site\'s DLA ceiling (dark hatch)' : '') + '.' + (G.min ? ' Best ' + o.name + ': ' + g(G.min.value * o.scale, 4) + ' ' + o.unit + ' leaving ' + K.dateOf(G.min.depTdb) + ' for ' + Math.round(G.min.tofS / DAY) + ' d.' : '') + (G.rawMin && G.min && G.rawMin.value < G.min.value ? ' The raw minimum (' + g(G.rawMin.value * o.scale, 3) + ' ' + o.unit + ', ' + K.dateOf(G.rawMin.depTdb) + ' + ' + Math.round(G.rawMin.tofS / DAY) + ' d) is refused.' : '') : '';
+    $('gridNote').textContent = G ? G.solved + ' of ' + (G.nDep * G.nTof) + ' cells solved' + (G.flagged ? ', ' + G.flagged + ' hatched in red (arrival past an Earth encounter or inside Earth\'s sphere of influence: refused)' : '') + (G.red ? ', ' + G.red + ' beyond ' + LambertAster.sites[state.S.site].name + '\'s DLA ceiling (dark hatch)' : '') + (G.excludedCounts && G.excludedCounts.plane + G.excludedCounts.unbound ? ', ' + (G.excludedCounts.plane + G.excludedCounts.unbound) + ' within ' + LambertAster.nearPiDeg + '° of 180° or unbound about the Sun (grey hatch)' : '') + '.' + (G.solved && !G.min ? ' Every solved cell is refused.' : '') + (G.min ? ' Best ' + o.name + ': ' + g(G.min.value * o.scale, 4) + ' ' + o.unit + ' leaving ' + K.dateOf(G.min.depTdb) + ' for ' + Math.round(G.min.tofS / DAY) + ' d.' : '') + (G.rawMin && G.min && G.rawMin.value < G.min.value ? ' The raw minimum (' + g(G.rawMin.value * o.scale, 3) + ' ' + o.unit + ', ' + K.dateOf(G.rawMin.depTdb) + ' + ' + Math.round(G.rawMin.tofS / DAY) + ' d) is refused.' : '') : '';
     var leg = clear($('porkLegend'));
-    [['tri', 'the grid\'s best reliable cell'], ['mark', 'the chosen window'], ['diam', 'Aster\'s cell (ideas 37 and 38)'], ['cross', 'refused: past an Earth encounter'], ['hatch', 'DLA beyond the site\'s ceiling']].concat(R.chain && R.chain.departure ? [['vline', 'idea 38\'s departure']] : []).forEach(function (q) { leg.appendChild(el('li', {}, [el('span', { class: 'key ' + q[0] }), q[1]])); });
+    [['tri', 'the grid\'s best reliable cell'], ['mark', 'the chosen window'], ['diam', 'Aster\'s cell (ideas 37 and 38)'], ['cross', 'refused: past an Earth encounter'], ['hatch', 'refused: DLA beyond the site\'s ceiling'], ['ghatch', 'refused: within ' + LambertAster.nearPiDeg + '° of 180°, or unbound']].concat(R.chain && R.chain.departure ? [['vline', 'idea 38\'s departure']] : []).forEach(function (q) { leg.appendChild(el('li', {}, [el('span', { class: 'key ' + q[0] }), q[1]])); });
     $('porkCap').textContent = 'Departure date (UTC) across, flight time up; colour: ' + o.name + ' of the ' + (state.S.revs.length > 1 ? 'family the colour prefers among ' + state.S.revs.map(function (m) { return m ? m + ' rev' : 'direct'; }).join(', ') : state.S.revs[0] ? state.S.revs[0] + '-revolution transfers' : 'direct transfers') + '. White lines are contours' + (G && G.encounters.length ? '; the red dashed line marks arrivals at the Earth encounter of ' + G.encounters.map(function (e) { return K.dateOf(e.t) + ' (' + g(e.distance_m / 1000, 3) + ' km, two-body)'; }).join(', ') : '') + '. Tap a cell to choose it; with the chart focused, arrow keys move and Enter refines.';
     drawPork(); renderSelection(); drawOrbit(); renderChain(); renderChecks();
     var src = $('srcLine');
@@ -402,7 +432,7 @@
   $('tgtSel').addEventListener('change', function () { state.S.target = this.value; settingsChanged(); });
   document.querySelectorAll('[data-tgt]').forEach(function (b) { b.addEventListener('click', function () { state.S.target = b.getAttribute('data-tgt'); $('tgtSearch').value = ''; fillTargets(''); settingsChanged(); }); });
   [['depA', 'depStartUtc'], ['depZ', 'depEndUtc']].forEach(function (p) { $(p[0]).addEventListener('change', function () { if (this.value) { state.S[p[1]] = this.value; settingsChanged(); } }); });
-  [['tofA', 'tofMinDays'], ['tofZ', 'tofMaxDays']].forEach(function (p) { $(p[0]).addEventListener('change', function () { var v = Number(this.value); if (isFinite(v) && this.value !== '') { state.S[p[1]] = v; settingsChanged(); } }); });
+  [['tofA', 'tofMinDays'], ['tofZ', 'tofMaxDays']].forEach(function (p) { $(p[0]).addEventListener('change', function () { var v = Number(this.value); if (isFinite(v) && this.value !== '') { state.S[p[1]] = v; settingsChanged(); } else { this.value = state.S[p[1]]; showStatus('bad', 'Not a number of days: kept ' + state.S[p[1]] + '.'); } }); });
   document.querySelectorAll('[data-revs]').forEach(function (b) { b.addEventListener('click', function () { state.S.revs = b.getAttribute('data-revs').split(',').map(Number); settingsChanged(); }); });
   document.querySelectorAll('[data-obj]').forEach(function (b) { b.addEventListener('click', function () { state.S.objective = b.getAttribute('data-obj'); state.cache = null; render(); }); });
   $('siteSel').addEventListener('change', function () { state.S.site = this.value; state.cache = null; render(); });
@@ -435,7 +465,10 @@
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () { if (state.R && !state.R.refusal) { drawPork(); drawOrbit(); } });
 
   // ------------------------------------------------------------------ handoff
-  function currentHandoff() { return K.buildHandoff(state.R); }
+  function currentHandoff() {
+    if (!state.R || state.R.refusal) { showStatus('bad', 'Nothing to export: ' + (state.R && state.R.refusal ? state.R.refusal.reason : 'nothing is computed yet.') + ' What would help: ' + (state.R && state.R.refusal ? state.R.refusal.what_would_help : 'wait for the page.')); return null; }
+    return K.buildHandoff(state.R);
+  }
   function doImport(text, label) {
     var h; try { h = JSON.parse(text); } catch (e) { showStatus('bad', 'Not imported: that is not JSON.'); return false; }
     if (h && h.from === '39-lamberts-road') {
@@ -455,9 +488,9 @@
   $('importBtn').addEventListener('click', function () { doImport($('importText').value, 'from the text box'); });
   $('importFile').addEventListener('change', function () { var fl = this.files && this.files[0]; if (!fl) return; var rd = new FileReader(); rd.onload = function () { doImport(String(rd.result), 'from ' + fl.name); }; rd.readAsText(fl); });
   $('clearChainBtn').addEventListener('click', function () { state.chain = null; state.label = null; state.S.selection = null; showStatus('', 'The chain is dropped: this page stands alone.'); render(); });
-  $('copyBtn').addEventListener('click', function () { var s = JSON.stringify(currentHandoff()); if (navigator.clipboard) navigator.clipboard.writeText(s).then(function () { showStatus('ok', 'Copied (' + s.length + ' characters).'); }, function () { $('importText').value = s; showStatus('', 'The clipboard is not available here; the handoff is in the text box.'); }); else { $('importText').value = s; showStatus('', 'The handoff is in the text box.'); } });
-  $('dlBtn').addEventListener('click', function () { var s = JSON.stringify(currentHandoff(), null, 1), a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: 'application/json' })); a.download = 'lamberts-road-handoff.json'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0); showStatus('ok', 'Downloaded lamberts-road-handoff.json.'); });
-  $('linkBtn').addEventListener('click', function () { var u = location.href.split('#')[0] + '#h=' + b64e(JSON.stringify(currentHandoff())); if (navigator.clipboard) navigator.clipboard.writeText(u).then(function () { showStatus('ok', 'Link copied (' + u.length + ' characters).'); }, function () { showStatus('', 'Link: ' + u.slice(0, 120) + '…'); }); else showStatus('', 'Link: ' + u.slice(0, 120) + '…'); });
+  $('copyBtn').addEventListener('click', function () { var h = currentHandoff(); if (!h) return; var s = JSON.stringify(h); if (navigator.clipboard) navigator.clipboard.writeText(s).then(function () { showStatus('ok', 'Copied (' + s.length + ' characters).'); }, function () { $('importText').value = s; showStatus('', 'The clipboard is not available here; the handoff is in the text box.'); }); else { $('importText').value = s; showStatus('', 'The handoff is in the text box.'); } });
+  $('dlBtn').addEventListener('click', function () { var h = currentHandoff(); if (!h) return; var s = JSON.stringify(h, null, 1), a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: 'application/json' })); a.download = 'lamberts-road-handoff.json'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0); showStatus('ok', 'Downloaded lamberts-road-handoff.json.'); });
+  $('linkBtn').addEventListener('click', function () { var h = currentHandoff(); if (!h) return; var u = location.href.split('#')[0] + '#h=' + b64e(JSON.stringify(h)); if (navigator.clipboard) navigator.clipboard.writeText(u).then(function () { showStatus('ok', 'Link copied (' + u.length + ' characters).'); }, function () { showStatus('', 'Link: ' + u.slice(0, 120) + '…'); }); else showStatus('', 'Link: ' + u.slice(0, 120) + '…'); });
 
   // ------------------------------------------------------------------ start
   fillTargets('');

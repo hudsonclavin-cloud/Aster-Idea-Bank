@@ -126,6 +126,7 @@ canvas#pork, canvas#orbit { width: 100%; display: block; touch-action: none; bor
 canvas#pork { cursor: crosshair; }
 canvas#ramp { width: 100%; display: block; margin-top: 6px; }
 .legend .key.hatch { width: 16px; height: 12px; border: 1px solid var(--axis); background: repeating-linear-gradient(45deg, var(--ink-2) 0 1.5px, transparent 1.5px 5px); }
+.legend .key.ghatch { width: 16px; height: 12px; border: 1px solid var(--axis); background: repeating-linear-gradient(135deg, rgba(255,255,255,0.85) 0 1.5px, transparent 1.5px 5px), rgb(68, 1, 84); }
 .legend .key.cross { width: 16px; height: 12px; border: 1px solid var(--axis); background: repeating-linear-gradient(135deg, var(--crit) 0 1.5px, transparent 1.5px 5px); }
 .legend .key.mark { width: 12px; height: 12px; border: 2px solid var(--ink); border-radius: 50%; }
 .legend .key.diam { width: 10px; height: 10px; border: 0; background: var(--s2); transform: rotate(45deg); }
