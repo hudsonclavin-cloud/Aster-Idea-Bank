@@ -280,8 +280,54 @@ test('navigation and the chain\'s numbers, checked one by one', () => {
   // the camera: PolyCam's 13.5 urad pixel and 0.1-pixel centroids (AAS 19-035 Table 2, p. 7) at the first-image range
   close(chain.detection.lateralSigma(2184000e3), 2184000e3 * 13.5e-6 * 0.1, 1e-6, 'line-of-sight sigma at 2,184,000 km');
   close(chain.detection.lateralSigma(2184000e3), 2948.4, 0.1, 'by hand, m');
-  // the Earth's tide: a stay to 26 March 2029 meets the week of 30 March, where it is 2.2% of the Sun's
+  // the Earth's tide: a stay to 26 March 2029 meets the week of 30 March, where it is 2.5% of the Sun's tide at Apophis
+  // (review: the Sun's tide is taken at the asteroid's own distance from the Sun, 1.041 au that week, not at 1 au)
   const st = K.run(src41, Object.assign(K.defaults(), { stayDays: 258 }));
-  close(st.earthTide.ratio, 0.0221, 0.0005, 'tide ratio'); assert.ok(st.refusals.some((r) => r.applies_to === 'planets'), 'refused at 2%');
-  close(chain.earthTide.ratio, 1.755e-4, 0.002e-4, 'the default stay\'s worst week (2028-09-15)');
+  const T41 = sample41().outputs.comms_timeline.value, iw = T41.utc.indexOf('2029-03-30'), tw = K.tdbOfUtc('2029-03-30T00:00:00Z');
+  const dw = norm(K.conic(src41.arrival.astR, src41.arrival.astV, src41.arrival.t)(tw).r);
+  assert.equal(st.earthTide.utc, '2029-03-30');
+  close(st.earthTide.ratio, (3.986004418e14 / T41.range_m[iw] ** 3) / (1.32712440018e20 / dw ** 3), 1e-12, 'tide ratio by hand at the asteroid\'s own Sun distance');
+  close(st.earthTide.ratio, 0.0250, 0.0005, 'tide ratio'); assert.ok(st.refusals.some((r) => r.applies_to === 'planets'), 'refused at 2.5%');
+  close(chain.earthTide.ratio, 7.662e-5, 0.002e-5, 'the default stay\'s worst week, with Apophis at 0.76 au from the Sun');
+});
+
+test('review: what the first review found the sabotages and the page could get past', () => {
+  // the deadband's cycle and kick are the closed forms 2 sqrt(2L/a) and 2 sqrt(2aL) (a burn every 88.69 h at 18.6 km)
+  const a = chain.hover.accel_m_s2;
+  close(chain.hover.cycle_s, 2 * Math.sqrt(2 * 1000 / a), 1e-9, 'cycle 2 sqrt(2L/a)');
+  close(chain.hover.dv_per_cycle_m_s, 2 * Math.sqrt(2 * a * 1000), 1e-15, 'kick 2 sqrt(2aL)');
+  close(chain.hover.cycle_s / 3600, 88.69, 0.01, 'by hand from 6.781 mm/s a day');
+  // engines: AAM-3 (5.1 m/s) on the 450 N main engine, AAM-3a (1.5 mm/s) on NEAR's 21 N thrusters (NSSDCA)
+  const B = chain.burns;
+  assert.deepEqual(B.map((b) => b.engine), ['main', 'main', 'main', 'small', 'small', 'small', 'small']);
+  assert.equal(B[3].thrust_N, 21);
+  // AAS 24-063's GM range, low then high
+  assert.deepEqual(chain.body.GM_range_m3_s2, [1.36, 4.37]);
+  // density on Apophis (the page's "From a density" button threw here): G rho (4/3) pi R^3 by hand, refused as body_mass
+  const dens = K.run(src41, Object.assign(K.defaults(), { gm: 'density' }));
+  assert.ok(!dens.refusal);
+  close(dens.body.GM_m3_s2, 6.6743e-11 * 2000 * 4 / 3 * Math.PI * 170 ** 3, 1e-12, 'GM from 2000 kg/m^3 on a 340 m sphere');
+  close(dens.body.GM_m3_s2, 2.747, 0.001, 'by hand');
+  assert.match(dens.refusals.find((r) => r.applies_to === 'body_mass').reason, /density/);
+  // SBDB's published density where it has no GM (Didymos 2170 kg/m^3, Naidu et al. 2020), not the slider's 2000
+  const did = K.bodyModel('65803', Object.assign(K.defaults(), { gm: 'measured' }), null);
+  close(did.density_kg_m3, 2170, 1e-9, 'Didymos density'); close(did.GM_m3_s2, 35.99, 0.02, 'Didymos GM by hand');
+  // a stand-off below the surface is refused, not flown (it was: 23 m/s a day at 100 m from a 170 m body)
+  const inside = K.run(src41, Object.assign(K.defaults(), { standoff_m: 100 }));
+  assert.equal(inside.refusal && inside.refusal.applies_to, 'standoff'); assert.equal(inside.refusal.code, 'invalid_input');
+  assert.ok(!K.run(src41, Object.assign(K.defaults(), { standoff_m: 200 })).refusal, '30 m above the surface is flown');
+  // first sight after the first burn: said as "after", not as a negative "days before"
+  const far = K.run(src41, Object.assign(K.defaults(), { firstBurnRange_m: 5e9 }));
+  assert.ok(far.detection.leadToFirstBurn_s < 0);
+  assert.match(far.refusals.find((r) => r.applies_to === 'autonomy').reason, /days after the first braking burn/);
+  // bright from the start of the computed arc: the lead is a lower bound, and a loop longer than it cannot be judged
+  const early = K.run(src41, Object.assign(K.defaults(), { detectV: 20 }));
+  assert.ok(early.detection.leadIsLowerBound); close(early.detection.leadToFirstBurn_s, early.ap.t1 - early.detection.rows[0].t, 1e-6, 'the arc\'s length');
+  assert.ok(!chain.detection.leadIsLowerBound, 'the default is a crossing, not a bound');
+  const early30 = K.run(src41, Object.assign(K.defaults(), { detectV: 20, groundLoopDays: 30 }));
+  const au = early30.refusals.find((r) => r.applies_to === 'autonomy'); assert.equal(au && au.code, 'insufficient_data');
+  assert.equal(K.buildHandoff(early, 'x').outputs.navigation.value.detection.lead_is_lower_bound, true);
+  // the dark-side equilibrium lies in the shadow: no sunlight there in this model
+  const ctx = chain.ap.ctx, t = chain.ap.standoff.t, A = ctx.astAt(t), u = A.r.map((x) => x / norm(A.r));
+  assert.equal(norm(K.accel(t, u.map((x) => x * chain.regimes.dark_equilibrium_m), Object.assign({}, ctx, { parts: true })).srp), 0);
 });

@@ -79,8 +79,17 @@ async function canvasesDrawn(page) {
   // a stand-off outside the Hill sphere, typed
   await page.fill('#soIn', '40'); await page.dispatchEvent('#soIn', 'change'); await page.waitForTimeout(700);
   ok((await refusals(page)).some((r) => /standoff/.test(r)), 'stand-off outside the Hill sphere refused');
+  // review: a stand-off inside the body is refused with nothing computed (it was flown)
+  await page.fill('#soIn', '0.1'); await page.dispatchEvent('#soIn', 'change'); await page.waitForTimeout(700);
+  ok((await page.$$('.tile')).length === 0 && /invalid input: standoff/.test((await refusals(page)).join()), 'stand-off inside Apophis refused');
   await page.click('#resetBtn'); await settle(page);
   ok((await page.inputValue('#soIn')) === '18.6', 'reset');
+  // review: "From a density" on the chain threw (Apophis's AAS 24-063 range was read when there was none)
+  const nErr = errors.length;
+  await page.click('[data-gm="density"]'); await settle(page);
+  const Td = await tiles(page), Rd = K.run(K.importSignal(sample41()), Object.assign(K.defaults(), { gm: 'density' }));
+  ok(errors.length === nErr && Math.abs(num(Td['Hill radius'].v) - Rd.regimes.hill_radius_m / 1000) < 0.5, 'density on the chain computes ' + errors.slice(nErr));
+  await page.click('[data-gm="measured"]'); await settle(page);
   // one braking leg, by slider: a different plan
   await page.click('[data-tpl="direct"]'); await settle(page);
   ok((await page.$$('#burnTable tbody tr')).length === 2, 'one leg: two burns');

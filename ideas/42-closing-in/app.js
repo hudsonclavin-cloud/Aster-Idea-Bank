@@ -107,7 +107,8 @@
     t += tile('Hill radius', km(reg.hill_radius_m, 3), 'km', gmConf, 'at ' + f(reg.sun_distance_m / K.AU, 3) + ' au from the Sun; stand-off at ' + f(100 * state.S.standoff_m / reg.hill_radius_m, 2) + '% of it');
     t += tile('Sunlight ÷ gravity at stand-off', f(hv.srp_m_s2 / hv.gravity_m_s2, 3), '×', 'derived', 'equal at ' + km(reg.gravity_equals_srp_m, 3) + ' km; tide ' + f(hv.tide_m_s2, 2) + ' m/s²');
     t += tile('Holding station', f(hv.dv_per_day_m_s * 1000, 3), 'mm/s a day', 'derived', 'a burn every ' + f(hv.cycle_s / HOUR, 3) + ' h in a ' + f(state.S.box_m, 4) + ' m box' + (R.deadband ? '; flown ' + R.deadband.days + ' days: ' + f(R.deadband.dv_per_day_m_s * 1000, 3) + ' mm/s a day' : ''));
-    t += det ? tile('First sight in the camera', det.first ? f(det.leadToFirstBurn_s / DAY, 3) : 'not seen', det.first ? 'days before' : '', 'derived', det.first ? 'at ' + f(det.first.range_m / 1e9, 3) + ' million km, V ' + f(det.vLimit, 3) + ' (Bennu at OSIRIS-REx\'s first image)' : det.before, det.first && det.leadToFirstBurn_s >= state.S.groundLoopDays * DAY ? '' : 'bad')
+    var lead = det && det.first ? det.leadToFirstBurn_s / DAY : null;
+    t += det ? tile('First sight in the camera', det.first ? (det.leadIsLowerBound ? '≥ ' : '') + f(Math.abs(lead), 3) : 'not seen', det.first ? (lead >= 0 ? 'days before' : 'days after') : '', 'derived', det.first ? (det.leadIsLowerBound ? 'already bright where the computed arc begins, ' : '') + 'at ' + f(det.first.range_m / 1e9, 3) + ' million km, V ' + f(det.vLimit, 3) + ' (Bennu at OSIRIS-REx\'s first image)' : det.before, det.first && det.leadToFirstBurn_s >= state.S.groundLoopDays * DAY ? '' : 'bad')
       : tile('First sight in the camera', 'refused', '', '', 'no H and G', 'refused');
     t += src.link ? tile('Command round trip', f(src.link.rtlt_s / 60, 3), 'min', 'derived', 'at the arrival (idea 41)') : tile('Command round trip', '—', '', '', 'not in this case');
     t += tile('Knowledge before the camera', R.knowledge.spacecraft_m ? km(R.knowledge.spacecraft_m, 2) : '—', R.knowledge.spacecraft_m ? 'km' : '', R.knowledge.spacecraft_m ? 'derived' : '', R.knowledge.asteroid_m ? 'spacecraft (idea 40); the asteroid\'s own orbit ' + km(R.knowledge.asteroid_m, 2) + ' km (Horizons)' : 'not in this case');
@@ -198,7 +199,11 @@
     var guides = [[1, '1 day'], [7, '1 week'], [30, '1 month']];
     guides.forEach(function (q) { var T = q[0] * DAY; g.line([[rmin, rmin * 1000 / T], [rmax, rmax * 1000 / T]], css('--axis'), { w: 1, dash: [2, 3] }); });
     // each guide labelled where it crosses 30 m/s, on a chip so the data underneath stays readable
-    guides.forEach(function (q) { var T = q[0] * DAY, xr = 30 * T / 1000; if (xr < rmin || xr > rmax) return; var X = g.tx(xr), Y = g.ty(30), c = g.ctx, txt = q[1]; c.font = '11px system-ui, sans-serif'; var w = c.measureText(txt).width;
+    var placed = [];
+    guides.forEach(function (q) { var T = q[0] * DAY, c = g.ctx, txt = q[1]; c.font = '11px system-ui, sans-serif'; var w = c.measureText(txt).width, v = 30, X, Y, ok = false;
+      for (var k = 0; k < 8 && !ok; k++, v /= 2.5) { var xr = v * T / 1000; X = g.tx(xr); Y = g.ty(v);
+        ok = xr >= rmin && xr <= rmax && X - w / 2 >= g.pl && X + w / 2 <= g.pl + g.W && Y - 7 >= g.pt && Y + 7 <= g.pt + g.H && placed.every(function (b) { return X + w / 2 + 3 < b[0] || X - w / 2 - 3 > b[1] || Y + 8 < b[2] || Y - 8 > b[3]; }); }
+      if (!ok) return; placed.push([X - w / 2, X + w / 2, Y - 7, Y + 7]);
       c.fillStyle = css('--surface'); c.fillRect(X - w / 2 - 2, Y - 7, w + 4, 14); c.fillStyle = ink; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, X, Y); });
     g.line(apex, s3, { dash: [6, 4], w: 1.5 });
     g.line(orex, s2, { w: 1.5 });
@@ -214,20 +219,20 @@
     if (state.caseKey === 'orex2018') { var D = K.horizons.orex.daily, tj = K.tdbOfJd(D.jd0); g2.line(D.rel.map(function (q, i) { return [(tj + i * DAY - t1) / DAY, Math.hypot(q[0], q[1], q[2]) / 1000]; }), s2, { w: 1.5, dash: [5, 3] }); }
     B.forEach(function (b, i) { g2.dot((b.t - t1) / DAY, b.range_m / 1000, i === sel ? crit : s1, i === sel ? 5.5 : 3.5); });
     if (det && det.first) g2.vmark((det.first.t - t1) / DAY, warn, 'first sight', [2, 2]);
-    g2.vmark(-state.S.groundLoopDays, ink, 'design lead', [5, 4]);
+    g2.vmark(-state.S.groundLoopDays, ink, 'design lead', [5, 4], 1);
     legend('rtLegend', [{ c: s1, t: 'this plan' }].concat(state.caseKey === 'orex2018' ? [{ c: s2, dash: true, t: 'OSIRIS-REx as flown (Horizons)' }] : []).concat([{ c: warn, dash: true, t: 'the asteroid first bright enough to see' }]));
-    $('rtCap').textContent = det && det.first ? 'The camera sees it ' + f(det.leadToFirstBurn_s / DAY, 3) + ' days before the first burn, ' + (det.leadToFirstBurn_s >= state.S.groundLoopDays * DAY ? 'more' : 'less') + ' than the ' + state.S.groundLoopDays + '-day design lead. ' + (sel !== null ? B[sel].name + ': ' + dt(B[sel].t) + ', ' + km(B[sel].range_m, 4) + ' km.' : '') : '';
+    $('rtCap').textContent = (det && det.first ? 'The camera sees it ' + (det.leadIsLowerBound ? 'at least ' : '') + f(Math.abs(det.leadToFirstBurn_s) / DAY, 3) + ' days ' + (det.leadToFirstBurn_s >= 0 ? 'before' : 'after') + ' the first burn, ' + (det.leadToFirstBurn_s >= state.S.groundLoopDays * DAY ? 'more' : 'less') + ' than the ' + state.S.groundLoopDays + '-day design lead. ' : '') + (sel !== null ? B[sel].name + ': ' + dt(B[sel].t) + ', ' + km(B[sel].range_m, 4) + ' km.' : '');
     // 3. forces against distance
     var ctx = R.ap.ctx, so = R.ap.standoff, ts = so.t, u = so.r.map(function (x) { return x / Math.hypot(so.r[0], so.r[1], so.r[2]); });
     var dmin = R.body.radius_m * 0.8, dmax = Math.max(R.regimes.hill_radius_m * 4, state.S.standoff_m * 3), n = 80, grav = [], tide = [], sun = [];
     for (var i = 0; i <= n; i++) { var d = dmin * Math.pow(dmax / dmin, i / n), P = K.accel(ts, u.map(function (x) { return x * d; }), Object.assign({}, ctx, { parts: true, shadow: false })); grav.push([d / 1000, Math.hypot.apply(null, P.gravity)]); tide.push([d / 1000, Math.hypot.apply(null, P.tide)]); sun.push([d / 1000, Math.hypot.apply(null, P.srp)]); }
     var all = grav.concat(tide, sun).map(function (p) { return p[1]; }).filter(function (x) { return x > 0; });
-    var g3 = frame($('fChart'), { x: [dmin / 1000, dmax / 1000], y: [Math.pow(10, Math.floor(Math.log10(Math.min.apply(null, all)))), Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, all))))], xlog: true, ylog: true, xlab: 'distance from the asteroid\'s centre, km (along the stand-off direction)', ylab: 'acceleration, m/s²' });
+    var g3 = frame($('fChart'), { x: [dmin / 1000, dmax / 1000], y: [Math.pow(10, Math.floor(Math.log10(Math.min.apply(null, all)))), Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, all))))], xlog: true, ylog: true, xlab: 'distance from its centre, km (toward the stand-off)', ylab: 'acceleration, m/s²' });
     g3.line(grav, s1); g3.line(sun, warn); g3.line(tide, s3, { dash: [6, 4] });
     g3.vmark(R.body.radius_m / 1000, ink, 'surface'); g3.vmark(R.regimes.hill_radius_m / 1000, ink, 'Hill', null, 1); g3.vmark(state.S.standoff_m / 1000, crit, 'stand-off', [2, 2]);
     if (state.S.am_m2_kg > 0) g3.vmark(R.regimes.gravity_equals_srp_m / 1000, warn, '', [1, 3]);
     legend('fLegend', [{ c: s1, t: 'the asteroid\'s gravity (GM ' + f(R.body.GM_m3_s2, 3) + ' m³/s²)' }, { c: warn, t: 'sunlight (' + f(state.S.am_m2_kg, 3) + ' m²/kg)' }, { c: s3, dash: true, t: 'the Sun\'s tide' }]);
-    $('fCap').textContent = 'Gravity falls as 1/r², sunlight does not fall at all over these distances, and the tide grows with r. Beyond ' + km(R.regimes.gravity_equals_srp_m, 3) + ' km sunlight beats gravity; the Hill radius (' + km(R.regimes.hill_radius_m, 3) + ' km) is where the tide does on the Sun line (along this direction the tide is weaker). AAS 24-063\'s dark-side equilibrium sits at ' + km(R.regimes.dark_equilibrium_m, 3) + ' km.';
+    $('fCap').textContent = 'Gravity falls as 1/r², sunlight does not fall at all over these distances, and the tide grows with r. Beyond ' + km(R.regimes.gravity_equals_srp_m, 3) + ' km sunlight beats gravity; the Hill radius (' + km(R.regimes.hill_radius_m, 3) + ' km) is where the tide does on the Sun line (along this direction the tide is weaker). AAS 24-063\'s dark-side equilibrium (no shadow in its model) sits at ' + km(R.regimes.dark_equilibrium_m, 3) + ' km on the anti-Sun axis, which is inside the asteroid\'s shadow, where sunlight is cut off.';
     // 4. the corridor (log-polar, the Sun up)
     var cg = setup($('geoChart')), c4 = cg.ctx, cx = cg.w / 2, cy = cg.h / 2 + 6, Rpx = Math.min(cg.w, cg.h) / 2 - 18, lo = Math.log10(Math.max(0.05, rmin / 2)), hi = Math.log10(rmax);
     var rad = function (rkm) { return Rpx * Math.max(0, (Math.log10(Math.max(rkm, Math.pow(10, lo))) - lo) / (hi - lo)); };
@@ -256,7 +261,7 @@
     ['AAM-1', 'AAM-2', 'AAM-3', 'AAM-3a', 'AAM-4', 'M0P'].forEach(function (ev) { var m = K.measuredDv(ev, 3, AM_APEX); rows.push([ev + ' measured from the flown trajectory (Horizons, 3 h either side)', f(T3[ev][3], 6) + ' m/s (Table 3, estimated)', f(m.dv_m_s, 6) + ' m/s', f(m.dv_m_s - T3[ev][3], 2) + ' m/s', Math.abs(m.dv_m_s - T3[ev][3]) < 0.002]); });
     [['AAM-1', 'AAM-2'], ['AAM-2', 'AAM-3'], ['AAM-3', 'AAM-3a'], ['AAM-3a', 'AAM-4'], ['AAM-4', 'M0P'], ['M0P', 'Arrival']].forEach(function (q) { var p = K.plannedDv(q[0], q[1], AM_APEX); var g = p.dv_m_s - T3[q[0]][2]; rows.push([q[0] + ' planned here from the flown state, aimed at ' + q[1] + '\'s Table 1 point', f(T3[q[0]][2], 6) + ' m/s (Table 3, designed)', f(p.dv_m_s, 6) + ' m/s', f(g, 2) + ' m/s (' + f(100 * g / T3[q[0]][2], 2) + '%)', Math.abs(g / T3[q[0]][2]) < 0.1]); });
     var Rb = K.run(K.orexCase(), K.defaults()), b = Rb.burns[0];
-    rows.push(['Flown 61 days from 1 Aug 2018: where AAM-1 happens', '175,000 km, 20.5°, 55.3°, 491.3 m/s (Table 1)', km(b.range_m, 6) + ' km, ' + f(b.lat_deg, 3) + '°, ' + f(b.lon_deg, 3) + '°, ' + f(b.speed_before_m_s, 5) + ' m/s', f(b.range_m / 1000 - 175000, 3) + ' km', Math.abs(b.range_m / 1000 - 175000) < 175]);
+    rows.push(['Flown 61 days from 1 Aug 2018: where AAM-1 happens', '175,000 km, 20.5°, 55.3°, 491.3 m/s (Table 1)', km(b.range_m, 6) + ' km, ' + f(b.lat_deg, 3) + '°, ' + f(b.lon_deg, 3) + '°, ' + f(b.speed_before_m_s, 5) + ' m/s', f(b.range_m / 1000 - T1[0][2], 3) + ' km in range; ' + f(b.lat_deg - T1[0][3], 2) + '° and ' + f(b.lon_deg - T1[0][4], 2) + '° in angle (Table 1 rounds to 0.1°)', Math.abs(b.range_m / 1000 - T1[0][2]) < 175 && Math.abs(b.lat_deg - T1[0][3]) < 0.1 && Math.abs(b.lon_deg - T1[0][4]) < 0.1]);
     var b61 = K.ballistic(0, 61, AM_APEX, K.bodies['101955'].GM_m3_s2), b17 = K.ballistic(104, 121, AM_APEX, K.bodies['101955'].GM_m3_s2);
     rows.push(['Ballistic, 1 Aug to 1 Oct 2018 (3.07 million km to 175,000 km)', 'Horizons\' reconstruction', 'this model', km(b61.final_m, 3) + ' km apart', false, 'no planets\' tides, sunlight as a flat absorber']);
     rows.push(['Ballistic, 13 to 30 Nov 2018 (150 km to 38 km)', 'Horizons; the navigation team predicted two weeks to within 500 m (AAS 19-035 p. 15)', 'this model', km(b17.final_m, 3) + ' km apart', false, 'their ten-plate sunlight and thermal model, and the momentum dumps, against a flat absorber here']);

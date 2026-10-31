@@ -164,10 +164,12 @@
         out.GM_m3_s2 = E[S.gmCase || 'best']; out.GM_confidence = 'assumed'; out.GM_range_m3_s2 = [E.min, E.max];
         out.GM_source = 'AAS 24-063 ' + E.page + ': ' + E.best + ' (' + E.min + '-' + E.max + ') m^3/s^2, the ' + (S.gmCase || 'best') + ' value';
       } else if (mode === 'density' || mode === 'measured' || mode === 'estimate') {
-        var rho = num(S.density_kg_m3) ? S.density_kg_m3 : null;
+        // review: where SBDB publishes a bulk density but no GM (Didymos), "measured or published" uses SBDB's density
+        var sbdbRho = mode !== 'density' && b && num(b.density_kg_m3) ? b.density_kg_m3 : null;
+        var rho = sbdbRho !== null ? sbdbRho : num(S.density_kg_m3) ? S.density_kg_m3 : null;
         if (!(rho > 0)) return { refusal: refusal('insufficient_data', 'No measured mass for ' + out.name + ' and no density given.', 'A density (the measured bulk densities of Bennu, Ryugu, Itokawa and Eros are 1190 to 2670 kg/m^3, SBDB).', { applies_to: 'body' }) };
         out.GM_m3_s2 = G_NEWTON * rho * vol; out.GM_confidence = 'assumed'; out.GM_range_m3_s2 = null;
-        out.GM_source = 'G (NIST CODATA 2022) x ' + rho + ' kg/m^3 (assumed) x the volume of a ' + (2 * out.radius_m).toFixed(0) + ' m sphere';
+        out.GM_source = 'G (NIST CODATA 2022) x ' + rho + ' kg/m^3 (' + (sbdbRho !== null ? 'SBDB density, ' + b.density_ref : 'assumed') + ') x the volume of a ' + (2 * out.radius_m).toFixed(0) + ' m sphere';
       } else return { refusal: refusal('invalid_input', 'Unknown mass mode ' + mode + '.', 'measured, estimate or density.') };
       out.density_kg_m3 = out.GM_m3_s2 / (G_NEWTON * vol);
       out.surface_gravity_m_s2 = out.GM_m3_s2 / (out.radius_m * out.radius_m);
@@ -286,9 +288,12 @@
       var first = null;
       for (var j = 0; j < rows.length; j++) if (rows[j].V <= vLim) { first = rows[j]; break; }
       var cam = A19.imagers[0], sigPx = A19.centroid.unresolvedAchieved_px, ifov = cam[2] * 1e-6;
+      // review: bright enough at the first computed point means first sight is earlier than the arc reaches, so the lead
+      // is a lower bound (not a value); a negative lead means the camera first sees it after the first burn
       return { rows: rows, vLimit: vLim, first: first, imager: cam[0], ifov_rad: ifov, centroid_px: sigPx,
         lateralSigma: function (range) { return range * ifov * sigPx; },
-        leadToFirstBurn_s: first ? ap.t1 - first.t : null, before: first ? null : 'not bright enough within ' + ((ap.t1 - rows[0].t) / DAY).toFixed(0) + ' days of the first burn' };
+        leadToFirstBurn_s: first ? ap.t1 - first.t : null, leadIsLowerBound: first === rows[0],
+        before: first ? null : 'not bright enough within ' + ((ap.t1 - rows[0].t) / DAY).toFixed(0) + ' days of the first burn' };
     }
     var _orexV = null;
     /** Bennu's V at OSIRIS-REx's first PolyCam image (AAS 19-035 p. 5), from Horizons' geometry on 2018-08-17 and the H-G law. */
@@ -410,13 +415,15 @@
     }
 
     /** Earth's tide on the approach and the stay against the Sun's, from idea 41's weekly Earth range. */
-    function earthTideCheck(src, tFrom, tTo) {
+    function earthTideCheck(src, tFrom, tTo, astAt) {
       var T = src.timeline; if (!T) return null;
       var worst = null;
       for (var i = 0; i < T.utc.length; i++) {
         var t = tdbOfUtc(T.utc[i] + 'T00:00:00Z'); if (t < tFrom - 7 * DAY || t > tTo + 7 * DAY) continue;
-        var ratio = (MU_EARTH / Math.pow(T.range_m[i], 3)) / (MU_SUN / Math.pow(AU, 3));
-        if (!worst || ratio > worst.ratio) worst = { ratio: ratio, utc: T.utc[i], range_m: T.range_m[i] };
+        // review: the Sun's tide at the asteroid's own distance from the Sun on that date (it was taken at 1 au)
+        var A = astAt ? astAt(t) : null, dSun = A ? norm(A.r) : AU;
+        var ratio = (MU_EARTH / Math.pow(T.range_m[i], 3)) / (MU_SUN / Math.pow(dSun, 3));
+        if (!worst || ratio > worst.ratio) worst = { ratio: ratio, utc: T.utc[i], range_m: T.range_m[i], sun_distance_m: dSun };
       }
       return worst;
     }
@@ -433,7 +440,9 @@
       var des = String(src.target.designation);
       var body = bodyModel(des, S, src.target); if (body.refusal) return { refusal: body.refusal, S: S };
       R.body = body;
-      if (body.GM_confidence !== 'measured') R.refusals.push(refusal('insufficient_data', body.name + '\'s mass has not been measured: GM ' + body.GM_m3_s2.toPrecision(3) + ' m^3/s^2 is ' + (des === '99942' ? 'the OSIRIS-APEX team\'s estimate (' + body.GM_range_m3_s2.join(' to ') + ')' : 'an assumed density times a sphere') + '. Orbits and hover costs near it move with it.', 'A radio-science mass from a spacecraft at the body (as OSIRIS-REx measured Bennu\'s; OSIRIS-APEX will measure Apophis\'s).', { applies_to: 'body_mass' }));
+      // review: a stand-off at or below the surface is not a place to hold station (it was flown as one)
+      if (!(S.standoff_m > body.radius_m)) return { refusal: refusal('invalid_input', 'The stand-off (' + S.standoff_m + ' m from the centre) is inside ' + body.name + ', whose radius is ' + body.radius_m.toFixed(0) + ' m (' + body.radius_source + ').', 'A stand-off above the surface (module 44 lands).', { applies_to: 'standoff' }), S: S };
+      if (body.GM_confidence !== 'measured') R.refusals.push(refusal('insufficient_data', body.name + '\'s mass has not been measured: GM ' + body.GM_m3_s2.toPrecision(3) + ' m^3/s^2 is ' + (des === '99942' && body.GM_range_m3_s2 ? 'the OSIRIS-APEX team\'s estimate (' + body.GM_range_m3_s2.join(' to ') + ')' : 'a density (' + body.density_kg_m3.toPrecision(4) + ' kg/m^3) times a sphere') + '. Orbits and hover costs near it move with it.', 'A radio-science mass from a spacecraft at the body (as OSIRIS-REx measured Bennu\'s; OSIRIS-APEX will measure Apophis\'s).', { applies_to: 'body_mass' }));
       var ap = approach(src.arrival, S, body, src.firstBurnAt);
       if (ap.refusal) return { refusal: ap.refusal, S: S };
       R.ap = ap;
@@ -474,14 +483,16 @@
       for (var i = 0; i + 1 < R.burns.length; i++) { var lt = R.burns[i + 1].t - R.burns[i].t; if (lt < loop) R.legsShort.push({ from: R.burns[i].name, to: R.burns[i + 1].name, days: lt / DAY }); }
       var det = detection(ap, body, S);
       if (det.refusal) R.refusals.push(det.refusal); else R.detection = det;
-      if (R.detection && (!R.detection.first || R.detection.leadToFirstBurn_s < loop)) R.refusals.push(refusal('out_of_envelope', R.detection.first ? 'The camera first sees ' + body.name + ' (V ' + R.detection.vLimit.toFixed(1) + ') ' + (R.detection.leadToFirstBurn_s / DAY).toFixed(1) + ' days before the first braking burn, less than the ' + S.groundLoopDays + '-day ground loop (AAS 19-035: final maneuver designs 5-7 days ahead): the burn would be aimed without the asteroid in sight.' : 'The camera does not see ' + body.name + ' before the first burn (' + R.detection.before + ').', 'Onboard optical navigation and autonomous targeting, a slower arrival, or braking farther out on radio navigation alone.', { applies_to: 'autonomy' }));
+      var DT = R.detection;
+      if (DT && DT.first && DT.leadIsLowerBound && DT.leadToFirstBurn_s < loop) R.refusals.push(refusal('insufficient_data', 'The camera already sees ' + body.name + ' (V ' + DT.vLimit.toFixed(1) + ') where the computed arc begins, ' + (DT.leadToFirstBurn_s / DAY).toFixed(1) + ' days before the first burn: first sight is earlier, by an amount this arc does not reach, so it cannot say whether it beats the ' + S.groundLoopDays + '-day ground loop.', 'A shorter ground loop, or the cruise\'s own record of first sight (idea 40).', { applies_to: 'autonomy' }));
+      else if (DT && (!DT.first || DT.leadToFirstBurn_s < loop)) R.refusals.push(refusal('out_of_envelope', DT.first ? 'The camera first sees ' + body.name + ' (V ' + DT.vLimit.toFixed(1) + ') ' + (DT.leadToFirstBurn_s >= 0 ? (DT.leadToFirstBurn_s / DAY).toFixed(1) + ' days before the first braking burn, less than' : (-DT.leadToFirstBurn_s / DAY).toFixed(1) + ' days after the first braking burn, inside') + ' the ' + S.groundLoopDays + '-day ground loop (AAS 19-035: final maneuver designs 5-7 days ahead): the burn would be aimed without the asteroid in sight.' : 'The camera does not see ' + body.name + ' before the first burn (' + DT.before + ').', 'Onboard optical navigation and autonomous targeting, a slower arrival, or braking farther out on radio navigation alone.', { applies_to: 'autonomy' }));
       // knowledge before the camera: the spacecraft (idea 40) and the asteroid's own orbit (Horizons, at the chain's arrival)
       R.knowledge = { spacecraft_m: src.knowledgeSigma_m, asteroid_m: null };
       if (des === '99942' && src.from === '41-signal') { var sg = HZ.apophisArrival.sigma_xyz_m; R.knowledge.asteroid_m = Math.sqrt(sg[0] * sg[0] + sg[1] * sg[1] + sg[2] * sg[2]); }
       // planets: the Earth's tide over the approach and the stay, from idea 41's Earth range
-      var et = earthTideCheck(src, ap.t1, ap.standoff.t + S.stayDays * DAY);
+      var et = earthTideCheck(src, ap.t1, ap.standoff.t + S.stayDays * DAY, ap.astAt);
       R.earthTide = et;
-      if (et && et.ratio > 0.01) R.refusals.push(refusal('out_of_envelope', 'On ' + et.utc + ' the Earth is ' + (et.range_m / AU).toFixed(3) + ' au away and its tide is ' + (100 * et.ratio).toFixed(0) + '% of the Sun\'s: the planets are not in this model.', 'A stay that ends before the Earth comes close, or a model with the planets (idea 40\'s propagator).', { applies_to: 'planets' }));
+      if (et && et.ratio > 0.01) R.refusals.push(refusal('out_of_envelope', 'On ' + et.utc + ' the Earth is ' + (et.range_m / AU).toFixed(3) + ' au away and its tide is ' + (100 * et.ratio).toFixed(0) + '% of the Sun\'s (at ' + (et.sun_distance_m / AU).toFixed(3) + ' au from the Sun): the planets are not in this model.', 'A stay that ends before the Earth comes close, or a model with the planets (idea 40\'s propagator).', { applies_to: 'planets' }));
       // the stand-off and the stay
       var sim = deadband(ap.standoff.t, ap.standoff.r, ap.ctx, S.box_m, S.simDays);
       R.deadband = sim.failed ? null : sim;
@@ -513,7 +524,7 @@
         'm^3/s^2, m, kg/m^3, h, m/s^2, m/s', b.GM_confidence === 'measured' ? 'measured' : 'assumed', 'JPL SBDB (snapshots/bodies.js), AAS 24-063 Table 2 for Apophis\'s GM, NIST G');
       O.environment = qv({ srp_accel_m_s2: r9(R.regimes.srp_accel_m_s2), gravity_at_standoff_m_s2: r9(R.hover.gravity_m_s2), tide_at_standoff_m_s2: r9(R.hover.tide_m_s2), srp_at_standoff_m_s2: r9(R.hover.srp_m_s2),
         gravity_equals_srp_m: r9(R.regimes.gravity_equals_srp_m), anh3bp_length_unit_m: r9(R.regimes.du_m), anh3bp_beta: r9(R.regimes.beta), dark_side_equilibrium_m: r9(R.regimes.dark_equilibrium_m), area_per_mass_m2_kg: r9(S.am_m2_kg) },
-        'm/s^2, m', 'derived', KERNEL + ' regimes(), hover(): solar pressure ' + r9(P1AU) + ' N/m^2 at 1 au (idea 40), area per mass ' + r9(S.am_m2_kg) + ' m^2/kg');
+        'm/s^2, m', 'derived', KERNEL + ' regimes(), hover(): solar pressure ' + r9(P1AU) + ' N/m^2 at 1 au (idea 40), area per mass ' + r9(S.am_m2_kg) + ' m^2/kg; the dark-side equilibrium is AAS 24-063\'s circular ANH3BP point with no shadow (on the anti-Sun axis it lies in the asteroid\'s shadow, where this model has no sunlight)');
       O.approach = qv({ template: S.template, first_burn_utc: utcOf(ap.t1), standoff_utc: utcOf(so.t), duration_s: r9(so.t - ap.t1), total_dv_m_s: r9(R.mass.burns_dv_m_s),
         burns: R.burns.map(function (q) { return { name: q.name, utc: utcOf(q.t), tdb_s_past_j2000: q.t, range_m: r9(q.range_m), lat_deg: r9(q.lat_deg), lon_deg: r9(q.lon_deg), dv_m_s: r9(q.dv_m_s), dv_vec_m_s: vr9(q.dv_vec), speed_before_m_s: r9(q.speed_before_m_s), engine: q.engine, propellant_kg: r9(q.propellant_kg), duration_s: r9(q.duration_s) }; }),
         legs_shorter_than_ground_loop: R.legsShort.map(function (l) { return { from: l.from, to: l.to, days: r9(l.days) }; }) },
@@ -527,7 +538,7 @@
         'm/s^2, m/s, m, s', 'derived', KERNEL + ' hover(), deadband(): a point fixed in the SAM frame; the deadband flown under every force');
       O.navigation = qv({ spacecraft_knowledge_sigma_m: r9(R.knowledge.spacecraft_m), asteroid_ephemeris_sigma_m: r9(R.knowledge.asteroid_m),
         detection: R.detection ? { v_limit: r9(R.detection.vLimit), imager: R.detection.imager, first_seen_utc: R.detection.first ? utcOf(R.detection.first.t) : null, first_seen_range_m: R.detection.first ? r9(R.detection.first.range_m) : null,
-          lead_to_first_burn_s: r9(R.detection.leadToFirstBurn_s), optical_sigma_at_first_burn_m: r9(R.detection.lateralSigma(R.burns[0].range_m)) } : null,
+          lead_to_first_burn_s: r9(R.detection.leadToFirstBurn_s), lead_is_lower_bound: !!(R.detection.first && R.detection.leadIsLowerBound), optical_sigma_at_first_burn_m: r9(R.detection.lateralSigma(R.burns[0].range_m)) } : null,
         ground_loop_s: r9(S.groundLoopDays * DAY + (src.link ? src.link.rtlt_s : 0)), round_trip_light_time_s: src.link ? r9(src.link.rtlt_s) : null },
         'm, s', 'derived', 'Horizons 1-sigma for Apophis at the arrival; idea 40\'s knowledge covariance; AAS 19-035 PolyCam iFOV and centroiding; the H-G law (Horizons manual)');
       h.refusals = (src.h41 ? (src.h41.refusals || []).map(function (r) { var q = clone(r); if (!q.from) q.from = '41-signal'; return q; }) : []).concat(R.refusals.map(clone));
