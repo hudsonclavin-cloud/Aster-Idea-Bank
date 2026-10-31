@@ -252,9 +252,9 @@ handSidecar('nav-sources.js', { repo: 'https://ntrs.nasa.gov ; https://deepspace
   note: 'hand-transcribed from the PDFs (pdftotext -layout) and the fact sheet; every number carries its table and page in the file itself' });
 
 // ------------------------------------------------------------------ Horizons asteroid truth (the propagation oracle)
-// (433 Eros is fetched as DES=2000433: Horizons reads "433;" as comet 433P, 2005 QN173)
+// (433 Eros is fetched as DES=2000433; "DES=433;" is comet 433P, 2005 QN173, while "433;" is Eros: checked in review)
 const SB = { '99942': 'horizons-sb-99942-1d.json', '101955': 'horizons-sb-101955-1d.json', '162173': 'horizons-sb-162173-1d.json', '433': 'horizons-sb-433-1d.json', '65803': 'horizons-sb-65803-1d.json', '2000 SG344': 'horizons-sb-2000_SG344-1d.json' };
-const pickDays = ['2026-May-01', '2026-Jul-02', '2027-Jun-01', '2028-May-10', '2028-Dec-31'];
+const pickDays = ['2026-Jul-02', '2028-May-10'];   // the two days the tests and the page use (three more dropped in review, for size)
 const truth = { source: 'NASA/JPL Horizons API: small bodies about the Sun (500@10), ICRF, TDB, km and km/s; states at whole TDB days', bodies: {}, apophis2029: null };
 const sbSha = {};
 for (const [des, file] of Object.entries(SB)) {
@@ -270,7 +270,7 @@ for (const [des, file] of Object.entries(SB)) {
   const d = horizonsRecords(F('horizons-sb-99942-2029-1d.json')), h = horizonsRecords(F('horizons-sb-99942-2029-1h.json'));
   sbSha['horizons-sb-99942-2029-1d.json'] = sha(F('horizons-sb-99942-2029-1d.json')); sbSha['horizons-sb-99942-2029-1h.json'] = sha(F('horizons-sb-99942-2029-1h.json'));
   const at = (jd) => d.find((r) => Math.abs(r[0] - jd) < 1e-6);
-  truth.apophis2029 = { daily: { '2029-03-01': at(2462196.5), '2029-04-01': at(2462227.5), '2029-05-01': at(2462257.5), '2029-07-01': at(2462318.5) }, hourly: h.filter((r) => r[0] >= 2462238.5 && r[0] <= 2462240.5) };
+  truth.apophis2029 = { daily: { '2029-03-01': at(2462196.5), '2029-04-01': at(2462227.5), '2029-05-01': at(2462257.5), '2029-07-01': at(2462318.5) }, hourly: h.filter((r) => r[0] >= 2462240 - 1e-6 && r[0] <= 2462240.5) };   // 2029-04-13 12:00 to 24:00 TDB (closest approach 22:00)
 }
 { // OSIRIS-APEX (-64), JPL's own predict for the spacecraft that will reach Apophis in 2029: every 20 days on two arcs
   // free of manoeuvres in the predict (found by the step in a 20-day propagation residual, README)
@@ -286,7 +286,7 @@ writeData('horizons-truth.js', 'CoastTruth', 'JPL Horizons states of six asteroi
 handSidecar('horizons-truth.js', { repo: 'https://ssd.jpl.nasa.gov/api/horizons.api',
   path: "horizons.api?format=json&COMMAND='99942;' ('101955;', '162173;', 'DES=2000433;', '65803;', 'DES=2000 SG344;', and '-64' OSIRIS-APEX from 2026-01-01 to 2028-12-30)&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2026-05-01'&STOP_TIME='2029-01-01'&STEP_SIZE='1 d'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES' ; COMMAND='99942;' 2029-01-01..2029-07-01 step '1 d' and 2029-04-12..2029-04-16 step '1 h'",
   sourceSha256: sbSha, license: 'NASA/JPL Horizons; US-government work, public domain in the US',
-  note: 'excerpted by build-data.mjs: each body\'s solution, small-perturber set and non-gravitational parameters from the response header, and its states on five whole TDB days; Apophis daily on four days of 2029 and hourly on 2029-04-13 and 14; OSIRIS-APEX (-64, JPL predict od398) every 20 days on two manoeuvre-free arcs' });
+  note: 'excerpted by build-data.mjs: each body\'s solution, small-perturber set and non-gravitational parameters from the response header, and its states on two whole TDB days (2026-07-02, 2028-05-10); Apophis daily on four days of 2029 and hourly from 2029-04-13 12:00 to 2029-04-14 00:00 TDB; OSIRIS-APEX (-64, JPL predict od398) every 20 days on two manoeuvre-free arcs' });
 
 // ------------------------------------------------------------------ the Moon fit's hourly check (test fixture)
 fs.writeFileSync(path.join(here, 'oracle', 'moon-hourly-excerpt.json'), JSON.stringify({ source: 'NASA/JPL Horizons 301 about 500@399, ICRF, TDB, km; one hourly record a day (07:00 TDB, between Aster\'s daily records) of two fetched windows', sha256: { '2026': sha(F('horizons-moon-1h-2026.json')), '2035': sha(F('horizons-moon-1h-2035.json')) }, windows: Object.fromEntries(Object.entries(moonWindows).map(([k, v]) => [k, { maxPos_m: v.maxPos_m, records: v.excerpt }])) }) + '\n');

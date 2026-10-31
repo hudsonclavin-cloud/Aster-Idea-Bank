@@ -15,7 +15,7 @@
   "horizons-sc-64-1d.json": "aa421ea133e72dc08e3c11a90d9ce60f65855c7f9d06c710dd0de00021a13ea2"
  },
  "license": "NASA/JPL Horizons; US-government work, public domain in the US",
- "note": "excerpted by build-data.mjs: each body's solution, small-perturber set and non-gravitational parameters from the response header, and its states on five whole TDB days; Apophis daily on four days of 2029 and hourly on 2029-04-13 and 14; OSIRIS-APEX (-64, JPL predict od398) every 20 days on two manoeuvre-free arcs",
- "writtenSha256": "29917c62557a2795a8c431c376ee2d9cf6e7183616d96d442e325202395493a6",
- "writtenBytes": 16072
+ "note": "excerpted by build-data.mjs: each body's solution, small-perturber set and non-gravitational parameters from the response header, and its states on two whole TDB days (2026-07-02, 2028-05-10); Apophis daily on four days of 2029 and hourly from 2029-04-13 12:00 to 2029-04-14 00:00 TDB; OSIRIS-APEX (-64, JPL predict od398) every 20 days on two manoeuvre-free arcs",
+ "writtenSha256": "4c644455372ce5987c47605baf169b1204fa17ee253f6cedb5127544a9cafa7e",
+ "writtenBytes": 8929
 }

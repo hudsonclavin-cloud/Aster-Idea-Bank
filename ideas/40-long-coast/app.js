@@ -117,7 +117,7 @@
     return true;
   }
   function exportText() {
-    if (!st.R || st.R.refusal || !st.R.arrival) { hoStatus('Nothing to export: ' + (st.R && st.R.refusal ? st.R.refusal.reason : (st.R && st.R.refusals && st.R.refusals.length ? st.R.refusals[st.R.refusals.length - 1].reason : 'no cruise computed')), 'bad'); return null; }
+    if (!st.R || st.R.refusal || !st.R.arrival || !st.R.budget) { hoStatus('Nothing to export: ' + (st.R && st.R.refusal ? st.R.refusal.reason : (st.R && st.R.refusals && st.R.refusals.length ? st.R.refusals[st.R.refusals.length - 1].reason : 'no cruise computed')), 'bad'); return null; }
     return JSON.stringify(K.buildHandoff(st.R));
   }
   function b64u(s) { return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -218,7 +218,8 @@
     var L = 46, Rm = 10, T = 20, B = 28, W = g.w - L - Rm, Hh = g.h - T - B;
     var series = [['knowledge_m', css('--s1'), 'Knowledge now (1σ, RSS)'], ['knowledgeAtArrival_m', css('--s3'), 'Knowledge mapped to the arrival'], ['dispersionAtArrival_m', css('--s2'), 'Dispersion mapped to the arrival']];
     var lo = Infinity, hi = -Infinity;
-    H.forEach(function (p) { series.forEach(function (s) { var v = p[s[0]] / 1e3; if (v > 0) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }); });
+    H.forEach(function (p) { series.forEach(function (s) { var v = p[s[0]] / 1e3; if (v > 0 && isFinite(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }); });
+    if (!isFinite(hi)) return;   // nothing finite to draw (the kernel refuses non-finite runs; this keeps the loops bounded)
     lo = Math.pow(10, Math.floor(Math.log10(Math.max(lo, 1e-3)))); hi = Math.pow(10, Math.ceil(Math.log10(hi)));
     var X = function (t) { return L + (t - t0) / (tA - t0) * W; }, Y = function (v) { return T + (1 - (Math.log10(Math.max(v, lo)) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * Hh; };
     ctx.strokeStyle = css('--grid'); ctx.lineWidth = 1;
@@ -237,7 +238,7 @@
     var B = st.R.budget.rows, g = canvasFor('tcmChart', 0.42, 200), ctx = g.ctx, L = 46, Rm = 8, T = 20, Bm = 26, W = g.w - L - Rm, Hh = g.h - T - Bm;
     if (!B.length) { legend('tcmLegend', []); return; }
     var vals = []; B.forEach(function (r) { vals.push(r.p99_m_s, r.mean_m_s, r.deterministic_m_s); });
-    var pos = vals.filter(function (v) { return v > 0; }), lo = Math.pow(10, Math.floor(Math.log10(Math.min.apply(null, pos.length ? pos : [1e-3])))), hi = Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, pos.length ? pos : [1]))));
+    var pos = vals.filter(function (v) { return v > 0 && isFinite(v); }), lo = Math.pow(10, Math.floor(Math.log10(Math.min.apply(null, pos.length ? pos : [1e-3])))), hi = Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, pos.length ? pos : [1]))));
     if (hi <= lo) hi = lo * 10;
     var Y = function (v) { return T + (1 - (Math.log10(Math.max(v, lo)) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * Hh; };
     ctx.strokeStyle = css('--grid');

@@ -114,6 +114,24 @@ const src = K.importLambertsRoad(K.lambertsRoadFrom(P.settings)), R = K.run(src,
   await context.close();
 }
 
+// ---------------------------------------------------------------- review: tracking edges and a moved TCM on another preset
+{
+  const { context, page, errors } = await open(DESK);
+  const set = async (sel, v) => { await page.fill(sel, String(v)); await page.dispatchEvent(sel, 'change'); await settle(page); };
+  await set('#ppwIn', 0); await set('#ddorIn', 0);   // hung the page (an Infinity budget in a log-axis loop)
+  ok(Number.isFinite(num(await tileVal(page, 'TCM budget'))) && !/e-\d\d|Infinity|NaN/.test(await page.textContent('#tcmTable')), 'no passes, no Delta-DOR: finite budget');
+  ok(/no tracking datum after/.test(await page.textContent('#refusals')), 'TCMs with no new data flagged');
+  await page.click('#resetBtn'); await settle(page);
+  await set('.tDays[data-i="0"]', 3);   // showed TCM-1 at 3e-157 m/s beside the refusal
+  ok(/before any tracking datum/.test(await page.textContent('#refusals')) && (await page.$$eval('#tiles .tile', (t) => t.length)) === 0, 'TCM-1 at 3 days refused, no tiles');
+  await page.selectOption('#presetSel', '65803'); await settle(page);
+  await set('.tDays[data-i="0"]', 25);   // its export was refused by its own parser (a stale cached re-aim)
+  const p65 = K.parseHandoff(await page.evaluate(() => window.LongCoastPage.exportText()));
+  ok(!p65.refusal, 'Didymos, TCM-1 moved: export parses ' + (p65.refusal ? p65.refusal.reason : ''));
+  ok(errors.length === 0, 'review block errors: ' + errors.join(' | '));
+  await context.close();
+}
+
 // ---------------------------------------------------------------- #h= links: the committed 40 sample, and idea 39's
 {
   const { context, page, errors } = await open(DESK, URL0 + '#h=' + b64(H40));

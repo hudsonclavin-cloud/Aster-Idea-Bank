@@ -1,0 +1,49 @@
+{
+ "oracle": "JPL DE440s (jplephem 2.24), scipy 1.18.1 DOP853 rtol 1e-12; no code shared with coast.js",
+ "ephemeris": {
+  "url": "https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp",
+  "sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2"
+ },
+ "inputs": {
+  "from": "39-lamberts-road handoff.json (committed)",
+  "departure_tdb_s_past_j2000": 836272869.184,
+  "arrival_tdb_s_past_j2000": 894780969.184,
+  "tcm1_tdb_s_past_j2000": 837136869.184,
+  "vinf_m_s": [
+   511.2997435158795,
+   83.58978840265172,
+   492.89286194082024
+  ]
+ },
+ "target_r_m": [
+  -153565549563.12634,
+  -24128304371.857597,
+  -12831463960.108788
+ ],
+ "target_v_m_s": [
+  8451.36409921964,
+  -24305.735718382777,
+  -8818.447761200852
+ ],
+ "target_two_body_shift_m": 87301318.12160127,
+ "uncorrected_miss_m": 10094010933.147724,
+ "tcm1_as_given_dv_m_s": [
+  -75.10182070067462,
+  164.817786075633,
+  18.34098411704949
+ ],
+ "tcm1_residual_miss_m": 2.8955880746805946,
+ "tcm1_iterations": 5,
+ "reaim_vinf_m_s": [
+  495.5076522987225,
+  248.60592046179582,
+  522.1447377336599
+ ],
+ "reaim_residual_miss_m": 18.31319815453066,
+ "reaim_iterations": 5,
+ "reaim_c3_m2_s2": 579967.864318201,
+ "reaim_dla_deg": 43.285064924064564,
+ "reaim_rla_deg": 26.643819394506885,
+ "reaim_periapsis_speed_change_m_s": 3.1091972560534487,
+ "arrival_vinf_m_s": 4156.094223006433
+}

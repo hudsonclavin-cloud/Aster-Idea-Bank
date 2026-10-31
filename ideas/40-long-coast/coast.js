@@ -81,11 +81,15 @@
     return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, Cc / det, -(a * h - b * g) / det, (a * e - b * d) / det];
   }
   function block(P, n, r0, c0, r, c) { var B = mzero(r, c); for (var i = 0; i < r; i++) for (var j = 0; j < c; j++) B[i * c + j] = P[(r0 + i) * n + c0 + j]; return B; }
-  /** Lower Cholesky factor of a symmetric 3x3 (with a tiny floor so a rank-deficient covariance still samples). */
+  /** Lower Cholesky factor of a symmetric 3x3 (with a tiny floor so a rank-deficient covariance still samples). A pivot
+   * at or below the floor gets the floor and no column below it, so round-off (a covariance that is zero up to 1e-13,
+   * with negative diagonals, as after a TCM with no new data) cannot divide by ~0 into Infinity (review fix); below
+   * 1e-24 (m/s)^2 in all the factor is zero. Positive-definite matrices factor exactly as before. */
   function chol3(S) {
-    var tr = Math.max(1e-300, S[0] + S[4] + S[8]), eps = 1e-14 * tr;
-    var l11 = Math.sqrt(Math.max(S[0], eps)), l21 = S[3] / l11, l31 = S[6] / l11;
-    var l22 = Math.sqrt(Math.max(S[4] - l21 * l21, eps)), l32 = (S[7] - l31 * l21) / l22;
+    var tr = Math.abs(S[0]) + Math.abs(S[4]) + Math.abs(S[8]), eps = 1e-14 * tr;
+    if (!(tr > 1e-24)) return mzero(3);
+    var p1 = S[0] > eps, l11 = Math.sqrt(p1 ? S[0] : eps), l21 = p1 ? S[3] / l11 : 0, l31 = p1 ? S[6] / l11 : 0;
+    var d2 = S[4] - l21 * l21, p2 = d2 > eps, l22 = Math.sqrt(p2 ? d2 : eps), l32 = p2 ? (S[7] - l31 * l21) / l22 : 0;
     var l33 = Math.sqrt(Math.max(S[8] - l31 * l31 - l32 * l32, eps));
     return [l11, 0, 0, l21, l22, 0, l31, l32, l33];
   }
@@ -596,9 +600,11 @@
      * the schedule in N), the TCMs (node indices in tcmNodes, each targeting the position at the last node), momentum
      * dumps. Returns the history (sampled), the TCM statistics and the covariances at arrival.
      */
-    function navigate(T, X, Phi, tcmNodes, detDv, S, injCov) {
+    function navigate(T, X, Phi, tcmNodes, detDv, S, injCov, trace) {
       var N = S.nav, n = T.length, tArr = T[n - 1], t0 = T[0], ex = gatesOf(EXEC[S.execution]);
-      var Pn = injCov.slice(), Pe = mzero(6), q = N.stochastic_m_s2 * N.stochastic_m_s2 * N.stochasticBatch_s;
+      var Pn = injCov.slice(), Pe = mzero(6), q = N.stochastic_m_s2 * N.stochastic_m_s2 * N.stochasticBatch_s, lastData = 0;
+      // every Kalman update goes through here; `trace` (tests) records the type and the weight each one used
+      function upd(h, s2, type, k, bl) { if (!kalman(Pn, Pe, h, s2)) return false; counts[type]++; if (trace) trace.push({ type: type, s2: s2, k: k, baseline: bl }); return true; }
       // Psi_k = Phi(tArr, t_k), kept at the TCM nodes and every sampled node
       var every = Math.max(1, Math.round(6 / S.nodeHours)), keep = {}, Psi = meye(6);
       tcmNodes.forEach(function (k) { keep[k] = true; });
@@ -652,8 +658,12 @@
           var A = mmul(inv, Prr, 3, 3, 3), G = mzero(3, 6);
           for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) { G[i * 6 + j] = -A[i * 3 + j]; G[i * 6 + 3 + j] = (i === j ? -1 : 0); }
           var Sdv = msym(mmul(mmul(G, Pe, 3, 6, 6), mT(G, 3, 6), 3, 6, 3), 3), m = detDv[tcmIdx[k]] || [0, 0, 0];
+          // no datum since the last TCM: the estimate still predicts no miss, so G x_est is zero (not round-off)
+          if (tcm.length && counts.doppler + counts.range + counts.ddor === lastData) Sdv = mzero(3);
           var stats = dvStats(m, Sdv, ex, S.samples, rand);
-          tcm.push({ index: tcmIdx[k], node: k, tdb: t, deterministic: m, cov: Sdv, stats: stats, knowledgePos_m: posSigma(Pn), knowledgeVel_m_s: velSigma(Pn), dispersionPos_m: posSigma(madd(Pe, Pn)), dispersionVel_m_s: velSigma(madd(Pe, Pn)) });
+          var nData = counts.doppler + counts.range + counts.ddor;   // data in hand when it is designed (all before its cutoff)
+          tcm.push({ index: tcmIdx[k], node: k, tdb: t, deterministic: m, cov: Sdv, stats: stats, knowledgePos_m: posSigma(Pn), knowledgeVel_m_s: velSigma(Pn), dispersionPos_m: posSigma(madd(Pe, Pn)), dispersionVel_m_s: velSigma(madd(Pe, Pn)), dataTotal: nData, dataNew: nData - lastData });
+          lastData = nData;
           // the estimate moves by B G; the knowledge error gains the execution error
           var IBG = meye(6); for (var i2 = 0; i2 < 3; i2++) for (var j2 = 0; j2 < 6; j2++) IBG[(3 + i2) * 6 + j2] += G[i2 * 6 + j2];
           Pe = sandwich(IBG, Pe, 6);
@@ -669,17 +679,17 @@
             var bj = -1, be = EL_MIN; STATIONS.forEach(function (st, j4) { var el = elevation(st, t, g); if (el >= be) { be = el; bj = j4; } });
             if (bj >= 0) {
               var md = rangeDoppler(STATIONS[bj], t, X[k], E);
-              if (kalman(Pn, Pe, md.hDoppler, N.doppler_m_s * N.doppler_m_s)) counts.doppler++;
-              if (k % rangeEvery === 0 && kalman(Pn, Pe, md.hRange, N.range_m * N.range_m)) counts.range++;
+              upd(md.hDoppler, N.doppler_m_s * N.doppler_m_s, 'doppler', k);
+              if (k % rangeEvery === 0) upd(md.hRange, N.range_m * N.range_m, 'range', k);
             }
           } else {
             var pl = plan(di);
-            if (pl.doppler[k] !== undefined) { var md2 = rangeDoppler(STATIONS[pl.doppler[k]], t, X[k], E); if (kalman(Pn, Pe, md2.hDoppler, N.doppler_m_s * N.doppler_m_s)) counts.doppler++; }
-            if (pl.range[k] !== undefined) { var md3 = rangeDoppler(STATIONS[pl.range[k]], t, X[k], E); if (kalman(Pn, Pe, md3.hRange, N.range_m * N.range_m)) counts.range++; }
+            if (pl.doppler[k] !== undefined) upd(rangeDoppler(STATIONS[pl.doppler[k]], t, X[k], E).hDoppler, N.doppler_m_s * N.doppler_m_s, 'doppler', k);
+            if (pl.range[k] !== undefined) upd(rangeDoppler(STATIONS[pl.range[k]], t, X[k], E).hRange, N.range_m * N.range_m, 'range', k);
           }
           if (tArr - t > N.contArrDays * DAY) {
             var pl2 = plan(di);
-            if (pl2.ddor[k]) pl2.ddor[k].forEach(function (bl) { var dd = ddor(bl, t, X[k], E); if (dd) { var s = ddorSigmaDelay / dd.baselineProjection_m; if (kalman(Pn, Pe, dd.h, s * s)) counts.ddor++; } });
+            if (pl2.ddor[k]) pl2.ddor[k].forEach(function (bl) { var dd = ddor(bl, t, X[k], E); if (dd) { var s = ddorSigmaDelay / dd.baselineProjection_m; upd(dd.h, s * s, 'ddor', k, bl); } });
             if (!countedDays[di]) { countedDays[di] = true; counts.ddorSkipped += pl2.ddorSkipped || 0; }
           }
         }
@@ -831,7 +841,9 @@
         else R.tcm1AsGiven = { dv: a1.dv, dv_m_s: norm(a1.dv), iterations: a1.iterations, tdb: first.tdb };
       }
       if (aimMode === 'injection') {
-        var ai = memo('aimv|' + S.target + '|' + fkey, function () { return aimVinf(dep.vinf, dep.tdb, tArr, tgt.r, fm, a1 ? add(dep.vinf, a1.dv) : null); });
+        // the Newton start depends on TCM-1's correction, so its time is in the key: without it a page that moved TCM-1
+        // reused a re-aim a fresh run would not find (1 km apart), and its own export was refused on import (review fix)
+        var ai = memo('aimv|' + S.target + '|' + fkey + '|' + (a1 ? first.tdb : ''), function () { return aimVinf(dep.vinf, dep.tdb, tArr, tgt.r, fm, a1 ? add(dep.vinf, a1.dv) : null); });
         if (ai.refusal) { R.refusals.push(refusal(ai.refusal.code, ai.refusal.reason, 'Aim with TCM-1 instead (the departure as given, corrected ' + (first ? first.days + ' days out' : 'later') + ').', { applies_to: 'targeting' })); return R; }
         depFinal = { key: dep.key, label: dep.label + ', re-aimed', tdb: dep.tdb, rGeo: ai.departure.rGeo, vGeo: ai.departure.vGeo, vinf: ai.vinf, source: dep.source };
         R.reaim = { vinf: ai.vinf, dvinf: ai.dvinf, dvinf_m_s: norm(ai.dvinf), periapsisSpeedChange_m_s: norm(ai.departure.vGeo) - norm(dep.vGeo), iterations: ai.iterations, miss_m: ai.miss_m, c3: dot(ai.vinf, ai.vinf), dla: K39.dlaDeg(ai.vinf), rla: K39.rlaDeg(ai.vinf), band: K39.band(K39.dlaDeg(ai.vinf), R39.S.site) };
@@ -842,10 +854,10 @@
       // the reference trajectory, node by node with its STMs
       var x0f = helio(depFinal), imp = {};
       tcmNodes.forEach(function (k, i) { if (norm(detDv[i]) > 0) imp[k] = detDv[i]; });
-      var ref = memo('ref|' + JSON.stringify([dep.key, aimMode, S.target, S.force, S.nodeHours, imp]), function () { return propagateNodes(x0f, T, fm, imp); });
+      var ref = memo('ref|' + JSON.stringify([dep.key, aimMode, S.target, S.force, S.nodeHours, imp, depFinal.rGeo, depFinal.vGeo]), function () { return propagateNodes(x0f, T, fm, imp); });
       if (ref.refusal) { R.refusals.push(ref.refusal); return R; }
       var xEnd = ref.X[ref.X.length - 1];
-      R.reference = { T: T, X: ref.X, steps: ref.steps, missAtArrival_m: norm(sub(xEnd.slice(0, 3), tgt.r)), tcmNodes: tcmNodes };
+      R.reference = { T: T, X: ref.X, Phi: ref.Phi, steps: ref.steps, missAtArrival_m: norm(sub(xEnd.slice(0, 3), tgt.r)), tcmNodes: tcmNodes, detDv: detDv };
       var ER = earthReturn(T, ref.X), out = ER.leftSphere, ret = ER.ret;
       R.reference.earthReturn = { leftSphere: out, minDistance_m: ER.minDistance_m, tdb: ER.tdb };
       if (!out) R.refusals.push(refusal('out_of_envelope', 'The spacecraft never gets ' + fmt(R_GEO / 1e3, 4) + ' km from the Earth before the arrival: this is not a cruise between the Earth and an asteroid.', 'A transfer that leaves the Earth.', { applies_to: 'cruise_earth_encounter' }));
@@ -855,9 +867,15 @@
       var injCov = injectionCov(S.injection, { r: depFinal.rGeo, v: depFinal.vGeo });
       var nav = navigate(T, ref.X, ref.Phi, tcmNodes, detDv, S, injCov);
       if (nav.refusal) { R.refusals.push(nav.refusal); return R; }
+      // a TCM designed before any tracking datum has nothing to act on: its "statistics" would be those of a zero
+      // estimate (1e-157 m/s), so the budget is refused rather than shown (review fix)
+      var blind = nav.tcm.filter(function (m) { return m.dataTotal === 0; })[0];
+      if (blind) { R.refusals.push(refusal('insufficient_data', tcmsSorted[blind.index].name + ' (' + K39.utcOf(blind.tdb).slice(0, 10) + ') is designed before any tracking datum (data cut off ' + S.nav.cutoffDays + ' days before it; tracking as set): there is no estimate to correct, so no budget or delivery can be stated.', 'A later ' + tcmsSorted[blind.index].name + ', a shorter data cutoff, or tracking after launch.', { applies_to: 'tcm_schedule' })); return R; }
+      var budget = budgetOf(nav, tcmsSorted), delivery = bplane(nav.arrival, R.arrival);
+      if (![budget, delivery, nav.arrival].every(allFinite)) { R.refusals.push(refusal('not_found', 'The navigation analysis did not stay finite for these settings.', 'Other tracking or TCM settings.', { applies_to: 'tracking' })); return R; }
       R.nav = nav;
-      R.budget = budgetOf(nav, tcmsSorted);
-      R.delivery = bplane(nav.arrival, R.arrival);
+      R.budget = budget;
+      R.delivery = delivery;
       ownRefusals(R, S, dep, tcmsSorted, nav);
       return R;
     }
@@ -873,6 +891,7 @@
       }
       return { leftSphere: out, minDistance_m: out ? minAfter : null, tdb: minAt, ret: ret };
     }
+    function allFinite(o) { if (typeof o === 'number') return isFinite(o); if (o && typeof o === 'object') { for (var k in o) if (!allFinite(o[k])) return false; } return true; }
     function budgetOf(nav, tcms) {
       var rows = nav.tcm.map(function (m, i) { return { name: tcms[i].name, tdb: m.tdb, deterministic_m_s: norm(m.deterministic), mean_m_s: m.stats.mean_m_s, p99_m_s: m.stats.p99_m_s, p9973_m_s: m.stats.p9973_m_s, knowledgePos_m: m.knowledgePos_m, dispersionPos_m: m.dispersionPos_m }; });
       var sum = function (k) { return rows.reduce(function (s, r) { return s + r[k]; }, 0); };
@@ -903,6 +922,7 @@
       tcms.forEach(function (m, i) {
         var prev = i === 0 ? dep.tdb : tcms[i - 1].tdb;
         if (m.tdb - S.nav.cutoffDays * DAY <= dep.tdb + 0.5 * DAY) R.refusals.push(refusal('insufficient_data', m.name + ' is designed on less than half a day of tracking (data cut off ' + S.nav.cutoffDays + ' days before it): its statistics assume the injection error is barely measured.', 'A later ' + m.name + ', or a shorter data cutoff.', { applies_to: 'tcm_schedule' }));
+        else if (i > 0 && nav.tcm[i] && nav.tcm[i].dataNew === 0) R.refusals.push(refusal('insufficient_data', m.name + ' gets no tracking datum after ' + tcms[i - 1].name + ' (data cut off ' + S.nav.cutoffDays + ' days before it): it learns nothing new, so its statistical delta-v is zero and it corrects nothing.', 'More passes or Delta-DOR sessions, or another schedule.', { applies_to: 'tcm_schedule' }));
         else if (m.tdb - prev < S.nav.cutoffDays * DAY) R.refusals.push(refusal('insufficient_data', m.name + ' comes ' + fmt((m.tdb - prev) / DAY, 3) + ' days after the previous event, inside its ' + S.nav.cutoffDays + '-day data cutoff: it is designed without tracking the previous one\'s execution.', 'Space the TCMs further apart.', { applies_to: 'tcm_schedule' }));
       });
     }
@@ -914,7 +934,7 @@
       var S = R.S, h = { handoff: 'long-way-round', version: 1, from: '40-long-coast', produced: produced || new Date().toISOString() };
       h.inputs = { lamberts_road_handoff: R.src.h39, settings: clone(S) };
       var O = {}, u = K39.utcOf;
-      if (R.arrival) {
+      if (R.arrival && R.budget) {
         O.arrival_state = qv({ tdb_s_past_j2000: R.arrival.tdb, utc: u(R.arrival.tdb), r_m: R.arrival.r, v_m_s: R.arrival.v, target_r_m: R.arrival.targetR, target_v_m_s: R.arrival.targetV, v_infinity_arrival_m_s: R.arrival.vinf, v_infinity_arrival_magnitude_m_s: norm(R.arrival.vinf), target_ephemeris: S.target, frame: 'heliocentric ICRF/J2000, Sun centre' },
           's, m, m/s', 'derived', KERNEL + ' reference trajectory: n-body (Sun, Mercury..Neptune, the Moon, Earth J2, solar relativity' + (S.force.srp_m2_kg > 0 ? ', sunlight' : '') + '), aimed at the target\'s ' + (S.target === 'nbody' ? 'n-body' : 'two-body') + ' position at idea 39\'s arrival epoch');
         O.arrival_covariance = qv({ knowledge_m_m_s: covOut(R.nav.arrival.knowledge, 6), dispersion_m_m_s: covOut(R.nav.arrival.dispersion, 6), knowledge_position_sigma_rss_m: posSigma(R.nav.arrival.knowledge), dispersion_position_sigma_rss_m: posSigma(R.nav.arrival.dispersion),

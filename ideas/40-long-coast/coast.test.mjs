@@ -255,9 +255,8 @@ test('Navigation responds as it should: no Delta-DOR widens the delivery; tracki
   const S = K.defaults(); S.nav.ddorPerWeek = 0; const R2 = K.run(src, S, R);
   assert.ok(R2.delivery.dispersion.semiMajor3s_m > 3 * R.delivery.dispersion.semiMajor3s_m);
   const S3 = K.defaults(); S3.nav.passesPerWeek = 0; S3.nav.ddorPerWeek = 0; S3.nav.contDepDays = 0; S3.nav.contArrDays = 0;
-  const R3 = K.run(src, S3, R);   // no tracking at all: a TCM can correct only what tracking has measured
-  assert.ok(R3.budget.totalP99_m_s < 1e-6, R3.budget.totalP99_m_s);
-  assert.ok(R3.delivery.dispersion.semiMajor3s_m > 1000 * R.delivery.dispersion.semiMajor3s_m);
+  const R3 = K.run(src, S3, R);   // no tracking at all: TCM-1 has no estimate to act on, so the budget is refused
+  assert.ok(!R3.budget && R3.refusals.some((r) => r.applies_to === 'tcm_schedule' && /before any tracking datum/.test(r.reason)));
   // the knowledge mapped to the arrival falls as tracking accumulates between TCM-1 and the arrival
   const hs = R.nav.history, k1 = hs.findIndex((h) => h.tdb > R.tcms[0].tdb + DAY), kE = hs.length - 1;
   assert.ok(hs[kE].knowledgeAtArrival_m < hs[k1].knowledgeAtArrival_m / 100);
@@ -338,4 +337,69 @@ test('Refusals for settings and envelopes: structured, never a number', () => {
   const S4 = K.defaults(); S4.departure = 'flown_38'; assert.ok(K.run(src, S4).refusals.some((r) => r.applies_to === 'departure'));
   const S5 = K.defaults(); S5.tcms = []; const R5 = K.run(src, S5); assert.ok(R5.refusals.some((r) => r.applies_to === 'tcm_schedule'));
   const S6 = K.defaults(); S6.tcms[0].days = 2; assert.ok(K.run(src, S6).refusals.some((r) => r.applies_to === 'tcm_schedule' && /tracking/.test(r.reason)));
+});
+
+// ---------------------------------------------------------------- added in the independent review
+test('Review: process noise and momentum dumps against free-flight closed forms (q = sigma^2 x batch, Lucy Table 6)', () => {
+  // no tracking, no injection error, straight-line motion (Phi = [[I, dt I], [0, I]]): white acceleration noise of PSD q
+  // gives a position variance q t^3 / 3 per axis; a dump of sigma_d per axis at t_j adds sigma_d^2 (t - t_j)^2 per axis
+  const t0 = 836272800, n = 481, T = [], X = [], Phi = [];
+  for (let k = 0; k < n; k++) { T.push(t0 + 7200 * k); const E = K.k39.earthState(T[k]); X.push([E.r[0] + 3e9, E.r[1], E.r[2], E.v[0], E.v[1], E.v[2]]); }
+  for (let k = 0; k < n - 1; k++) { const P = LongCoast.meye(6); for (let i = 0; i < 3; i++) P[i * 6 + 3 + i] = 7200; Phi.push(P); }
+  const at = (S, day) => K.navigate(T, X, Phi, [], [], S, LongCoast.mzero(6)).history.find((h) => Math.abs(h.tdb - t0 - day * DAY) < 1).knowledge_m;
+  const quiet = (sto, dumps) => { const S = K.defaults(); Object.assign(S.nav, { passesPerWeek: 0, ddorPerWeek: 0, contDepDays: 0, contArrDays: 0, stochastic_m_s2: sto, dumps }); return S; };
+  const q = 1e-9 * 1e-9 * DAY, t = 30 * DAY;   // Lucy: 1e-12 km/s^2 (1 sigma), white, 1-day batches
+  assert.ok(Math.abs(at(quiet(1e-9, false), 30) / Math.sqrt(q * t ** 3) - 1) < 1e-9);
+  const sd = 0.0004 / 3; let v = 0; for (let j = 4; j < 30; j += 4) v += 3 * sd * sd * ((30 - j) * DAY) ** 2;   // 0.4 mm/s 3 sigma, every 4 days
+  assert.ok(Math.abs(at(quiet(0, true), 30) / Math.sqrt(v) - 1) < 1e-9);
+});
+
+test('Review: every Kalman update uses its stated data weight squared; Delta-DOR over the projected baseline', () => {
+  const { R } = chain(), S = K.defaults(), dep = R.departureFlown, trace = [], c = K.de440.c_m_s;
+  K.navigate(R.reference.T, R.reference.X, R.reference.Phi, R.reference.tcmNodes, R.reference.detDv, S, K.injectionCov(S.injection, { r: dep.rGeo, v: dep.vGeo }), trace);
+  const by = (ty) => trace.filter((e) => e.type === ty);
+  assert.deepEqual([by('doppler').length, by('range').length, by('ddor').length], [R.nav.counts.doppler, R.nav.counts.range, R.nav.counts.ddor]);
+  assert.ok(by('range').every((e) => e.s2 === 100 * 100) && by('doppler').every((e) => e.s2 === 1e-4 * 1e-4));   // Lucy: 100 m, 0.1 mm/s
+  for (const e of by('ddor').filter((_, i) => i % 25 === 0)) {   // 0.2 ns of delay over the baseline's plane-of-sky projection
+    const t = R.reference.T[e.k], E = K.k39.earthState(t), A = K.stationState(K.STATIONS.find((s) => s.id === e.baseline[0]), t), B = K.stationState(K.STATIONS.find((s) => s.id === e.baseline[1]), t);
+    const rho = [0, 1, 2].map((i) => R.reference.X[e.k][i] - E.r[i]), u = rho.map((x) => x / Math.hypot(...rho)), b = [0, 1, 2].map((i) => B.r[i] - A.r[i]), bu = b[0] * u[0] + b[1] * u[1] + b[2] * u[2];
+    const bp = Math.hypot(...b.map((x, i) => x - bu * u[i]));
+    assert.ok(Math.abs(e.s2 / (0.2e-9 * c / bp) ** 2 - 1) < 1e-9);
+  }
+});
+
+test('Review: tracking edges stay finite or are refused; a TCM moved on the page exports a handoff that parses', () => {
+  const { src, R } = chain();
+  const S1 = K.defaults(); Object.assign(S1.nav, { passesPerWeek: 0, ddorPerWeek: 0 });   // was a total of Infinity (and a hung page)
+  const R1 = K.run(src, S1, R);
+  assert.ok(isFinite(R1.budget.totalP99_m_s) && R1.budget.rows.slice(1).every((r) => r.p99_m_s === 0));
+  assert.equal(R1.refusals.filter((r) => r.applies_to === 'tcm_schedule' && /no tracking datum after/.test(r.reason)).length, 4);
+  // TCM-2's delta-v covariance in that case, zero up to round-off with negative diagonals: the factor stays finite and tiny
+  const Lb = LongCoast.chol3([-1.98e-13, 6.27e-14, -6.39e-14, 6.27e-14, 4.93e-15, -4.62e-14, -6.39e-14, -4.62e-14, 5.17e-14]);
+  assert.ok(Lb.every((x) => Number.isFinite(x) && Math.abs(x) < 1e-5), Lb.join(' '));
+  // the approach-plane ellipse: its axes' squares sum to 9 (T.P.T + R.P.R) and multiply to 81 det, the along-track is 3 sqrt(S.P.S)
+  const A = R.delivery.axes, Pd = R.nav.arrival.dispersion, qq = (u, w) => [0, 1, 2].reduce((s, i) => s + [0, 1, 2].reduce((t, j) => t + u[i] * Pd[i * 6 + j] * w[j], 0), 0), D = R.delivery.dispersion;
+  assert.ok(Math.abs((D.semiMajor3s_m ** 2 + D.semiMinor3s_m ** 2) / (9 * (qq(A.T, A.T) + qq(A.R, A.R))) - 1) < 1e-9);
+  assert.ok(Math.abs(D.semiMajor3s_m * D.semiMinor3s_m / (9 * Math.sqrt(qq(A.T, A.T) * qq(A.R, A.R) - qq(A.T, A.R) ** 2)) - 1) < 1e-6 && Math.abs(D.along3s_m / (3 * Math.sqrt(qq(A.S, A.S))) - 1) < 1e-9);
+  const S2 = K.defaults(); S2.tcms[0].days = 3;   // was TCM-1 at 3e-157 m/s beside a refusal
+  assert.ok(!K.run(src, S2, R).budget);
+  for (const nav of [{ passesPerWeek: 3, ddorPerWeek: 1, cutoffDays: 14 }, { passesPerWeek: 1, ddorPerWeek: 0, contDepDays: 0, contArrDays: 0, cutoffDays: 14 }, { passesPerWeek: 0, ddorPerWeek: 7, contDepDays: 30, contArrDays: 0, cutoffDays: 14 }]) {
+    const S = K.defaults(); Object.assign(S.nav, nav); const Rx = K.run(src, S, R);
+    assert.ok(!Rx.budget || [Rx.budget.totalP99_m_s, Rx.delivery.dispersion.semiMajor3s_m].every(Number.isFinite), JSON.stringify(nav));
+  }
+  // Didymos: the re-aim cached by the page before TCM-1 moved was not the one a fresh run finds, and the export was refused
+  const P = require(path.join(here, 'presets.js')).list.find((p) => p.key === '65803'), s65 = K.importLambertsRoad(K.lambertsRoadFrom(P.settings));
+  const R0 = K.run(s65, K.defaults()), S3 = K.defaults(); S3.tcms[0].days = 25;
+  const P3 = K.parseHandoff(K.buildHandoff(K.run(s65, S3, R0), '2026-10-31T12:00:00Z'));
+  assert.ok(!P3.refusal, P3.refusal && P3.refusal.reason);
+});
+
+test('Review: the chain against an independent DE440 oracle (jplephem + scipy DOP853, oracle/de440-chain.py)', () => {
+  const O = JSON.parse(fs.readFileSync(path.join(here, 'oracle', 'de440-chain.json'), 'utf8')), { src, R } = chain(), v39 = src.R39.transfer.sol.vinfDep;
+  assert.equal(O.inputs.departure_tdb_s_past_j2000, R.departure.tdb); assert.equal(O.inputs.tcm1_tdb_s_past_j2000, R.tcms[0].tdb); assert.deepEqual(O.inputs.vinf_m_s, v39);
+  assert.ok(Math.abs(R.uncorrected.missAtArrival_m / O.uncorrected_miss_m - 1) < 1e-5);   // 10.094 million km, 1.6 km apart
+  assert.ok(d3(R.target.nbody.r, O.target_r_m) < 200 && Math.abs(R.target.shift_m - O.target_two_body_shift_m) < 1000);   // 14 m; 87,301 km
+  assert.ok(d3(R.tcm1AsGiven.dv, O.tcm1_as_given_dv_m_s) < 1e-3 && d3(R.reaim.vinf, O.reaim_vinf_m_s) < 1e-3);   // both ~5e-5 m/s
+  assert.ok(Math.abs(R.reaim.c3 - O.reaim_c3_m2_s2) < 1 && Math.abs(R.reaim.dla - O.reaim_dla_deg) < 1e-4 && Math.abs(R.reaim.rla - O.reaim_rla_deg) < 1e-4);
+  assert.ok(Math.abs(R.reaim.periapsisSpeedChange_m_s - O.reaim_periapsis_speed_change_m_s) < 1e-3 && Math.abs(Math.hypot(...R.arrival.vinf) - O.arrival_vinf_m_s) < 0.1);
 });
