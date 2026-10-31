@@ -25,7 +25,7 @@ const SIDES = {
     sourceSha256: 'f60fed99deaf8228fa2490e4eb68097f752d871ddbb77e9841700ec9c3670a9d',
     license: 'NASA technical memorandum (TM X-53770), a US-government work: public domain in the US',
     path: 'NTRS 19690009748, C. E. Walker, NASA TM X-53770 (21 Aug 1968): Figure 28 (printed page 147, PDF page 157), Definition of Symbols (PDF page 9)',
-    note: 'Digitized by hand from the 300 dpi 1-bit scan: affine grid calibration (largest residual 1.6 px), dark-run listing at each station, solid fairing picked on zoomed crops (oracle/digitize_fig28.py; its overlay of this table on the figure was inspected). Reading uncertainty +-0.01 above Mach 1.5, +-0.02 below.',
+    note: 'Digitized by hand from the 300 dpi 1-bit scan: affine grid calibration (largest residual 1.6 px), dark-run listing at each station, solid fairing picked on zoomed crops (oracle/digitize_fig28.py; its overlay of this table on the figure was inspected). Reading uncertainty +-0.01 above Mach 1.5, +-0.02 below. Independent review (2026-10-31): the figure\'s third curve, the base coefficient C_Ab, read at seven stations clear of data symbols from Mach 2.25 to 7.0 with the reviewer\'s own grid calibration (the `base` table), equals C_AT - C_Af from the two tables to 0.003; the reviewer\'s overlay of both tables on the figure was inspected too.',
   },
 };
 for (const [f, meta] of Object.entries(SIDES)) {

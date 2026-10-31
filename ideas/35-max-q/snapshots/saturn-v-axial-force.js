@@ -39,6 +39,15 @@
       ca:   [0.668, 0.672, 0.69, 0.71, 0.74, 0.81, 0.93, 1.13, 1.225, 1.26, 1.24, 1.22, 1.165, 1.105, 1.045, 1.0, 0.927, 0.80, 0.713, 0.645, 0.568, 0.53, 0.485, 0.45, 0.414, 0.39, 0.369, 0.331, 0.296, 0.263, 0.236, 0.205, 0.1925, 0.1817, 0.167, 0.1528, 0.15],
     },
     readingUncertainty: { above15: 0.01, below15: 0.02 },
+    // base axial force coefficient C_Ab, power off: the figure's third curve (upper panel, lower line), which the table
+    // above does not use. Read by the module's independent reviewer at stations clear of data symbols, with its own grid
+    // calibration (Mach 0..8 and coefficient 0..1.4 major lines found by projection on the same 300 dpi rendering), as the
+    // centre of the dark run 0.02 Mach either side of each station. By Walker's definitions C_AT = C_Af + C_Ab, so it
+    // checks the two curves above against a third reading (ascent.test.mjs).
+    base: {
+      mach: [2.25, 2.75, 4.5, 5.5, 6.0, 6.5, 7.0],
+      ca:   [0.219, 0.143, 0.051, 0.030, 0.021, 0.013, 0.008],
+    },
   };
   if (typeof module === 'object' && module.exports) module.exports = D;
   else root.SATURN_V_AXIAL_FORCE = D;

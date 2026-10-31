@@ -138,7 +138,19 @@ const REF = as512Ref(true), REF0 = as512Ref(false);
   // drag off: zero drag in the budget
   await page.click('[data-drag="none"]'); await page.waitForTimeout(80);
   ok(/drag 0\.0,/.test(await tileSub(page, 'Lost to gravity')), 'no drag');
+  // review: with drag off the page said max Q 0.00 kPa and Mach 1 "never"; q and Mach belong to the flight
+  { const p0 = JSON.parse(JSON.stringify(await page.evaluate(() => window.__maxq.cur.plan))); const rN = A.fly(REF.v.vehicle, REF.v.engines, p0);
+    ok(num(await tileVal(page, 'Max Q')) > 30 && Math.abs(num(await tileVal(page, 'Max Q')) - rN.maxQ.q / 1000) < 0.006, 'no drag: max Q is still the flight\'s (' + (await tileVal(page, 'Max Q')) + ' kPa)');
+    ok(Math.abs(num(await tileVal(page, 'Mach 1')) - rN.mach1.t) < 0.06, 'no drag: Mach 1 is still reached'); }
   await page.click('[data-drag="forebody"]'); await page.waitForTimeout(80);
+  // review: an absurd diameter is refused as drag the integrator cannot follow, not handed on as an escape
+  await setNum(page, '#diaNum', 100000); await page.waitForTimeout(150);
+  ok(/drag: refused/.test(await refusalText(page)) && !/escapes/.test(await refusalText(page)), 'a 100 km diameter is refused, not an escape');
+  await setNum(page, '#diaNum', REF.p.diameter);
+  // review: an empty bucket throttle said "Throttle NaN %"
+  await page.check('#bucketOn'); await page.waitForTimeout(100); await setNum(page, '#bLevelNum', '');
+  ok(/throttle: refused/.test(await refusalText(page)) && !/NaN/.test(await refusalText(page)), 'an empty bucket throttle is refused without NaN');
+  await page.uncheck('#bucketOn'); await page.waitForTimeout(150);
   // export: a 35-max-q handoff equal to the kernel's
   const h = JSON.parse(await page.locator('#exportText').inputValue());
   ok(h.from === '35-max-q' && h.inputs.vehicle_handoff.from === '34-stack', 'export is a 35 handoff carrying 34\'s');
@@ -160,6 +172,13 @@ const REF = as512Ref(true), REF0 = as512Ref(false);
   ok(/Refused \(insufficient_data\)/.test(await page.locator('#importStatus').innerText()), 'an engine (idea 33) is not a vehicle');
   await page.fill('#importText', 'not json'); await page.click('#importBtn'); await page.waitForTimeout(100);
   ok(/Refused/.test(await page.locator('#importStatus').innerText()), 'garbage refused');
+  // review: idea 34's export of an edited Saturn V (payload 10 % lighter, made by idea 34's own kernel) opened on
+  // "Ascent refused": the 1-degree default kick brought it down. It now solves the kick, then the level burnout.
+  { const L34 = require(path.join(here, '..', '34-stack', 'load.cjs'));
+    const v34 = L34.S.fromAS512(L34.AS512), e34 = L34.S.as512Engines(); v34.payload.mass = Math.round(v34.payload.mass * 0.9);
+    await page.fill('#importText', JSON.stringify(L34.S.makeHandoff(v34, e34, L34.S.evaluate(v34, e34), { produced: 'x' }))); await page.click('#importBtn'); await page.waitForTimeout(2500);
+    ok(/Imported/.test(await page.locator('#importStatus').innerText()) && !/the flight report's/.test(await page.locator('#vehicle').innerText()), 'an edited AS-512 from idea 34 imports, demoted');
+    ok((await tileVal(page, 'Ascent')) === null && num(await tileVal(page, 'Max Q')) > 0, 'and flies: ' + (await refusalText(page)).slice(0, 80)); }
   await noNaN(page, 'desktop');
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'desktop.png'), fullPage: true });
   ok(errors.length === 0, 'desktop: no console errors ' + errors.join(' | '));

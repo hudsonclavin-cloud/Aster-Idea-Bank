@@ -87,6 +87,10 @@ test('Saturn V axial force: two independently read curves are consistent (total 
   assert.equal(A.axialCoefficient(0.2).ca, AERO.forebody.ca[0]); assert.ok(A.axialCoefficient(0.2).outside);
   assert.equal(A.axialCoefficient(9).ca, AERO.forebody.ca[AERO.forebody.ca.length - 1]); assert.ok(!A.axialCoefficient(3).outside);
   near(A.axialCoefficient(1.125).ca, (0.655 + 0.665) / 2, 1e-12, 'linear between stations');
+  // review: the figure's third curve, C_Ab (read separately at stations clear of data symbols), is C_AT - C_Af by
+  // Walker's definitions; a forebody or total reading off by 0.015 at any of these stations fails here
+  assert.equal(AERO.base.mach.length, 7);
+  AERO.base.mach.forEach((M, i) => near(A.axialCoefficient(M, 'total').ca - A.axialCoefficient(M, 'forebody').ca, AERO.base.ca[i], 0.015, 'C_AT - C_Af = C_Ab at Mach ' + M));
 });
 
 // ------------------------------------------------------------------ closed forms
@@ -141,6 +145,35 @@ test('pad and frame: the pad moves at omega R cos(latitude); the launch plane co
   // 1976 atmosphere through idea 02's isa(): sea level 101325 Pa, zero above 86 km
   near(A.atmosphere(0).P, 101325, 1e-6); near(A.constants.ATM_TOP, 85999.95, 0.01, 'isa()\'s top, 84,852 m geopotential');
   assert.equal(A.atmosphere(86000).rho, 0); assert.ok(A.atmosphere(85999).rho > 0); assert.ok(!pf.isa(85999.9).clamped && pf.isa(86000).clamped);
+});
+
+test('closed form (review): with Earth not rotating the flight stays in its plane, so cos(latitude) sin(heading) = cos(inclination) at every cutoff', () => {
+  // Clairaut's relation for a great circle; pins the burnout heading and latitude the handoff carries
+  const v = A.vehicleFromHandoff(L.H34), p = Object.assign(A.defaultPlan(v.vehicle), { kickDeg: 1, diameter: 4, rotation: false, azimuthDeg: 70, upper: { mode: 'hold', startDeg: 5 } });
+  const r = A.fly(v.vehicle, v.engines, p);
+  assert.ok(r.stageEnds.length === 2, JSON.stringify(r.refusals));
+  const ci = Math.cos(28.5 * DEG) * Math.sin(70 * DEG);
+  near(Math.cos(r.orbit.inclinationDeg * DEG), ci, 1e-9, 'the orbit is the launch plane');
+  for (const e of r.stageEnds) {
+    near(Math.cos(e.state.latitudeDeg * DEG) * Math.sin(e.state.headingDeg * DEG), ci, 1e-9, e.label + ' Clairaut');
+    near(Math.sin(e.state.latitudeDeg * DEG), e.state.r[2] / Math.hypot(...e.state.r), 1e-12, e.label + ' geocentric latitude');
+  }
+  assert.ok(r.final.latitudeDeg > 28.5 && r.final.headingDeg > 70, 'north-east from 28.5 deg N toward the plane\'s vertex, the heading swinging east');
+});
+test('dynamic pressure and Mach belong to the flight: with the drag switched off they are still 1/2 rho v^2 and v/a (review)', () => {
+  const v = as512(), p = Object.assign(A.defaultPlan(v.vehicle), { kickDeg: 1.357, upper: { mode: 'linear', startDeg: 35.1, endDeg: 0 } });
+  p.flowScale = [A.as512FlowScale(v.engines), 1, 1];
+  const withDrag = A.fly(v.vehicle, v.engines, p);
+  for (const o of [{ drag: 'none' }, { dragScale: 0 }]) {
+    const r = A.fly(v.vehicle, v.engines, Object.assign({}, p, o));
+    near(r.losses.drag, 0, 1e-12, 'no drag loss');
+    assert.ok(r.maxQ.q > withDrag.maxQ.q && r.maxQ.q < 1.1 * withDrag.maxQ.q, 'max Q without drag ' + r.maxQ.q + ', with ' + withDrag.maxQ.q);
+    assert.ok(r.mach1 && r.mach1.t < withDrag.mach1.t, 'Mach 1 comes, and sooner');
+    // against PartForge's isa() directly, at every sample in the air
+    r.samples.filter((s) => s.t > 0 && s.h < 80000).forEach((s) => { const a = pf.isa(s.h); rel(s.q, 0.5 * a.rho_kg_m3 * s.vrel * s.vrel, 1e-12); rel(s.M, s.vrel / a.a_m_s, 1e-12); });
+    const h = A.makeHandoff(L.H34AS512, v.vehicle, Object.assign({}, p, o), r, { produced: 'x' });
+    assert.equal(h.outputs.max_dynamic_pressure.value, r.maxQ.q); assert.ok(h.outputs.mach_1_time);
+  }
 });
 
 // ------------------------------------------------------------------ against idea 34's exact ledger
@@ -238,26 +271,69 @@ test('AS-512 against the flight report: the gaps, pinned (flight-average F-1 flo
 });
 
 // ------------------------------------------------------------------ refusals
-test('refusals: the inputs this module cannot fly, each with a code and what would help', () => {
-  const v = as512(), p = Object.assign(A.defaultPlan(v.vehicle), { kickDeg: 0.74 });
-  const fly = (o) => A.fly(v.vehicle, v.engines, Object.assign({}, p, o));
-  const codeOf = (r) => r.refusals[0].code;
-  assert.equal(codeOf(fly({ azimuthDeg: 150 })), 'out_of_envelope', 'outside Cape Canaveral\'s corridor');
-  assert.equal(codeOf(fly({ throttle: { start: 30, end: 60, level: 0.3 } })), 'out_of_envelope', 'below the deck');
-  assert.equal(codeOf(fly({ throttle: { start: 60, end: 30, level: 0.8 } })), 'invalid_input');
-  assert.equal(codeOf(fly({ flowScale: [2, 1, 1] })), 'out_of_envelope');
-  assert.equal(codeOf(fly({ diameter: 0 })), 'invalid_input');
-  assert.equal(codeOf(fly({ kickDeg: 5 })), 'out_of_envelope', 'a hard kick brings it down');
-  assert.match(fly({ kickDeg: 5 }).refusals[0].reason, /comes back to the ground/);
-  const r = A.fly(v.vehicle, v.engines, p); assert.ok(r.refusals.every((x) => x.what_would_help));
+test('refusals: the inputs this module cannot fly, each named by what it applies to, against a base flight with none', () => {
+  // review: the first version flew a base plan that was itself refused (it came down), so a check that only read the
+  // first refusal's code passed with the azimuth corridor or the deck's lower bound removed; each case now starts from a
+  // flight that reaches orbit with no refusal, and names the refusal it expects
+  const smp = A.vehicleFromHandoff(L.H34);
+  const bp = Object.assign(A.defaultPlan(smp.vehicle), { kickDeg: 1, diameter: 4, upper: { mode: 'linear', startDeg: 0, endDeg: 0 } });
+  bp.upper.startDeg = A.solveInsertion(smp.vehicle, smp.engines, bp).pitchDeg;
+  const base = A.fly(smp.vehicle, smp.engines, bp);
+  assert.ok(base.ok && base.refusals.length === 0, 'the base flight reaches orbit: ' + JSON.stringify(base.refusals));
+  const fly = (o, veh = smp.vehicle) => A.fly(veh, smp.engines, Object.assign({}, bp, o));
+  const only = (r, applies, code, re) => {
+    assert.ok(!r.ok || r.refusals.length, 'refused');
+    const x = r.refusals.find((y) => y.applies_to === applies);
+    assert.ok(x, 'expected a refusal for ' + applies + ', got ' + JSON.stringify(r.refusals.map((y) => y.applies_to + ':' + y.reason)));
+    assert.equal(x.code, code, applies); assert.ok(x.what_would_help, applies + ' says what would help');
+    assert.ok(!/NaN|undefined|Infinity/.test(x.reason), applies + ': ' + x.reason);
+    if (re) assert.match(x.reason, re);
+    return x;
+  };
+  only(fly({ azimuthDeg: 150 }), 'azimuth', 'out_of_envelope', /corridor \(35 to 120/);
+  only(fly({ azimuthDeg: 30 }), 'azimuth', 'out_of_envelope');
+  only(fly({ site: { id: 'vandenberg', label: 'Vandenberg', latitudeDeg: 34.7 }, azimuthDeg: 90 }), 'azimuth', 'out_of_envelope', /158 to 201/);
+  only(fly({ site: { id: 'x', latitudeDeg: 95 } }), 'site', 'invalid_input');
+  only(fly({ throttle: { start: 30, end: 60, level: 0.3 } }), 'throttle', 'out_of_envelope', /outside the first stage engine's deck/);
+  only(fly({ throttle: { start: 30, end: 60, level: 1.2 } }), 'throttle', 'out_of_envelope');
+  only(fly({ throttle: { start: 60, end: 30, level: 0.8 } }), 'throttle', 'invalid_input');
+  only(fly({ throttle: { start: 30, end: 60, level: NaN } }), 'throttle', 'invalid_input');
+  only(fly({ flowScale: [2, 1] }), 'stage 1', 'out_of_envelope');
+  only(fly({ diameter: 0 }), 'drag', 'invalid_input');
+  only(fly({ dragScale: -1 }), 'drag', 'invalid_input');
+  only(fly({ kickDeg: -1 }), 'pitch', 'invalid_input');
+  only(fly({ kickDuration: 0 }), 'pitch', 'invalid_input');
+  only(fly({ stagingCoast: [-1] }), 'staging', 'invalid_input');
+  only(fly({ upper: { mode: 'hold', startDeg: 95 } }), 'upper', 'invalid_input');
+  // what the flight itself does wrong
+  const v = as512(), p = Object.assign(A.defaultPlan(v.vehicle), { kickDeg: 1.357, upper: { mode: 'linear', startDeg: 35.1, endDeg: 0 } });
+  p.flowScale = [A.as512FlowScale(v.engines), 1, 1];
+  assert.ok(A.fly(v.vehicle, v.engines, p).ok, 'AS-512 flies (to a not-in-orbit refusal)');
+  const as = (o) => A.fly(v.vehicle, v.engines, Object.assign({}, p, o));
+  only(as({ kickDeg: 5 }), 'trajectory', 'out_of_envelope', /comes back to the ground/);
+  // review: a 100 km diameter blew the integrator up and was handed on as an escape with C3 = 2.9e43 km^2/s^2
+  for (const d of [1e5, 1e7]) { const r = as({ diameter: d }); only(r, 'drag', 'out_of_envelope', /parachute/); assert.ok(!r.ok && !r.refusals.some((x) => /escapes/.test(x.reason))); }
+  // review: a 400 s staging coast sank the stack 70 km underground and was refused as the J-2's nozzle separating there
+  { const r = as({ stagingCoast: [400, 5.56] }); only(r, 'trajectory', 'out_of_envelope', /comes back to the ground at 4\d\d/); assert.ok(!r.refusals.some((x) => /separates/.test(x.reason))); }
+  // separation at the bucket's throttle, not at 100 %: idea 33's F-1 onset at 40 % (77 kPa) is below sea-level pressure
+  { const dk = v.engines['F-1'].deckVac, on40 = dk.separation_onset_pa[dk.throttle.indexOf(0.4)];
+    assert.ok(on40 < 101325 && v.engines['F-1'].sepOnsetPa > 101325, 'the F-1 separates at sea level at 40 % but not at 100 %');
+    const x = only(as({ throttle: { start: 5, end: 40, level: 0.4 } }), 'stage 1', 'out_of_envelope', /separates/);
+    assert.match(x.reason, new RegExp('onset ' + String(+on40.toPrecision(4)))); }
   // a J-2 first stage separates at sea level (idea 33's criterion, idea 34's refusal)
   const j2 = JSON.parse(JSON.stringify(v.vehicle)); j2.stages[0].engine = 'J-2'; j2.id = 'custom';
-  assert.equal(A.fly(j2, v.engines, p).refusals[0].applies_to, 'liftoff');
+  only(A.fly(j2, v.engines, p), 'liftoff', 'out_of_envelope');
   // an upper stage lit low enough that its nozzle separates (idea 33's onset for the J-2) is refused at that point
-  const smp = A.vehicleFromHandoff(L.H34), low = JSON.parse(JSON.stringify(smp.vehicle)); low.stages[0].burns[0].propellant = 20000; low.id = 'custom';
-  const rl = A.fly(low, smp.engines, Object.assign(A.defaultPlan(low), { kickDeg: 1, diameter: 4 }));
-  assert.ok(!rl.ok && rl.refusals[0].applies_to === 'stage 2' && /separates/.test(rl.refusals[0].reason), 'J-2 lit near the ground separates');
-  assert.ok(rl.refusals[0].reason.includes(String(Math.round(smp.engines['J-2'].sepOnsetPa))) || /separation onset/.test(rl.refusals[0].reason));
+  const low = JSON.parse(JSON.stringify(smp.vehicle)); low.stages[0].burns[0].propellant = 20000; low.id = 'custom';
+  const rl = fly({ kickDeg: 1 }, low);
+  only(rl, 'stage 2', 'out_of_envelope', /separates/); assert.ok(rl.refusals[0].reason.includes('onset ' + String(+smp.engines['J-2'].sepOnsetPa.toPrecision(4)) + ' Pa'));
+  // ... or that sinks into thicker air in flight (review: the check ran only where a segment began)
+  { const r = fly({ upper: { mode: 'hold', startDeg: -20 } }); const x = only(r, 'stage 2', 'out_of_envelope', /separates at 2\.\d+ km/); assert.ok(!r.ok); void x; }
+  // a stack that leaves the atmosphere and falls back into it under power
+  only(fly({ stagingCoast: [220], upper: { mode: 'hold', startDeg: 20 } }), 'trajectory', 'out_of_envelope', /comes back into it/);
+  // a stack light enough to escape
+  const light = JSON.parse(JSON.stringify(smp.vehicle)); light.payload.mass = 100; light.stages[1].dry = 3000; light.id = 'custom';
+  { const r = fly({ upper: { mode: 'hold', startDeg: 0 } }, light); const x = only(r, 'orbit', 'out_of_envelope', /not bound to Earth/); assert.ok(r.orbit.c3 > 0 && x.reason.includes(String(+(r.orbit.c3 / 1e6).toPrecision(4)))); }
   // a solver with nothing to find refuses
   assert.ok(A.solveKick(v.vehicle, v.engines, p, 89).refusal);
   assert.ok(A.solveKick(v.vehicle, v.engines, p, 0).refusal);
@@ -273,10 +349,15 @@ test('import: idea 34\'s handoffs come in; edited, foreign and partial ones are 
   assert.match(A.vehicleFromHandoff(ei).refusal.reason, /idea 33 handoff/);
   const ei2 = JSON.parse(JSON.stringify(L.H34)); ei2.inputs.engines[k].specific_impulse_vacuum_m_s *= 1.01;
   assert.match(A.vehicleFromHandoff(ei2).refusal.reason, /specific_impulse_vacuum_m_s is not thrust_vacuum_N \/ mass_flow_kg_s/, 'an imported engine\'s Isp edited alone');
-  const em = JSON.parse(JSON.stringify(L.H34AS512)); em.inputs.vehicle.stages[0].dry += 1000; em.outputs.liftoff_mass.value += 1000;
-  // the ledger is consistent again, so it imports, but it is no longer the flight report's AS-512
-  const imp = A.vehicleFromHandoff(em);
-  if (!imp.refusal) assert.equal(imp.vehicle.id, 'imported'); else assert.equal(imp.refusal.code, 'invalid_input');
+  // review: the first version of this check edited one output, so idea 34's ledger refused it and the branch that
+  // demotes an edited AS-512 never ran; this one is made by idea 34's own kernel with a 10 % lighter payload
+  const L34 = require(path.join(here, '..', '34-stack', 'load.cjs'));
+  const veh34 = L34.S.fromAS512(L34.AS512), eng34 = L34.S.as512Engines(); veh34.payload.mass = Math.round(veh34.payload.mass * 0.9);
+  const imp = A.vehicleFromHandoff(L34.S.makeHandoff(veh34, eng34, L34.S.evaluate(veh34, eng34), { produced: 'x' }));
+  assert.ok(!imp.refusal, 'idea 34\'s own export imports'); assert.equal(imp.vehicle.id, 'imported'); assert.match(imp.vehicle.note, /not the flight report's/);
+  assert.equal(A.defaultPlan(imp.vehicle).azimuthDeg, 90, 'and is flown as an assumed vehicle, not on the flight\'s plan');
+  const es = JSON.parse(JSON.stringify(L.H34)); es.inputs.engines[k].thrust_sea_level_N *= 1.01;
+  assert.match(A.vehicleFromHandoff(es).refusal.reason, /thrust_sea_level_N is not/, 'an imported engine\'s sea-level thrust edited alone');
   assert.equal(A.vehicleFromHandoff('{').refusal.code, 'invalid_input');
   assert.equal(A.vehicleFromHandoff({ handoff: 'long-way-round', from: '33-engine-deck' }).refusal.code, 'insufficient_data');
   assert.equal(A.vehicleFromHandoff({ handoff: 'long-way-round', from: '40-long-coast' }).refusal.code, 'invalid_input');

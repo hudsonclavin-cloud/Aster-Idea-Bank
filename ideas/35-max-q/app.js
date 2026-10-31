@@ -53,7 +53,12 @@
       state.kickFit = null; state.levelFit = null;
       $('fpaTarget').value = as ? T.cutoff.sicOeco.fpa : 25;
       if (as) { solveKick(true); solveLevel(true); }
-      else if (v.vehicle.stages.length > 1) { cur.plan.kickDeg = 1; cur.plan.upper = { mode: 'linear', startDeg: 0, endDeg: 0 }; solveLevel(true); }
+      else if (v.vehicle.stages.length > 1) {
+        cur.plan.kickDeg = 1; cur.plan.upper = { mode: 'linear', startDeg: 0, endDeg: 0 }; solveLevel(true);
+        // review: an imported heavy stack (an edited Saturn V) fell back to the ground on the 1-degree kick and opened on a
+        // refusal; when no level burnout exists for that kick, solve the kick for the target angle first, then the level
+        if (!cur.plan.fitInsertion) { solveKick(true); if (cur.plan.kickDeg !== 1) solveLevel(true); }
+      }
     }
     fillVehicleSelect(); syncControls(); compute();
   }
@@ -135,8 +140,8 @@
     (r.refusals || []).forEach(function (x) { rf.appendChild(refusalBox(x)); });
     if (!r.ok) { tl.appendChild(tile('Ascent', 'refused', '', null, 'Fix the inputs named above.', 'refused')); return; }
     var f = r.final, o = r.orbit;
-    tl.appendChild(tile('Max Q', fmt(r.maxQ.q / 1000, 2), 'kPa', 'derived', 'at ' + fmt(r.maxQ.t, 1) + ' s, ' + fmt(r.maxQ.h / 1000, 2) + ' km, Mach ' + fmt(r.maxQ.M, 2), 'hero'));
-    tl.appendChild(r.mach1 ? tile('Mach 1', fmt(r.mach1.t, 1), 's', 'derived', 'at ' + fmt(r.mach1.h / 1000, 2) + ' km') : tile('Mach 1', 'never', '', 'derived'));
+    tl.appendChild(tile('Max Q', fmt(r.maxQ.q / 1000, 2), 'kPa', 'derived', 'at ' + fmt(r.maxQ.t, 1) + ' s after liftoff, ' + fmt(r.maxQ.h / 1000, 2) + ' km, Mach ' + fmt(r.maxQ.M, 2), 'hero'));
+    tl.appendChild(r.mach1 ? tile('Mach 1', fmt(r.mach1.t, 1), 's', 'derived', 'after liftoff, at ' + fmt(r.mach1.h / 1000, 2) + ' km') : tile('Mach 1', 'never', '', 'derived'));
     tl.appendChild(tile('Burnout altitude', fmt(f.altitude / 1000, 1), 'km', 'derived', 'at ' + fmt(f.t, 1) + ' s, flight-path angle ' + fmt(f.fpaDeg, 2) + ' deg'));
     tl.appendChild(tile('Burnout speed', fmt(f.speed / 1000, 3), 'km/s', 'derived', 'inertial; ' + fmt(f.speedEarthFixed / 1000, 3) + ' km/s relative to the ground'));
     if (o.bound && o.perigeeAlt > A.constants.ATM_TOP) tl.appendChild(tile('Orbit', fmt(o.perigeeAlt / 1000, 0) + ' × ' + fmt(o.apogeeAlt / 1000, 0), 'km', 'derived', 'perigee × apogee, inclination ' + fmt(o.inclinationDeg, 2) + ' deg'));
@@ -204,18 +209,18 @@
   function firstStageEnd() { var r = cur.r; return r.stageEnds && r.stageEnds.length ? r.stageEnds[0].t : r.samples[r.samples.length - 1].t; }
   var METRICS = {
     q: { xl: 'Time from liftoff (s)', yl: 'Dynamic pressure (kPa)', x: function (s) { return s.t; }, y: function (s) { return s.q / 1000; }, until: function () { return firstStageEnd() + 15; },
-      flight: function () { return [[T.maxQ.t - T0, T.maxQ.qNcm2 * 10, 'Max Q, Table 4-1']]; }, cap: 'Dynamic pressure ½ρv² on the Earth-relative velocity, first stage. The black point is the flight\'s maximum (3.36 N/cm² at 82.5 s range time, Table 4-1).' },
+      flight: function () { return [[T.maxQ.t - T0, T.maxQ.qNcm2 * 10, 'Max Q, Table 4-1']]; }, cap: 'Dynamic pressure ½ρv² on the Earth-relative velocity, first stage. The round point is the flight\'s maximum (3.36 N/cm² at 82.5 s range time, Table 4-1).' },
     alt: { xl: 'Downrange (km)', yl: 'Altitude (km)', x: function (s) { return s.range / 1000; }, y: function (s) { return s.h / 1000; },
       flight: function () { var C = T.cutoff; return [[C.sicCeco.rangeKm, C.sicCeco.altKm, 'S-IC centre cutoff'], [C.sicOeco.rangeKm, C.sicOeco.altKm, 'S-IC outboard cutoff'], [C.siiCeco.rangeKm, C.siiCeco.altKm, 'S-II centre cutoff'], [C.siiOeco.rangeKm, C.siiOeco.altKm, 'S-II cutoff']]; },
-      cap: 'Height above the sphere against the great-circle distance from the pad (which turns with the Earth). Black points: the flight\'s cutoffs (Table 4-2; geodetic heights).' },
+      cap: 'Height above the sphere against the great-circle distance from the pad (which turns with the Earth). Round points: the flight\'s cutoffs (Table 4-2; geodetic heights).' },
     v: { xl: 'Time from liftoff (s)', yl: 'Speed (km/s)', x: function (s) { return s.t; }, y: function (s) { return s.v / 1000; }, y2: function (s) { return s.vrel / 1000; },
       flight: function () { var C = T.cutoff; return [[C.sicCeco.t - T0, C.sicCeco.v / 1000, 'S-IC centre cutoff'], [C.sicOeco.t - T0, C.sicOeco.v / 1000, 'S-IC outboard cutoff'], [C.siiCeco.t - T0, C.siiCeco.v / 1000, 'S-II centre cutoff'], [C.siiOeco.t - T0, C.siiOeco.v / 1000, 'S-II cutoff'], [C.sivb1Gcs.t - T0, C.sivb1Gcs.v / 1000, 'S-IVB first cutoff']]; },
-      cap: 'Inertial (space-fixed) speed, and dashed, speed relative to the rotating ground. Black points: the flight\'s space-fixed speeds at its cutoffs (Table 4-2).' },
+      cap: 'Inertial (space-fixed) speed, and dashed, speed relative to the rotating ground. Round points: the flight\'s space-fixed speeds at its cutoffs (Table 4-2).' },
     a: { xl: 'Time from liftoff (s)', yl: 'Acceleration (g)', x: function (s) { return s.t; }, y: function (s) { return s.a / G0; },
       flight: function () { var X = D.acceleration; return [[X.sic[0] - T0, X.sic[3], 'S-IC peak'], [X.sii[0] - T0, X.sii[3], 'S-II before centre cutoff'], [X.sivb1[0] - T0, X.sivb1[3], 'S-IVB first cutoff']]; },
-      cap: 'What an accelerometer reads: thrust and drag over mass, in g. Black points: the flight\'s peaks (Table 4-1).' },
+      cap: 'What an accelerometer reads: thrust and drag over mass, in g. Round points: the flight\'s peaks (Table 4-1).' },
     mach: { xl: 'Time from liftoff (s)', yl: 'Mach number', x: function (s) { return s.t; }, y: function (s) { return s.M; }, until: function () { return firstStageEnd() + 15; },
-      flight: function () { return [[T.mach1.t - T0, 1, 'Mach 1, Table 4-1']]; }, cap: 'Earth-relative speed over the 1976 standard\'s speed of sound (no Mach number above 86 km, where the table ends). Black point: the flight\'s Mach 1 (67.5 s range time).' },
+      flight: function () { return [[T.mach1.t - T0, 1, 'Mach 1, Table 4-1']]; }, cap: 'Earth-relative speed over the 1976 standard\'s speed of sound (no Mach number above 86 km, where the table ends). Round point: the flight\'s Mach 1 (67.5 s range time).' },
   };
   function view() {
     var m = METRICS[state.metric], r = cur.r, lim = m.until ? m.until() : Infinity;
@@ -303,7 +308,7 @@
         el('td', { 'data-k': 'Event', text: x.group }), el('td', { 'data-k': 'Quantity', text: x.label }),
         el('td', { 'data-k': 'Model', class: 'n', text: fmt(x.model, Math.abs(x.model) < 100 ? 3 : 1) + ' ' + x.units }),
         el('td', { 'data-k': 'Flight', class: 'n', text: fmt(x.flight, Math.abs(x.flight) < 100 ? 3 : 1) + ' ' + x.units }),
-        el('td', { 'data-k': 'Gap', class: 'n', text: gp(x) }), el('td', { 'data-k': 'Note' }, [el('span', { class: 'why', text: x.note })])]));
+        el('td', { 'data-k': 'Gap', class: 'n', text: gp(x) }), x.note ? el('td', { 'data-k': 'Note' }, [el('span', { class: 'why', text: x.note })]) : el('td', { class: 'nonote' })]));
     });
     tb.appendChild(body);
   }

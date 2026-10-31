@@ -184,6 +184,7 @@ tr.hl td { background: var(--accent-bg); }
   table.stack td { border: 0; padding: 2px 0; text-align: left; }
   table.stack td.n { text-align: left; }
   table.stack td[data-k]::before { content: attr(data-k) ": "; color: var(--muted); font-size: 0.78rem; }
+  table.stack td.nonote { display: none; }
 }
 
 /* ---- Max Q ---- */

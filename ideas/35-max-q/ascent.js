@@ -14,7 +14,8 @@
  *              radius, point-mass gravity mu/r^2 with Aster's GM, rotating at pck00010's rate.
  *   motion     r'' = -mu r/|r|^3 + (F u - D vrel_hat)/m, m' = -mdot, vrel = v - omega x r. RK4, fixed steps that land
  *              exactly on every event (jettison, cutoff, throttle change, burnout, steering phase).
- *   thrust     F = n k [F_vac(tau) - p_a A_e] (idea 32's linear CF(p_a), as idea 33's sea-level thrust is built),
+ *   thrust     F = n [k F_vac(tau) - p_a A_e] (idea 32's linear CF(p_a), as idea 33's sea-level thrust is built; k the
+ *              flow scale, which moves the chamber, not the nozzle's exit area),
  *              refused where p_a exceeds the nozzle's separation onset (idea 33's criterion).
  *   drag       D = q S C_A(M), q = rho |vrel|^2 / 2, S = pi d^2 / 4, M = |vrel| / a: Walker's forebody C_Af (Saturn V,
  *              Mach 0.5 to 7.8, held flat outside), or his power-off total C_AT as a bound. Above 86 km (the top of
@@ -206,7 +207,8 @@
       if (th) {
         if (!(num(th.start) && num(th.end) && th.end > th.start && th.start >= 0)) out.push(refusal('invalid_input', 'The throttle bucket needs a start and a later end, in seconds after liftoff.', 'Two times.', { applies_to: 'throttle' }));
         var dk = engines[veh.stages[0].engine] && engines[veh.stages[0].engine].deckVac;
-        if (!num(th.level) || !dk || th.level < dk.throttle[0] - 1e-12 || th.level > dk.throttle[dk.throttle.length - 1] + 1e-12) out.push(refusal('out_of_envelope', 'Throttle ' + fmt(100 * th.level, 3) + ' % is outside the first stage engine\'s deck (' + (dk ? fmt(100 * dk.throttle[0], 3) + ' to ' + fmt(100 * dk.throttle[dk.throttle.length - 1], 3) + ' %' : 'none') + ', idea 33).', 'A throttle inside the deck idea 33 computed.', { applies_to: 'throttle' }));
+        if (!num(th.level)) out.push(refusal('invalid_input', 'The throttle in the bucket must be a number (a fraction of rated thrust).', 'A throttle inside the deck idea 33 computed.', { applies_to: 'throttle' }));
+        else if (!dk || th.level < dk.throttle[0] - 1e-12 || th.level > dk.throttle[dk.throttle.length - 1] + 1e-12) out.push(refusal('out_of_envelope', 'Throttle ' + fmt(100 * th.level, 3) + ' % is outside the first stage engine\'s deck (' + (dk ? fmt(100 * dk.throttle[0], 3) + ' to ' + fmt(100 * dk.throttle[dk.throttle.length - 1], 3) + ' %' : 'none') + ', idea 33).', 'A throttle inside the deck idea 33 computed.', { applies_to: 'throttle' }));
       }
       return out;
     }
@@ -231,18 +233,21 @@
       var w = c.omega;
       var vrel = [v[0] + w * r[1], v[1] - w * r[0], v[2]];
       var vr = norm(vrel), h = rn - RE;
-      var atm = c.drag || c.engines > 0 ? atmosphere(h) : { P: 0, rho: 0, a: null };
+      var atm = atmosphere(h);
       var gmag = c.uniformG ? MU / (RE * RE) : MU / (rn * rn);
       var g = scale(up, -gmag);
       // thrust
       var Fv = c.engines > 0 ? c.Fvac : 0, Fp = c.engines > 0 ? atm.P * c.Ae : 0, F = Fv - Fp;
       var u = steer(t, r, v, vrel, up, c);
-      // drag
+      // dynamic pressure and Mach number belong to the flight, drag or no drag (review: with drag off they were 0 and
+      // null, and the page showed max Q 0.00 kPa and Mach 1 "never"); drag acts only when it is switched on
       var Dm = 0, M = null, q = 0, ca = 0, outside = false;
-      if (c.drag && atm.rho > 0 && vr > 0) {
+      if (atm.rho > 0 && vr > 0) {
         q = 0.5 * atm.rho * vr * vr; M = vr / atm.a;
-        var cc = axialCoefficient(M, c.dragCurve); ca = cc.ca * c.dragScale; outside = cc.outside;
-        Dm = q * c.Sref * ca / m;
+        if (c.drag) {
+          var cc = axialCoefficient(M, c.dragCurve); ca = cc.ca * c.dragScale; outside = cc.outside;
+          Dm = q * c.Sref * ca / m;
+        }
       }
       var vrh = vr > 0 ? scale(vrel, 1 / vr) : [0, 0, 0];
       var acc = add(add(g, scale(u, F / m)), scale(vrh, -Dm));
@@ -357,7 +362,20 @@
       base.np = launchPlane(pad.r, base.az);
       var maxQ = { q: -1 }, mach1 = null, prevM = null, prevT = null, qHist = [];
       var latR = plan.site.latitudeDeg * DEG;
-      var sep = null, crashed = null, kickDone = false, kickEndT = null, above = false, reentry = null;
+      var sep = null, crashed = null, kickDone = false, kickEndT = null, above = false, reentry = null, stiff = null, curDt = plan.dt.atmosphere;
+      // after every step (burns and coasts): the ground, the atmosphere's top on the way down, and a drag so strong that
+      // one explicit step cannot follow it (review: a 100 km diameter blew the integrator up and was reported as escape)
+      // A step whose Earth-relative speed grew by more than thrust, gravity and the centrifugal term could give (drag only
+      // slows it; Coriolis turns it) has left the physics, whatever its numbers say.
+      var lastVrel = 0;
+      function watch(tt, yy, info, stage) {
+        if (info.h < -1 && !crashed) crashed = { t: tt, stage: stage };
+        if (info.h >= ATM_TOP) above = true; else if (above && !reentry) reentry = { t: tt, stage: stage, v: info.vrel };
+        var aD = info.D / yy[6], rn = Math.sqrt(yy[0] * yy[0] + yy[1] * yy[1] + yy[2] * yy[2]);
+        var jump = info.vrel > lastVrel + (Math.abs(info.F) / yy[6] + MU / (rn * rn) + base.omega * base.omega * rn) * curDt * 1.5 + 1;
+        lastVrel = info.vrel;
+        if (!stiff && (!(isFinite(yy[0] + yy[1] + yy[2] + yy[3] + yy[4] + yy[5] + yy[6])) || jump || (aD > 0 && aD * curDt > Math.max(info.vrel, 1)))) stiff = { t: tt, stage: stage, dt: curDt };
+      }
       function record(tt, yy, info, stage, burn, n, tau) {
         // events in the first stage: max Q (parabolic refinement later) and Mach 1 (linear in time)
         if (info.M != null && prevM != null && prevM < 1 && info.M >= 1 && !mach1) { var f = (1 - prevM) / (info.M - prevM); mach1 = { t: prevT + f * (tt - prevT), h: null }; }
@@ -393,9 +411,11 @@
             var cT = plan.stagingCoast[si - 1] || 0;
             if (cT > 0) {
               var cc = Object.assign({}, base, { engines: 0, mdot: 0, Fvac: 0, Ae: 0, steer: 'gravity' });
-              var rr = integrate(t, y, t + cT, cc, plan.dt.atmosphere, function (tt, yy, inf) { record(tt, yy, inf, si, -1, 0, 0); });
+              curDt = plan.dt.atmosphere;
+              var rr = integrate(t, y, t + cT, cc, plan.dt.atmosphere, function (tt, yy, inf) { record(tt, yy, inf, si, -1, 0, 0); watch(tt, yy, inf, si); });
               t = rr.t; y = rr.y;
               events.push({ kind: 'coast', stage: si, t0: t - cT, t1: t });
+              if (crashed || stiff) break;
             }
           }
           curStage = si;
@@ -434,7 +454,7 @@
           var tEnd = tB0 + tc + tOut, isBp = false;
           if (nb != null && bps[nb].t < tc + tOut - 1e-9) { tEnd = tB0 + bps[nb].t; isBp = true; }
           var dtS = c.steer === 'kick' || c.steer === 'vertical' || norm([y[0], y[1], y[2]]) - RE < ATM_TOP ? plan.dt.atmosphere : plan.dt.vacuum;
-          var tStart = t;
+          var tStart = t; curDt = dtS;
           var stopFn = null;
           if (mode === 'kick') {
             // the kick hands over to the gravity turn once its ramp is done and the Earth-relative velocity has turned as far
@@ -448,9 +468,10 @@
           }
           var res = integrate(t, y, tEnd, c, dtS, function (tt, yy, inf) {
             record(tt, yy, inf, si, bi, n, tau);
-            if (inf.h < -1 && !crashed) crashed = { t: tt, stage: si };
-            if (inf.h >= ATM_TOP) above = true; else if (above && !reentry) reentry = { t: tt, stage: si, v: inf.vrel };
+            watch(tt, yy, inf, si);
+            sepCheck(tt, yy, e, tau, si); // in flight too: a stage that sinks into thicker air separates there
           }, stopFn);
+          if (crashed || stiff || sep) break;
           if (res.stopped === 'kick-done') {
             // refine the hand-over time by bisection inside the last step (to 1e-6 s), then switch
             var lo = res.tPrev, hi = res.t, y0s = res.yPrev;
@@ -464,7 +485,6 @@
             continue;
           }
           burned += y[6] - res.y[6] - 0; t = res.t; y = res.y;
-          if (crashed) break;
           if (isBp) {
             applyBp(bps[nb]); applied.push(nb);
           } else {
@@ -478,17 +498,19 @@
           if (bp.kind === 'jettison') { carried += bp.mass; warnings.push({ applies_to: 'stage ' + (si + 1), reason: (bp.label || 'A jettison') + ' at ' + fmt(bp.t, 4) + ' s comes after this burn ends (' + fmt(t - tB0, 4) + ' s): carried to separation.' }); }
           else if (bp.kind === 'engine-out') warnings.push({ applies_to: 'stage ' + (si + 1), reason: (bp.label || 'An engine cutoff') + ' at ' + fmt(bp.t, 4) + ' s comes after this burn ends and is ignored.' });
         });
-        if (sep || crashed) break;
+        if (sep || crashed || stiff) break;
         stageEnds.push({ stage: si, burn: bi, label: s.label, tIgnition: tB0, t: t, burnTime: t - tB0, state: stateOf(t, y, base.omega), engines: n,
           losses: { ideal: y[7], pressure: y[8], drag: y[9], gravity: y[10], steering: y[11] }, lossesRel: { drag: y[16], gravity: y[13], steering: y[14], centrifugal: y[15] } });
         events.push({ kind: 'cutoff', stage: si, burn: bi, t: t, label: s.label + (s.burns.length > 1 ? ' burn ' + (bi + 1) : '') + ' cutoff' });
       }
-      if (sep) {
-        refusals.push(refusal('out_of_envelope', 'Stage ' + (sep.stage + 1) + '\'s ' + veh.stages[sep.stage].engine + ' nozzle separates at ' + fmt(sep.h / 1000, 3) + ' km (' + fmt(sep.t, 4) + ' s): ambient pressure ' + fmt(sep.P, 4) + ' Pa is above its separation onset ' + fmt(sep.onset, 4) + ' Pa (idea 33\'s criterion), so its thrust there is not modelled.', 'An engine with a smaller area ratio for that altitude, or light it higher (a longer lower stage).', { applies_to: 'stage ' + (sep.stage + 1) }));
-        return { ok: false, refusals: refusals, samples: samples, partial: true };
-      }
-      if (crashed) {
-        refusals.push(refusal('out_of_envelope', 'The vehicle comes back to the ground at ' + fmt(crashed.t, 4) + ' s (stage ' + (crashed.stage + 1) + '): the pitch-over is too hard or the thrust too low.', 'A smaller kick angle, a later pitch-over, or more thrust.', { applies_to: 'trajectory' }));
+      // whatever stopped the flight first is the refusal (a stack that sinks underground also sees sea-level pressure)
+      var stops = [];
+      if (sep) stops.push([sep.t, refusal('out_of_envelope', 'Stage ' + (sep.stage + 1) + '\'s ' + veh.stages[sep.stage].engine + ' nozzle separates at ' + fmt(sep.h / 1000, 3) + ' km (' + fmt(sep.t, 4) + ' s): ambient pressure ' + fmt(sep.P, 4) + ' Pa is above its separation onset ' + fmt(sep.onset, 4) + ' Pa (idea 33\'s criterion), so its thrust there is not modelled.', 'An engine with a smaller area ratio for that altitude, or light it higher (a longer lower stage).', { applies_to: 'stage ' + (sep.stage + 1) })]);
+      if (crashed) stops.push([crashed.t, refusal('out_of_envelope', 'The vehicle comes back to the ground at ' + fmt(crashed.t, 4) + ' s (stage ' + (crashed.stage + 1) + '): the pitch-over is too hard, the thrust too low or a staging coast too long.', 'A smaller kick angle, a later pitch-over, more thrust, or a shorter coast.', { applies_to: 'trajectory' })]);
+      if (stiff) stops.push([stiff.t, refusal('out_of_envelope', 'By ' + fmt(stiff.t, 4) + ' s the drag would take away more than the vehicle\'s whole Earth-relative speed in one ' + fmt(stiff.dt, 3) + ' s step, so the fixed-step integrator cannot follow it (its numbers there are not a flight): at this diameter and drag factor the vehicle is a parachute, not a rocket.', 'A reference diameter and drag factor near the vehicle\'s own.', { applies_to: 'drag' })]);
+      if (stops.length) {
+        stops.sort(function (p1, p2) { return p1[0] - p2[0]; });
+        refusals.push(stops[0][1]);
         return { ok: false, refusals: refusals, samples: samples, partial: true };
       }
       // max Q refined by a parabola through the three samples around the peak
@@ -588,7 +610,7 @@
       var b = bracketBisect(f, [-20, -10, -5, 0, 5, 10, 15, 20, 30, 45, 60], 1e-8, 60);
       if (!b.ok) {
         var got = b.seen.filter(function (x) { return x[1] != null; }).map(function (x) { return x[1]; });
-        return { refusal: refusal('out_of_envelope', 'No fixed upper-stage pitch between -20 and 60 degrees makes the last burn end level' + (got.length ? ' (it ends between ' + fmt(Math.min.apply(null, got), 4) + ' and ' + fmt(Math.max.apply(null, got), 4) + ' deg)' : '') + ': an open-loop hold cannot fly this vehicle to orbit.', 'Closed-loop guidance (module 36), more upper-stage thrust, or another kick.') };
+        return { refusal: refusal('out_of_envelope', 'No fixed upper-stage pitch between -20 and 60 degrees makes the last burn end level' + (got.length ? ' (it ends between ' + fmt(Math.min.apply(null, got), 4) + ' and ' + fmt(Math.max.apply(null, got), 4) + ' deg)' : '') + ': with this first-stage trajectory, this upper-stage programme cannot end level.', 'Another kick (solve it for a first-stage cutoff angle first), closed-loop guidance (module 36), or more upper-stage thrust.') };
       }
       return { pitchDeg: b.x };
     }
