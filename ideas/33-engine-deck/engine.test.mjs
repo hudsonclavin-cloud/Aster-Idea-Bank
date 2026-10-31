@@ -78,7 +78,7 @@ test('the transcriptions are internally consistent (catches a mistyped digit)', 
   const odd = new Set(['J-2 Hydrogen', 'SSME (EPL) Hydrogen', 'A-7 Alcohol (75 % alcohol, 25 % water)']);
   for (const r of TD.SP8107_PUMPS) { const c = E.pumpCheck(r); if (!odd.has(r.engine + ' ' + r.fluid)) assert.ok(Math.abs(c.headGap) < 0.02, r.engine + ' ' + r.fluid + ' head ' + c.headGap); }
   // SP-8107 Table II: gpm x density = lb/s within 2 %, except the MA-5 sustainer's RP-1 pump, whose printed 91.6 lb/s is
-  // 8.5 % above its own 745 gpm x 50.5 lb/ft^3 = 83.8 lb/s; its printed 620 hp follows from 83.8 lb/s (a finding)
+  // 9.3 % above its own 745 gpm x 50.5 lb/ft^3 = 83.8 lb/s (83.8 is 8.5 % below it); its printed 620 hp follows from 83.8 lb/s (a finding)
   for (const r of TD.SP8107_PUMPS) {
     const w = r.gpm * 231 / 1728 / 60 * r.rho;
     if (r.engine === 'MA-5 sustainer' && r.fluid === 'RP-1') {
@@ -220,7 +220,16 @@ test('the gas-generator balance closes, and the staged-combustion and expander b
   const j = E.engineSpec('J-2'), jv = E.point(j.context, j.spec.pc, 0), jd = E.densities(j.spec.prop);
   const jg = E.cycle(E.cycleReference('J-2'), { pc: jv.pc, mdotOx: jv.mdotOx, mdotFuel: jv.mdotFuel, prop: j.spec.prop, rhoOx: jd.ox.value, rhoFuel: jd.fuel.value });
   near(jg.stages[1].flowFrac, 5 / 7, 1e-12, 'series flow fraction'); assert.ok(jg.stages[1].Tin < jg.stages[0].Tin, 'second turbine is fed the first one\'s exhaust');
-  near(jg.mdotGG / LBM, 7.38, 0.01, 'J-2 gas-generator flow on this deck (SP-8107: 7.0 lb/s)');
+  near(jg.mdotGG / LBM, 7.2885, 0.01, 'J-2 gas-generator flow on this deck (SP-8107: 7.0 lb/s)');
+  // review fix: the J-2's 423 s divides by the whole engine's flow (ispBasisCheck), so its chamber is calibrated at
+  // SP-8107's chamber share (544 - 7.0) / 544 and the engine level comes back to 423 s, not 1.3 % below it
+  near(j.spec.calibration.chamberShare, (460.4 + 83.6 - 7.0) / (460.4 + 83.6), 1e-12, 'J-2 chamber share of the pump flow');
+  const jel = E.engineLevel(jv, jg);
+  near(jel.ispVacLow / G0, 422.773, 0.002, 'J-2 engine vacuum Isp, exhaust dumped (published engine value 423 s)');
+  assert.ok(Math.abs(jel.ispVacLow / G0 / 423 - 1) < 0.001 && jel.ispVacHigh / G0 > 423, 'the J-2 bracket holds its published engine Isp');
+  near(jv.ispVac / G0, 423 / ((460.4 + 83.6 - 7.0) / (460.4 + 83.6)), 1e-6, 'J-2 thrust-chamber vacuum Isp');
+  // the other gas-generator presets' Isp is the thrust chamber's: calibrated at the published value
+  for (const id of ['F-1', 'H-1', 'LR89-NA-7']) assert.equal(E.engineSpec(id).spec.calibration.chamberShare, 1, id + ' chamber basis');
   near(jg.turbinePower, jg.pumpPower, 1e-9 * jg.pumpPower, 'J-2 balance');
   const ref = E.cycleReference('SSME (EPL)'), P = TD.SP8107_PUMPS.filter((r) => r.engine === 'SSME (EPL)'), dl = E.densities(lh2);
   const sc = E.cycle(ref, { pc: ref.pc, mdotOx: P[0].w * LBM, mdotFuel: P[1].w * LBM, prop: lh2, rhoOx: dl.ox.value, rhoFuel: dl.fuel.value });
@@ -247,6 +256,8 @@ test('SP-8120\'s Isp is not on one basis: thrust chamber for F-1, H-1 and LR89, 
   assert.equal(b['J-2'].basis, 'engine'); assert.equal(b['LR79-NA-11'].basis, 'engine'); assert.equal(b['RL10A-3-3'].basis, 'closed cycle (one value)');
   near(b['F-1'].ispEngine, 1522000 / 5785, 1e-9, 'F-1 engine Isp by hand'); near(b['F-1'].engineGap, 0.041452, 1e-6, 'F-1 274 s vs 263.1 s');
   near(b['H-1C and H-1D'].chamberGap, -0.000631424, 1e-7, 'H-1 chamber'); near(b['J-2'].engineGap, 0.000486957, 1e-7, 'J-2 engine');
+  // review addition: the J-2's turbines are in series, so its gas generator's flow is the larger turbine flow (7.0), not the sum
+  near(b['J-2'].turbineFlow, 7.0, 1e-12, 'J-2 turbine flow'); near(b['J-2'].chamberGap, 423 / (230000 / (460.4 + 83.6 - 7.0)) - 1, 1e-12, 'J-2 chamber');
 });
 
 test('turbine powers against SP-8107 Table III: SP-8110 gas -14.6 to +17.1 %, idea 31 gas -27.2 to -3.4 %', () => {
@@ -277,7 +288,7 @@ test('cycle predictions: gas-generator flows, the J-2\'s series turbine, the SSM
   near(sc[0].pr, 1.74523, 1e-4, 'SSME oxidizer turbine (published 1.59)'); near(sc[1].pr, 1.67486, 1e-4, 'SSME fuel turbine (published 1.56)');
 });
 
-test('expander: the RL10A-3-3A balance at its own operating point gives pressure ratio 1.4038 (published 1.402)', () => {
+test('expander: the RL10A-3-3A turbine needs pressure ratio 1.410 for the table\'s pump power; the cycle\'s own balance gives 1.4038 (published 1.402)', () => {
   const x = E.expanderCheck();
   near(x.dh, 89.432, 0.002, 'turbine dh, Btu/lb (published 92.02)'); near(x.pr, 1.40995, 1e-4, 'PR for the published pump power');
   const X = TD.RL10A33A, ref = E.cycleReference('RL10A-3-3A');
@@ -286,6 +297,10 @@ test('expander: the RL10A-3-3A balance at its own operating point gives pressure
   near(c.pr, 1.40378, 1e-4, 'pressure ratio'); assert.ok(rel(c.pr, 1.402) < 0.002);
   near(c.pumps.fuel.pout / PSI, 1068.92, 0.05, 'fuel pump discharge (published 1067.3)');
   near(c.turbinePower, c.pumpPower, 1e-9 * c.pumpPower, 'balance');
+  // review addition: why the cycle lands nearer 1.402 than the direct check. Its incompressible pumps need 1.2 % less
+  // than the table's torque x speed, which offsets part of the turbine's 2.8 % short drop.
+  near(c.pumpPower / EN.HP, 769.02, 0.05, 'cycle pump power, hp'); near(x.pumpPowerTorque, 778.462, 0.005, 'table pump power (torque x speed), hp');
+  near((x.pr - 1) / (1.402 - 1) - 1, 0.01978, 2e-4, 'direct check: +2.0 % in (PR - 1)');
   // the expander's ceiling: at the same turbine inlet temperature it no longer closes at 1.5 x the chamber pressure
   const run = (tau, o) => E.cycle(ref, { pc: ref.pc * tau, mdotOx: X.ox[2][4] * LBM * tau, mdotFuel: X.fuel[3][4] * LBM * tau, prop: lh2, rhoOx: X.ox[1][5] * EN.LB_FT3, rhoFuel: X.fuel[1][5] * EN.LB_FT3 }, o);
   near(run(1.2).pr, 1.5951, 2e-4, '1.2 x closes'); const up = run(1.5);
@@ -303,7 +318,7 @@ test('staged combustion on the SSME reference closes at 100 % only at pressure r
 });
 
 test('engine presets: calibration factors, lowest sea-level throttle, and the altitude engines refused at sea level', () => {
-  const want = { 'F-1': [1.05754, 0.902458, 0.526801], 'H-1': [1.03467, 0.924771, 0.384265], 'J-2': [0.949786, 1.01292, null], 'LR89-NA-7': [0.999179, 0.925221, 0.460266], 'RL10A-3-3': [1.02082, 0.959161, null], 'YLR113-AJ-1': [0.980515, 0.935609, 0.327533] };
+  const want = { 'F-1': [1.05754, 0.902458, 0.526801], 'H-1': [1.03467, 0.924771, 0.384265], 'J-2': [0.962166, 1.01292, null], 'LR89-NA-7': [0.999179, 0.925221, 0.460266], 'RL10A-3-3': [1.02082, 0.959161, null], 'YLR113-AJ-1': [0.980515, 0.935609, 0.327533] };
   for (const [id, [a, b, t]] of Object.entries(want)) {
     const s = E.engineSpec(id);
     near(s.spec.etaCstar, a, 2e-5, id + ' c*'); near(s.spec.etaCF, b, 2e-5, id + ' CF');
@@ -376,4 +391,17 @@ test('refusals: efficiencies, chamber envelope, a cycle without flow or with the
   const H = E.makeHandoff(JSON.parse(H32), s, D, null, {});
   assert.equal(H.outputs.deck.value.status[0][0], 'separated'); assert.equal(H.outputs.deck.value.thrust[0][0], null);
   assert.equal(E.cycleReference('nope').refusal.code, 'not_found');
+  // review additions: the deck's flows-full-at-sea-level flag agrees with the lowest throttle (F-1: 52.7 %)
+  const D2 = E.deck(c, [0.5, 0.6]);
+  assert.equal(D2.rows[0].flowsFullAtSeaLevel, false, '50 %: separates at sea level'); assert.equal(D2.rows[1].flowsFullAtSeaLevel, true, '60 %: flows full');
+  // a typed turbine inlet temperature that is not a positive number is refused, not silently replaced by the reference's
+  const j = E.engineSpec('J-2'), jv = E.point(j.context, j.spec.pc, 0), jd = E.densities(j.spec.prop);
+  const jop = { pc: jv.pc, mdotOx: jv.mdotOx, mdotFuel: jv.mdotFuel, prop: j.spec.prop, rhoOx: jd.ox.value, rhoFuel: jd.fuel.value };
+  const r = E.engineSpec('RL10A-3-3'), rv = E.point(r.context, r.spec.pc, 0), rd = E.densities(r.spec.prop);
+  const rop = { pc: rv.pc, mdotOx: rv.mdotOx, mdotFuel: rv.mdotFuel, prop: r.spec.prop, rhoOx: rd.ox.value, rhoFuel: rd.fuel.value };
+  for (const [ref, op] of [['SSME (EPL)', jop], ['RL10A-3-3A', rop]]) {
+    for (const t of [-5, 0, NaN, 'abc']) assert.equal(E.cycle(E.cycleReference(ref), op, { TinOverride: t }).refusal.code, 'invalid_input', ref + ' Tin ' + t);
+    assert.ok(!E.cycle(E.cycleReference(ref), op, { TinOverride: null }).refusal, ref + ' blank Tin: the reference temperature');
+  }
+  assert.ok(!E.cycle(E.cycleReference('J-2'), jop, { TinOverride: -5 }).refusal, 'a gas generator takes its temperature from the reference only');
 });

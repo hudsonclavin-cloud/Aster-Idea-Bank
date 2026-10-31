@@ -206,12 +206,15 @@ details.more { margin-top: 12px; }
 .summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin: 8px 0 12px; }
 .summary .tile .v { font-size: 1.1rem; }
 td.gap-bad { color: var(--crit); }
+td[data-k="Gap"] { white-space: nowrap; }
+table.stack caption { text-align: left; }
 td .why { display: block; color: var(--ink-2); font-size: 0.78rem; max-width: 46ch; }
 tr.hl td { background: var(--accent-bg); }
 .cmp { font-size: 0.82rem; color: var(--ink-2); margin-top: 6px; }
 @media (max-width: 600px) {
   table.stack, table.stack tbody, table.stack tr, table.stack td { display: block; width: 100%; }
   table.stack thead { display: none; }
+  table.stack caption { display: block; width: 100%; margin-bottom: 6px; }
   table.stack tr { border: 1px solid var(--ring); border-radius: 6px; padding: 4px 6px; margin-bottom: 8px; }
   table.stack td { border: 0; padding: 2px 0; text-align: left; }
   table.stack td.n { text-align: left; }

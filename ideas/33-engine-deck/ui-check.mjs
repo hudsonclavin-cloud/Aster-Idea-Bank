@@ -105,6 +105,17 @@ const H32noSize = JSON.stringify(B.makeHandoff(ch.handoff, nz, B.analyze(ch.rock
   await page.fill('#altNum', '20'); await page.press('#altNum', 'Enter'); await page.waitForTimeout(150);
   ok(/flows full/.test(await page.locator('#verdict').innerText()), 'J-2 flows full at 20 km');
   ok(/idea 31 gas/.test(await page.locator('#cycleTiles').innerText()), 'J-2 drive gas from idea 31');
+  // review additions: the J-2's engine-level vacuum Isp brackets its published engine value (423 s), and a typed
+  // turbine inlet temperature that is not positive is refused rather than silently replaced
+  const jVac = await page.locator('.tile', { hasText: 'Vacuum' }).first().innerText();
+  const jm = jVac.match(/Isp ([0-9.]+)–([0-9.]+) s/);
+  ok(jm && +jm[1] <= 423.05 && +jm[2] >= 423, 'J-2 engine vacuum Isp bracket holds 423 s (' + (jm ? jm[0] : jVac.replace(/\n/g, ' ')) + ')');
+  await page.selectOption('#cycleRef', 'SSME (EPL)'); await page.waitForTimeout(400);
+  await page.fill('#tinNum', '-5'); await page.press('#tinNum', 'Enter'); await page.waitForTimeout(300);
+  ok(/Refused: .*positive number/.test(await page.locator('#cycleVerdict').innerText()), 'a typed -5 K turbine inlet is refused');
+  ok(/invalid input/i.test(await page.locator('#refusals').innerText()), 'and listed among the refusals');
+  await page.fill('#tinNum', ''); await page.press('#tinNum', 'Enter'); await page.waitForTimeout(300);
+  ok(/closes/.test(await page.locator('#cycleVerdict').innerText()), 'blank: the reference temperature again');
   // RL10: expander
   await page.selectOption('#engine', 'RL10A-3-3'); await page.waitForTimeout(400);
   ok(/Expander closes/.test(await page.locator('#cycleVerdict').innerText()), 'RL10 expander closes');
@@ -184,6 +195,10 @@ for (const scheme of ['dark', 'light']) {
   ok(minFont >= 10.5, scheme + ' phone: chart text at least 11 px (' + minFont.toFixed(1) + ')');
   const wide = await page.evaluate(() => [...document.querySelectorAll('table td')].filter((td) => { const r = td.getBoundingClientRect(); return r.width > 0 && (r.right > innerWidth + 1 || r.left < -1); }).length);
   ok(wide === 0, scheme + ' phone: every table cell on screen (' + wide + ' off)');
+  // review addition: the record tables' captions used to be squeezed into a ~120 px column at this width
+  const narrow = await page.evaluate(() => [...document.querySelectorAll('table caption')].filter((c) => { const r = c.getBoundingClientRect(), t = c.closest('table').getBoundingClientRect(); return r.width > 0 && r.width < 0.8 * t.width; }).length);
+  const nCap = await page.evaluate(() => document.querySelectorAll('table caption').length);
+  ok(nCap >= 3 && narrow === 0, scheme + ' phone: table captions span their tables (' + narrow + ' of ' + nCap + ' narrow)');
   await page.locator('#chartThr').scrollIntoViewIfNeeded();
   const box = await page.locator('#chartThr').boundingBox();
   await page.touchscreen.tap(box.x + box.width * 0.5, box.y + box.height * 0.5); await page.waitForTimeout(200);

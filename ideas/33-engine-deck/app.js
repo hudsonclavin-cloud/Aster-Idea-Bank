@@ -150,7 +150,8 @@
     $('etaC').value = sig(state.etaC, 5); $('etaF').value = sig(state.etaF, 5);
     var cal = cur.cal;
     $('etaCal').disabled = !cal;
-    $('etaNote').innerHTML = cal ? 'Calibrated on SP-8120 Table I\'s ' + (cal.condition === 'sl' ? 'sea-level' : 'altitude') + ' thrust and Isp at ' + fmt(s.pc / PSI, 0) + ' psia and the printed throat area: c* ' + sig(cal.etaCstar, 4) + ', C<sub>F</sub> ' + sig(cal.etaCF, 4) + ' (Isp ' + sig(cal.etaCstar * cal.etaCF, 4) + ' of the shifting ideal).' + (cal.exceedsUnity ? ' <span class="chip-warn">above 1: a calibration factor, not an efficiency; the table\'s pressure, throat and Isp are not on one basis</span>' : '') :
+    $('etaNote').innerHTML = cal ? 'Calibrated on SP-8120 Table I\'s ' + (cal.condition === 'sl' ? 'sea-level' : 'altitude') + ' thrust and Isp at ' + fmt(s.pc / PSI, 0) + ' psia and the printed throat area: c* ' + sig(cal.etaCstar, 4) + ', C<sub>F</sub> ' + sig(cal.etaCF, 4) + ' (Isp ' + sig(cal.etaCstar * cal.etaCF, 4) + ' of the shifting ideal).' +
+      (cal.chamberShare < 1 ? ' The table\'s ' + fmt(cal.isp / G0, 0) + ' s divides by the whole engine\'s flow (SP-8107\'s pumps; see the record below), so the thrust chamber is calibrated at ' + fmt(cal.ispChamber / G0, 1) + ' s, on its ' + fmt(100 * cal.chamberShare, 2) + ' % share.' : '') + (cal.exceedsUnity ? ' <span class="chip-warn">above 1: a calibration factor, not an efficiency; the table\'s pressure, throat and Isp are not on one basis</span>' : '') :
       'Imported engines start ideal (1, 1). Idea 32 found real engines 2.1 to 9.0 % below the shifting ideal in Isp; type efficiencies to apply a loss.';
     document.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)); });
     fillRefSelect();
@@ -158,7 +159,7 @@
     $('richCtl').hidden = refC !== 'staged-combustion';
     $('tinCtl').hidden = !(refC === 'staged-combustion' || refC === 'expander');
     document.querySelectorAll('[data-rich]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.rich === state.rich)); });
-    $('tinNum').value = state.tin > 0 ? state.tin : '';
+    $('tinNum').value = state.tin != null && isFinite(state.tin) ? state.tin : '';
     $('cycleNote').textContent = !cur.ref ? 'No turbopump cycle: the deck is the thrust chamber alone.' + (s.id === 'YLR113-AJ-1' ? ' SP-8107 has no turbopump data for this sled engine.' : '') :
       cur.ref.refusal ? cur.ref.refusal.reason : 'Every pressure ratio, efficiency, temperature and flow share is ' + cur.ref.id + '\'s (' + cur.ref.source + '), held over the throttle range. ' +
       (refC === 'gas-generator' ? 'The pumps\' discharge pressures scale with chamber pressure by its ratios.' : refC === 'staged-combustion' ? 'The turbine pressure ratio is solved; the pump discharge rises with it.' : 'The hydrogen\'s turbine inlet temperature is the reference\'s (the jacket\'s heat pick-up is not modelled); the pressure ratio is solved.');
@@ -344,7 +345,7 @@
     var own = refEng && refEng === cur.ref.id && state.thr === 100;
     V.className = 'verdict full';
     if (cyc.cycle === 'gas-generator') {
-      V.textContent = 'The gas generator burns ' + fmt(cyc.mdotGG, 2) + ' kg/s (' + fmt(100 * cyc.ggFraction, 2) + ' % of the engine\'s flow) to drive the pumps at this throttle, and throws it away.';
+      V.textContent = 'The gas generator burns ' + fmt(cyc.mdotGG, 2) + ' kg/s (' + fmt(100 * cyc.ggFraction, 2) + ' % of the engine\'s flow) to drive the pumps at this throttle. Its exhaust leaves through the turbine, not the chamber; what thrust it still gives is not modelled, so the engine\'s Isp is bracketed.';
       T.appendChild(tile('Gas-generator flow', fmt(cyc.mdotGG, 2), 'kg/s', 'derived', fmt(cyc.mdotGG / LBM, 1) + ' lb/s' + (own ? '; SP-8107 publishes ' + TD.SP8107_TURBINES.filter(function (r) { return r.engine === refEng; }).reduce(function (a, r) { return Math.max(a, r.w); }, 0) + ' lb/s' : '')));
       T.appendChild(tile('Turbine inlet', fmt(cyc.stages[0].Tin, 0), 'K', 'derived', fmt(EN.KtoF(cyc.stages[0].Tin), 0) + ' F; ' + (cyc.gas.kind === 'tabulated' ? 'SP-8110 gas (idea 31 refuses this mixture)' : 'idea 31 gas at O/F ' + sig(cyc.gas.of, 4))));
       T.appendChild(tile('Pump discharge', fmt(cyc.pumps.ox.pout / 1e5, 1) + ' / ' + fmt(cyc.pumps.fuel.pout / 1e5, 1), 'bar', 'derived', 'oxidizer / fuel; ' + fmt(cyc.pumps.ox.pout / pc, 3) + ' and ' + fmt(cyc.pumps.fuel.pout / pc, 3) + ' x chamber'));
@@ -548,7 +549,8 @@
   document.querySelectorAll('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { state.mode = b.dataset.mode; compute(); }); });
   $('cycleRef').addEventListener('change', function () { state.ref = this.value; state.tin = null; compute(); });
   document.querySelectorAll('[data-rich]').forEach(function (b) { b.addEventListener('click', function () { state.rich = b.dataset.rich; compute(); }); });
-  $('tinNum').addEventListener('change', function () { var v = num('tinNum'); state.tin = v > 0 ? v : null; compute(); });
+  // review fix: a blank field means the reference's temperature; anything else is passed on, and the kernel refuses a non-positive one
+  $('tinNum').addEventListener('change', function () { state.tin = this.value.trim() === '' ? null : num('tinNum'); compute(); });
   $('tmin').addEventListener('change', function () { var v = num('tmin'); if (v >= 10 && v <= 100) state.tmin = v; buildHandoff(); drawThr(); this.value = state.tmin; });
   $('tmax').addEventListener('change', function () { var v = num('tmax'); if (v >= 100 && v <= 120) state.tmax = v; buildHandoff(); drawThr(); this.value = state.tmax; });
   var setThr = function (v) { if (!(v >= 10 && v <= 120)) return; state.thr = Math.round(v); renderOp(); };

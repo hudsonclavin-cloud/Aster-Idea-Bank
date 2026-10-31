@@ -89,7 +89,7 @@
       ['etaCstar', 'etaCF'].forEach(function (k) {
         var v = spec[k];
         if (!(typeof v === 'number' && isFinite(v))) c.refusals.push(refusal('invalid_input', 'The ' + (k === 'etaCstar' ? 'c* efficiency' : 'thrust-coefficient efficiency') + ' must be a number.', 'A number between ' + ETA_ENVELOPE[0] + ' and ' + ETA_ENVELOPE[1] + ' (1 is the ideal).', { applies_to: k }));
-        else if (v < ETA_ENVELOPE[0] || v > ETA_ENVELOPE[1]) c.refusals.push(refusal('out_of_envelope', 'An efficiency of ' + fmt(v) + ' is outside ' + ETA_ENVELOPE[0] + ' to ' + ETA_ENVELOPE[1] + '.', 'A value nearer 1; real engines deliver a few percent below the ideal (idea 32: 2.1 to 9.0 % in Isp).', { applies_to: k }));
+        else if (v < ETA_ENVELOPE[0] || v > ETA_ENVELOPE[1]) c.refusals.push(refusal('out_of_envelope', 'An efficiency of ' + fmt(v, 10) + ' is outside ' + ETA_ENVELOPE[0] + ' to ' + ETA_ENVELOPE[1] + '.', 'A value nearer 1; real engines deliver a few percent below the ideal (idea 32: 2.1 to 9.0 % in Isp).', { applies_to: k }));
       });
       c.ok = !c.refusals.some(function (r) { return r.applies_to !== 'throat_area'; });
       return c;
@@ -533,9 +533,15 @@
       var c = context(spec);
       var F = parseRange(cond(r.thrust, E.calib)), I = parseRange(cond(r.isp, E.calib));
       var pa = E.calib === 'sl' ? isa(0).P_Pa : 0;
-      var cal = calibrate(c, F[1] * LBF / spec.chambers, I[1] * g0, pa);
+      // Review fix: SP-8120's Isp is not on one basis (ispBasisCheck). Where it divides by the whole engine's flow
+      // (the J-2), the thrust chamber is calibrated at the chamber's share of that flow, SP-8107's pumps less its
+      // turbine flow; otherwise the engine level below would subtract the gas generator a second time.
+      var bc = E.cycle === 'gas-generator' ? ispBasisCheck().filter(function (o) { return o.engine === E.table; })[0] : null;
+      var chamberShare = bc && bc.basis === 'engine' ? (bc.pumpFlow - bc.turbineFlow) / bc.pumpFlow : 1;
+      var cal = calibrate(c, F[1] * LBF / spec.chambers, I[1] * g0 / chamberShare, pa);
       if (!cal.refusal) { spec.etaCstar = cal.etaCstar; spec.etaCF = cal.etaCF; }
-      spec.calibration = Object.assign({ condition: E.calib, F: F[1] * LBF / spec.chambers, isp: I[1] * g0, pa: pa }, cal);
+      spec.calibration = Object.assign({ condition: E.calib, F: F[1] * LBF / spec.chambers, isp: I[1] * g0, pa: pa,
+        ispBasis: bc ? bc.basis : (E.cycle === 'expander' ? 'closed cycle (one value)' : 'no turbopump data (taken as the thrust chamber)'), chamberShare: chamberShare, ispChamber: I[1] * g0 / chamberShare }, cal);
       return { spec: spec, context: context(spec) };
     }
     /**
@@ -610,6 +616,11 @@
       if (!ref || ref.refusal) return { refusal: ref ? ref.refusal : refusal('insufficient_data', 'No cycle chosen.', 'A cycle reference.') };
       if (!(op.mdotOx > 0 && op.mdotFuel > 0)) return { refusal: refusal('insufficient_data', 'No mass flows at this operating point (no throat area).', 'A throat area: a thrust in idea 32, or an engine preset.') };
       if (!(op.rhoOx > 0 && op.rhoFuel > 0)) return { refusal: refusal('insufficient_data', 'No measured propellant density, so no pump power.', 'Densities for both propellants (idea 31\'s density table).') };
+      // Review fix: a typed turbine inlet temperature that is not a positive number used to be ignored silently (the
+      // reference's temperature was used and the cycle reported as closing); it is refused instead.
+      if (ref.cycle !== 'gas-generator' && opts.TinOverride != null && !(typeof opts.TinOverride === 'number' && isFinite(opts.TinOverride) && opts.TinOverride > 0)) {
+        return { refusal: refusal('invalid_input', 'A typed turbine inlet temperature must be a positive number of kelvin; ' + fmt(opts.TinOverride) + ' is not one.', 'Clear the field to use the reference engine\'s temperature, or type a sourced one in kelvin.', { applies_to: 'turbine_inlet_temperature' }) };
+      }
       if (ref.cycle === 'gas-generator') return cycleGG(ref, op);
       if (ref.cycle === 'staged-combustion') return cycleSC(ref, op, opts);
       if (ref.cycle === 'expander') return cycleExpander(ref, op, opts);
@@ -822,7 +833,7 @@
         handoff: 'long-way-round', version: 1, from: '33-engine-deck', produced: extra.produced || new Date().toISOString(),
         inputs: {
           preset: h32.inputs.preset, oxidizer: h32.inputs.oxidizer, fuel: h32.inputs.fuel, mixture_ratio: h32.inputs.mixture_ratio, chamber_pressure_Pa: h32.inputs.chamber_pressure_Pa,
-          engine: { id: spec.id, label: spec.label, throat_area_m2: spec.At || null, efficiencies: { cstar: spec.etaCstar, thrust_coefficient: spec.etaCF, basis: spec.calibration ? 'calibrated on ' + spec.id + ' at SP-8120 Table I (' + spec.calibration.condition + ')' : 'user input' },
+          engine: { id: spec.id, label: spec.label, throat_area_m2: spec.At || null, efficiencies: { cstar: spec.etaCstar, thrust_coefficient: spec.etaCF, basis: spec.calibration ? 'calibrated on ' + spec.id + ' at SP-8120 Table I (' + spec.calibration.condition + '; its Isp read on the ' + spec.calibration.ispBasis + ' basis)' : 'user input' },
             throttle: extra.throttle || null, cycle_reference: extra.reference || null, rich_side: extra.richSide || null, chambers: spec.chambers || 1 },
           nozzle_handoff: h32,
         },
@@ -833,7 +844,7 @@
           'Ambient pressure from the 1976 US Standard Atmosphere (PartForge isa(), via ideas 02 and 32), 0 to 86 km; vacuum above.',
           'Pumps incompressible (power = mdot dp / (rho eta)); turbines isentropic drop x efficiency; every cycle parameter (pressure ladder, efficiencies, inlet temperatures, routing) from the named reference engine, held over the throttle range.',
           'Frames and time scales: none (an engine deck has no position or epoch).',
-        ].concat(extra.assumptions || []),
+        ].concat(spec.calibration && spec.calibration.chamberShare < 1 ? ['SP-8120 Table I\'s ' + spec.id + ' Isp matches the whole engine\'s flow (SP-8107\'s pumps), so the thrust chamber is calibrated at ' + fmt(spec.calibration.chamberShare, 5) + ' of that flow (the pumps less the turbine flow), i.e. at ' + fmt(spec.calibration.ispChamber / g0, 5) + ' s.'] : []).concat(extra.assumptions || []),
       };
       var O = out.outputs;
       ['mixture_ratio', 'chamber_pressure', 'chamber_temperature', 'cstar_shifting', 'oxidizer_density', 'fuel_density', 'bulk_density', 'area_ratio', 'divergence_efficiency'].forEach(function (k) {
