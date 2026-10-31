@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/42-closing-in/handoff.json",
+  "commit": "5cc892126ce665799cc45e95edc2d1cc5074c0d3",
+  "commitDate": "2026-10-31T21:28:25+00:00",
+  "pathLastChanged": "36a9fa7 2026-10-31T21:28:17+00:00",
+  "committedBlob": "9b3f386fa7bdb058532f070876715d40fe06ae86",
+  "readBlob": "9b3f386fa7bdb058532f070876715d40fe06ae86",
+  "sourceSha256": "4a0d7bc56bca0061c72d63a5a2d6375dec89972d3107bdf3d46cf040d3f4d349",
+  "sourceBytes": 48086,
+  "copiedAt": "2026-10-31T22:27:48.600Z",
+  "mode": "derived",
+  "note": "derived by build-sample.mjs: idea 42's committed sample handoff wrapped unmodified (JSON.stringify of the parsed file) as a classic script, so the page opens on the chain's case with no network",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f5b3c7b84e044b51fd19d1e571d02989af80e67eca052c03aaf83f8654153cac",
+  "writtenBytes": 48492
+}

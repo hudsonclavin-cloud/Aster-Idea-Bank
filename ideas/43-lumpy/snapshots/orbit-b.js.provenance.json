@@ -1,0 +1,14 @@
+{
+  "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "path": "COMMAND='-64' CENTER='500@2101955' and COMMAND='2101955' CENTER='500@10', VECTORS, ICRF, 2019-06-18 to 2019-06-26 every 30 min (excerpt: 06-19 to 06-22 every 2 h)",
+  "sourceSha256": {
+    "horizons-orex-orbitb.txt": "da57c16ec3d894c0acfa65d14ceb04f6443a8afbd169bf712b334faedb8ed980",
+    "horizons-bennu-helio.txt": "8898d1876abf42ca9e3a53f7f9580047cbf5996da2b070a9f8b7966138c8a558"
+  },
+  "license": "NASA/JPL Solar System Dynamics data: US government work, public domain",
+  "note": "Rows at 2-hour steps from 2019-06-19 00:00 to 2019-06-22 00:00 TDB (37 per body), km and km/s converted to m and m/s.",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "writtenSha256": "10224c27785ec104aa61b338ff62759a9064af45e024e08f95a1a125b89ecf20",
+  "writtenBytes": 8272
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://naif.jpl.nasa.gov/pub/naif/ORX/kernels/",
+  "path": "ck/apophis_npa_220101_330101_nominal_pravec_v1.bc (samples, parameters), ck/apophis_npa_220101_330101_cuni_A_v1.bc (comment: the encounter epoch only), pck/bennu_v17.tpc, fk/orx_v15.tf (SCLK), lsk/naif0012.tls (generic_kernels)",
+  "sourceSha256": {
+    "apophis_npa_220101_330101_nominal_pravec_v1.bc": "3d856791782b60a63a26cf6f2eaaa0c59bd7b5c4a6fd4e71ce3d6760cea64a36",
+    "apophis_npa_220101_330101_cuni_A_v1.bc": "b818e0d1ab0d2e185ea8911e7dc77a2b51295a127f17d827200673ccf19c1630",
+    "bennu_v17.tpc": "cdb4bc04f2869d32503db87bddd5a9ab8ea59b6ae91a39cd144e5d9e93339a0a",
+    "orx_v15.tf": "b1687d1af234c733991ab476983e1ba7fe10b3df9790809142dd26e71dd9fc92",
+    "naif0012.tls": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b"
+  },
+  "license": "NASA/JPL NAIF SPICE kernels: US government work, public domain (no copyright)",
+  "note": "Apophis: 60 CK samples (every 20 days, 2026-01-01 to the 2029-04-13 Earth encounter): each record's C-matrix (relative to ECLIPJ2000, the segment's frame) turned into J2000 with SPICE pxform and stored as a SPICE quaternion, and its angular velocity rotated from ECLIPJ2000 into body axes with the record's own C-matrix; Pravec 2014 parameters parsed from the CK comment. Bennu: BODY2101955_POLE_RA/DEC/PM/RADII from the PCK data section.",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "writtenSha256": "d5c889ef6dbb7984379c307bea93ba5be01124b9fe61c49f9763df3771e2e448",
+  "writtenBytes": 12089
+}

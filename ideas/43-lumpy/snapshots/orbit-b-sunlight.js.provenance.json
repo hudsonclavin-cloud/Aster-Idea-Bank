@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/42-closing-in/closing.js",
+  "commit": "5cc892126ce665799cc45e95edc2d1cc5074c0d3",
+  "commitDate": "2026-10-31T21:28:25+00:00",
+  "pathLastChanged": "36a9fa7 2026-10-31T21:28:17+00:00",
+  "committedBlob": "069b3cd497aa83f72fc26b846b56a59baadd9824",
+  "readBlob": "069b3cd497aa83f72fc26b846b56a59baadd9824",
+  "sourceSha256": "31ce5799864f00476403c82128fe6f53bab88948528245466a9f660a3d8dc153",
+  "sourceBytes": 66652,
+  "copiedAt": "2026-10-31T22:27:48.669Z",
+  "mode": "derived",
+  "note": "derived by build-sample.mjs: idea 42's committed kernel (closing.js accel() with the asteroid's pull off: sunlight with the asteroid's shadow, and the Sun's exact tide; OSIRIS-APEX area per mass 1/81.119 m^2/kg from 42's approach-sources.js; Bennu on idea 39's conic via 42's bennuCtx()) evaluated at the 37 OSIRIS-REx positions of snapshots/orbit-b.js",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f2fc49b0c4a1e903816fb1649043936b8c1b18405362ede70cf088a32cecd6a4",
+  "writtenBytes": 3354
+}

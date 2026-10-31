@@ -1,0 +1,14 @@
+{
+  "repo": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi",
+  "path": "db=pmc&id=7544499 (Table 1) and db=pmc&id=6505705 (Table 1)",
+  "sourceSha256": {
+    "pmc7544499.xml": "92c1d6382480a7bb65021f8bac2d577f591385fbd5a6c7aeb3bb65e14612454d",
+    "pmc6505705.xml": "44dd5446f267169636aad669f2eb45c8cc92254a49c81e6b6b117c84ab7b6a41"
+  },
+  "license": "Sci. Adv. article under CC BY-NC 4.0 (open access); Nat. Geosci. article deposited in PMC as a NASA author manuscript (public access); tabulated facts quoted with citation",
+  "note": "Scheeres 2020 Table 1 parsed cell by cell from the JATS XML (the x10^n notation converted); Barnouin 2019 Table 1 rows kept as printed and the numbers this module tests against transcribed beside them, each asserted to appear in the printed row.",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "writtenSha256": "d9dc71f211fe8a17f428fae2bdd3bd934db521cf30a189d20601dca9ec8dea3c",
+  "writtenBytes": 4330
+}

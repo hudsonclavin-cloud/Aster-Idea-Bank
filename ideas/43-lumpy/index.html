@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumpy: the asteroid's own gravity</title>
+<meta name="description" content="The gravity of a real asteroid shape: Apophis's radar model and Bennu's laser-altimetry model filled with uniform density, the slopes and escape speeds on their surfaces, the points where gravity and spin balance, which close orbits the lumps destroy, and OSIRIS-REx's own orbit as the test.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Lumpy</h1>
+  <p class="lede">Idea 42 parked the spacecraft beside the asteroid and refused one thing: its asteroid was a point. This page gives it a shape. It fills a published shape model with uniform density and computes the exact gravity of that solid, inside and out. It then reads off what a lander and an orbiter need: surface gravity and slope, escape speed, the places where spin and gravity balance, and which close orbits the lumps destroy. OSIRIS-REx's own orbit about Bennu is the test of how right it is.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 13 of 20. Previous: <a href="../42-closing-in/index.html">42 Closing In</a>, the arrival and the stand-off. Next: 44 Touch and Go, descent and contact (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">The body</h2>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+    <span class="lab" id="lab-case">Case</span>
+    <div class="seg" role="group" aria-labelledby="lab-case"><button type="button" data-case="chain">The chain: Apophis (idea 42)</button><button type="button" data-case="bennu">Bennu, OSIRIS-REx 2019</button></div>
+
+    <span class="lab" id="lab-gm">Mass</span>
+    <div class="seg" role="group" aria-labelledby="lab-gm" id="gmSeg">
+      <button type="button" data-gm="handoff">As handed on</button><button type="button" data-gm="low">Low end</button><button type="button" data-gm="high">High end</button>
+      <button type="button" data-gm="measured">Measured (particles)</button><button type="button" data-gm="measured_sc">Measured (spacecraft)</button><button type="button" data-gm="density">From a density</button>
+    </div>
+    <div class="ctl" id="densRow"><div class="ctl-head"><label for="densIn">Bulk density <small>kg/m³</small></label><input id="densIn" type="number" min="500" max="8000" step="10" inputmode="decimal"></div>
+      <input id="densRange" type="range" min="500" max="4000" step="10" aria-label="Bulk density, kilograms per cubic metre"></div>
+
+    <h2 class="sub">The surface map</h2>
+    <label class="lab" for="qtySel">Colour the shape by</label>
+    <select id="qtySel">
+      <option value="slope">Slope (deg): against gravity and spin</option>
+      <option value="accel">Acceleration a grain feels (m/s²)</option>
+      <option value="gravity">Gravity alone (m/s²)</option>
+      <option value="height">Height above the mean geopotential (m)</option>
+      <option value="vUp">Escape speed straight up (m/s)</option>
+    </select>
+    <p class="note">Drag the shape to turn it; tap a plate to make it the site handed to module 44 (keys: arrows turn, Enter picks the plate in the centre).</p>
+    <div class="btnrow"><button type="button" id="siteReset">Site under the stand-off</button></div>
+
+    <h2 class="sub">Close orbits</h2>
+    <div class="ctl"><div class="ctl-head"><label for="daysIn">Fly each orbit for <small>days</small></label><input id="daysIn" type="number" min="0.25" max="30" step="0.25" inputmode="decimal"></div>
+      <input id="daysRange" type="range" min="0.25" max="10" step="0.25" aria-label="Days each orbit is flown"></div>
+    <div class="ctl"><div class="ctl-head"><label for="radIn">Starting radii <small>count</small></label><input id="radIn" type="number" min="2" max="16" step="1" inputmode="numeric"></div></div>
+    <span class="lab" id="lab-inc">Inclinations to the spin</span>
+    <div class="inclchecks" role="group" aria-labelledby="lab-inc">
+      <label><input type="checkbox" data-inc="0"> 0° prograde</label><label><input type="checkbox" data-inc="45"> 45°</label><label><input type="checkbox" data-inc="90"> 90° polar</label><label><input type="checkbox" data-inc="135"> 135°</label><label><input type="checkbox" data-inc="180"> 180° retrograde</label>
+    </div>
+    <div class="btnrow"><button type="button" id="scanBtn">Fly the orbits</button><button type="button" id="resetBtn">Reset</button></div>
+    <div class="progress" aria-hidden="true"><div id="scanBar"></div></div>
+    <p class="note" id="runNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-res">
+      <h2 id="h-res">The field and the surface</h2>
+      <div id="resLine" class="small"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+    <section class="card" aria-labelledby="h-shape">
+      <h2 id="h-shape">The shape, coloured</h2>
+      <div class="viewwrap"><canvas id="shapeView" class="shape" tabindex="0" role="img" aria-label="The asteroid's shape model, shaded and coloured by the chosen surface quantity; the spin axis and the chosen site are marked. Drag to turn it, tap a plate to choose the site."></canvas></div>
+      <div class="cbar"><span id="cbMin"></span><canvas id="cbar" aria-hidden="true"></canvas><span id="cbMax"></span></div>
+      <div class="sitebox" id="siteBox"></div>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-charts">
+    <h2 id="h-charts">Slopes, and where the lumps stop mattering</h2>
+    <div class="twocharts">
+      <div><canvas id="histChart" class="chart" role="img" aria-label="Share of the surface by slope, in 5 degree bins, weighted by area, with the area mean marked."></canvas><p class="chart-cap" id="histCap"></p></div>
+      <div><canvas id="profChart" class="chart" role="img" aria-label="Along the line from the centre through the site: how far the shape's gravity is from a point mass's, in percent, against distance; and sunlight as a percentage of gravity, from idea 42."></canvas><ul class="legend" id="profLegend"></ul><p class="chart-cap" id="profCap"></p></div>
+    </div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-eq">
+    <h2 id="h-eq">Where spin and gravity balance, and close orbits</h2>
+    <div class="twocharts">
+      <div><canvas id="eqChart" class="chart" role="img" aria-label="The body's equatorial cross-section seen from the spin pole, with the equilibrium points (saddles and centres) and the synchronous radius."></canvas><ul class="legend" id="eqLegend"></ul><p class="chart-cap" id="eqCap"></p></div>
+      <div><canvas id="trackChart" class="chart" role="img" aria-label="The chosen orbit's track in the body's frame, seen from the spin pole, with the body's outline."></canvas><p class="chart-cap" id="trackCap"></p></div>
+    </div>
+    <div id="scanGrid" class="scangrid"></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-ob">
+    <h2 id="h-ob">The test: OSIRIS-REx in Orbital B</h2>
+    <p class="small">JPL Horizons' reconstruction of OSIRIS-REx about Bennu, 19 to 20 June 2019, about 0.9 km out. Flown here from its own state under a point mass and under the shape, with idea 42's sunlight and the Sun's tide (tabulated from idea 42's kernel), leg by leg (2 h each) and as one 40-hour arc. The arc stops before an impulse in the reconstruction 40 to 42 hours in.</p>
+    <canvas id="obChart" class="chart" role="img" aria-label="Distance between the flown trajectory and JPL's reconstruction against hours, for a point mass and for the shape model."></canvas>
+    <ul class="legend" id="obLegend"></ul>
+    <p class="chart-cap" id="obCap"></p>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Against what was published and measured</h2>
+    <p class="small">Computed by this page's kernel, live, and set beside independent numbers: Barnouin et al. 2019 and Scheeres et al. 2020 (Bennu), Pravec et al. 2014 via NAIF's Apophis kernels, JPL's Small-Body Database. The node tests also hold the field to an independent implementation (polyhedral-gravity) and a closed-form prism to about 1e-10.</p>
+    <div class="tablewrap"><table class="stack" id="checkTable"><thead><tr><th>Check</th><th>Independent</th><th>This page</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 42's handoff (or one from this page); export the gravity field and the chosen site for module 44. Every number carries its units, a confidence class and its source; refusals travel down the chain.</p>
+    <label class="lab" for="importText">Paste a handoff</label>
+    <textarea id="importText" rows="4" spellcheck="false" placeholder='{"handoff":"long-way-round","from":"42-closing-in",...}'></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import</button>
+      <label class="filebtn"><input type="file" id="importFile" accept="application/json,.json"> <span>Load a file</span></label>
+      <button type="button" id="copyBtn">Copy handoff</button>
+      <button type="button" id="dlBtn">Download</button>
+      <button type="button" id="linkBtn">Copy a link</button>
+    </div>
+    <div id="hoStatus" class="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <details><summary>The shapes</summary>
+      <p class="small">Apophis: the radar shape of Brozović et al. (2018), 2,000 vertices and 3,996 plates about 25 m across, as the OSIRIS-APEX project delivered it to NAIF (a DSK, unchanged). Bennu: the OSIRIS-REx laser-altimetry model v021 at 12.6 m (Daly et al. 2020), a grid of 6 × 33 × 33 vertices; every second grid vertex is kept here (3,072 plates, 25 m), which moves gravity by at most 0.3% just outside the body (measured against the full model in the tests). Each is checked closed and wound outward, and the origin moved to the uniform-density centre of mass (5.2 m from the DSK's origin at Apophis, 1.3 m at Bennu).</p></details>
+    <details><summary>The gravity of a polyhedron</summary>
+      <p class="small">A solid of uniform density bounded by flat plates has an exact potential (Werner and Scheeres 1997): a sum over its edges, each with a dyad built from the two plates' normals and a logarithm of distances, and over its plates, each with its normal's dyad times the solid angle it subtends. The same sums give gravity, its gradient, and an inside test for free: the solid angles add to 4π inside and to 0 outside. Density is GM / (G V). The node tests hold this to an independent code that integrates along edges instead (Tsoulis's method, the polyhedral-gravity package) and to the closed form for a box.</p></details>
+    <details><summary>The surface</summary>
+      <p class="small">At each plate's centre: gravity; the acceleration a grain at rest feels, which is gravity less the spin's centrifugal pull (and, for a tumbler, the Euler term); the slope, the angle between the inward normal and that acceleration (over 90° the ground overhangs its own down); the geopotential, gravity's potential plus the spin's, as a height above its area mean; and the speed that escapes from the energy in a non-rotating field, straight up and along the spin. Statistics are weighted by plate area.</p></details>
+    <details><summary>Spin</summary>
+      <p class="small">Bennu turns about its pole every 4.30 h (NAIF's bennu_v17.tpc, which includes its YORP spin-up). Apophis tumbles (Pravec et al. 2014): this page flies Euler's equations for a torque-free rigid body with Pravec's inertia ratios 0.61 and 0.965 from the nearest of NAIF's CK samples (every 20 days); against the CK's own samples it holds to under one arcsecond over ten days. After the April 2029 Earth encounter the spin is unknown and the page refuses.</p></details>
+    <details><summary>Equilibria and the Roche lobe</summary>
+      <p class="small">In a body that turns steadily, a particle can sit still where gravity balances the centrifugal pull, near the synchronous radius (GM/ω²)^(1/3). They are found by Newton's method in the body frame and classified from the linearised motion in the turning frame: saddles have a real pair of eigenvalues, centres an oscillating pair (here every centre is unstable, through a complex quartet). The lowest of their energies bounds the rotational Roche lobe: surface below it is energetically trapped. A tumbler has no such frame and no such points.</p></details>
+    <details><summary>Close orbits</summary>
+      <p class="small">Each start is a circular orbit at √(GM/r) on the node of the spin equator, at the chosen inclination, flown under the shape's gravity as it turns (idea 40's Dormand-Prince integrator). It ends as an impact (inside the shape), an escape (unbound beyond four Brillouin radii), or survives. A point mass would keep every one of them forever, so every impact or escape here is the lumps' doing. Radii run from just outside the Brillouin sphere to four times it; where idea 42's sunlight passes 5% of gravity the radius is refused (sunlight and the tide are idea 42's, which flies them).</p></details>
+    <details><summary>What it does not do</summary>
+      <p class="small">Uniform density only: at Bennu the measured field differs (J2 3.7% stronger than this model, surface gravity by up to ±3% and slopes by ±1° per Scheeres et al. 2020). The shapes are 25 m plates: nothing at a lander's scale. The orbit scan leaves out sunlight and the tide, and the Orbital B test uses idea 42's flat-absorber sunlight, not the navigation team's ten-plate model. No spin after Apophis's 2029 encounter; no other bodies' shapes.</p></details>
+  </section>
+</main>
+<footer><p class="small">Idea 43 of the Aster Idea Bank: an idea-bank prototype, not Aster's audited code. Sources: NAIF's OSIRIS-REx and OSIRIS-APEX SPICE kernels (shapes, Bennu's pole, Apophis's spin), JPL Horizons, Scheeres et al. 2020 and Barnouin et al. 2019 (PubMed Central), NIST CODATA, ideas 40 and 42.</p></footer>
+
+<script src="snapshots/integrator.js"></script>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/approach-sources.js"></script>
+<script src="snapshots/shapes.js"></script>
+<script src="snapshots/attitude.js"></script>
+<script src="snapshots/geophysics.js"></script>
+<script src="snapshots/orbit-b.js"></script>
+<script src="snapshots/orbit-b-sunlight.js"></script>
+<script src="snapshots/closing-handoff.js"></script>
+<script src="lumpy.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

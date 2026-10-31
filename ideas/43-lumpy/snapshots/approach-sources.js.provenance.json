@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/42-closing-in/snapshots/approach-sources.js",
+  "commit": "5cc892126ce665799cc45e95edc2d1cc5074c0d3",
+  "commitDate": "2026-10-31T21:28:25+00:00",
+  "pathLastChanged": "5e21191 2026-10-31T21:04:48+00:00",
+  "committedBlob": "9f2d214c309ed75b7cddd4013995ea9dcc319536",
+  "readBlob": "9f2d214c309ed75b7cddd4013995ea9dcc319536",
+  "sourceSha256": "c6195d2d211b67d7968990d53e8831660fb4f3c43c4844f333e7f127deed7402",
+  "sourceBytes": 6499,
+  "copiedAt": "2026-10-31T21:49:05.860Z",
+  "mode": "copy",
+  "note": "idea 42's transcribed sources, unmodified: this module reads NIST's G (nist.G_m3_kg_s2) from it, so density and GM convert exactly as in idea 42",
+  "readMatchesCommitted": true,
+  "writtenSha256": "c6195d2d211b67d7968990d53e8831660fb4f3c43c4844f333e7f127deed7402",
+  "writtenBytes": 6499
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/42-closing-in/snapshots/aster-constants.js",
+  "commit": "5cc892126ce665799cc45e95edc2d1cc5074c0d3",
+  "commitDate": "2026-10-31T21:28:25+00:00",
+  "pathLastChanged": "5e21191 2026-10-31T21:04:48+00:00",
+  "committedBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "readBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "sourceSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "sourceBytes": 1986,
+  "copiedAt": "2026-10-31T21:49:05.928Z",
+  "mode": "copy",
+  "note": "Aster constants as idea 39 generated them (via idea 42's copy), unmodified: TDB-UTC for the UTC labels",
+  "readMatchesCommitted": true,
+  "writtenSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "writtenBytes": 1986
+}
