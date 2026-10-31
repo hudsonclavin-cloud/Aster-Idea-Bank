@@ -1,0 +1,10 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19840010158, JPL Publication 82-43 Vol. I Part 2, section III.C Launch/Injection Geometry, printed pages 9-17 (PDF pages 21-29)",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19840010158/downloads/19840010158.pdf",
+ "sourceSha256": "6da1f324531765baf71c0b7d884cce9331d2d853133e5905bdf07fb02c3709b3",
+ "license": "JPL Publication prepared for NASA under contract NAS7-100, distributed by NTRS: US-government sponsored work, public distribution",
+ "note": "Hand-transcribed by idea 37 from page images (the PDF's text layer is scrambled): equations (9)-(27) and the worked numbers window.test.mjs checks (0.46 deg per revolution, Fig. 14's 285 deg, Fig. 12's 12 hours). This is also the canonical reference Aster's SLICE_12_FOUNDING.md (OQ-12-2) names for the azimuth-vs-DLA constraint region."
+}

@@ -1,0 +1,50 @@
+{
+ "schemaVersion": 1,
+ "generatedAt": "2026-07-02T20:48:53.501Z",
+ "harness": {
+  "window": {
+   "departureStartUtc": "2026-01-01",
+   "departureEndUtc": "2032-01-01",
+   "tofMinDays": 182.5,
+   "tofMaxDays": 1095.75
+  },
+  "productionPathReplica": "lambertMultiRev(r1, r2, tof, mu, M=1, prograde=true) + min-C3 converged branch selection, exactly as src/v2/porkchop/grid-compute.ts ships it"
+ },
+ "summary": {
+  "maxAngularSeparationCell": {
+   "index": 63,
+   "body": "99942",
+   "depDate": "2026-07-02",
+   "tofDays": 677.1770833333334,
+   "ourBranch": "left",
+   "matchedLowpath": false,
+   "angSepDeg": 5.737702974878478e-13,
+   "oursVInfDep": [
+    0.5112998207236181,
+    0.083589896934404,
+    0.4928928807474233
+   ],
+   "poliastroVInfDep": [
+    0.5112998207236288,
+    0.08358989693440577,
+    0.49289288074742377
+   ]
+  },
+  "maxDeltaDlaCell": {
+   "index": 63,
+   "body": "99942",
+   "depDate": "2026-07-02",
+   "tofDays": 677.1770833333334,
+   "oursDlaDeg": 43.57242226665295,
+   "poliastroDlaDeg": 43.57242226665239,
+   "deltaDeg": 5.613287612504791e-13
+  }
+ },
+ "bar": {
+  "angularSeparationDeg": 0.000001,
+  "maxAbsDlaDeg": 0.000001,
+  "minVInfKmps": 0.1,
+  "pass": true,
+  "justification": "Same states, same algorithm family (izzo multi-rev on both sides), closed-form postprocessing; the generous 1e-6 deg bar absorbs series-convergence differences (Slice 11 magnitude agreement was 3.6e-12 relative). Branch correspondence is established per-cell by minimum vector distance with a reported discrimination margin, never by assumed ordering. This closes the INV-021 gap: DLA is the first consumer of vInfDep COMPONENTS, and Slice 11 validated M=1 magnitudes only."
+ }
+}

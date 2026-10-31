@@ -1,0 +1,12 @@
+{
+ "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+ "path": "src/v2/core/units/utc-to-tdb.ts; vendor/naif/pck00010.tpc",
+ "commit": "62ddb17",
+ "sourceSha256": {
+  "aster-utc-to-tdb.ts.txt": "d156229ed76384f9cbd543490834d7a82e5d5e63e19bbc16be5f2f8cddf3063f",
+  "pck00010-earth.txt": "8d65ff7d758619d78c1106e11de7989cbe92ef85cec8cc1c8a683c7d7b201a11"
+ },
+ "note": "derived by build-data.mjs from snapshots/aster-utc-to-tdb.ts.txt and snapshots/pck00010-earth.txt (both copied by tools/snapshot.mjs; their own sidecars carry the Aster blob hashes)",
+ "writtenSha256": "cf48bb10487022cf7660fffed5f7e39c7200e989a7320cda4cba0ebf16ca09ac",
+ "writtenBytes": 1005
+}

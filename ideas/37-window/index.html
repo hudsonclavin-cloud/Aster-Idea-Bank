@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Window: launch to the departure asymptote</title>
+<meta name="description" content="When can the rocket leave the pad so that its parking orbit, after the coast, holds the direction it must depart along? The day's launch windows, azimuth, inclination and node, the J2 turn of the plane over the coast, the departure point in J2000, and what each moment of the window costs the vehicle.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Window</h1>
+  <p class="lede">A transfer to an asteroid leaves Earth along one direction in space, the departure asymptote. The parking orbit must contain that direction when the departure burn comes, and it must also pass over the launch pad at liftoff, which turns with the Earth. Most moments of the day give a plane that leaves the pad on an azimuth the range will not allow; the stretches that do are the launch windows. This page finds them, says when to go and on what heading, coasts the parking orbit with the Earth's bulge turning its plane, and hands module 38 the departure point and its epoch. It opens on the Saturn V that flew Apollo 17, departing for Apophis on the asymptote Aster itself computes.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 7 of 20. Previous: <a href="../36-closed-loop/index.html">36 Closed Loop</a>, guidance to the parking orbit. Next: 38 Burn Out, the departure burn.</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Vehicle, asymptote, site</h2>
+    <label for="vehicle">Parking orbit (idea 36)</label>
+    <select id="vehicle"></select>
+    <div id="vehSource" class="srcline" role="status" aria-live="polite"></div>
+
+    <h2 class="sub">Departure asymptote</h2>
+    <div class="btnrow" role="group" aria-label="Asymptote presets">
+      <button type="button" id="preApophis" aria-pressed="true">Apophis (Aster)</button>
+      <button type="button" id="preApollo" aria-pressed="false">Apollo 17 target</button>
+    </div>
+    <div class="grid2">
+      <div class="ctl"><label for="dateIn">Date <small>(UTC)</small></label><input id="dateIn" type="text" inputmode="numeric" autocomplete="off" spellcheck="false"></div>
+      <div class="ctl"><label for="c3In">C3 <small>(km²/s²)</small></label><input id="c3In" type="number" step="0.001" inputmode="decimal"></div>
+      <div class="ctl"><label for="rlaIn">RLA <small>(deg, J2000)</small></label><input id="rlaIn" type="number" step="0.01" inputmode="decimal"></div>
+      <div class="ctl"><label for="dlaIn">DLA <small>(deg, J2000)</small></label><input id="dlaIn" type="number" min="-90" max="90" step="0.01" inputmode="decimal"></div>
+    </div>
+    <div id="asySource" class="srcline" role="status" aria-live="polite"></div>
+    <div class="ctl">
+      <div class="ctl-head"><label for="dlaRange">Declination <small>(drag to explore)</small></label><output id="dlaOut"></output></div>
+      <input id="dlaRange" type="range" min="-70" max="70" step="0.1" aria-label="Asymptote declination slider, degrees">
+    </div>
+
+    <h2 class="sub">Range and coast</h2>
+    <div class="btnrow" role="group" aria-label="Azimuth corridor presets">
+      <button type="button" data-cor="aster" aria-pressed="true">Aster's Cape 35–120°</button>
+      <button type="button" data-cor="apollo" aria-pressed="false">Apollo 17 72–100°</button>
+    </div>
+    <div class="grid2">
+      <div class="ctl"><label for="corMin">Azimuth from <small>(deg)</small></label><input id="corMin" type="number" min="0" max="360" step="0.5" inputmode="decimal"></div>
+      <div class="ctl"><label for="corMax">to <small>(deg)</small></label><input id="corMax" type="number" min="0" max="360" step="0.5" inputmode="decimal"></div>
+      <div class="ctl"><label for="coastMax">Longest coast <small>(h)</small></label><input id="coastMax" type="number" min="0.1" max="48" step="0.05" inputmode="decimal"></div>
+      <div class="ctl"><label for="lonIn">Pad longitude <small>(deg E)</small></label><input id="lonIn" type="number" min="-180" max="360" step="0.0001" inputmode="decimal"></div>
+    </div>
+    <label class="check"><input id="j2In" type="checkbox" checked> Earth's J2 turns the plane over the coast</label>
+    <p class="note" id="siteNote"></p>
+  </section>
+
+  <div id="right" class="col">
+    <section id="results" class="card" aria-labelledby="h-results">
+      <h2 id="h-results">The day's windows</h2>
+      <div id="verdict" class="verdict" role="status" aria-live="polite"></div>
+      <div id="refusals" class="refusals" role="alert"></div>
+      <div class="ctl">
+        <span class="lab" id="oppLab">Launch</span>
+        <div class="seg" id="oppSeg" role="group" aria-labelledby="oppLab"></div>
+      </div>
+      <div class="ctl">
+        <div class="ctl-head"><label for="fracRange">Moment in the window</label><output id="fracOut"></output></div>
+        <input id="fracRange" type="range" min="0" max="1" step="any" value="0" aria-label="Launch moment within the window, from opening to close">
+      </div>
+      <div id="tiles" class="tiles"></div>
+    </section>
+
+    <section class="card" aria-labelledby="h-az">
+      <h2 id="h-az">Launch azimuth through the day</h2>
+      <div class="chart-wrap">
+        <svg id="azChart" class="chartsvg" viewBox="0 0 640 300" role="img" aria-label="Launch azimuth against time of day, with the corridor and the windows; tap or use the arrow keys to move the launch" tabindex="0"></svg>
+        <div id="azTip" class="tip"></div>
+      </div>
+      <ul class="legend"><li><span class="key" style="border-color:var(--s1)"></span>azimuth of the plane through pad and asymptote (J2 aimed)</li><li><span class="swatch" style="background:var(--s3);opacity:.35"></span>window</li><li><span class="swatch" style="background:var(--refused)"></span>outside the corridor</li><li><span class="key dot" style="background:var(--s2)"></span>chosen launch</li></ul>
+      <p class="chart-cap" id="azCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-perf">
+      <h2 id="h-perf">What each moment costs the vehicle</h2>
+      <svg id="perfChart" class="chartsvg" viewBox="0 0 640 240" role="img" aria-label="Propellant left for the departure burn across the window, idea 36's ascent re-flown at each azimuth"></svg>
+      <ul class="legend"><li><span class="key" style="border-color:var(--s1)"></span>propellant left for departure (idea 36 re-flown at each azimuth)</li><li><span class="key dash" style="border-color:var(--ink-2)"></span>as idea 36 flew it</li></ul>
+      <p class="chart-cap" id="perfCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-sky">
+      <h2 id="h-sky">The geometry on the sky</h2>
+      <svg id="skyChart" class="chartsvg" viewBox="0 0 640 300" role="img" aria-label="Right ascension and declination of date: the pad's daily circle, the asymptote and the parking orbit's plane at the chosen launch"></svg>
+      <ul class="legend"><li><span class="key" style="border-color:var(--s1)"></span>parking orbit plane</li><li><span class="key dash" style="border-color:var(--ink-2)"></span>pad's daily circle</li><li><span class="key dot" style="background:var(--s2)"></span>asymptote</li><li><span class="key dot" style="background:var(--s1)"></span>pad at liftoff</li><li><span class="key dot" style="background:var(--s3)"></span>departure point</li></ul>
+      <p class="chart-cap">Mean equator and equinox of the launch date; the same picture as JPL Publication 82-43's Fig. 14.</p>
+    </section>
+  </div>
+
+  <section id="apollo" class="card wide" aria-labelledby="h-ap">
+    <h2 id="h-ap">Against Apollo 17 (7 December 1972)</h2>
+    <p class="small">The flight report gives the Saturn V's azimuth at the scheduled liftoff and at the actual one, 2 h 40 min later; the press kit gives the window and its azimuth limits. A direction fixed in space fitted to the two azimuths predicts the rest.</p>
+    <div class="tablewrap"><table class="stack" id="apTable"><thead><tr><th>Quantity</th><th>This page</th><th>Apollo 17</th><th>Gap</th><th>Source</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section id="handoff" class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 36's handoff (or this page's), or open this page from idea 36's link. Export hands module 38 the departure point, its epoch, the asymptote and the propellant left, with idea 36's handoff inside.</p>
+    <label for="importText">Paste a handoff</label>
+    <textarea id="importText" rows="3" placeholder='{"handoff": "long-way-round", "from": "36-closed-loop", ...}'></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import</button>
+      <button type="button" id="copyBtn">Copy this page's handoff</button>
+      <button type="button" id="dlBtn">Download</button>
+      <a id="nextLink" href="#">Open in 38 Burn Out</a>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <details><summary>Handoff preview</summary><pre id="hoPreview" class="small"></pre></details>
+  </section>
+
+  <section id="how" class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <ul>
+      <li><b>The plane.</b> At liftoff the parking orbit's plane passes through Earth's centre and the pad; at the departure burn it must also hold the asymptote (JPL Publication 82-43, Launch/Injection Geometry, eq. 9). That fixes the launch azimuth at every instant; inclination follows from cos i = cos(latitude) sin(azimuth) (eq. 15). When the asymptote's declination exceeds the pad's latitude, azimuths near east are never reached (eq. 14): Aster's AMBER band, made day-specific.</li>
+      <li><b>The Earth.</b> The pad's direction in space comes from the IAU 2006 mean sidereal time and precession (coefficients parsed from ERFA's C source), with UTC turned into TT by NAIF's leap-second table. Nutation and UT1 − UTC are left out: against pyerfa's full IAU 2006/2000A model the pad moves along its daily circle by at most 0.2 s and the window edges by under 1 s.</li>
+      <li><b>The coast.</b> Idea 36's insertion, turned into each plane, is coasted under Aster's GM plus the Earth's J2 (WGS-84) until the asymptote lies the hyperbola's true anomaly ahead (eq. 21): where an impulsive burn at perigee would leave along it. J2 turns the plane westward (about 0.46 deg per revolution, eq. 25), so the launch is aimed east of the asymptote by just enough that the plane holds it when the burn comes (eq. 27, solved numerically).</li>
+      <li><b>The window.</b> The day is scanned with the handbook's closed form; every edge is refined with the numerical solve to 0.05 s, the vehicle re-flown at the corridor's limiting azimuth.</li>
+      <li><b>The vehicle.</b> At the chosen moment idea 36's guided ascent is flown again on that azimuth (its first stage on it, guidance aimed at its plane) until the azimuth stops moving; seven moments across each window give the propellant curve.</li>
+      <li><b>What it is not.</b> No dogleg, no plane change at departure, no drag, no J3 or higher, no Sun or Moon over the coast, no venting; the asymptote is held fixed for the day; the departure burn is impulsive (module 38 makes it finite). The README has the tests, the oracle and every source.</li>
+    </ul>
+  </section>
+</main>
+<footer>Idea 37 of the Aster Idea Bank. Data: ERFA (IAU 2006), NAIF naif0012 and geophysical.ker, JPL Publication 82-43, MPR-SAT-FE-73-1 and the Apollo 17 press kit, Aster at 62ddb17, ideas 34 to 36. No network.</footer>
+
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/stack.js"></script>
+<script src="snapshots/as512-flight.js"></script>
+<script src="snapshots/as512-trajectory.js"></script>
+<script src="snapshots/as512-guidance.js"></script>
+<script src="snapshots/earth.js"></script>
+<script src="snapshots/saturn-v-axial-force.js"></script>
+<script src="snapshots/data-json.js"></script>
+<script src="snapshots/aster-parking.js"></script>
+<script src="snapshots/ascent.js"></script>
+<script src="snapshots/closedloop.js"></script>
+<script src="snapshots/erfa-iau2006.js"></script>
+<script src="snapshots/naif-time-gravity.js"></script>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/apollo17-window.js"></script>
+<script src="snapshots/aster-apophis-vinf.js"></script>
+<script src="window.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

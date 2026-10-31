@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/36-closed-loop/snapshots/as512-trajectory.js",
+  "commit": "b53f06ee7a8a35998673c1cbb3c61aa704dd4e44",
+  "commitDate": "2026-10-31T11:45:45+00:00",
+  "pathLastChanged": "daea3af 2026-10-31T11:14:13+00:00",
+  "committedBlob": "7ea51712a4e98eb86d51f2fbf2514995648c604b",
+  "readBlob": "7ea51712a4e98eb86d51f2fbf2514995648c604b",
+  "sourceSha256": "fffd457b1cacacd1edadca6502e90c3057430ec1e617b8b2dd1176324bbd0648",
+  "sourceBytes": 6907,
+  "copiedAt": "2026-10-31T12:11:05.572Z",
+  "mode": "copy",
+  "note": "a file idea 36's kernel loads (idea 36's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "fffd457b1cacacd1edadca6502e90c3057430ec1e617b8b2dd1176324bbd0648",
+  "writtenBytes": 6907
+}

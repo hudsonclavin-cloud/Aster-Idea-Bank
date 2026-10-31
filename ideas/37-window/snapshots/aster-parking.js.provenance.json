@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/36-closed-loop/snapshots/aster-parking.js",
+  "commit": "b53f06ee7a8a35998673c1cbb3c61aa704dd4e44",
+  "commitDate": "2026-10-31T11:45:45+00:00",
+  "pathLastChanged": "daea3af 2026-10-31T11:14:13+00:00",
+  "committedBlob": "4283d1945a9e2f65326e4f855e861a6c9d8f3361",
+  "readBlob": "4283d1945a9e2f65326e4f855e861a6c9d8f3361",
+  "sourceSha256": "092283a0b51f39a79143f94db35f27b6ab467b16424bb72694000428c82437d1",
+  "sourceBytes": 618,
+  "copiedAt": "2026-10-31T12:11:05.843Z",
+  "mode": "copy",
+  "note": "a file idea 36's kernel loads (idea 36's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "092283a0b51f39a79143f94db35f27b6ab467b16424bb72694000428c82437d1",
+  "writtenBytes": 618
+}

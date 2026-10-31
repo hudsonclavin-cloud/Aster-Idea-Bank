@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/36-closed-loop/closedloop.js",
+  "commit": "b53f06ee7a8a35998673c1cbb3c61aa704dd4e44",
+  "commitDate": "2026-10-31T11:45:45+00:00",
+  "pathLastChanged": "9df09a7 2026-10-31T11:45:33+00:00",
+  "committedBlob": "25e04d0838b982df461e561e7b697a0a397420b3",
+  "readBlob": "25e04d0838b982df461e561e7b697a0a397420b3",
+  "sourceSha256": "87bd95111d7298e4648a481719b9072a1e9fada63089b9305334ef2d52fc0649",
+  "sourceBytes": 82178,
+  "copiedAt": "2026-10-31T12:11:05.141Z",
+  "mode": "copy",
+  "note": "idea 36's kernel (UPFG guided ascent, handoff make/parse), unmodified: re-checks the imported handoff and re-flies the ascent at each launch azimuth",
+  "readMatchesCommitted": true,
+  "writtenSha256": "87bd95111d7298e4648a481719b9072a1e9fada63089b9305334ef2d52fc0649",
+  "writtenBytes": 82178
+}

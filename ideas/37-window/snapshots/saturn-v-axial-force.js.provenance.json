@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/36-closed-loop/snapshots/saturn-v-axial-force.js",
+  "commit": "b53f06ee7a8a35998673c1cbb3c61aa704dd4e44",
+  "commitDate": "2026-10-31T11:45:45+00:00",
+  "pathLastChanged": "daea3af 2026-10-31T11:14:13+00:00",
+  "committedBlob": "b6e8cd6e0e5ae1e931639a8b739689a1d4644f58",
+  "readBlob": "b6e8cd6e0e5ae1e931639a8b739689a1d4644f58",
+  "sourceSha256": "66af3f196f924affd7ca0dff12fa07448831e1e4018fff3e8fa7826dcb5ce825",
+  "sourceBytes": 4784,
+  "copiedAt": "2026-10-31T12:11:05.715Z",
+  "mode": "copy",
+  "note": "a file idea 36's kernel loads (idea 36's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "66af3f196f924affd7ca0dff12fa07448831e1e4018fff3e8fa7826dcb5ce825",
+  "writtenBytes": 4784
+}

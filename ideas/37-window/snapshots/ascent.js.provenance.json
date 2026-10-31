@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/36-closed-loop/snapshots/ascent.js",
+  "commit": "b53f06ee7a8a35998673c1cbb3c61aa704dd4e44",
+  "commitDate": "2026-10-31T11:45:45+00:00",
+  "pathLastChanged": "daea3af 2026-10-31T11:14:13+00:00",
+  "committedBlob": "96117402a2d7dd5552ceb1cefd944f18b918c2ec",
+  "readBlob": "96117402a2d7dd5552ceb1cefd944f18b918c2ec",
+  "sourceSha256": "14dbd65e034882cd5b2c00a1e13fafec1363d466d4cd2ca131a08c5f8b307a96",
+  "sourceBytes": 64530,
+  "copiedAt": "2026-10-31T12:11:05.211Z",
+  "mode": "copy",
+  "note": "a file idea 36's kernel loads (idea 36's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "14dbd65e034882cd5b2c00a1e13fafec1363d466d4cd2ca131a08c5f8b307a96",
+  "writtenBytes": 64530
+}

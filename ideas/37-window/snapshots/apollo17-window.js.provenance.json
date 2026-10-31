@@ -1,0 +1,13 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19730025089 (MPR-SAT-FE-73-1): section 3.1 (PDF page 46), 3.2.2 (48), Table 2-1 (34), summary (25), Tables 4-3, 4-4, 4-5 (62-64), section 4.2.2 (57), section 9.3.1 (146); NTRS 20090012049 (Apollo 17 press kit, release 72-220K): Launch Windows (PDF page 25)",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19730025089/downloads/19730025089.pdf ; https://ntrs.nasa.gov/api/citations/20090012049/downloads/20090012049.pdf",
+ "sourceSha256": {
+  "19730025089.pdf": "8e543894efef0d9a3862ded599001d1d9c83b0e5684f85dbe85abd981f2eaa42",
+  "20090012049.pdf": "1e09036f4f99086a63300e13ca62667253577236ea9d343e9f2d1590d3143fca"
+ },
+ "license": "NASA technical memorandum and NASA press release: US-government works, public domain in the US",
+ "note": "Hand-transcribed by idea 37 from page images (pdftoppm, 120-200 dpi), text layer where clean (pages 25, 34, 48, 57). The same flight-report PDF ideas 34-36 used (same sha256). window.test.mjs cross-checks the transcription where it can: the hold time plus 30 s against the press kit's window opening, Table 4-4 against idea 35's own transcription (as512-trajectory.js)."
+}

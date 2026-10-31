@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/36-closed-loop/snapshots/as512-guidance.js",
+  "commit": "b53f06ee7a8a35998673c1cbb3c61aa704dd4e44",
+  "commitDate": "2026-10-31T11:45:45+00:00",
+  "pathLastChanged": "daea3af 2026-10-31T11:14:13+00:00",
+  "committedBlob": "d40d023fec36ea1ca38715ca011e66affc3bd0bb",
+  "readBlob": "d40d023fec36ea1ca38715ca011e66affc3bd0bb",
+  "sourceSha256": "b06c52542951bbdf2d1384ad6caf27ee2c270a8c27eae3199c8ef9e5c0a66ead",
+  "sourceBytes": 6863,
+  "copiedAt": "2026-10-31T12:11:05.642Z",
+  "mode": "copy",
+  "note": "a file idea 36's kernel loads (idea 36's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "b06c52542951bbdf2d1384ad6caf27ee2c270a8c27eae3199c8ef9e5c0a66ead",
+  "writtenBytes": 6863
+}

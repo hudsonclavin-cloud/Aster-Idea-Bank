@@ -1,0 +1,18 @@
+{
+ "repo": "https://github.com/liberfa/erfa",
+ "path": "src/era00.c, src/gmst06.c, src/pfw06.c, src/obl06.c, src/fw2m.c, src/erfam.h",
+ "commit": "master, retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": {
+  "era00.c": "91c092c322d070305ba02873005bcb03110d7c26674fbdc7105477c50543ffb5",
+  "gmst06.c": "5adeede2ed23b37209870778e52083bd57a7870c5b4779c425cf254d26d2e420",
+  "pfw06.c": "085f49861026fab98633d8479795090b3278a0d246a938ebdf10fde326ef1987",
+  "obl06.c": "550260874d5e5fa3be77296b85b92c54c726fee6fbb1bb44748d04c17ffb37c2",
+  "fw2m.c": "480d1ae7780566980b8f80f4c6daa2be330a80e99861d892dc5a9f7b11da47c0",
+  "erfam.h": "0da6313033aacf9c64533a7e74be49ecda97b4aaa87e134f98287e4ff279886f"
+ },
+ "license": "BSD-3-Clause (ERFA, NumFOCUS), derived with permission from IAU SOFA",
+ "note": "derived by build-data.mjs: the Horner coefficients and constants parsed from the C source by regular expression; the fw2m rotation order asserted. Checked against pyerfa (oracle/oracle.json) by window.test.mjs.",
+ "writtenSha256": "31b3306c74eb59c4c6017a124fc61f24ebf42592fa84a129a78ed992d15eba32",
+ "writtenBytes": 1729
+}

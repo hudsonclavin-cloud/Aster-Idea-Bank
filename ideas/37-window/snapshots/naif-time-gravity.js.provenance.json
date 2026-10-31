@@ -1,0 +1,14 @@
+{
+ "repo": "https://naif.jpl.nasa.gov/pub/naif/generic_kernels",
+ "path": "lsk/naif0012.tls; pck/geophysical.ker",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": {
+  "naif0012.tls": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+  "geophysical.ker": "3c60329dc3f5418ba961a6cf36ac01e4bb28bffb91322f230bbdc8c499248987"
+ },
+ "license": "NAIF/JPL generic kernels, US-government work, public domain in the US",
+ "note": "derived by build-data.mjs: DELTET/DELTA_T_A, the DELTET/DELTA_AT table, and the WGS84 J2, J3, J4, ER, MU block of geophysical.ker's comments.",
+ "writtenSha256": "a6e8d139227c4a15c6713b5fd14b337866b73b180e91096cfe3081713ecb0c6a",
+ "writtenBytes": 2094
+}

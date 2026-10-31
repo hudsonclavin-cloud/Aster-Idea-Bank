@@ -1,0 +1,51 @@
+Sergeyevsky, Snyder and Cunniff, "Interplanetary Mission Design Handbook, Volume I, Part 2: Earth to Mars Ballistic
+Mission Opportunities, 1990-2005", JPL Publication 82-43, 15 September 1983. NTRS 19840010158,
+https://ntrs.nasa.gov/api/citations/19840010158/downloads/19840010158.pdf (sha256 6da1f324531765baf71c0b7d884cce9331d2d853133e5905bdf07fb02c3709b3).
+Section III.C "Launch/Injection Geometry", printed pages 9-17 (PDF pages 21-29), read as page images (pdftoppm 110 dpi;
+the text layer is scrambled). Transcribed by idea 37 (Window): the equations it implements and the numbers it checks.
+
+Notation: phi_L launch-site geocentric latitude, lambda_L its east longitude; alpha_L the site's right ascension at
+liftoff; delta_inf (DLA), alpha_inf (RLA) the outgoing asymptote's declination and right ascension; Sigma_L the launch
+azimuth "measured in the site's local horizontal plane, clockwise from north"; i, Omega the parking orbit's
+inclination and ascending node; theta the range angle from the launch site to the asymptote, in the trajectory plane.
+
+p. 9   "In its simplest form this plane must contain the outgoing V-infinity (DLA, RLA) vector, the center of Earth, and
+        the launch site at lift-off (Fig. 10)."
+(9)    cotan Sigma_L = [cos phi_L tan delta_inf - sin phi_L cos(alpha_inf - alpha_L)] / sin(alpha_inf - alpha_L)
+p. 10  "If the launch is known to be direct (i.e., eastward), then Sigma_L, when cotan Sigma_L is negative, must be
+        corrected to Sigma_L = Sigma_LNEG + 180.0."
+(10)   alpha_L = lambda_L + GHA_DATE + omega_EARTH x t_L ;  (11) GHA_DATE = 100.075 + 0.9856123008 x d_50  [EME50; not used:
+        Window uses IAU 2006 sidereal time and precession instead]
+(12)   t_RLT = 24.0 - (alpha_inf - alpha_L)/15.0  h  ("a generalized sidereal time of launch, elapsed since the launch site
+        last passed the departure asymptote meridian")
+p. 10  "As can be seen from Fig. 12, for delta_inf = 0, the two daily launch opportunities are separated by exactly 12
+        hours; with an increasing |delta_inf| they close in on each other, until at |delta_inf| = |phi_L| they merge into a
+        single daily opportunity. For |delta_inf| > |phi_L|, a 'split' of that single launch window occurs, disallowing an
+        ever-increasing sector of azimuth values. This sector is symmetric about east"
+(14)   sin Sigma_LLIMIT = +- cos delta_inf / cos phi_L
+(15)   cos i = cos phi_L x sin Sigma_L
+(16)   sin(alpha_L - Omega) = sin phi_L x sin Sigma_L / sin i   ("a negative cos Sigma_L places (alpha_L - Omega) into the
+        second or third quadrant")
+(17)   cos theta = sin delta_inf sin phi_L + cos delta_inf cos phi_L cos(alpha_inf - alpha_L)
+(18)   sin theta = sin(alpha_inf - alpha_L) cos delta_inf / sin Sigma_L
+p. 12  Fig. 14, "Typical launch geometry example": phi_L = 28.3 deg, asymptote delta_inf = -15 deg, alpha_inf = 315 deg;
+        first window opens at Sigma_L = 70 deg, closes at 110 deg; marked "alpha_inf - alpha_L1 = 285 deg" for the site at
+        the first window's opening.
+(21)   cos nu_inf = -1 / (1 + C3 x r_p / mu_E)   (nu_inf: true anomaly of the asymptote; r_p "typically 6563 km, for a
+        horizontal injection from a 185-km (100-nmi) parking orbit")
+(22)   theta = theta_1 + theta_COAST + theta_2 + nu_inf - nu_I   (theta_1 booster burn arc into parking orbit, theta_2 final
+        stage burn arc, nu_I true anomaly of injection)
+(24)   e_H = 1 + C3 x r_p / mu_E
+p. 16  "A negative theta_COAST implies that the Sigma_L-solution was too short-ranged ... An extra revolution in parking
+        orbit may be a viable alternative."
+p. 16  "4. Parking orbit regression. The average regression of the nodes ... of a typical direct (prograde) circular
+        parking orbit of 28.3-deg inclination with the Earth's equator, due to Earth's oblateness, amounts to about 0.46 deg
+        of westward nodal motion per revolution and can be approximately computed from"
+(25)   Omega_dot = 540 deg x r_s^2 x J2 x cos i / r_o^2 , deg/revolution  (r_s "Earth equatorial surface radius, 6378 km";
+        r_o "circular orbit radius, typically 6748 km for an orbital altitude of 370 km (200 nmi)")
+p. 17  J2 = 0.00108263 for Earth
+(26)   cos i = cos phi_L x sin Sigma_L
+(27)   alpha_L_EFF = alpha_L + Omega_dot x N , deg   ("This correction, multiplied by the orbital stay time of N
+        revolutions, must be considered in determining a biased launch time")
+p. 17  "5. Dogleg ascent ... powered plane change maneuvers out of parking orbit or during transplanetary injection are
+        much less efficient, as a much higher velocity vector must now be rotated through the same angle"

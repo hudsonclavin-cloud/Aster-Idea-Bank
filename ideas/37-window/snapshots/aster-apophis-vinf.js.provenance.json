@@ -1,0 +1,9 @@
+{
+ "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+ "path": "tools/slice12-research/data/dla-oracle-m1-vectors.json",
+ "commit": "62ddb17",
+ "sourceSha256": "9f934bd3a45ff318cae1e7bed4bfb52cc5357f2c651d594e16524f5f0c10985f",
+ "note": "derived by build-data.mjs: snapshots/aster-apophis-vinf.json (the snapshot.mjs excerpt, whose sidecar carries the Aster blob) wrapped as a classic script; window.test.mjs checks the two hold the same data",
+ "writtenSha256": "ec49458c941b3ae26076c7742b3b268f2d4c83fbdc07f25ed9192e8386c10a53",
+ "writtenBytes": 2190
+}

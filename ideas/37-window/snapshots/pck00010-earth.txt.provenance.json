@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/pck00010-earth.txt",
+  "commit": "b53f06ee7a8a35998673c1cbb3c61aa704dd4e44",
+  "commitDate": "2026-10-31T11:45:45+00:00",
+  "pathLastChanged": "3335518 2026-10-31T08:57:06+00:00",
+  "committedBlob": "c3dbe88a228008ba5475f2a5357c0f0c5160bf9a",
+  "readBlob": "c3dbe88a228008ba5475f2a5357c0f0c5160bf9a",
+  "sourceSha256": "8d65ff7d758619d78c1106e11de7989cbe92ef85cec8cc1c8a683c7d7b201a11",
+  "sourceBytes": 692,
+  "copiedAt": "2026-10-31T12:16:46.738Z",
+  "mode": "copy",
+  "note": "idea 35's excerpt of Aster's vendor/naif/pck00010.tpc (Earth radii, pole and prime meridian), unmodified: the polar radius turns the flight report's geodetic latitudes geocentric, and the IAU Earth model is compared with IAU 2006",
+  "readMatchesCommitted": true,
+  "writtenSha256": "8d65ff7d758619d78c1106e11de7989cbe92ef85cec8cc1c8a683c7d7b201a11",
+  "writtenBytes": 692
+}
