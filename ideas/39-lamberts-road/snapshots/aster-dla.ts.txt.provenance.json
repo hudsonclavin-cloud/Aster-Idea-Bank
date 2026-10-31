@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/core/lambert/dla.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "33e50949b4bbc9ec542aa038f90b7889897e1e21",
+  "readBlob": "33e50949b4bbc9ec542aa038f90b7889897e1e21",
+  "sourceSha256": "16ec407b52fe4d47a3ba1d10677033386f72cac5afe8479c8eaeda049e4c08a5",
+  "sourceBytes": 1515,
+  "copiedAt": "2026-10-31T15:20:48.817Z",
+  "mode": "copy",
+  "note": "verbatim Aster source; build-data.mjs parses its constants into snapshots/aster-constants.js",
+  "readMatchesCommitted": true,
+  "writtenSha256": "16ec407b52fe4d47a3ba1d10677033386f72cac5afe8479c8eaeda049e4c08a5",
+  "writtenBytes": 1515
+}

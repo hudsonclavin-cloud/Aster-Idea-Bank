@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/lambert-screen-cache.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "readBlob": "d0acf1670f80309dac7d200932301b8f6394eeb1",
+  "sourceSha256": "bd27b9bd882a65343399f772e37218b5fb05644bea5a822aafcb65e81e750206",
+  "sourceBytes": 34499477,
+  "copiedAt": "2026-10-31T15:47:03.260Z",
+  "mode": "derived",
+  "note": "derived by study-encounters.mjs: for every body's bestWindows[0] in this cache (with its elements from tests/fixtures/v2/nea-catalog-slice9.json at the same commit), whether lambert.js's targetRefusals() refuses the arrival (past an Earth encounter closer than 0.05 au after the element epoch, or inside Earth's sphere of influence); counts and the 25 lowest-C3 refused windows",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1ad822a0f6ccf316170aad9ebecc34a29f5d316929a4b48873d80f79ee07d000",
+  "writtenBytes": 6955
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/core/propagators/keplerian.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "a4fae7b9afb97b41d613a848d6b8ad13410af89f",
+  "readBlob": "a4fae7b9afb97b41d613a848d6b8ad13410af89f",
+  "sourceSha256": "2e4ceb3809a763d94be5a5892ad4efc7c50a1a5070dc2787007a63e0d25881fd",
+  "sourceBytes": 8900,
+  "copiedAt": "2026-10-31T15:48:20.742Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: constants parsed from the verbatim Aster files snapshots/aster-{keplerian,units,utc-to-tdb,delta-v,feasibility,dla}.ts.txt, plus AU_M from src/v2/app/solar-system/runtime.ts and closeApproachWindow.distMaxAu from tests/fixtures/v2/nea-catalog-slice9.json, all at the commit recorded here",
+  "readMatchesCommitted": true,
+  "writtenSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "writtenBytes": 1986
+}

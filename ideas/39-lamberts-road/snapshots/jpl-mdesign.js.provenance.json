@@ -1,0 +1,12 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://ssd-api.jpl.nasa.gov/mdesign.api",
+ "path": "mdesign.api?sstr=99942 and ?sstr=101955, &mjd0=61041&span=2191&tof-min=180&tof-max=1100&step=5 (mode M, API v1.2, documented at https://ssd-api.jpl.nasa.gov/doc/mdesign.html)",
+ "sourceSha256": {
+  "md-apophis.json": "0f54d00359259ca270285128868beaa54356f9d7b25dcb52084f6f07b5357a37",
+  "md-bennu.json": "c6f815c62a35ca1f77a20a02126ecd5d7c8778916e71ac6aacd2748563b26ced"
+ },
+ "license": "NASA/JPL Solar System Dynamics data service; US-government work, public domain in the US",
+ "note": "Excerpted by build-data.mjs: object block, selectedMissions whole, and map cells drawn with a seeded LCG (seeds 39, 3939) from the 439 x 185 maps: Apophis 150 arriving before MJD 62239 (2029-04-13, its Earth encounter) and 60 after, Bennu 150 (vinf_dep, vinf_arr, decl_dep). JPL computes these with its own ephemerides and orbit solution (Apophis orbit 220, Bennu md_orbit 97); they are an oracle, never read by the page as an input to the porkchop."
+}

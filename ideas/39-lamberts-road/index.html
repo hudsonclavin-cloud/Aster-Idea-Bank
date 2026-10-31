@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lambert's Road: the transfer to the asteroid</title>
+<meta name="description" content="Heliocentric transfers from Earth to a real near-Earth asteroid from Aster's catalog: Lambert solutions for zero, one and two revolutions, a porkchop you can click, the chosen window with its v-infinities, DLA and delta-v, the orbit drawn, Earth encounters that break two-body propagation refused, and idea 38's flown departure carried on.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Lambert's Road</h1>
+  <p class="lede">Idea 38 burned the departure and left Earth along one asymptote. That asymptote came from a single cell of Aster's porkchop: Apophis, leaving on 2 July 2026, 677 days, once round the Sun. This page computes that cell and every cell around it from first principles. It places Earth from JPL Horizons and the asteroid from Aster's own orbital elements, then solves Lambert's problem for the orbit that joins them in exactly the time of flight. Pick any of 61 real near-Earth asteroids and a range of dates, read the porkchop, click a window, and see its orbit, its v-infinities, its launch declination, Aster's delta-v for it, and every reason a number cannot be trusted.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 9 of 20. Previous: <a href="../38-burn-out/index.html">38 Burn Out</a>, the departure burn. Next: 40 Long Coast, the cruise with the planets pulling (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Target and window</h2>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+    <label class="lab" for="tgtSearch">Asteroid <small>(61 of Aster's 41,906)</small></label>
+    <input id="tgtSearch" type="search" placeholder="Filter: name or designation" autocomplete="off" aria-label="Filter the asteroid list">
+    <select id="tgtSel" aria-label="Target asteroid"></select>
+    <div id="tgtInfo" class="tgtline"></div>
+    <div class="btnrow" role="group" aria-label="Quick targets">
+      <button type="button" data-tgt="99942">Apophis</button>
+      <button type="button" data-tgt="101955">Bennu</button>
+      <button type="button" data-tgt="162173">Ryugu</button>
+      <button type="button" data-tgt="2000 SG344">2000 SG344</button>
+      <button type="button" data-tgt="469219">Kamo`oalewa</button>
+    </div>
+
+    <h2 class="sub">Departures and flight times</h2>
+    <div class="grid2">
+      <div class="ctl"><label for="depA">Depart from <small>(UTC)</small></label><input id="depA" type="date" min="2026-01-01" max="2040-12-30"></div>
+      <div class="ctl"><label for="depZ">to</label><input id="depZ" type="date" min="2026-01-02" max="2040-12-30"></div>
+      <div class="ctl"><label for="tofA">Flight from <small>(days)</small></label><input id="tofA" type="number" min="5" max="2990" step="5" inputmode="numeric"></div>
+      <div class="ctl"><label for="tofZ">to <small>(days)</small></label><input id="tofZ" type="number" min="10" max="3000" step="5" inputmode="numeric"></div>
+    </div>
+    <span class="lab" id="lab-revs">Revolutions about the Sun</span>
+    <div class="seg" role="group" aria-labelledby="lab-revs">
+      <button type="button" data-revs="0">Direct</button>
+      <button type="button" data-revs="0,1">Up to 1</button>
+      <button type="button" data-revs="0,1,2">Up to 2</button>
+      <button type="button" data-revs="1">1 only</button>
+    </div>
+    <span class="lab" id="lab-obj" style="margin-top:12px">Colour and choose by</span>
+    <div class="seg" role="group" aria-labelledby="lab-obj">
+      <button type="button" data-obj="c3">C3</button>
+      <button type="button" data-obj="dv_oneway">ΔV one-way</button>
+      <button type="button" data-obj="dv_return">ΔV return</button>
+      <button type="button" data-obj="vinf_arr">v∞ arrival</button>
+    </div>
+    <div class="grid2">
+      <div class="ctl"><label for="siteSel">Launch site <small>(DLA band)</small></label>
+        <select id="siteSel"><option value="cape">Cape Canaveral</option><option value="vandenberg">Vandenberg SFB</option></select></div>
+      <div class="ctl"><label for="resSel">Grid</label>
+        <select id="resSel"><option value="80x60">80 × 60</option><option value="120x90" selected>120 × 90</option><option value="200x140">200 × 140</option></select></div>
+    </div>
+    <div class="btnrow">
+      <button type="button" id="minBtn">Go to the grid's best</button>
+      <button type="button" id="refineBtn">Refine the selected cell</button>
+      <button type="button" id="asterBtn">Aster's cell (the chain's)</button>
+      <button type="button" id="resetBtn">Reset</button>
+    </div>
+    <p class="note" id="gridNote"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-pork">
+      <h2 id="h-pork">Porkchop</h2>
+      <div class="chart-wrap" id="porkWrap">
+        <canvas id="pork" tabindex="0" role="img" aria-label="Porkchop: departure date across, time of flight up; colour is the chosen quantity. Tap or use the arrow keys to choose a cell; Enter refines it."></canvas>
+        <div class="tip" id="porkTip"></div>
+      </div>
+      <ul class="legend" id="porkLegend"></ul>
+      <canvas id="ramp" height="34" aria-hidden="true"></canvas>
+      <p class="chart-cap" id="porkCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-sel">
+      <h2 id="h-sel">The chosen window</h2>
+      <div id="selLine" class="small"></div>
+      <div class="tiles" id="selTiles"></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+
+    <section class="card" aria-labelledby="h-orbit">
+      <h2 id="h-orbit">The transfer, seen from the ecliptic pole</h2>
+      <canvas id="orbit" role="img" aria-label="Top view of the inner solar system: Earth's orbit, the asteroid's orbit, and the transfer arc from Earth at departure to the asteroid at arrival."></canvas>
+      <ul class="legend" id="orbitLegend"></ul>
+      <p class="chart-cap" id="orbitCap"></p>
+    </section>
+  </div>
+
+  <section class="card wide" id="chainCard" aria-labelledby="h-chain">
+    <h2 id="h-chain">The chain: idea 38's departure, carried on</h2>
+    <div id="chainBody" class="small"></div>
+    <div class="tiles" id="chainTiles"></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Against the oracles</h2>
+    <p class="small">Each row is recomputed live by this page and set beside a number it did not compute: Aster's own cell and screening cache, JPL's own mission-design windows, and JPL's integrated ephemeris of the asteroid.</p>
+    <div class="tablewrap"><table class="stack" id="checkTable"><caption class="small" id="checkCap"></caption><thead><tr><th>Check</th><th>Theirs</th><th>This page</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 38's handoff (or one from this page) to carry the flown departure on; export this transfer for module 40. Every number carries its units, a confidence class and its source; refusals travel down the chain.</p>
+    <label class="lab" for="importText">Paste a handoff</label>
+    <textarea id="importText" rows="4" spellcheck="false" placeholder='{"handoff":"long-way-round","from":"38-burn-out",...}'></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import</button>
+      <label class="filebtn"><input type="file" id="importFile" accept="application/json,.json"> <span>Load a file</span></label>
+      <button type="button" id="clearChainBtn">Drop the chain</button>
+      <button type="button" id="copyBtn">Copy handoff</button>
+      <button type="button" id="dlBtn">Download</button>
+      <button type="button" id="linkBtn">Copy a link</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <ul>
+      <li><b>Earth</b> is NASA/JPL Horizons' geocentre about the Sun (ICRF, TDB), the daily records 2026-2040 that Aster's porkchop uses, fitted here with Chebyshev series on 32-day segments. Between the daily records it is about as close to Horizons as Aster's own cubic Hermite, in 9,786 numbers instead of 32,874: against Horizons every hour for June and July 2026 the worst errors are 0.13 km and 3.2 mm/s (Aster's Hermite: 0.09 km and 3.2 mm/s); the table below re-measures it live at 81 of those epochs.</li>
+      <li><b>The asteroid</b> is Aster's catalog orbit, propagated about the Sun alone exactly as Aster's <code>keplerian.ts</code> does (ecliptic elements, Kepler's equation, then the J2000 obliquity to ICRF). At the element epoch it reproduces Aster's anchor state to 6 mm. It does not know the planets: Apophis drifts 93,000 km from JPL's integrated orbit by April 2028, and after its 13 April 2029 Earth encounter it is millions of km off. So every arrival after an Earth encounter closer than 0.05 au (Aster's own screening distance), or inside the Earth's sphere of influence, is hatched and refused.</li>
+      <li><b>Lambert's problem</b>: Izzo's 2015 method (the λ, x formulation, Householder iterations), for direct transfers and for one and two revolutions on both branches. It matches Aster's pinned cells to 1e-15 and two independent libraries (hapsira's Izzo, lamberthub's Gooding 1990) to 7e-13 over 75 cases.</li>
+      <li><b>What each cell shows</b>: departure v∞ = transfer velocity minus Earth's, C3 = |v∞|², DLA = asin(v∞z/|v∞|) in ICRF (Aster's convention, no rotation), arrival v∞ = transfer minus asteroid velocity, and Aster's ΔV stack: vis-viva injection from a 6,578 km parking orbit, rendezvous at the arrival v∞, the same again home for sample return, 150 m/s station-keeping and 10 % margin. With several families allowed, each cell shows the one the chosen quantity prefers.</li>
+      <li><b>The chain</b>: idea 38's handoff gives the departure epoch and v∞ as flown. This page coasts that state about the Sun to the asteroid (the miss, uncorrected) and solves Lambert again from that epoch to the same arrival (the correction module 40 must fly).</li>
+      <li><b>Not modelled</b>: the planets, the Moon and Earth's pull during the transfer (patched conics), solar radiation pressure, low thrust, gravity assists, broken-plane manoeuvres, orbit uncertainty beyond the condition-code refusal, Venus encounters.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>Idea 39 of the Aster Idea Bank, by Perihelion. A prototype: not through Aster's multi-agent math audit, founding-doc DEC process or protected-core review. Every number traces to a snapshot, a computation this page shows, or a cited source (README).</footer>
+
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/earth-cheb.js"></script>
+<script src="snapshots/neo-excerpt.js"></script>
+<script src="snapshots/aster-refs.js"></script>
+<script src="snapshots/drift-truth.js"></script>
+<script src="snapshots/jpl-mdesign.js"></script>
+<script src="snapshots/horizons-earth-9h.js"></script>
+<script src="lambert.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

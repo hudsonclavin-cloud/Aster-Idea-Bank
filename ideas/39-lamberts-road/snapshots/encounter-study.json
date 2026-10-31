@@ -1,0 +1,304 @@
+{
+ "study": "ideas/39-lamberts-road/study-encounters.mjs",
+ "aster": "tests/fixtures/v2/nea-catalog-slice9.json + lambert-screen-cache.json at 62ddb17",
+ "rule": "refused when the arrival of bestWindows[0] lies past an Earth encounter closer than 0.05 au after the element epoch (two-body, 1-day scan refined by golden section) or the body is inside the Earth's sphere of influence (924647 km) at arrival; encounters are looked for only inside the Earth ephemeris 2026-2040",
+ "bodies": 41905,
+ "refused": 1844,
+ "arrivalInsideSoi": 61,
+ "arrivalPastEncounter": 1819,
+ "encounterCheckPartial": 2936,
+ "notKeplerSafeAmongAll": 347,
+ "bestC3Below1": 17603,
+ "bestC3Below1Refused": 1721,
+ "seconds": 59,
+ "lowestRefused": [
+  {
+   "designation": "99942",
+   "c3": 0.00020641346871491306,
+   "launchDate": "2028-09-14",
+   "tofDays": 212,
+   "inSoi": true,
+   "encounter": null,
+   "conditionCode": 0
+  },
+  {
+   "designation": "2022 GA2",
+   "c3": 0.00027059192205451015,
+   "launchDate": "2031-07-10",
+   "tofDays": 272,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2032-04-06T15:53:06.981Z",
+    "distance_km": 560037.9569365944
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2025 UK9",
+   "c3": 0.00034561836635714927,
+   "launchDate": "2029-02-01",
+   "tofDays": 272,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2026-10-31T03:26:25.727Z",
+    "distance_km": 328052.15138269495
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2005 TA",
+   "c3": 0.0005375525191174764,
+   "launchDate": "2034-03-09",
+   "tofDays": 212,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2034-10-04T04:22:37.044Z",
+    "distance_km": 768053.1854547069
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2017 TB",
+   "c3": 0.0006269433383799889,
+   "launchDate": "2033-12-08",
+   "tofDays": 302,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2034-10-05T20:35:24.681Z",
+    "distance_km": 1030894.883060628
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2020 GB1",
+   "c3": 0.0006454290075770892,
+   "launchDate": "2034-05-11",
+   "tofDays": 332,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2035-04-07T21:36:23.038Z",
+    "distance_km": 1028710.5570421091
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2021 UX1",
+   "c3": 0.0006698594896219268,
+   "launchDate": "2030-01-31",
+   "tofDays": 272,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2030-10-20T07:47:32.467Z",
+    "distance_km": 2256672.4692582474
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2025 BM6",
+   "c3": 0.0007065435418212141,
+   "launchDate": "2038-04-01",
+   "tofDays": 302,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2039-01-27T12:27:59.710Z",
+    "distance_km": 611259.1579806953
+   },
+   "conditionCode": 3
+  },
+  {
+   "designation": "216985",
+   "c3": 0.0007582369661933834,
+   "launchDate": "2035-05-17",
+   "tofDays": 302,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2036-03-13T09:22:42.209Z",
+    "distance_km": 1946204.6981321308
+   },
+   "conditionCode": 0
+  },
+  {
+   "designation": "2025 HA19",
+   "c3": 0.0007717787174555122,
+   "launchDate": "2033-06-02",
+   "tofDays": 332,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2028-04-29T17:06:31.373Z",
+    "distance_km": 1609584.6622879244
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2019 TN5",
+   "c3": 0.0008211647926212875,
+   "launchDate": "2037-02-05",
+   "tofDays": 242,
+   "inSoi": true,
+   "encounter": null,
+   "conditionCode": 7
+  },
+  {
+   "designation": "2013 FU13",
+   "c3": 0.000822504996133415,
+   "launchDate": "2037-06-18",
+   "tofDays": 272,
+   "inSoi": true,
+   "encounter": null,
+   "conditionCode": 6
+  },
+  {
+   "designation": "2014 UU56",
+   "c3": 0.0008906216846595662,
+   "launchDate": "2036-02-21",
+   "tofDays": 242,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2036-10-19T19:46:45.364Z",
+    "distance_km": 2075805.2071887536
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2014 HB177",
+   "c3": 0.0009091176859680898,
+   "launchDate": "2033-10-06",
+   "tofDays": 212,
+   "inSoi": true,
+   "encounter": null,
+   "conditionCode": 6
+  },
+  {
+   "designation": "2000 LG6",
+   "c3": 0.0009366910134234852,
+   "launchDate": "2035-09-06",
+   "tofDays": 272,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2036-05-21T22:45:24.249Z",
+    "distance_km": 2326491.88959916
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2020 XF",
+   "c3": 0.0009447588081487678,
+   "launchDate": "2027-05-06",
+   "tofDays": 212,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2027-12-02T13:58:49.474Z",
+    "distance_km": 728209.6941667326
+   },
+   "conditionCode": 5
+  },
+  {
+   "designation": "2025 XZ3",
+   "c3": 0.0009850541426953158,
+   "launchDate": "2038-01-14",
+   "tofDays": 332,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2038-12-10T08:23:24.617Z",
+    "distance_km": 907532.008607952
+   },
+   "conditionCode": 7
+  },
+  {
+   "designation": "2024 JP17",
+   "c3": 0.0010174891740951277,
+   "launchDate": "2037-08-20",
+   "tofDays": 272,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2038-05-17T23:51:24.174Z",
+    "distance_km": 585469.4340409441
+   },
+   "conditionCode": 7
+  },
+  {
+   "designation": "2019 RT3",
+   "c3": 0.0010611317065869054,
+   "launchDate": "2035-12-13",
+   "tofDays": 272,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2036-09-09T09:47:08.798Z",
+    "distance_km": 317802.5993614523
+   },
+   "conditionCode": 4
+  },
+  {
+   "designation": "2024 RQ5",
+   "c3": 0.0011096303624380595,
+   "launchDate": "2027-11-18",
+   "tofDays": 302,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2028-09-12T06:22:03.852Z",
+    "distance_km": 3354003.9885469093
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2021 DR",
+   "c3": 0.0011227692141061335,
+   "launchDate": "2031-05-15",
+   "tofDays": 272,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2032-02-09T11:34:03.616Z",
+    "distance_km": 525716.9523813133
+   },
+   "conditionCode": 6
+  },
+  {
+   "designation": "2025 DT2",
+   "c3": 0.0011340336686724154,
+   "launchDate": "2032-07-29",
+   "tofDays": 212,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2029-02-25T23:06:29.244Z",
+    "distance_km": 528680.6840343723
+   },
+   "conditionCode": 3
+  },
+  {
+   "designation": "2024 AZ3",
+   "c3": 0.0012222487175871453,
+   "launchDate": "2033-06-16",
+   "tofDays": 212,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2034-01-13T00:23:54.965Z",
+    "distance_km": 2359563.4121439382
+   },
+   "conditionCode": 7
+  },
+  {
+   "designation": "2024 CU",
+   "c3": 0.001222607339321641,
+   "launchDate": "2033-05-12",
+   "tofDays": 272,
+   "inSoi": true,
+   "encounter": {
+    "utc": "2029-02-09T04:49:30.258Z",
+    "distance_km": 382792.1153939203
+   },
+   "conditionCode": 5
+  },
+  {
+   "designation": "2025 ML89",
+   "c3": 0.0013164224913500134,
+   "launchDate": "2038-10-28",
+   "tofDays": 242,
+   "inSoi": false,
+   "encounter": {
+    "utc": "2032-06-25T23:17:34.668Z",
+    "distance_km": 2300303.9629926095
+   },
+   "conditionCode": 6
+  }
+ ]
+}

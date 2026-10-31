@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/lambert-multi-rev-pinned-cells.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "e833e3bc0771f6dc7929a58f5feebd2915907fdc",
+  "readBlob": "e833e3bc0771f6dc7929a58f5feebd2915907fdc",
+  "sourceSha256": "2eff8ffd991323a827638573423e78ac2153014b823bee2f89adeddee5d4a2e0",
+  "sourceBytes": 9552,
+  "copiedAt": "2026-10-31T15:30:06.163Z",
+  "mode": "copy",
+  "note": "Aster's pinned Lambert cells (M = 0, 1, 2 and a below-T_min null case, poliastro-checked), the reconciliation target for lambert.js",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2eff8ffd991323a827638573423e78ac2153014b823bee2f89adeddee5d4a2e0",
+  "writtenBytes": 9552
+}

@@ -1,0 +1,9 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+ "path": "horizons.api?format=json&COMMAND='399'&EPHEM_TYPE='VECTORS'&CENTER='500@10'&START_TIME='2026-06-01'&STOP_TIME='2026-08-01'&STEP_SIZE='1 h'&REF_SYSTEM='ICRF'&REF_PLANE='FRAME'&VEC_TABLE='2'&OUT_UNITS='KM-S'&TIME_TYPE='TDB'&CSV_FORMAT='YES'",
+ "sourceSha256": "1cd266e70283f41cc8df2be00809f4775fb596421037326c428ed896a96acbc9",
+ "license": "NASA/JPL Horizons; US-government work, public domain in the US",
+ "note": "Excerpted by build-data.mjs: every 9th hourly record from JD 2461206.5 to 2461236.5 (81 records); asterDaily carries Aster's own 31 daily records of that month from src/v2/data/horizons-inner-solar-system-2026-2040.json at 62ddb17 for comparison. Ephemeris DE441 per the response header. At whole days these equal Aster's daily records exactly (checked when this was built: maximum difference 0)."
+}

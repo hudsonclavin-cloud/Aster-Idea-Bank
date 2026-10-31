@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/core/propagators/keplerian.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "a4fae7b9afb97b41d613a848d6b8ad13410af89f",
+  "readBlob": "a4fae7b9afb97b41d613a848d6b8ad13410af89f",
+  "sourceSha256": "2e4ceb3809a763d94be5a5892ad4efc7c50a1a5070dc2787007a63e0d25881fd",
+  "sourceBytes": 8900,
+  "copiedAt": "2026-10-31T15:20:49.040Z",
+  "mode": "copy",
+  "note": "verbatim Aster two-body propagator (GM_SUN, ecliptic elements rotated to ICRF by the J2000 obliquity); lambert.js follows the same formulas so its target states reproduce Aster's",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2e4ceb3809a763d94be5a5892ad4efc7c50a1a5070dc2787007a63e0d25881fd",
+  "writtenBytes": 8900
+}

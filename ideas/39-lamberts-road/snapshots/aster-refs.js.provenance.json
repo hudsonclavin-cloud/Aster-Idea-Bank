@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tools/slice12-research/data/dla-oracle-m1-vectors.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "28e88f012b381b03272a325caaaab29f6438de92",
+  "readBlob": "28e88f012b381b03272a325caaaab29f6438de92",
+  "sourceSha256": "88da945ddbb6f40f4f63b301a7065c37f884b6b23ca4ffe7f9ae8b724680b856",
+  "sourceBytes": 4148,
+  "copiedAt": "2026-10-31T15:48:21.965Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: summary.maxAngularSeparationCell (the only DLA-oracle cell with vector components), its departure epoch recomputed from the harness grid (25 departures 2026-01-01..2032-01-01 UTC as Aster TDB, index 2), and the two daily Earth records around it from src/v2/data/horizons-inner-solar-system-2026-2040.json",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d9a27ab6b9566bad253ee221ff33eb49a546eeb2af1cef683acc4095cfc04e20",
+  "writtenBytes": 1349
+}
