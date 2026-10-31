@@ -209,19 +209,32 @@
       if (D.sep.status === 'vacuum') txt = 'In vacuum nothing separates. ';
       else if (D.sep.status === 'full') txt = 'At ' + lab + ' (' + sig(A.ambient.pa / 1e3, 4) + ' kPa) the nozzle flows full: exit pressure ' + sig(D.exit.P / 1e3, 3) + ' kPa against separation at ' + sig(D.sep.pSep / 1e3, 3) + ' kPa (SP-8120). ';
       else if (D.sep.status === 'marginal') txt = 'Marginal at ' + lab + ': the exit pressure (' + sig(D.exit.P / 1e3, 3) + ' kPa) is within 20 % of separation (' + sig(D.sep.pSep / 1e3, 3) + ' kPa). SP-8120 says to reduce the area ratio or change the contour. ';
+      else if (D.bracket && D.bracket.none) txt = 'Does not run at ' + lab + ': SP-8120 puts separation at ' + sig(D.sep.pSep / 1e3, 3) + ' kPa, at or above the throat pressure (' + sig(D.base.throat.P / 1e3, 3) + ' kPa), so the flow would break away at or before the throat and the nozzle would not run supersonic. ';
       else txt = 'Separates at ' + lab + ': the exit pressure (' + sig(D.exit.P / 1e3, 3) + ' kPa) is below the separation pressure (' + sig(D.sep.pSep / 1e3, 3) + ' kPa), so the wall flow breaks away inside the nozzle' + (D.sepCut ? ', near area ratio ' + sig(D.sepCut.eps, 3) : '') + '. Expect unsteady side loads. ';
       txt += 'With this ' + A.design + '-flow exit it turns marginal at an ambient of ' + where(D.sepMarginOnset) + ' and separates at ' + where(D.sepOnset) + '.';
       v.textContent = txt;
     }
+    // Review fix: a refused ambient or divergence efficiency shows "refused", never the vacuum or ideal value under
+    // an "at ?" or "after divergence loss" label; a separated nozzle shows the kernel's own bracket.
     var isp = function (Fl) {
       if (!Fl || !Fl.exit) return '-';
+      if (!A.ambient || !Fl.vac) return 'refused';
       if (Fl.sep && Fl.sep.status === 'separated') return 'refused';
       return fmt(Fl.amb ? Fl.amb.isp / G0 : Fl.vac.Ivac / G0, 1);
     };
-    var hero = tile('Specific impulse at ' + lab + ', s', pairNodes(isp(S), isp(F)), 'derived', { cls: 'hero', sub: 'shifting / frozen; after divergence loss' + ((S && S.sep && S.sep.status === 'separated') ? '. Separated: between ' + fmt(S.amb.isp / G0, 1) + ' and ' + (S.sepCut ? fmt(S.sepCut.ispUpper / G0, 1) : '?') + ' s (shifting), not predicted' : '') });
+    var bracketS = function (br) {
+      if (!br) return '';
+      if (br.none) return '. Separated: no bracket (separation would sit at or before the throat)';
+      return '. Separated: ' + (br.lower != null && br.upper != null ? 'between ' + fmt(br.lower / G0, 1) + ' and ' + fmt(br.upper / G0, 1) + ' s' : br.upper != null ? 'at most ' + fmt(br.upper / G0, 1) + ' s' : 'at least ' + fmt(br.lower / G0, 1) + ' s') + ' (shifting), not predicted';
+    };
+    var heroSub = !A.ambient ? 'the ambient is refused (see above)' : !A.lambda ? 'no divergence efficiency for this contour (see above); the ideal nozzle is in the next tile'
+      : 'shifting / frozen; after divergence loss' + ((S && S.sep && S.sep.status === 'separated') ? bracketS(S.bracket) : '');
+    var hero = tile('Specific impulse at ' + (A.ambient ? lab : 'the ambient') + ', s', pairNodes(isp(S), isp(F)), 'derived', { cls: 'hero', sub: heroSub });
     tiles.appendChild(hero);
-    tiles.appendChild(tile('Vacuum specific impulse, s', pairNodes(hasS ? fmt(S.vac.Ivac / G0, 1) : '-', hasF ? fmt(F.vac.Ivac / G0, 1) : '-'), 'derived', { sub: 'ideal nozzle: ' + (hasS ? fmt(S.exit.Ivac / G0, 1) : '-') + ' / ' + (hasF ? fmt(F.exit.Ivac / G0, 1) : '-') + ' s' }));
-    tiles.appendChild(tile('Thrust coefficient', pairNodes(hasS && S.amb ? fmt(S.amb.cf, 4) : '-', hasF && F.amb ? fmt(F.amb.cf, 4) : '-'), 'derived', { sub: 'at ' + lab + '; vacuum ' + (hasS ? fmt(S.vac.cfVac, 4) : '-') + ' / ' + (hasF ? fmt(F.vac.cfVac, 4) : '-') }));
+    var ivac = function (Fl) { return Fl && Fl.vac ? fmt(Fl.vac.Ivac / G0, 1) : Fl && Fl.exit ? 'refused' : '-'; };
+    var cfv = function (Fl) { return Fl && Fl.vac ? fmt(Fl.vac.cfVac, 4) : '-'; };
+    tiles.appendChild(tile('Vacuum specific impulse, s', pairNodes(ivac(S), ivac(F)), 'derived', { sub: (A.lambda ? '' : 'after divergence loss refused; ') + 'ideal nozzle: ' + (hasS ? fmt(S.exit.Ivac / G0, 1) : '-') + ' / ' + (hasF ? fmt(F.exit.Ivac / G0, 1) : '-') + ' s' }));
+    tiles.appendChild(tile('Thrust coefficient', pairNodes(hasS && S.amb && !(S.sep && S.sep.status === 'separated') ? fmt(S.amb.cf, 4) : '-', hasF && F.amb && !(F.sep && F.sep.status === 'separated') ? fmt(F.amb.cf, 4) : '-'), 'derived', { sub: 'at ' + (A.ambient ? lab : 'the ambient (refused)') + '; vacuum ' + cfv(S) + ' / ' + cfv(F) }));
     tiles.appendChild(tile('Exit pressure, kPa', pairNodes(hasS ? sig(S.exit.P / 1e3, 4) : '-', hasF ? sig(F.exit.P / 1e3, 4) : '-'), 'derived', { sub: A.ambient && A.ambient.pa > 0 ? 'ambient ' + sig(A.ambient.pa / 1e3, 4) + ' kPa' : 'vacuum' }));
     tiles.appendChild(tile('Exit temperature, K', pairNodes(hasS ? fmt(S.exit.T, 0) : '-', hasF ? fmt(F.exit.T, 0) : '-'), 'derived'));
     tiles.appendChild(tile('Exit Mach number', pairNodes(hasS ? fmt(S.exit.mach, 3) : '-', hasF ? fmt(F.exit.mach, 3) : '-'), 'derived', { sub: 'velocity ' + (hasS ? fmt(S.exit.u, 0) : '-') + ' / ' + (hasF ? fmt(F.exit.u, 0) : '-') + ' m/s' }));
@@ -315,6 +328,8 @@
     var A = cur.A;
     var S = A.flows.shifting, F = A.flows.frozen;
     if (!(S && S.base) && !(F && F.base)) { cap.textContent = 'Nothing to draw: the chamber was refused.'; return; }
+    // review fix: no divergence efficiency, no after-divergence curves (they used to be drawn with lambda = 1)
+    if (!A.lambda) { cap.textContent = 'Nothing to draw: this contour has no divergence efficiency (see the refusal above), so there is no specific impulse after divergence loss to plot.'; return; }
     var W = drawWidth(svg), H = W < 520 ? 300 : 340, L = 52, R = 12, Tp = 14, Bt = 40;
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     var series = [], bands = [], xlog = state.chart === 'eps', xs, xlab, xval, marker;
@@ -463,7 +478,7 @@
     T1.ROWS.forEach(function (row) {
       var c = B.engineCase(row, P.PRESETS);
       if (c.refusal) {
-        t.appendChild(el('tr', {}, [el('td', { text: row.engine }), el('td', { class: 'wrap', colspan: '10', text: 'Not modelled: ' + c.refusal.reason })]));
+        t.appendChild(el('tr', {}, [el('td', { class: 'eng', text: row.engine }), el('td', { class: 'wrap', colspan: '10', text: 'Not modelled: ' + c.refusal.reason })]));
         return;
       }
       c.points.forEach(function (p) {
@@ -471,11 +486,12 @@
         var gap = function (o) { return o && o.isp ? el('span', { text: fmt(o.isp / G0, 1) + ' (' + (o.gap > 0 ? '+' : '') + fmt(100 * o.gap, 1) + ' %)' }) : '-'; };
         var btn = el('button', { type: 'button', text: 'Load', 'aria-label': 'Load ' + key });
         btn.addEventListener('click', function () { loadEngine(row, c, p); });
-        var tr = el('tr', { 'data-key': key }, [el('td', { text: row.engine }), el('td', { text: c.prop + ', ' + row.mr }), el('td', { class: 'n', text: sig(c.pcChem / 1e5, 4) }),
-          el('td', { class: 'n', text: String(row.eps) }), el('td', { text: /conical/i.test(row.exit) ? 'cone ' + row.divergence + '°' : 'bell ' + (c.Lf != null ? fmt(c.Lf * 100, 0) + ' %' : '') }),
-          el('td', { text: p.condition === 'sl' ? 'sea level' : p.condition === 'vac' ? 'vacuum' : 'altitude' }), el('td', { class: 'n', text: fmt(p.ispPublished / G0, 0) }),
-          el('td', { class: 'n' }, [gap(p.shifting)]), el('td', { class: 'n' }, [gap(p.frozen)]),
-          el('td', { text: p.shifting.status === 'separated' ? 'separates' : p.shifting.status === 'vacuum' ? '-' : p.shifting.status }), el('td', {}, [btn])]);
+        // data-label: the column name, shown before each cell when the table stacks on a phone (style.css)
+        var tr = el('tr', { 'data-key': key }, [el('td', { class: 'eng', text: row.engine }), el('td', { 'data-label': 'propellant, O/F', text: c.prop + ', ' + row.mr }), el('td', { class: 'n', 'data-label': 'pc, bar', text: sig(c.pcChem / 1e5, 4) }),
+          el('td', { class: 'n', 'data-label': 'area ratio', text: String(row.eps) }), el('td', { text: /conical/i.test(row.exit) ? 'cone ' + row.divergence + '°' : 'bell ' + (c.Lf != null ? fmt(c.Lf * 100, 0) + ' %' : '') }),
+          el('td', { text: p.condition === 'sl' ? 'sea level' : p.condition === 'vac' ? 'vacuum' : 'altitude' }), el('td', { class: 'n', 'data-label': 'published, s', text: fmt(p.ispPublished / G0, 0) }),
+          el('td', { class: 'n', 'data-label': 'shifting, s' }, [gap(p.shifting)]), el('td', { class: 'n', 'data-label': 'frozen, s' }, [gap(p.frozen)]),
+          el('td', { 'data-label': 'flow', text: p.shifting.status === 'separated' ? 'separates' : p.shifting.status === 'vacuum' ? '-' : p.shifting.status }), el('td', { class: 'act' }, [btn])]);
         t.appendChild(tr);
         engineRows.push({ key: key, tr: tr });
       });

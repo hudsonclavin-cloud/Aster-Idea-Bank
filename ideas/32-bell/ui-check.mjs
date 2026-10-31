@@ -100,7 +100,32 @@ async function setNum(page, sel, v) { await page.fill(sel, String(v)); await pag
   await setNum(page, '#altNum', 90);
   h = await handoff(page);
   ok(h.refusals.some((r) => r.applies_to === 'ambient' && /86 km/.test(r.reason)), 'altitude 90 km refused (ISA table ends at 86 km)');
+  // review: a refused ambient shows "refused" in the hero, not the vacuum value under "at ?"
+  let heroT = await text(page, '.tile.hero');
+  ok(/refused/.test(heroT) && !/\?/.test(heroT), 'altitude 90 km: the hero tile refuses: ' + heroT.replace(/\s+/g, ' '));
   await setNum(page, '#altNum', 0);
+  // review: a bell length outside SP-125's chart refuses every after-divergence number, sizing and the chart
+  await setNum(page, '#lfNum', 50);
+  h = await handoff(page);
+  heroT = await text(page, '.tile.hero');
+  ok(/refused/.test(heroT) && !h.outputs.specific_impulse_vacuum_shifting && !h.outputs.throat_diameter && !h.outputs.divergence_efficiency, 'bell 50 %: no after-divergence numbers and no sizing: ' + heroT.replace(/\s+/g, ' '));
+  ok(h.outputs.specific_impulse_vacuum_ideal_shifting && h.refusals.some((r) => r.applies_to === 'specific_impulse_shifting'), 'bell 50 %: the ideal nozzle is still given, the rest refused');
+  ok((await text(page, '#chartCap')).startsWith('Nothing to draw') && (await page.locator('#chart polyline').count()) === 0, 'bell 50 %: the chart draws nothing');
+  await setNum(page, '#lfNum', 80);
+  // review: a 60-degree cone is outside the cone envelope for its numbers too, not only its drawing
+  await page.click('[data-contour="cone"]'); await setNum(page, '#alphaNum', 60);
+  h = await handoff(page);
+  ok(/refused/.test(await text(page, '.tile.hero')) && !h.outputs.specific_impulse_vacuum_shifting, 'cone 60 deg: Isp refused');
+  await setNum(page, '#alphaNum', 15); await page.click('[data-contour="bell"]');
+  // review: an ambient above the throat pressure gives no bracket and says the nozzle would not run
+  await page.click('[data-amb="pressure"]'); await setNum(page, '#paNum', 10000);
+  heroT = await text(page, '.tile.hero');
+  ok(/no bracket/.test(heroT) && !/-\d/.test(heroT) && /^Does not run/.test(await text(page, '#verdict')), '10 MPa ambient: no bracket, no negative number: ' + heroT.replace(/\s+/g, ' '));
+  // review: a blank area ratio exports no divergence efficiency (it used to export 0)
+  await page.click('[data-amb="altitude"]'); await page.fill('#epsNum', ''); await page.dispatchEvent('#epsNum', 'change'); await page.waitForTimeout(100);
+  h = await handoff(page);
+  ok(!h.outputs.divergence_efficiency && !/NaN/.test(JSON.stringify(h.refusals)), 'blank area ratio: no lambda and no "NaN" in the refusals');
+  await setNum(page, '#epsNum', 16);
   // the two helpers: exit = ambient, and the largest area ratio that flows full with SP-8120's 20 % margin
   await page.click('#toIdeal'); await page.waitForTimeout(150);
   h = await handoff(page);
@@ -189,6 +214,11 @@ for (const scheme of ['dark', 'light']) {
   for (const d of await page.locator('details').all()) await d.evaluate((e) => { e.open = true; });
   await page.waitForTimeout(100);
   ok(!(await overflow(page)), scheme + ' phone: no overflow with every section open');
+  // review: both tables stack on a phone, so nothing in them needs sideways scrolling and every source is on screen
+  const sideways = await page.evaluate(() => [...document.querySelectorAll('.tablewrap')].map((w) => w.scrollWidth - w.clientWidth));
+  ok(sideways.every((x) => x <= 1), scheme + ' phone: the tables do not scroll sideways (' + sideways + ')');
+  const offRight = await page.evaluate(() => [...document.querySelectorAll('#allTable td, #engines td')].filter((td) => td.getBoundingClientRect().width > 0 && td.getBoundingClientRect().right > innerWidth + 1).length);
+  ok(offRight === 0, scheme + ' phone: every table cell inside the screen (' + offRight + ' outside)');
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   ok(scheme === 'dark' ? bg === 'rgb(13, 13, 13)' : bg === 'rgb(249, 249, 247)', scheme + ' background ' + bg);
   const minFont = await page.evaluate(() => {

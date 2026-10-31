@@ -21,6 +21,6 @@ export function sample(h31, nozzle, produced) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const h31 = JSON.parse(fs.readFileSync(path.join(here, 'snapshots/31-handoff.json'), 'utf8'));
   const h = sample(h31, SAMPLE_NOZZLE, '2026-10-31T12:00:00Z');
-  fs.writeFileSync(path.join(here, 'handoff.json'), JSON.stringify(h, null, 1) + '\n');
+  fs.writeFileSync(path.join(here, 'handoff.json'), JSON.stringify(h) + '\n');
   console.log('wrote handoff.json:', Object.keys(h.outputs).length, 'outputs,', h.refusals.length, 'refusals');
 }

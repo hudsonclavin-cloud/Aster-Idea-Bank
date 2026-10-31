@@ -424,3 +424,91 @@ test('structured refusals for out-of-envelope and bad inputs, with no numbers', 
   assert.ok(h.refusals.some((x) => x.applies_to === 'specific_impulse_ambient_shifting'));
   for (const x of h.refusals) assert.ok(!/NaN|Infinity|undefined/.test(x.reason + x.what_would_help), x.reason);
 });
+
+// ------------------------------------------------------------------ added by the independent review
+test('review: an independent CEA run (the reviewer\'s own script) at Table I conditions and the sample, outside the builder\'s fixture', () => {
+  const R = json('oracle/review-cea-check.json');
+  const T1 = (n) => L.table.ROWS.find((r) => r.engine === n);
+  let n = 0;
+  for (const c of R.cases) {
+    // the conditions are Table I's as transcribed (no number retyped): O/F, psia and area ratio
+    if (c.name !== 'sample') { const row = T1(c.name); assert.equal(c.of, row.mr); assert.equal(c.eps, row.eps); assert.ok(rel(c.pc_Pa, row.pc[0][0] * Bell.PSI) < 1e-9, c.name + ' pc'); }
+    else assert.ok(c.of === 2.6 && c.pc_Pa === 1e7 && c.eps === 16);
+    const r = M.rocket(db, L.presets.PRESETS.find((p) => p.id === c.preset), c.of, c.pc_Pa);
+    for (const [tag, mode] of [['eq', 'shifting'], ['frz1', 'frozen']]) {
+      const b = B.flow(r, mode), ref = c[tag + '_43'], full = c[tag + '_full'];
+      assert.ok(ref.converged && full.converged);
+      const st = B.stationAtArea(b, ref.eps); // at CEA's own converged area ratio
+      assert.ok(rel(st.Ivac, ref.Ivac) < 2e-7 && rel(st.T, ref.T) < 5e-7 && rel(st.mach, ref.mach) < 5e-7 && rel(st.P, ref.P) < 5e-6, c.name + ' ' + mode);
+      assert.ok(rel(b.cstar, ref.cstar) < 2e-6, c.name + ' ' + mode + ' c*');
+      assert.ok(rel(st.Ivac, full.Ivac) < 2e-7, c.name + ' ' + mode + ' against every product');
+      n++;
+    }
+  }
+  assert.equal(n, 10);
+  // the README's F-1 sea-level numbers from these CEA values and the bell's lambda: 291.5 s shifting, 278.5 s frozen
+  const f1 = R.cases.find((c) => c.name === 'F-1'), row = T1('F-1');
+  const lam = B.lambdaBell(B.lengthFraction(row.L * IN, row.Dt * IN / 2, row.eps), row.eps).value;
+  const sl = (x) => (lam * x.Ivac - x.eps * L.pf.isa(0).P_Pa * x.cstar / f1.pc_Pa) / L.pf.ISA_G0;
+  assert.ok(Math.abs(sl(f1.eq_full) - 291.5) < 0.05 && Math.abs(sl(f1.frz1_full) - 278.5) < 0.05, sl(f1.eq_full) + ' ' + sl(f1.frz1_full));
+});
+
+test('review: a refused divergence efficiency gives no after-divergence numbers, no sizing and no chart points', () => {
+  const sel = { preset: 'lox-rp1', oxidizer: side(PAIRS['LOX/RP-1'][0]), fuel: side(PAIRS['LOX/RP-1'][1]), of: 2.27, pc: 77.6e5 };
+  const ch = B.chamberHandoff(sel, L.densities, L.THERMO, 'x');
+  const base = { eps: 16, ambient: { kind: 'altitude', alt_m: 0 }, thrust: 1e6 };
+  const contours = [{ type: 'bell', Lf: 0.5 }, { type: 'bell', Lf: NaN }, { type: 'cone', alpha: 60 }, { type: 'cone', alpha: 0 }, { type: 'cone', alpha: NaN }];
+  for (const contour of contours) {
+    const ni = { ...base, contour }, A = B.analyze(ch.rocket, ni), h = B.makeHandoff(ch.handoff, ni, A, { produced: 'x' });
+    const O = h.outputs, tag = JSON.stringify(contour);
+    assert.ok(!A.lambda && h.refusals.some((x) => x.applies_to === 'divergence_efficiency'), tag);
+    for (const k of ['divergence_efficiency', 'specific_impulse_vacuum_shifting', 'thrust_coefficient_vacuum_frozen', 'specific_impulse_ambient_shifting', 'thrust_coefficient_ambient_frozen', 'throat_area', 'mass_flow']) assert.ok(!O[k], tag + ' has no ' + k);
+    for (const k of ['specific_impulse_shifting', 'specific_impulse_frozen', 'sizing']) assert.ok(h.refusals.some((x) => x.applies_to === k), tag + ' refuses ' + k);
+    // the ideal nozzle is still given, and is the station's own Ivac
+    assert.equal(O.specific_impulse_vacuum_ideal_shifting.value, A.flows.shifting.exit.Ivac);
+    for (const x of h.refusals) assert.ok(!/NaN|Infinity|undefined/.test(x.reason + x.what_would_help), tag + ': ' + x.reason);
+  }
+  // an area ratio that is not a number, or outside the envelope, gets no lambda (it used to be 0 for NaN)
+  for (const eps of [NaN, 500, 1.2, -5]) {
+    const A = B.analyze(ch.rocket, { ...base, eps, contour: { type: 'bell', Lf: 0.8 } });
+    assert.ok(!A.lambda && A.refusals.some((x) => x.applies_to === 'divergence_efficiency'), 'eps ' + eps);
+    for (const x of A.refusals) assert.ok(!/NaN|Infinity|undefined/.test(x.reason + x.what_would_help), 'eps ' + eps + ': ' + x.reason);
+  }
+  // the cone's envelope is its contour's: 45 degrees still computes, exactly the closed form
+  const A45 = B.analyze(ch.rocket, { ...base, contour: { type: 'cone', alpha: 45 } });
+  assert.equal(A45.lambda.value, (1 + Math.cos(Math.PI / 4)) / 2);
+  // the area-ratio sweep refuses a point with no lambda rather than drawing it at lambda = 1
+  const rows = B.areaSweep(B.flow(ch.rocket, 'shifting'), 0, [10, 20], () => undefined);
+  assert.ok(rows.every((x) => x.refusal && x.isp == null));
+});
+
+test('review: the separated bracket (J-2 at sea level by hand) and no bracket when separation would sit at the throat', () => {
+  const row = L.table.ROWS.find((r) => r.engine === 'J-2');
+  const r = M.rocket(db, L.presets.PRESETS.find((p) => p.id === row.prop), row.mr, row.pc[0][0] * Bell.PSI);
+  const Lf = B.lengthFraction(row.L * IN, row.Dt * IN / 2, row.eps);
+  const pa = L.pf.isa(0).P_Pa;
+  const A = B.analyze(r, { eps: row.eps, contour: { type: 'bell', Lf }, ambient: { kind: 'altitude', alt_m: 0 } });
+  const S = A.flows.shifting, lam = A.lambda.value;
+  assert.equal(S.sep.status, 'separated');
+  // by hand: the cut nozzle at SP-8120's separation pressure, lambda C_F,vac minus its own eps pa / pc
+  const cut = B.stationAtPressure(S.base, S.sep.pSep);
+  const upper = (lam * cut.Ivac / S.base.cstar - cut.eps * pa / S.base.pc) * S.base.cstar;
+  assert.ok(rel(S.bracket.upper, upper) < 1e-9 && S.bracket.lower === S.amb.isp);
+  assert.ok(Math.abs(S.bracket.lower / L.pf.ISA_G0 - 307.0) < 0.05 && Math.abs(S.bracket.upper / L.pf.ISA_G0 - 339.5) < 0.05, 'README: 307.0 to 339.5 s');
+  // the engine table's bracket is the same code path
+  const ec = B.engineCase(row, L.presets.PRESETS).points.find((p) => p.condition === 'sl');
+  assert.ok(rel(ec.shifting.ispUpper, S.bracket.upper) < 1e-9);
+  // the F-1 at 10 MPa ambient: separation would sit above the throat pressure, so there is no bracket at all;
+  // at 1 MPa the full-flowing value is negative and is not offered as a bound
+  const f1 = L.table.ROWS.find((x) => x.engine === 'F-1');
+  const r1 = M.rocket(db, L.presets.PRESETS.find((p) => p.id === 'lox-rp1'), f1.mr, f1.pc[0][0] * Bell.PSI);
+  for (const [paX, expect] of [[1e7, 'none'], [1e6, 'upper only']]) {
+    const ni = { eps: 16, contour: { type: 'bell', Lf: 0.8 }, ambient: { kind: 'pressure', pa: paX } };
+    const A2 = B.analyze(r1, ni), F = A2.flows.shifting, h = B.makeHandoff({ ...json('snapshots/31-handoff.json') }, ni, A2, { produced: 'x' });
+    const txt = h.refusals.filter((x) => x.applies_to === 'specific_impulse_ambient_shifting')[0].what_would_help;
+    if (expect === 'none') assert.ok(F.bracket.none && F.bracket.upper == null && F.bracket.lower == null && /No bracket/.test(txt), txt);
+    else assert.ok(F.bracket.lower == null && F.bracket.upper > 0 && /up to/.test(txt), txt);
+    const offered = (txt.match(/Bracket: [^;(]*/) || [''])[0]; // the bound itself, not the explanation after it
+    assert.ok(!/-\d/.test(offered), 'no negative number offered as a bound: ' + txt);
+  }
+});

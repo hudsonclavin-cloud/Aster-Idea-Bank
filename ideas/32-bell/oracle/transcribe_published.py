@@ -61,7 +61,7 @@ def main():
     meta = {'source': 'NASA RP-1311 Part II (1996), Examples 8 (H2(L)/O2(L) at 90.17/20.27 K, O/F 5.55157, 773.3 psia = 53.3172 bar) and 12 (CH6N2(L)/N2O4(L) at 298.15 K, O/F 2.5, 1000 psia = 68.947 bar); legacy CEA with its 1996 thermodynamic data',
             'note': 'values exclude the chamber (and for Ae/At, CSTAR, CF, Ivac, Isp the throat) columns; units as printed: P bar, T K, cstar/Ivac/Isp m/s',
             'cases': cases}
-    json.dump(meta, open(os.path.join(HERE, 'published.json'), 'w'), indent=1)
+    json.dump(meta, open(os.path.join(HERE, 'published.json'), 'w'), separators=(',', ':'))
     for c in cases:
         print(c['name'], c['mode'], c['stations'], c['rows']['eps']['values'], c['rows']['Ivac']['values'])
 

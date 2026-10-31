@@ -238,6 +238,38 @@
       return { cfVacIdeal: st.cfVac, IvacIdeal: st.Ivac, cfVac: cfVac, Ivac: cfVac * base.cstar, cf: cf, isp: cf * base.cstar, pa: pa, lambda: lam };
     }
 
+    /**
+     * The bracket for a separated nozzle (m/s): lower = flowing full (the pressure deficit acts on the whole skirt),
+     * upper = the nozzle cut at SP-8120's separation plane (the skirt beyond contributes nothing). Review fix: when
+     * SP-8120's separation pressure is at or above the throat pressure there is no separation plane in the divergent
+     * section and no bracket (the kernel used to offer "-34060 m/s" at 10 MPa ambient); a non-positive lower end is
+     * dropped rather than offered as a bound.
+     */
+    function sepBracket(base, st, sep, pa, lam, ambPerf) {
+      var br = { lower: ambPerf.isp, upper: null, cut: null, notes: [] };
+      if (!(sep.pSep < base.throat.P)) {
+        br.lower = null;
+        br.none = 'SP-8120 puts separation at ' + fmt(sep.pSep / 1e3) + ' kPa, at or above the throat pressure (' + fmt(base.throat.P / 1e3) + ' kPa): the flow would break away at or before the throat, so this nozzle would not run supersonic at all and no bracket is offered';
+        return br;
+      }
+      var cut = stationAtPressure(base, sep.pSep, st);
+      if (cut.refusal) br.notes.push('no upper end: the separation plane cannot be located (' + cut.refusal.reason + ')');
+      else {
+        br.cut = { eps: cut.eps, station: cut, cfUpper: lam * cut.cfVac - cut.eps * pa / base.pc };
+        br.cut.ispUpper = br.cut.cfUpper * base.cstar;
+        br.upper = br.cut.ispUpper;
+      }
+      if (!(br.lower > 0)) { br.notes.push('the full-flowing value (' + fmt(br.lower, 4) + ' m/s) is not positive, so it bounds nothing'); br.lower = null; }
+      return br;
+    }
+    function bracketText(br) {
+      if (br.none) return 'No bracket: ' + br.none + '.';
+      var s = br.lower != null && br.upper != null ? 'Bracket: ' + fmt(br.lower, 4) + ' to ' + fmt(br.upper, 4) + ' m/s (full-flowing to cut at the separation plane)'
+        : br.upper != null ? 'Bracket: up to ' + fmt(br.upper, 4) + ' m/s (the nozzle cut at the separation plane)'
+        : br.lower != null ? 'Bracket: above ' + fmt(br.lower, 4) + ' m/s (flowing full)' : 'No bracket';
+      return s + (br.notes.length ? '; ' + br.notes.join('; ') : '') + '.';
+    }
+
     // ------------------------------------------------------------------ ambient and separation
     /** spec: {kind: 'vacuum'} | {kind: 'altitude', alt_m} | {kind: 'pressure', pa}. Returns {pa, label, source} or {refusal}. */
     function ambient(spec) {
@@ -281,12 +313,20 @@
     }
 
     // ------------------------------------------------------------------ divergence efficiency
+    // Review fix: the cone's lambda is refused over the same 0-45 degree envelope as its contour (coneContour), so a
+    // cone the page cannot draw is not given a thrust coefficient either; a non-number is invalid_input, not "NaN".
     function lambdaCone(alphaDeg) {
-      if (!(alphaDeg > 0 && alphaDeg < 90)) return { refusal: refusal('invalid_input', 'A cone half-angle must be between 0 and 90 degrees.', 'A half-angle such as 15 degrees.') };
+      if (!(typeof alphaDeg === 'number' && isFinite(alphaDeg))) return { refusal: refusal('invalid_input', 'The cone half-angle must be a number of degrees.', 'A half-angle such as 15 degrees (SP-125: 12 to 18 is usual).') };
+      if (!(alphaDeg > 0 && alphaDeg <= 45)) return { refusal: refusal('out_of_envelope', 'A cone half-angle of ' + fmt(alphaDeg) + ' degrees is outside 0 to 45, the cones this page draws and evaluates.', 'A half-angle such as 15 degrees (SP-125: 12 to 18 is usual).') };
       return { value: (1 + Math.cos(alphaDeg * DEG)) / 2, source: 'SP-125 eq (4-8), lambda = (1 + cos a) / 2', confidence: 'derived', exact: true };
     }
     function lambdaBell(Lf, eps) {
       var C = charts.bellLambda, pct = Lf * 100;
+      // Review fix: an area ratio that is not a number, or outside the kernel's envelope, gets no lambda (it used to
+      // return 0 for NaN and the nearest curve for, say, -5).
+      if (!(typeof Lf === 'number' && isFinite(Lf))) return { refusal: refusal('invalid_input', 'The bell length must be a number (a percentage of a 15-degree cone).', 'A length between 60 and 100 % of a 15-degree cone, or a cone.') };
+      if (!(typeof eps === 'number' && isFinite(eps))) return { refusal: refusal('invalid_input', 'The area ratio must be a number, so there is no divergence efficiency to read.', 'An exit-to-throat area ratio between ' + EPS_ENVELOPE[0] + ' and ' + EPS_ENVELOPE[1] + '.') };
+      if (eps < EPS_ENVELOPE[0] * (1 - 1e-6) || eps > EPS_ENVELOPE[1] * (1 + 1e-6)) return { refusal: refusal('out_of_envelope', 'An area ratio of ' + fmt(eps) + ' is outside the ' + EPS_ENVELOPE[0] + ' to ' + EPS_ENVELOPE[1] + ' this kernel works over, so no divergence efficiency is read for it.', 'An area ratio between ' + EPS_ENVELOPE[0] + ' and ' + EPS_ENVELOPE[1] + '.') };
       if (!(pct >= C.Lf[0] - 1e-9 && pct <= C.Lf[C.Lf.length - 1] + 1e-9)) {
         return { refusal: refusal('out_of_envelope', 'A ' + fmt(pct, 3) + ' % bell is outside SP-125 Figure 4-12, which covers 60 to 100 %.', 'A length between 60 and 100 % of a 15-degree cone, or a cone.') };
       }
@@ -307,6 +347,8 @@
     // ------------------------------------------------------------------ contour
     function raoAngles(eps, Lf) {
       var A = charts.raoAngles, pct = Lf * 100;
+      if (!(typeof eps === 'number' && isFinite(eps))) return { refusal: refusal('invalid_input', 'The area ratio must be a number, so there are no parabola angles to read.', 'An area ratio between ' + A.eps[0] + ' and ' + A.eps[A.eps.length - 1] + ', or a cone.') };
+      if (!(typeof Lf === 'number' && isFinite(Lf))) return { refusal: refusal('invalid_input', 'The bell length must be a number (a percentage of a 15-degree cone).', 'A length between 60 and 100 %.') };
       if (!(eps >= A.eps[0] && eps <= A.eps[A.eps.length - 1])) {
         return { refusal: refusal('out_of_envelope', 'SP-8120 Figure 5(b) gives parabola angles for area ratios ' + A.eps[0] + ' to ' + A.eps[A.eps.length - 1] + ' (beyond ' + A.dashedFrom + ' dashed); eps ' + fmt(eps) + ' is outside it.', 'An area ratio inside the chart, or a cone (any area ratio), or a method-of-characteristics contour (not in this module).') };
       }
@@ -382,6 +424,8 @@
 
     /** Conical nozzle (SP-125 Fig 4-10, eq 4-7): half-angle alpha (deg), downstream throat arc RdFrac * Rt. */
     function coneContour(Rt, eps, alphaDeg, RdFrac) {
+      if (!(typeof alphaDeg === 'number' && isFinite(alphaDeg))) return { refusal: refusal('invalid_input', 'The cone half-angle must be a number of degrees.', 'A half-angle such as 15 degrees (SP-125: 12 to 18 is usual).') };
+      if (!(typeof eps === 'number' && isFinite(eps) && eps > 1)) return { refusal: refusal('invalid_input', 'The area ratio must be a number above 1 to draw a cone.', 'An area ratio between ' + EPS_ENVELOPE[0] + ' and ' + EPS_ENVELOPE[1] + '.') };
       if (!(alphaDeg > 0 && alphaDeg <= 45)) return { refusal: refusal('out_of_envelope', 'A cone half-angle of ' + fmt(alphaDeg) + ' degrees is outside 0 to 45.', 'A half-angle such as 15 degrees (SP-125: 12 to 18 is usual).') };
       var a = alphaDeg * DEG, Rd = (RdFrac == null ? rules.cone.downstreamArc : RdFrac) * Rt, Re = Rt * Math.sqrt(eps);
       var Ln = (Rt * (Math.sqrt(eps) - 1) + Rd * (1 / Math.cos(a) - 1)) / Math.tan(a);
@@ -423,24 +467,24 @@
       else lam = lambdaBell(c.Lf, opts.eps);
       if (lam.refusal) { out.refusals.push(Object.assign({ applies_to: 'divergence_efficiency' }, lam.refusal)); lam = null; }
       out.lambda = lam;
+      // Review fix: with the divergence efficiency refused there is no after-divergence C_F or Isp and no sizing (the
+      // kernel used to fall back to lambda = 1 silently while the outputs still said "x divergence efficiency").
+      var lamv = lam ? lam.value : null;
+      if (lamv == null) out.lambdaRefused = out.refusals.filter(function (x) { return x.applies_to === 'divergence_efficiency'; })[0] || null;
       ['shifting', frozenMode].forEach(function (mode) {
         var key = mode === 'shifting' ? 'shifting' : 'frozen';
         var b = flow(r, mode);
         if (b.refusal) { out.refusals.push(Object.assign({ applies_to: key }, b.refusal)); return; }
         var st = stationAtArea(b, opts.eps);
         if (st.refusal) { out.refusals.push(Object.assign({ applies_to: key + '_exit' }, st.refusal)); out.flows[key] = { base: b }; return; }
-        var F = { base: b, exit: st, vac: performance(b, st, 0, lam ? lam.value : 1) };
+        var F = { base: b, exit: st };
+        if (lamv != null) F.vac = performance(b, st, 0, lamv);
         if (amb) {
           F.sep = separation(b.pc, amb.pa, st.P);
-          F.amb = performance(b, st, amb.pa, lam ? lam.value : 1);
-          if (F.sep.status === 'separated') {
-            var cut = stationAtPressure(b, F.sep.pSep, st);
-            if (!cut.refusal) {
-              F.sepCut = { eps: cut.eps, station: cut, cfUpper: (lam ? lam.value : 1) * cut.cfVac - cut.eps * amb.pa / b.pc };
-              F.sepCut.ispUpper = F.sepCut.cfUpper * b.cstar;
-            }
-          }
+          if (lamv != null) F.amb = performance(b, st, amb.pa, lamv);
+          if (F.sep.status === 'separated' && F.amb) F.bracket = sepBracket(b, st, F.sep, amb.pa, lamv, F.amb);
         }
+        if (F.bracket && F.bracket.cut) F.sepCut = F.bracket.cut;
         F.sepOnset = separationAmbient(b.pc, st.P, false);
         F.sepMarginOnset = separationAmbient(b.pc, st.P, true);
         out.flows[key] = F;
@@ -448,7 +492,9 @@
       // sizing and contour at the design flow model
       var D = out.flows[design];
       var Rt = null;
-      if (opts.thrust != null && D && D.exit) {
+      if (opts.thrust != null && D && D.exit && lamv == null) {
+        out.refusals.push({ applies_to: 'sizing', code: (out.lambdaRefused && out.lambdaRefused.code) || 'insufficient_data', reason: 'No divergence efficiency for this contour (refused above), so there is no thrust coefficient to size the throat with.', what_would_help: (out.lambdaRefused && out.lambdaRefused.what_would_help) || 'A contour inside the charts.' });
+      } else if (opts.thrust != null && D && D.exit) {
         var damb = opts.designAmbient ? ambient(opts.designAmbient) : amb;
         if (damb && damb.refusal) out.refusals.push(Object.assign({ applies_to: 'sizing' }, damb.refusal));
         else if (damb) {
@@ -456,7 +502,7 @@
           if (sepD.status === 'separated') {
             out.refusals.push({ applies_to: 'sizing', code: 'out_of_envelope', reason: 'At the design ambient (' + damb.label + ') the nozzle separates (exit ' + fmt(D.exit.P / 1e3) + ' kPa, separation at ' + fmt(sepD.pSep / 1e3) + ' kPa), so a thrust coefficient for sizing is not defined.', what_would_help: 'A design ambient nearer vacuum, a smaller area ratio, or a higher chamber pressure.' });
           } else {
-            var pd = performance(D.base, D.exit, damb.pa, lam ? lam.value : 1);
+            var pd = performance(D.base, D.exit, damb.pa, lamv);
             var sz = size(opts.thrust, pd.cf, D.base.pc, D.base.cstar, opts.eps);
             if (sz.refusal) out.refusals.push(Object.assign({ applies_to: 'sizing' }, sz.refusal));
             else { sz.F = opts.thrust; sz.cf = pd.cf; sz.isp = pd.isp; sz.ambient = damb; sz.separation = sepD; out.sizing = sz; Rt = sz.Rt; }
@@ -491,7 +537,9 @@
         var st = stationAtArea(base, e, prev);
         if (st.refusal) { prev = null; return { eps: e, refusal: st.refusal }; }
         var lv = lamFn ? lamFn(e) : 1;
-        var p = performance(base, st, pa, lv == null ? 1 : lv);
+        // review fix: a missing divergence efficiency refuses the point instead of silently becoming 1
+        if (!(typeof lv === 'number' && isFinite(lv))) { prev = st; return { eps: e, refusal: refusal('insufficient_data', 'No divergence efficiency at area ratio ' + fmt(e) + '.', 'A contour inside the charts.') }; }
+        var p = performance(base, st, pa, lv);
         var sep = separation(base.pc, pa, st.P);
         prev = st;
         return { eps: e, isp: p.isp, ispIdeal: st.Ivac - pa / st.G, pe: st.P, status: sep.status };
@@ -540,8 +588,8 @@
           var sep = separation(f.base.pc, pa, f.exit.P);
           var o = { isp: p.isp, cf: p.cf, cstar: f.base.cstar, status: sep.status, gap: (pt.ispPublished - p.isp) / p.isp };
           if (sep.status === 'separated') {
-            var cut = stationAtPressure(f.base, sep.pSep, f.exit);
-            if (!cut.refusal) { o.ispUpper = (lamv * cut.cfVac - cut.eps * pa / f.base.pc) * f.base.cstar; o.epsSep = cut.eps; }
+            var br = sepBracket(f.base, f.exit, sep, pa, lamv, p);
+            if (br.cut) { o.ispUpper = br.upper; o.epsSep = br.cut.eps; }
           }
           pt[mode] = o;
         });
@@ -615,8 +663,15 @@
         O['exit_gamma_' + k] = q(F.exit.gamma, '1', 'derived', s + (k === 'shifting' ? ' (gamma_s)' : ' (frozen cp/cv)'));
         O['thrust_coefficient_vacuum_ideal_' + k] = q(F.exit.cfVac, '1', 'derived', s + ' (no divergence loss)');
         O['specific_impulse_vacuum_ideal_' + k] = q(F.exit.Ivac, 'm/s', 'derived', s + ' (no divergence loss)');
-        O['thrust_coefficient_vacuum_' + k] = q(F.vac.cfVac, '1', 'derived', s + ' x divergence efficiency');
-        O['specific_impulse_vacuum_' + k] = q(F.vac.Ivac, 'm/s', 'derived', s + ' x divergence efficiency');
+        if (F.vac) {
+          O['thrust_coefficient_vacuum_' + k] = q(F.vac.cfVac, '1', 'derived', s + ' x divergence efficiency');
+          O['specific_impulse_vacuum_' + k] = q(F.vac.Ivac, 'm/s', 'derived', s + ' x divergence efficiency');
+        } else {
+          // review fix: no divergence efficiency, so no after-divergence numbers (the ideal ones above stand)
+          var lr = A.lambdaRefused || {};
+          out.refusals.push({ applies_to: 'specific_impulse_' + k, code: lr.code || 'insufficient_data', reason: 'No divergence efficiency for this contour (' + (lr.reason || 'refused') + '), so the ' + tag + ' thrust coefficient and specific impulse after divergence loss, in vacuum and at the ambient, are not given; the ideal-nozzle values (no divergence loss) are.',
+            what_would_help: lr.what_would_help || 'A contour inside the charts.' });
+        }
         if (k === 'frozen') O.cstar_frozen = q(F.base.cstar, 'm/s', 'derived', s + (A.frozenMode === 'frozen' ? ' (frozen throat)' : ' (equals the shifting c*: frozen after the throat)'));
         O['separation_onset_ambient_pressure_' + k] = q(F.sepOnset, 'Pa', 'derived', 'SP-8120 separation criterion (Schilling): ambient pressure at which the wall would separate at this exit pressure');
         O['separation_margin_ambient_pressure_' + k] = q(F.sepMarginOnset, 'Pa', 'derived', 'SP-8120: the ambient pressure at which the exit pressure is within 20 percent of separation');
@@ -625,7 +680,7 @@
           O['specific_impulse_ambient_' + k] = q(F.amb.isp, 'm/s', 'derived', s + ' at the ambient pressure, flowing full');
         } else if (F.sep && F.sep.status === 'separated') {
           out.refusals.push({ applies_to: 'specific_impulse_ambient_' + k, code: 'out_of_envelope', reason: 'At this ambient the ' + tag + ' nozzle separates (exit ' + fmt(F.exit.P / 1e3) + ' kPa, separation at ' + fmt(F.sep.pSep / 1e3) + ' kPa); a full-flowing C_F would be wrong and no separated-flow model is offered.',
-            what_would_help: 'A smaller area ratio, a higher chamber pressure, or an ambient below ' + fmt(F.sepOnset / 1e3) + ' kPa. Bracket: ' + fmt(F.amb.isp, 4) + (F.sepCut ? ' to ' + fmt(F.sepCut.ispUpper, 4) : '') + ' m/s (full-flowing to cut at the separation plane).' });
+            what_would_help: 'A smaller area ratio, a higher chamber pressure, or an ambient below ' + fmt(F.sepOnset / 1e3) + ' kPa.' + (F.bracket ? ' ' + bracketText(F.bracket) : '') });
         }
       });
       if (A.lambda) O.divergence_efficiency = q(A.lambda.value, '1', 'derived', A.lambda.source + (A.lambda.note ? '; ' + A.lambda.note : ''));
@@ -713,7 +768,7 @@
       ambient: ambient, altitudeOfPressure: altitudeOfPressure, separation: separation, separationAmbient: separationAmbient,
       lambdaCone: lambdaCone, lambdaBell: lambdaBell, raoAngles: raoAngles, referenceConeLength: referenceConeLength, lengthFraction: lengthFraction,
       bellContour: bellContour, coneContour: coneContour, size: size, analyze: analyze,
-      ambientSweep: ambientSweep, areaSweep: areaSweep, engineCase: engineCase,
+      ambientSweep: ambientSweep, areaSweep: areaSweep, engineCase: engineCase, sepBracket: sepBracket, bracketText: bracketText,
       makeHandoff: makeHandoff, parseHandoff: parseHandoff, chamberFromHandoff: chamberFromHandoff,
       g0: g0,
     };

@@ -29,6 +29,18 @@ EPS_DASH = [60, 70, 80, 90]
 LF_NODES = [60, 62.5, 65, 67.5, 70, 72.5, 75, 77.5, 80, 82.5, 85, 87.5, 90, 92.5, 95, 97.5, 100]
 
 
+
+def compact(data):
+    """JSON with each innermost list on one line (review: the one-number-per-line layout tripled the file)."""
+    def enc(v, ind):
+        if isinstance(v, dict):
+            pad = '  ' * (ind + 1)
+            return '{\n' + ',\n'.join(pad + json.dumps(k) + ': ' + enc(x, ind + 1) for k, x in v.items()) + '\n' + '  ' * ind + '}'
+        if isinstance(v, list) and any(isinstance(x, (dict, list)) for x in v):
+            return '[' + ', '.join(enc(x, ind) for x in v) + ']'
+        return json.dumps(v, separators=(', ', ': '))
+    return enc(data, 1)
+
 def sha(p):
     return hashlib.sha256(open(p, 'rb').read()).hexdigest()
 
@@ -190,7 +202,7 @@ def main():
           ' * chart\'s shortened-cone curve (used only to check the calibration against the closed form).\n'
           ' * raoAnglesSP125: SP-125 Figure 4-14\'s reading of the same angles (a second opinion; median of the points\n'
           ' * within 0.6 of each area ratio). */\n'
-          '(function (root) {\n  var NOZZLE_CHARTS = ' + json.dumps(data, indent=1).replace('\n', '\n  ') + ';\n'
+          '(function (root) {\n  var NOZZLE_CHARTS = ' + compact(data) + ';\n'
           '  if (typeof module === \'object\' && module.exports) module.exports = NOZZLE_CHARTS;\n'
           '  else root.NOZZLE_CHARTS = NOZZLE_CHARTS;\n'
           '})(typeof self !== \'undefined\' ? self : this);\n')

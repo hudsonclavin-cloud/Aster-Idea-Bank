@@ -158,3 +158,19 @@ details.more { margin-top: 12px; }
 #engines td.wrap { white-space: normal; min-width: 9em; }
 #engines button { min-height: 30px; padding: 2px 8px; }
 #engines tr.current td { background: var(--accent-bg); }
+/* Review fix: on a phone both tables stack, one record per block, so the comparison columns and the sources are
+   readable without scrolling sideways (they used to sit off-screen in a 150-px-tall-per-row strip). */
+@media (max-width: 600px) {
+  #allTable, #allTable tr, #engines, #engines tr { display: block; width: 100%; }
+  #allTable tr:first-child, #engines tr:first-child { display: none; }
+  #allTable tr, #engines tr { border-bottom: 1px solid var(--grid); padding: 6px 0; }
+  #allTable td, #engines td { display: inline-block; border: 0; padding: 1px 8px 1px 0; text-align: left; white-space: normal; vertical-align: baseline; }
+  #allTable td:first-child { display: block; font-weight: 600; overflow-wrap: anywhere; }
+  #allTable td:last-child { display: block; color: var(--ink-2); font-size: 0.78rem; overflow-wrap: anywhere; }
+  #engines td.eng { display: block; font-weight: 600; }
+  #engines td.wrap { display: block; min-width: 0; }
+  #engines td[data-label]::before { content: attr(data-label) " "; color: var(--muted); }
+  #engines td.act { display: block; padding-top: 4px; }
+  #engines tr.current { background: var(--accent-bg); }
+  #engines tr.current td { background: none; }
+}
