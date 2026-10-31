@@ -26,7 +26,7 @@ On 2026-10-26 the owner asked to stop spending on ideas 20 and above and to save
 | 25 | Reach Census | Aster + PartForge + Skyhook | census script and its output data; **no tests, page or README**. Recovered by replay | `hold/ideas-20-30` |
 | 29 | Confidence Census | PartForge | never started | proposal only |
 
-Beyond these, `waitlist.json` holds the next fifteen candidates the judging panel ranked (31–45) and the six it dropped as duplicates.
+Beyond these, `waitlist.json` holds the next fifteen candidates the judging panel ranked (its ranks 31–45 are positions in that ranking, not folder numbers) and the six it dropped as duplicates. Folder numbers 31–50 belong to the series in `SERIES_LONG_WAY_ROUND.md`.
 
 
 `hold/ideas-20-30` was built on top of `main` as it stood when the hold began, so it also contains older, pre-review copies of ideas 01-13. Do not merge it; restore only the folders you want: `git checkout origin/hold/ideas-20-30 -- ideas/NN-slug`.
