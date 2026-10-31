@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/snapshots/thermo-excerpt.js",
+  "commit": "a803e5577a66e5ff04d9bc07246ecb247692cb36",
+  "commitDate": "2026-10-31T04:14:30+00:00",
+  "pathLastChanged": "6a34026 2026-10-31T03:43:38+00:00",
+  "committedBlob": "b9a2ab8d137b9131989c0aa02a5947f51080c0e0",
+  "readBlob": "b9a2ab8d137b9131989c0aa02a5947f51080c0e0",
+  "sourceSha256": "0d49d96b535b51efef55de2be054eb15cfc3f228237a262ff07dc4ecef2fb416",
+  "sourceBytes": 38589,
+  "copiedAt": "2026-10-31T04:30:43.954Z",
+  "mode": "copy",
+  "note": "Module 31's verbatim NASA Glenn thermo.inp excerpt (43 gas products, 3 condensed, 10 reactants); entropy and enthalpy of the 31 handoff are on this file's reference state, so 32 must use the same excerpt",
+  "readMatchesCommitted": true,
+  "writtenSha256": "0d49d96b535b51efef55de2be054eb15cfc3f228237a262ff07dc4ecef2fb416",
+  "writtenBytes": 38589
+}

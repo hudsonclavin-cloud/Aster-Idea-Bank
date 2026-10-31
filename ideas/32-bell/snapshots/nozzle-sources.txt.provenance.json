@@ -1,0 +1,13 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19770009165 (NASA SP-8120, Liquid Rocket Engine Nozzles, 1976), pdftotext -layout lines 903-916, 928-933, 949-954, 1220-1243, 3660-3666, 3743-3757, 3815-3821; NTRS 19710019929 (NASA SP-125, Design of Liquid Propellant Rocket Engines, 2nd ed., 1971), lines 6189-6240, 6320-6370, 6620-6648, 6824-6862",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": {
+  "NTRS-19770009165.pdf (SP-8120)": "c6aa504371b090027fc4b597aad7ca7595e6f9489997857bbc573aab437bf79f",
+  "NTRS-19710019929.pdf (SP-125)": "471e590a0c8e99c36a98132104a3ddcc7097b0b7c561fb2638ce9d3c80e26c87"
+ },
+ "license": "NASA Special Publications, US-government works (public domain in the US)",
+ "note": "Verbatim text-layer lines written by oracle/build_sources.py (OCR errors kept). Scanned numbers that the text layer garbles were checked on rendered pages: SP-8120 printed page 17 (PDF 31) reads Pwall/Pamb = 0.583 (Pamb/Pc)^0.195; SP-125 PDF pages 104 and 107 read De = sqrt(14) x 24.9 = 93.4 in, Ln = 0.8 x 128 = 102.4 inches, theta_n = 27.4 deg, theta_e = 9.8 deg.",
+ "writtenSha256": "5cc901decf816bc8ee5b3d261a57c16dcfca9d06508ba89702124c8b0a538feb"
+}

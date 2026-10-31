@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/02-hot-skin/snapshots/partforge.js",
+  "commit": "a803e5577a66e5ff04d9bc07246ecb247692cb36",
+  "commitDate": "2026-10-31T04:14:30+00:00",
+  "pathLastChanged": "08d9c08 2026-10-26T09:55:34+00:00",
+  "committedBlob": "3b6db4b01268c4b4683cc1020cc37ff004b672c0",
+  "readBlob": "3b6db4b01268c4b4683cc1020cc37ff004b672c0",
+  "sourceSha256": "1c60979c3318dd7971da72050cbea791587d061252249ef8e7fe0e5a3e8ab027",
+  "sourceBytes": 22897,
+  "copiedAt": "2026-10-31T05:04:34.914Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: idea 02's verbatim copy of PartForge's 1976 US Standard Atmosphere block (PartForge index.html 620-684 at 0974a62), cut between idea 02's BEGIN/END markers and wrapped as window.PartForgeISA; used unmodified for ambient pressure against altitude, and ISA_G0 for Isp in seconds",
+  "readMatchesCommitted": true,
+  "writtenSha256": "50dd915e3f3f1e65674ccd80887f23d58e70e716ed80dca0c72e8a37749c605e",
+  "writtenBytes": 3637
+}

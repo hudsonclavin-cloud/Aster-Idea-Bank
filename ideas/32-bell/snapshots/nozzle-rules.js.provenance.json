@@ -1,0 +1,13 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19770009165 (SP-8120) section 2.1.2.1.3 and 3.1.2.1.3; NTRS 19710019929 (SP-125) section 4.3, equations (4-7) and (4-8), Figure 4-13, Sample Calculation (4-2)",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": {
+  "SP-8120": "c6aa504371b090027fc4b597aad7ca7595e6f9489997857bbc573aab437bf79f",
+  "SP-125": "471e590a0c8e99c36a98132104a3ddcc7097b0b7c561fb2638ce9d3c80e26c87"
+ },
+ "license": "US-government works (public domain in the US)",
+ "note": "Hand-transcribed constants; every quote is an exact substring of snapshots/nozzle-sources.txt (bell.test.mjs checks it). The separation exponent 0.195 is garbled in the text layer and was read from the rendered page.",
+ "writtenSha256": "bf613582fe4b1383a9a38382a235bd52f17e29efc1a482ccdc076770aaf2e9d2"
+}

@@ -1,0 +1,272 @@
+# Verbatim excerpts (pdftotext -layout of scanned NASA reports; OCR errors kept, e.g. "0.583 (Pamb/P)°"195" is
+# printed 0.583 (Pamb/Pc)^0.195 on the scan, and "= 0.8 x 128 = 1024 inches" is printed 102.4). Written by
+# oracle/build_sources.py; do not edit. US-government works, public domain in the US.
+
+## [SP-8120] NASA SP-8120, Liquid Rocket Engine Nozzles (NASA Space Vehicle Design Criteria, July 1976)
+## NTRS 19770009165, https://ntrs.nasa.gov/api/citations/19770009165/downloads/19770009165.pdf, sha256 c6aa504371b090027fc4b597aad7ca7595e6f9489997857bbc573aab437bf79f
+## pdftotext -layout lines 903-916, 928-933, 949-954, 1220-1243, 3660-3666, 3743-3757, 3815-3821
+--- lines 903-916
+
+
+A downstream                   wall           radius           0.4      times     the     throat         radius           usually         is a good             compromise               between
+fabrication          difficulty                    and         minimum              nozzle          length           for     tube-wall             construction.                 A minimum
+bend    radius    of               twice            the tube outside                      diameter    is required     for round                                    tubes      of relatively
+ductile    materials                 such            as stainless steel,                  nickel,  or copper.     Difficult-to-work                                        materials    must
+be limited         to larger                  bend            radii.      For     elliptical            cross       sections,             the     tube      bend        radius         should       be
+greater       than        twice               the         major          outside          dimension                  of      the     tube         cross         section.         For      ablative
+materials,        the     radius              must            be large          enough        to avoid             shearing           of the          material         during          firing.
+
+
+
+
+                                                                                                11
+--- lines 928-933
+divergence section is that tile nozzle wall geometry just downstream     of the throat can have a
+significant bearing on the heat transfer to tile downstream      wall because the geometry      can
+subject the boundary     layer to an adverse pressure gradient (ref. 10). Available experimental
+information   (refs. 10 and 11) for nozzles with a conical half-angle       of 15 ° indicates that
+Ra/R t probably     should not be made smaller than about 0.75. Detection   of oblique shock
+waves arising from the downstream       tangency  region is discussed  in reference   12. The
+--- lines 949-954
+rockets. As noted earlier and as shown in table I, bell nozzles are used on all of tile larger
+systems currently       flying. The expansion         surface of this type of nozzle is contoured           for
+optimum      performance       within a restrictive length and gives the nozzle a characteristic           bell
+shape. The length of a bell nozzle is generally specified as a percent (e.g., an "80% bell").
+This expression      designates      the length of the bell nozzle as a percent        of tile length of a
+ 15°-half-angle   conical nozzle having the same expansion          area ratio.
+--- lines 1220-1243
+Separation    of flow occurs when the gas in the boundary layer is unable to negotiate the rise
+to ambient pressure at the end of the nozzle. The exact- atmospheric     pressure at which flow
+will separate    from the wall of a nozzle cannot be predicted   accurately.    Various   rules of
+thumb to predict separation     have been suggested; however,   general agreement       on one of
+these methods has pot been reached. An early rule stated that a danger of separation     existed
+when the ratio of exit pressure to ambient pressure was equal to 0.4. Later methods based
+on fitting of experimental  results accounted   for the increase in overexpansion   that can be
+obtained   with increasing Mach number. A fit of experimental        data for short contoured
+nozzles over a broad range of nozzle area ratios (ref. 24) indicates that separation will occur
+when
+
+
+                                        Pwall/Pamb    =   0.583       (Pamb/P)°"195
+
+
+where
+
+
+        Pw_ai = exhaust-gas      static    pressure   on the wall at separation
+
+        Pamb   =   ambient   pressure
+
+          Pc = chamber        pressure     = exhaust-gas          total pressure
+
+--- lines 3660-3666
+
+
+Bell nozzles should have a constant-radius   arc for the upstream walls, the ratio of wall radius
+to throat    radius being kept greater than 0.6. To obtain the best compromise         of nozzle
+efficiency    and throat surface area exposed    to gas conditions near Mach 1, maintain       the
+upstream-wall     radius ratio at about 1.0.
+
+--- lines 3743-3757
+                                                               66
+3.1.2.1.2          Nonoptimum                         Contour
+
+
+          When          performance                        losses         of        ttle     order          of     0.25      percent           are     tolerable             or when
+          rigorous         optimization                          methods              do not exist.                 The      expansion           geometry                  shall       be a
+          simple         curve     that          provides                 the best           performance.
+
+
+For      the    first     condition,                  a canted-parabola                            contour            as shown          in figure                5(a)     is recommended
+for      the    expansion                wall.            For       conditions                where         rigorous           optimization                 methods              do     not        exist
+(e.g.,     short         nozzles          with             high        area         ratio),         the      truncated             ideal       nozzle            of reference                14 or a
+parabolic    wall contour   is recommended.                                                   From   the extrapolated     region of figure 5(b), get a
+trial estimate    of the initial   and final                                               wall angles   for the parabolic     contour.  To maximize
+performance,               vary         the trial               angles         and compute                  the      efficiency         of each           configuration.
+--- lines 3815-3821
+                                                three specific-heat ratios (ref. 25).
+
+
+                                                                                                   67
+exit wall pressure is within 20 percent of the separation    pressure, reduce the expansion   ratio
+or select a nonseparating,     nonoptimum     contour. Predictions    of separated flow should be
+regarded as development     guides only. Verify marginal nozzles by full-scale operation.
+
+## [SP-125] NASA SP-125, Design of Liquid Propellant Rocket Engines, 2nd ed. (Huzel & Huang, 1971)
+## NTRS 19710019929, https://ntrs.nasa.gov/api/citations/19710019929/downloads/19710019929.pdf, sha256 471e590a0c8e99c36a98132104a3ddcc7097b0b7c561fb2638ce9d3c80e26c87
+## pdftotext -layout lines 6189-6240, 6320-6370, 6620-6648, 6824-6862
+--- lines 6189-6240
+                                                                                                                   [XIT
+divergent cone half angle a varies from approxi-                1-1.-----                   L, _ _ _ _ _ _P...,LANE
+mately 12° to 18°. The length of the conical
+nozzle section can be expressed by the equation                 I                                                         END        '
+                                                             i THROAT                                                     ""'NT 1
+                                                                I
+                                                                I
+
+              R t (Vc-1) + R(sec a -1)                                                                                               ,
+           Ln           tan a
+                                              (4-7)
+                                                       .-T                                                                       ..
+                                                                                                                                ~ jfR,
+
+                                                       R
+                                                        f'
+                                                           i r - CHARACT[NSTIC                ~
+                                                                                                           RIGHT                     I
+    The conical nozzle with a 15° divergent half        I'      1\      kERIIIEL   (TN_O)         p. Ii'   INK)                      ,
+
+
+angle has become almost a standard. as it is a         L -10--------------
+                                                          ;                . ' NOZZLE                              ----~-~
+
+good compromise on the basis of weight. length,
+and performance.                                                    Figure 4-11. -Bell nozzle contour.
+   Since in a conical nozzle certain performance
+losses occur as a result of the non axial compo-      chosen for the nozzle contour MT upstream of the
+nent of the exhaust gas velocity, a correction        throat. Contour TNE is the diverging portion of
+factor A is applied for the calculation of the exit   the nozzle. The initial expansion occurs along
+gas momentum. This factor or thrust efficiency        contour TN; contour NE turns the flow over to a
+is the ratio between the exit gas momentum of         direction nearer to axial. For design conven-
+the conical nozzle and that of an ideal nozzle        ience, the contour TN is also a circular arc. with
+with uniformly parallel axial gas flow. The           a smaller radius R2 •
+value of A can be expressed by the following              For those familiar with compressible flow
+equation:                                             theories. it is noted that, using transonic flow
+                                                      analyses, a constant-Mach-number line TO can
+                  A=i(ltcosa)                 (4-8)   be defined at the throat. Given the flow condi-
+                                                      tion along TO and the solid boundary TN, a
+where a = half angle of the conical nozzle.           kernel flow field TNKO can be generated by the
+    For an ideal nozzle, A would be unity. For a      method of characteristics developed in gas dy-
+conical nozzle with a = 15° and A= 0.983, the exit    namics. The kernel of the rocket nozzle contour
+gas momentum or the exit velocity will be 98.3        is defined as that portion of the supersonic flow
+percent of the ideal nozzle exit velocity calcu-      field determined entirely by throat conditions.
+lated by equation (1-18). The value of the vac-       The last right characteristic line NK of kernel
+uum thrust coefficient of a nozzle is in direct       TNKO, and thus the loeation of the point N along
+proportion to the thrust generated by the nozzle,     contour TN, is to be determined by specific
+                                                      design criteria.
+or to the nozzle exit gas velocity. Therefore,
+                                                          The location of the end point E along contour
+the theoretical vacuum thrust coefficient (neglect-
+                                                      NE is defined by the given nozzle expansion
+--- lines 6320-6370
+FRACTIONAL NOZZLE LENGTH (L~ BASED ON A 15° HALF ANGLE                                 For the design of a specific nozzle. the fol-
+        CONICAL NOZZLE WITH ANY AREA RATIO.                                         lowing data are required:
+                                                                                       (1) Throat diameter, Dr, inches
+Figure 4-12. - Thrust efficiency versus bell nozzle                                    (2) Axial length of the nozzle from throat to
+   length. (Shown [or comparison: effect o[ short-                                           exit plane, Ln , inches (or the desired
+  ening conical nozzle, increasing half angle.)                                              fractional length Lf based on a 15°
+                                                                                             conical nozzle)
+    Commonly, an equivalent 15° half-angle coni-                                       (3) Expansion area ratio c
+cal nozzle is used as a standard to specify bell                                       (4) Initial wall angle of the parabola. Bn ,
+nozzles. For instance, the length of an 80-                                                  degrees
+percent bell nozzle (distance between throat and                                       (5) Nozzle exit wall angle, Be, degrees
+exit plane) is 80 percent, or 0.8 of that of a 15°                                  The wall angles,                 en
+                                                                                                          and Be are shown in figure
+half-angle conical nozzle having the same throat                                    4-14 as a function of the expansion area ratio c.
+area, radius below the throat, and area expansion
+ratio.
+    Figure 4-12 shows the thrust efficiency ,\
+versus fractional nozzle length Lf for conical
+and bell nozzles.
+    As may be seen, bell nozzle lengths beyond                                                         / ' V :..- ~
+                                                                                                                     I-- r-   -   I--
+                                                                                                                                                         Lt'" 60~.
+
+                                                                                                                                                         Lt· 70'/.
+                                                                                                                                                         Lt· 80'4
+                                                                                                                                                         Lp 90',.
+                                                                                                                                                         Lt:aIOO".
+approximately 80 percent do not significantly                                                         /':: ~ ~ t:::= ::::: f=-
+contribute to performance, especially when con-
+Sidering weight penalties.                                                                            ~V
+3. Parabolic Approximation of Bell Nozzles
+   One convenient way to design a near-optimum-                                                       l'-- ""'-
+                                                                                                      ~ ""'-
+thrust bell nozzle contour is through the use of                                                                                                         Lf' 60'/,
+                                                                                                                                                         L til 70'/,
+the parabolic approximation procedures as sug-                                                                                             i
+                                                                                                                                                         L ,. eo'/.
+gested by G.V.R. Rao. The design configuration                                                        ....:::::~          I
+                                                                                                                                           ,             L f' 90'/,
+                                                                                                                                                         L ,Z 10C".
+of a parabolic approximation bell nozzle is
+                                                                                           o
+shown in figure 4-13. The nozzle contour imme-                                                                '0        20       30       40
+                                                                                                                   EXPANSION AREA RATIO •
+diately upstream of the throat T is a circular arc
+with a radius of 1.5 Rt . The divergent section                                     Figure 4-14.-13 n and 13 e as function of expansion
+nozzle contour is made up of a circular entrance                                                       area ratio c.
+92                            DESIGN OF LIQUID PROPELLANT ROCKFT ENGINES
+
+
+
+--- lines 6620-6648
+                                                         From sample calculation (4-1):
+        expansion area ratios) for a given length.
+   (2) Improved performance at sea level or low
+                                                      Design sea level C[= 1.531;
+        altitudes. (Annular nozzles with high
+                                                                                (P c)ns = 1000 psia; (= 14
+        expansion area ratios can be used for a
+        single-stage sea level to vacuum vehicle
+                                                      Substitute into equation (1-33):
+        mission.)
+   (3) The relatively stagnant region in the cen-
+        ter of the nozzle can possibly be used        Throat area:           - 747000 _          . 2
+                                                                         A t -1.531 x 1000 - 487 m
+        for installation of gas generators. turbo-
+        pumps. tanks. auxiliary equipment. and
+        turbine gas discharges.
+   (4) A segmented combustion chamber design
+                                                      Throat diameter: Dt =   l ~x   487 = 24.9 in
+
+        approach can be used. easing develop-                                                  24 9
+                                                                                         R t -_ 2. --1245·
+                                                                                                       . m
+        ment effort (individual segments can be
+        built and tested during the early phases)
+         and improving combustion stability.          Exit diameter:     De =vl4x 24.9=93.4 in
+Disadvantages
+                                                                                         Re-- 93.4
+                                                                                               2 -- 46 .7 m
+                                                                                                          .
+--- lines 6824-6862
+Distance from injector face to throat                    to 50 Btulin 2 -sec), thrust chamber cooling be-
+            =18.17+12.40=30.57, say 31 inches            comes a major design consideration. For short-
+                                                         duration operation (up to a few seconds), un-
+    Design an "80-percent bell" nozzle configura-        cooled chamber walls can be used. In this case,
+tion using the parabolic approximation procedure.        the heat can be absorbed by the sufficiently
+The nozzle contour downstream of the throat will         heavy chamber wall material which acts as a
+be a circular arc of radius 0.382 R t , or 4.75          heat sink, before the wall temperature rises to
+inches. By definition, the nozzle length Ln will         the failure level. For most longer duration appli-
+be 80 percent of the length for an equivalent 15°        cations, a steady-state chamber cooling system
+half-angle conical nozzle. Substitute into equa-         has to be employed. One or a combination of the
+tion (4-7)                                               following chamber cooling techniques is often
+                                                         used:
+                                0                            1. Regenerative cooling.-Regenerative cool-
+L =0.8x[1245(\'14-1)+4.75(SeC 15 -1)]
+ n                 tan 150                               ing is the most widely applied method and uti-
+                                                         lizes one or possibly both of the propellants, fed
+                             = 0.8 x 128 = 1024 inches
+                                                         through passages in the thrust chamber wall for
+                                                         cooling, before they are injected into the com-
+The parabolic contour wall angles en and ee can
+                                                         bustion chamber. (See par. 4.1 and fig. 4-1.)
+be derived from figure 4-14, for (= 14 and L[=0.8;
+                                                             2. Dump cooling.-With this principle, a small
+en = 274° and ee = 9.8°. The location of Nand E          percentage of the propellant, such as the hydro-
+along the nozzle contour, with respect to throat
+                                                         gen in a L0 2 /LH 2 engine, is fed through pas-
+and nozzle axis, can be calculated
+                                                         sages in the thrust chamber wall for cooling and
+                                                         subsequently dumped overboard through openings
+     Nc =0.382 Rt sin en = 2.19 inches
+                                                         at the rear end of the nozzle skirt. Because of
+     N a = Rc + 0.382 Rt(1- cos en) = 12.99 inches       inherent problems, this method has only limited
+                                                         application.
+     E t := Ln = 102.4 inches
+                                                             3. Film cooling.-Here, exposed chamber wall
+     Ea = Re = 46.7 inches                               surfaces are protected from excessive heat with
+                                                         a thin film of coolant or propellant which is in-
+With the aid of the established coordinates for          troduced through manifolded orifices in the cham-
+points Nand E, and the angles en and ee, a               ber wall near the injector. and usually in several

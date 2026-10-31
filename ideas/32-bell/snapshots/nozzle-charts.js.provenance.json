@@ -1,0 +1,13 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19770009165 (SP-8120) Figure 5(b), PDF page 29; NTRS 19710019929 (SP-125) Figures 4-12 and 4-14, PDF page 100",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": {
+  "SP-8120": "c6aa504371b090027fc4b597aad7ca7595e6f9489997857bbc573aab437bf79f",
+  "SP-125": "471e590a0c8e99c36a98132104a3ddcc7097b0b7c561fb2638ce9d3c80e26c87"
+ },
+ "license": "US-government works (public domain in the US)",
+ "note": "derived by oracle/digitize/build_charts.py: pages rendered with pdftoppm (400 and 300 dpi), gridlines or ticks fitted as straight lines (the scans are rotated and sheared), curve centres read column by column and smoothed by robust polynomial fits (RMS 0.013-0.034 deg for the angles, 0.004-0.011 percentage points for lambda). The chart's shortened-cone curve reproduces (1 + cos(atan(tan 15 deg / Lf)))/2 to within 0.023 percentage points, which checks the calibration.",
+ "writtenSha256": "7920b56e0d7f248f09263903da688112610cb3a5d50f4864198111dbbb95818d"
+}

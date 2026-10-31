@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/handoff.json",
+  "commit": "a803e5577a66e5ff04d9bc07246ecb247692cb36",
+  "commitDate": "2026-10-31T04:14:30+00:00",
+  "pathLastChanged": "6a34026 2026-10-31T03:43:38+00:00",
+  "committedBlob": "35f92a6f7ca10014a7d925eceadcb59a3b9b2e45",
+  "readBlob": "35f92a6f7ca10014a7d925eceadcb59a3b9b2e45",
+  "sourceSha256": "e214e4e31417a42331934bd75f27861d9edb4f567d8ecdf951592bcc5e9090b2",
+  "sourceBytes": 10215,
+  "copiedAt": "2026-10-31T04:48:59.017Z",
+  "mode": "copy",
+  "note": "Module 31's committed sample handoff (LOX/RP-1, O/F 2.6, 10 MPa): what module 32 must import exactly; bell.test.mjs runs the import path on it",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e214e4e31417a42331934bd75f27861d9edb4f567d8ecdf951592bcc5e9090b2",
+  "writtenBytes": 10215
+}

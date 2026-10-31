@@ -1,0 +1,10 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19770009165 (NASA SP-8120, 1976) Table I, printed pages 5-6 (PDF pages 19-20)",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceSha256": "c6aa504371b090027fc4b597aad7ca7595e6f9489997857bbc573aab437bf79f",
+ "license": "US-government work (public domain in the US)",
+ "note": "Hand-transcribed from the scan rendered at 200 and 300 dpi (the table is printed sideways; its text layer is unreadable). bell.test.mjs checks the transcription for internal consistency: At against Dt, Ae against De, and Ae/At against both.",
+ "writtenSha256": "a115d9b46960fd04814c9eac382019f5d0eae1d230310f5b4568b711a8a379fb"
+}

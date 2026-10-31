@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/mixture.js",
+  "commit": "a803e5577a66e5ff04d9bc07246ecb247692cb36",
+  "commitDate": "2026-10-31T04:14:30+00:00",
+  "pathLastChanged": "158fe6b 2026-10-31T04:14:11+00:00",
+  "committedBlob": "8c47c6922e165feb60ad757e4cee2b0dc78a2ae9",
+  "readBlob": "8c47c6922e165feb60ad757e4cee2b0dc78a2ae9",
+  "sourceSha256": "ad860e62106d472e839b9ba300614d8b1d49370ade33e33ec728384739d95f8d",
+  "sourceBytes": 40753,
+  "copiedAt": "2026-10-31T04:30:43.896Z",
+  "mode": "copy",
+  "note": "Module 31's chemical-equilibrium kernel, copied unmodified: module 32 runs shifting expansion as SP equilibria with equilibrate() and reuses thermoAt(), rocket(), sideDensity(), makeHandoff() and parseHandoff()",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ad860e62106d472e839b9ba300614d8b1d49370ade33e33ec728384739d95f8d",
+  "writtenBytes": 40753
+}

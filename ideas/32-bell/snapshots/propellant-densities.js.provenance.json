@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/snapshots/propellant-densities.js",
+  "commit": "a803e5577a66e5ff04d9bc07246ecb247692cb36",
+  "commitDate": "2026-10-31T04:14:30+00:00",
+  "pathLastChanged": "158fe6b 2026-10-31T04:14:11+00:00",
+  "committedBlob": "2afb6fc0c3afd8d4e9147a956389edb3b16e3987",
+  "readBlob": "2afb6fc0c3afd8d4e9147a956389edb3b16e3987",
+  "sourceSha256": "76470f9c2bf36483cb8f19734a42ed6c55a0abd56e4d9e099a3e1ea3d3bd7710",
+  "sourceBytes": 5144,
+  "copiedAt": "2026-10-31T04:30:44.015Z",
+  "mode": "copy",
+  "note": "Module 31's measured propellant densities, so a chamber computed here stand-alone carries the same densities a 31 handoff would",
+  "readMatchesCommitted": true,
+  "writtenSha256": "76470f9c2bf36483cb8f19734a42ed6c55a0abd56e4d9e099a3e1ea3d3bd7710",
+  "writtenBytes": 5144
+}
