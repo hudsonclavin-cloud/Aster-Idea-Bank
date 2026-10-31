@@ -58,8 +58,39 @@ test('Dawn (Canberra, 2014) and Deep Impact (DSS-14 70 m, 2005) DCTs: the gaps, 
   near(O.dawn.ptn0[1] - O.dawn.ptn0[0], 0.133, 0.01, 'Dawn Pt/No with DSS-34');
   near(O.dawn.tSun[1], 0.631, 0.002); near(O.dawn.sep_deg, 3.618, 1e-3, 'Horizons SEP at the DCT epoch');
   near(O.di.eirp[1], O.di.eirp[0], 1e-4, 'DI EIRP'); near(O.di.spaceLoss[1], O.di.spaceLoss[0], 0.005);
-  near(O.di.gain[1] - O.di.gain[0], 0.489, 0.005, 'DSS-14 gain today against 2005');
-  near(O.di.snt[1] - O.di.snt[0], -0.898, 0.01); near(O.di.ptn0[1] - O.di.ptn0[0], 0.655, 0.01, 'DI Pt/No');
+  // the DCT's header reads "RF Band X/S:X/S", LNA-1: DSS-14 with the S/X dichroic in (101 Rev. I Tables A-1 and A-3)
+  assert.equal(O.di.config, 'S/X');
+  near(O.di.snt[1] - O.di.snt[0], 0.042, 0.01, 'S/X configuration: the DCT\'s system noise to 0.04 K');
+  near(O.di.gain[1] - O.di.gain[0], 0.200, 0.005, 'S/X gain at 24.19 deg against the DCT\'s 74.02 dBi');
+  near(O.di.ptn0[1] - O.di.ptn0[0], 0.190, 0.01, 'DI Pt/No, S/X configuration');
+  // the X-only configuration (the review's correction): 0.9 K too quiet and 0.49 dB of gain too many
+  near(O.di.xOnly.snt[1] - O.di.xOnly.snt[0], -0.898, 0.01); near(O.di.xOnly.gain[1] - O.di.xOnly.gain[0], 0.489, 0.005); near(O.di.xOnly.ptn0[1] - O.di.xOnly.ptn0[0], 0.655, 0.01);
+});
+
+test('closed forms the first build left unpinned: reference frequencies, weather interpolation, the ray\'s elongation, overload limits', () => {
+  // vacuum gain at the parameter set's own reference frequency and peak elevation is G0 exactly (104 Tables A-2, A-4; 101 Table A-1)
+  near(K.dsnRx('DSS-26', 'X', D.stations['DSS-26'].X.gamma, 0.9, 8425e6).gainVac_dBi, 68.29, 1e-12, '34 m X at 8425 MHz');
+  near(K.dsnRx('DSS-26', 'Ka', D.stations['DSS-26'].Ka.gamma, 0.9, 32050e6).gainVac_dBi, 79.13, 1e-12, '34 m Ka at 32050 MHz');
+  near(K.dsnRx('DSS-14', 'X', D.stations['DSS-14'].X.gamma, 0.9, 8420e6).gainVac_dBi, 74.55, 1e-12, '70 m X at 8420 MHz');
+  near(K.dsnRx('DSS-14 (S/X)', 'X', 44.19, 0.9, 8420e6).gainVac_dBi, 74.35, 1e-12, '70 m S/X');
+  // a Ka link through the Ka radio: the ground gain is the Ka table's, not the X table's
+  const ka = K.linkBudget(rd('dawn', { band: 'Ka' }), AU, 'DSS-26', 44.38, 0.9, 90, 0, 0);
+  near(ka.lines.dsnGain_dBi, 79.13, 1e-9, 'Ka DSN gain at 32050 MHz and gamma');
+  // weather: Table A-5 at its nodes, linear between them
+  assert.equal(K.azen('Goldstone', 'X', 0), 0.037); assert.equal(K.azen('Goldstone', 'X', 0.25), 0.039); assert.equal(K.azen('Madrid', 'Ka', 0.9), 0.407);
+  near(K.azen('Goldstone', 'X', 0.7), (0.040 + 0.045) / 2, 1e-12, 'halfway between CD 0.5 and 0.9');
+  near(K.azen('Canberra', 'Ka', 0.125), (0.124 + 0.208) / 2, 1e-12);
+  // the ray's equivalent elongation: asin(p / |r_E|), p the closest approach of the Earth-spacecraft segment to the Sun
+  const rE = 0.983 * AU, E = { r: [rE, 0, 0], v: [0, 0, 0] }, still = (r) => () => ({ r: r, v: [0, 0, 0] });
+  const sup = K.downleg(0, still([-1.2 * AU, 0.05 * AU, 0]), () => E);   // beyond the Sun: p = r_E sin(SEP), elongation = SEP
+  near(sup.epsEff_deg, sup.sep_deg, 1e-9, 'superior: the elongation is the SEP'); assert.equal(sup.superior, true);
+  const inf = K.downleg(0, still([0.4 * AU, 0.01 * AU, 0]), () => E);    // between the Earth and the Sun: the ray stops short
+  near(inf.epsEff_deg, Math.asin(Math.hypot(0.4, 0.01) * AU / rE) * 180 / Math.PI, 1e-9, 'inferior: asin(|r_sc| / |r_E|)'); assert.equal(inf.superior, false);
+  // overload limits: 104 Table 7 (34 m, -85 dBm) and 101 Table 2 (70 m, -80 dBm)
+  assert.equal(K.maxRxOf(34), -85); assert.equal(K.maxRxOf(70), -80);
+  const near34 = K.linkBudget(rd('dawn'), 4e9, 'DSS-26', 40, 0.9, 90, 0, 0), near70 = K.linkBudget(rd('dawn'), 4e9, 'DSS-14', 40, 0.9, 90, 0, 0);
+  assert.equal(near34.saturates, near34.lines.pr_dBm > -85); assert.equal(near70.saturates, near70.lines.pr_dBm > -80);
+  assert.ok(near70.lines.pr_dBm > -80 && near34.lines.pr_dBm < -85 && !near34.saturates, near34.lines.pr_dBm + ' ' + near70.lines.pr_dBm + ': at 4 million km the 70 m overloads and the 34 m does not');
 });
 
 test('published rate thresholds: the model is exact at the rates that fly at the asteroid, optimistic at low rates', () => {
@@ -69,6 +100,10 @@ test('published rate thresholds: the model is exact at the rates that fly at the
   assert.ok(T.juno.maxGapHigh_dB < 0.07, 'Juno with ranging, >= 99.7 kbps: ' + T.juno.maxGapHigh_dB);
   near(T.juno.worstLow.published - T.juno.worstLow.model, 1.37, 0.01, 'Juno at 100 bps');
   near(T.junoNoRanging.maxGapHigh_dB, 0.365, 0.005, 'Juno without ranging, high rates');
+  // Dawn publishes one threshold (Table 5-2 line 21): 52.30 dB-Hz at 123,751 bps with ranging; the formula gives 52.09
+  near(T.dawnTop.published, 52.30, 1e-12); near(T.dawnTop.published - T.dawnTop.model, 0.209, 0.002, 'Dawn top rate: the model is 0.21 dB optimistic');
+  const rD = rd('dawn'); assert.equal(rD.rates[rD.rates.length - 1].reqPtN0, 52.30); assert.equal(rD.publishedCount, 1);
+  assert.equal(rd('dawn', { ranging: false }).publishedCount, 0, 'the published value is for ranging on only');
   // the radio uses the published threshold wherever one exists
   const lb = K.linkBudget(rd('juno'), 4.7456e11, 'DSS-26', 59.65, 0.9, 18, 0, 0.93);
   assert.equal(lb.rows.find((x) => x.bps === 119191).reqPtN0_dBHz, 51.78);
@@ -132,12 +167,16 @@ test('the chain sample: arrival link, totals, refusals', () => {
   const A = RUN.arrival, L = A.dct.lines;
   near(A.range_m / AU, 0.689064, 1e-6); near(A.owlt_s, 343.846, 1e-3); near(A.rtlt_s, 687.628, 1e-3); near(A.sep_deg, 72.986, 1e-3);
   assert.equal(A.dct.station, 'DSS-26'); near(A.dct.elevation_deg, 34.10, 0.01); near(L.ptn0_dBHz, 70.780, 0.002);
-  assert.equal(A.dct.best.bps, 123751.4); near(A.dct.best.margin_dB, 18.689, 0.002);
+  assert.equal(A.dct.best.bps, 123751.4); assert.equal(A.dct.best.reqSource, 'published'); near(A.dct.best.margin_dB, 18.480, 0.002, 'against Dawn\'s published 52.30 dB-Hz');
   const T = RUN.totals; assert.equal(RUN.days.length, 1041); assert.equal(T.cruise_days, 677); assert.equal(T.stay_days, 364);
   assert.equal(T.blackout_days, 0); assert.equal(T.saturation_days, 61); near(T.total_bits, 1.58956e12, 1e8);
   assert.equal(RUN.conjunctions.length, 0, 'Apophis never comes within 5 deg of the Sun');
   const own = RUN.refusals.filter((r) => !r.from).map((r) => r.applies_to).sort();
   assert.deepEqual(own, ['saturation', 'spacecraft', 'uplink']);
+  // the 70-m antennas overload too, at their own limit (101 Table 2: -80 dBm at the LNA input)
+  const R70 = K.run(src, Object.assign({}, SAMPLE.inputs.settings, { antenna: '70m' })), sat70 = R70.refusals.find((r) => r.applies_to === 'saturation');
+  assert.equal(R70.totals.saturation_days, 80); assert.ok(sat70 && /-80 dBm into the 70-m LNA/.test(sat70.reason), sat70 && sat70.reason);
+  assert.ok(R70.days.filter((d) => d.saturates).every((d) => d.pr_dBm > -80) && R70.days.filter((d) => d.pr_dBm > -80 && d.status === 'ok').every((d) => d.saturates));
   // the stay runs through Apophis's encounter of 2029-04-13 ~21:46 UTC: the nearest daily (00:00 UTC) sample is the 14th
   const close = RUN.days.reduce((m, d) => (d.range_m < m.range_m ? d : m)); assert.equal(close.utc, '2029-04-14'); assert.ok(close.range_m < 1e8, close.range_m);
 });

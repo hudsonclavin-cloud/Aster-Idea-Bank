@@ -2,7 +2,7 @@
  "commit": "retrieved 2026-10-31",
  "retrieved": "2026-10-31",
  "repo": "https://deepspace.jpl.nasa.gov/dsndocs/810-005/",
- "path": "104/104Q.pdf Appendix A Tables A-2, A-4, A-5 and Table 7; 101/101I.pdf Tables 2, A-1, A-3; 105/105E.pdf section 2.4.1 eqs. (10)-(11); 106/106B.pdf eqs. (1), (2), (7) and section 2.2.1; 202/202E.pdf eq. (3); 208/208C.pdf Tables 9 and 11; 301/301P.pdf Table 2",
+ "path": "104/104Q.pdf Appendix A Tables A-2, A-4, A-5 and Table 7; 101/101I.pdf Tables 2 (incl. -80.0 dBm maximum signal), A-1, A-3 (X-only and S/X configurations); 105/105E.pdf section 2.4.1 eqs. (10)-(11); 106/106B.pdf eqs. (1), (2), (7) and section 2.2.1; 202/202E.pdf eq. (3); 208/208C.pdf Tables 9 and 11; 301/301P.pdf Table 2",
  "sourceSha256": {
   "810-005 101I.pdf": "b751b026fe433e348ba749f3b4e9c6d003e603f7534d7ecad21b8bd119f74132",
   "810-005 104Q.pdf": "3ad95f333082065b68e40c52cc85aedf2e7148ecd0e9f4ea4c0b6dda7017682f",
@@ -14,6 +14,6 @@
  },
  "license": "JPL DSN Telecommunications Link Design Handbook, public release (California Institute of Technology, government sponsorship acknowledged); numbers transcribed with attribution",
  "note": "hand-transcribed by build-data.mjs from pdftotext -layout of each PDF; equation signs checked against the rendered pages (106 eqs. 2 and 7) or by continuity (105 eqs. 10-11 at 0.75 deg)",
- "writtenSha256": "6c6fcfbb94bed675bebb9e7a0a306d2f04b1cf52b51942d1a3fd8fcf1beae491",
- "writtenBytes": 5547
+ "writtenSha256": "27d688ae1e2ecb515ea8274f3f10ea9dfa7235f7486f4494aa0ad7dd8fa6f1d3",
+ "writtenBytes": 5931
 }

@@ -110,7 +110,7 @@
     h += tile('Cruise data', bits(T.cruise_bits), '', 'derived', T.cruise_days + ' days');
     h += tile('Stay data', bits(T.stay_bits), '', 'derived', T.stay_days + ' days at the asteroid');
     h += tile('Blacked-out days', String(T.blackout_days), '', 'derived', 'scintillation m ≥ 0.3 at ' + rd.band, T.blackout_days ? 'bad' : '');
-    h += tile('Receiver overload days', String(T.saturation_days), '', 'derived', '> −85 dBm into a 34-m', T.saturation_days ? 'bad' : '');
+    h += tile('Receiver overload days', String(T.saturation_days), '', 'derived', '> ' + String(K.maxRxOf(R.S.antenna === '70m' ? 70 : 34)).replace('-', '−') + ' dBm into a ' + (R.S.antenna === '70m' ? '70-m' : '34-m'), T.saturation_days ? 'bad' : '');
     $('tiles').innerHTML = h;
     var own = R.refusals.filter(function (r) { return !r.from; }), carried = R.refusals.filter(function (r) { return r.from; });
     $('refusals').innerHTML = own.map(refusalHtml).join('');
@@ -130,7 +130,7 @@
     var L = lb.lines, rd = R.radio, b = lb.best || lb.rows[lb.rows.length - 1], sp = K.suppression(rd, b.modDeg), P = CRAFT[rd.key];
     var h = row('Transmitter power', fx(L.Pt_dBm, 2), 'dBm', f(rd.power_W, 3) + ' W') + row('Circuit loss', fx(L.circuit_dB, 2), 'dB', P.article) + row('Antenna gain', fx(L.scGain_dBi, 2), 'dBi', f(rd.diameter_m, 3) + ' m, ' + f(rd.f_Hz / 1e6, 7) + ' MHz') + row('Pointing loss', fx(L.scPoint_dB, 2), 'dB', 'set') + row('EIRP', fx(L.eirp_dBm, 2), 'dBm', 'sum', 'hl');
     h += row('Range', Math.round(d.range_m / 1e3).toLocaleString('en-US'), 'km', 'idea 40 + light time') + row('Space loss', fx(L.spaceLoss_dB, 2), 'dB', '20 log(4πdf/c)') + row('Atmosphere', fx(L.atm_dB, 3), 'dB', 'Azen / sin(el), CD ' + R.S.cd);
-    h += row('DSN antenna gain', fx(L.dsnGain_dBi, 2), 'dBi', lb.station + ' at ' + f(lb.elevation_deg, 3) + '°') + row('DSN pointing', fx(L.dsnPoint_dB, 2), 'dB', '810-005 104') + row('Polarization', fx(L.pol_dB, 2), 'dB', P.article) + row('Received power', fx(L.pr_dBm, 2), 'dBm', lb.saturates ? 'above −85 dBm: overloads' : 'sum', 'hl');
+    h += row('DSN antenna gain', fx(L.dsnGain_dBi, 2), 'dBi', lb.station + ' at ' + f(lb.elevation_deg, 3) + '°') + row('DSN pointing', fx(L.dsnPoint_dB, 2), 'dB', '810-005 104') + row('Polarization', fx(L.pol_dB, 2), 'dB', P.article) + row('Received power', fx(L.pr_dBm, 2), 'dBm', lb.saturates ? 'above ' + String(lb.maxRx_dBm).replace('-', '−') + ' dBm: overloads' : 'sum', 'hl');
     h += row('Antenna-microwave noise', fx(L.tAmw_K, 2), 'K', 'T1 + T2 e^(−a el)') + row('Atmosphere noise', fx(L.tAtm_K, 2), 'K', 'Tp (1 − 1/L)') + row('Cosmic background', fx(L.tCmb_K, 2), 'K', '2.725 / L') + row('The Sun', fx(L.tSun_K, 2), 'K', 'SEP ' + f(d.sep_deg, 3) + '°') + row('System noise temperature', fx(L.snt_K, 2), 'K', 'sum') + row('Noise density', fx(L.n0_dBmHz, 2), 'dBm/Hz', 'k T');
     h += row('Received Pt/No', fx(L.ptn0_dBHz, 2), 'dB-Hz', '', 'hl');
     h += row('Carrier suppression', fx(sp.carrier_dB, 2), 'dB', 'cos²(' + b.modDeg + '°)' + (rd.ranging ? ', ranging' : '')) + row('Carrier loop SNR', fx(b.cnr_dB, 2), 'dB', 'needs 10 in ' + b.loopHz + ' Hz') + row('Data suppression', fx(sp.data_dB, 2), 'dB', 'sin²(' + b.modDeg + '°)' + (rd.ranging ? ', ranging' : ''));
@@ -142,6 +142,7 @@
   }
   function renderConj() {
     var R = st.R, tb = $('conjTable').querySelector('tbody');
+    $('conjDelayHead').textContent = 'Corona delay at ' + R.radio.band;
     if (!R.conjunctions.length) { tb.innerHTML = '<tr><td colspan="7">The spacecraft never comes within 5° of the Sun as seen from the Earth' + (R.S.stayDays ? ' (cruise and stay)' : '') + '.</td></tr>'; return; }
     tb.innerHTML = R.conjunctions.map(function (c) {
       var d = R.days.filter(function (q) { return q.utc === c.min_at_utc; })[0], g = d ? K.downleg(d.tdb, R.craftAt, K39.earthState) : null, del = g ? K.coronaDelay_s(K.stec(g.earth.r, g.craft.r), R.radio.f_Hz) * C : null;
@@ -158,8 +159,9 @@
     r('Juno DCT: system noise temperature<span class="why">antenna-microwave 16.33 K reproduced; the atmosphere gives 3.31 K here against 3.68</span>', fx(O.juno.snt[0], 2) + ' K', fx(O.juno.snt[1], 2) + ' K', fx(O.juno.snt[1] - O.juno.snt[0], 2) + ' K');
     r('Dawn DCT, Canberra 34 m, 2014-12-16: Pt/No<span class="why">with DSS-34 (the article does not name the antenna)</span>', fx(O.dawn.ptn0[0], 2), fx(O.dawn.ptn0[1], 2), dB(O.dawn.ptn0), true);
     r('Dawn DCT: the Sun\'s noise at SEP ' + f(O.dawn.sep_deg, 3) + '° (Horizons)<span class="why">810-005 105 eq. (10), the 1996 solar-minimum envelope</span>', fx(O.dawn.tSun[0], 2) + ' K', fx(O.dawn.tSun[1], 2) + ' K', fx(O.dawn.tSun[1] - O.dawn.tSun[0], 2) + ' K');
-    r('Deep Impact DCT, DSS-14 70 m, 2005-07-04: Pt/No<span class="why">today\'s published DSS-14 gain is 0.49 dB above 2005\'s</span>', fx(O.di.ptn0[0], 2), fx(O.di.ptn0[1], 2), dB(O.di.ptn0));
+    r('Deep Impact DCT, DSS-14 70 m, 2005-07-04: Pt/No<span class="why">the DCT reads "X/S:X/S", LNA-1: DSS-14 in its S/X configuration (101 Tables A-1, A-3), whose noise matches the DCT\'s to ' + fx(O.di.snt[1] - O.di.snt[0], 2) + ' K; the X-only configuration would give ' + fx(O.di.xOnly.ptn0[1] - O.di.xOnly.ptn0[0], 2) + ' dB</span>', fx(O.di.ptn0[0], 2), fx(O.di.ptn0[1], 2), dB(O.di.ptn0), true);
     r('Deep Impact rate table (27 rates): required Pt/No<span class="why">1 kbps to 400 kbps; at 10 bps the model is ' + fx(T.di.maxGapLow_dB, 2) + ' dB optimistic (subcarrier and sync losses)</span>', 'Table 3-1', 'computed', '≤ ' + fx(T.di.maxGapHigh_dB, 3) + ' dB', true);
+    r('Dawn DCT line 21: required Pt/No at 123.8 kbps<span class="why">Dawn\'s one published threshold; the page uses it (ranging on) and computes Dawn\'s other six</span>', fx(T.dawnTop.published, 2), fx(T.dawnTop.model, 2), fx(T.dawnTop.model - T.dawnTop.published, 2) + ' dB');
     r('Juno rate table, ranging on (17 rates)<span class="why">≥ 99.7 kbps; at 100 bps ' + fx(T.juno.maxGapLow_dB, 2) + ' dB optimistic; ranging off ' + fx(T.junoNoRanging.maxGapHigh_dB, 2) + ' dB: the page uses the published thresholds</span>', 'Table 3-2', 'computed', '≤ ' + fx(T.juno.maxGapHigh_dB, 3) + ' dB', true);
     var dc = M.map(function (m) { return m.carrier[0] - m.carrier[1]; }), ds = M.map(function (m) { return m.ssnr[0] - m.ssnr[1]; }), mean = function (a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; };
     r('Dawn\'s station data, June 2009, 5 passes: carrier power<span class="why">measured at DSS-24, 25 and 26 against this model at the logged range and elevation: reality is louder</span>', 'measured', 'model', '+' + fx(Math.min.apply(null, dc), 2) + ' to +' + fx(Math.max.apply(null, dc), 2) + ' dB (mean ' + fx(mean(dc), 2) + ')');
@@ -175,7 +177,7 @@
       if (O.chainApophis) r('The chain\'s Apophis (idea 40) seen from idea 39\'s Earth<span class="why">before the 2029 encounter / after it (the flyby multiplies the error)</span>', 'Horizons', 'this page', f(O.chainApophis.before.range_m / 1e3, 2) + ' km / ' + f(O.chainApophis.after.range_m / 1e3, 3) + ' km');
       var D5 = O.ds1Dates;
       r('DS1\'s 2000 conjunction: SEP below 5°<span class="why">DESCANSO article 2: 20 Oct to 3 Dec</span>', 'article', 'Horizons', '+' + fx(D5.below5.horizons[0] - D5.below5.article[0], 1) + ' d, ' + fx(D5.below5.horizons[1] - D5.below5.article[1], 1) + ' d');
-      r('DS1: telemetry received 20 Nov 2000 at "1.1°"<span class="why">Horizons puts DS1 at 1.90° that day; the model blacks out X band below 2.19°, DS1 got 40 bps through with a large margin</span>', '1.1°', fx(D5.firstTelemetry.horizonsSep, 2) + '°', 'model conservative');
+      r('DS1: telemetry received 20 Nov 2000 at "1.1°"<span class="why">Horizons puts DS1 at 1.90° that day; the model blacks out X band below 2.19°. DS1 ran 40 bps below 3° with both X and Ka on; the article does not say which band carried it</span>', '1.1°', fx(D5.firstTelemetry.horizonsSep, 2) + '°', 'model likely conservative');
     }
     $('checkTable').querySelector('tbody').innerHTML = rows.join('');
   }

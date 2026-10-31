@@ -123,6 +123,8 @@
       var Tamw = p.T1 + p.T2 * Math.exp(-p.a * elDeg), Tatm = Tp * (1 - 1 / L), Tcmb = D.Tcmb_K / L;
       return { gainVac_dBi: gainVac, atm_dB: A, azen_dB: A0, Tamw_K: Tamw, Tatm_K: Tatm, Tcmb_K: Tcmb, Tp_K: Tp, size: st.size, complex: st.complex };
     }
+    /** The recommended maximum received signal (dBm): 34-m BWG HEMT input (104 Table 7), 70-m LNA input (101 Table 2). */
+    function maxRxOf(size) { return size === 70 ? D.maxRx70_dBm : D.maxRx_dBm; }
     /** 105 Rev. E eqs. (10)-(11): the Sun's noise in a 34-m BWG beam pointed sepDeg from the Sun's centre. */
     function sunNoise(band, sepDeg, size) {
       var s = D.sunNoise;
@@ -158,7 +160,8 @@
     // ------------------------------------------------------------------------------------------- the spacecraft's radio
     var CRAFT_KEYS = Object.keys(CR.presets);
     function presetRates(P, ranging) {
-      if (P.rates && P.rates[0].length === 3) return P.rates.map(function (r) { return { bps: r[0], modDeg: r[1], loopHz: r[2], reqPtN0: null }; });
+      // Dawn: Table 4-2 has no thresholds; its DCT (Table 5-2 line 21) publishes the one for the top rate with ranging on
+      if (P.rates && P.rates[0].length === 3) return P.rates.map(function (r) { var q = P.dctReq; return { bps: r[0], modDeg: r[1], loopHz: r[2], reqPtN0: q && ranging && q.ranging && q.bps === r[0] ? q.reqPtN0 : null }; });
       if (P.ratesNoRanging) return (ranging ? P.rates : P.ratesNoRanging).map(function (r) { return { bps: r[1], nominal: r[0], modDeg: r[2], loopHz: P.loopBW_Hz, reqPtN0: r[3] }; });
       return P.rates.map(function (r) { return { bps: r[0], modDeg: r[1], loopHz: P.loopBW_Hz, reqPtN0: ranging ? r[3] : r[2] }; });
     }
@@ -174,6 +177,7 @@
         key: S.craft, name: P.name, article: P.article, f_Hz: fHz, band: S.band, Pt_dBm: db(S.power_W * 1000), power_W: S.power_W, circuitLoss_dB: P.circuitLoss_dB,
         gain_dBi: gain, diameter_m: S.diameter_m, polLoss_dB: P.polLoss_dB, losses_dB: P.losses_dB, code: P.code, reqEbN0_dB: P.reqEbN0_dB,
         ranging: S.ranging ? P.ranging : null, rates: rates, maxRate_bps: rates[rates.length - 1].bps, published: rates.some(function (r) { return r.reqPtN0 !== null; }),
+        publishedCount: rates.filter(function (r) { return r.reqPtN0 !== null; }).length,
         presetPower_W: Math.pow(10, P.Pt_dBm / 10) / 1000, presetDiameter_m: P.diameter_m
       };
     }
@@ -223,7 +227,8 @@
         best = cnr - D.carrierLoopMin_dB >= margin_dB && rc > 0 ? { bps: rc, modDeg: rd.topModDeg, loopHz: rd.topLoopHz, reqPtN0_dBHz: db(rc) + rd.reqEbN0_dB + rd.losses_dB - spc.data_dB, reqSource: 'computed', pcn0_dBHz: L.ptn0_dBHz + spc.carrier_dB, cnr_dB: cnr,
           pdn0_dBHz: L.ptn0_dBHz + spc.data_dB, ebn0_dB: L.ptn0_dBHz + spc.data_dB - db(rc), margin_dB: L.ptn0_dBHz - (db(rc) + rd.reqEbN0_dB + rd.losses_dB - spc.data_dB), closes: true, decoderCapped: capped } : null;
       }
-      return { lines: L, rows: rows, best: best, station: stId, complex: rx.complex, elevation_deg: elDeg, cd: cd, size: rx.size, saturates: rx.size === 34 && L.pr_dBm > D.maxRx_dBm };
+      var maxRx = maxRxOf(rx.size);
+      return { lines: L, rows: rows, best: best, station: stId, complex: rx.complex, elevation_deg: elDeg, cd: cd, size: rx.size, maxRx_dBm: maxRx, saturates: L.pr_dBm > maxRx };
     }
 
     // ------------------------------------------------------------------------------------------- settings
@@ -433,7 +438,10 @@
       if (t.refused_days) R.refusals.push(refusal('insufficient_data', t.refused_days + ' day(s) (' + spanOf(days, function (d) { return d.status === 'refused'; }) + ') have no link stated: ' + days.filter(function (d) { return d.status === 'refused'; })[0].refusal + ' outside the model.', S.antenna === '70m' ? 'A 34-m BWG station near the Sun.' : 'Other settings.', { applies_to: 'sun_noise' }));
       if (t.no_rate_days) R.refusals.push(refusal('out_of_envelope', t.no_rate_days + ' day(s) (' + spanOf(days, function (d) { return d.status === 'no_rate'; }) + ') close no rate in ' + rd.name + '\'s table with ' + S.margin_dB + ' dB of margin.', 'More power, a bigger dish, the 70-m antennas, or less margin.', { applies_to: 'link_margin' }));
       if (t.no_view_days) R.refusals.push(refusal('out_of_envelope', t.no_view_days + ' day(s) see the spacecraft from no complex above ' + S.elMin_deg + ' deg.', 'A lower elevation limit (6 deg receive-only).', { applies_to: 'view' }));
-      if (t.saturation_days) R.refusals.push(refusal('out_of_envelope', t.saturation_days + ' day(s) (' + spanOf(days, function (d) { return d.saturates; }) + ') put more than ' + D.maxRx_dBm + ' dBm into the 34-m receiver, the recommended maximum (810-005 104 Table 7): the high-gain antenna is too loud so close to the Earth.', 'A low-gain antenna or the station\'s low-gain mode (-65 dBm) for those days.', { applies_to: 'saturation' }));
+      if (t.saturation_days) {
+        var big = S.antenna === '70m';
+        R.refusals.push(refusal('out_of_envelope', t.saturation_days + ' day(s) (' + spanOf(days, function (d) { return d.saturates; }) + ') put more than ' + maxRxOf(big ? 70 : 34) + ' dBm into the ' + (big ? '70-m LNA, the recommended maximum (810-005 101 Table 2)' : '34-m receiver, the recommended maximum (810-005 104 Table 7)') + ': the high-gain antenna is too loud so close to the Earth.', big ? 'A low-gain antenna on the spacecraft, or a 34-m BWG antenna in its low-gain mode (-65 dBm, 810-005 104 Table 7), for those days.' : 'A low-gain antenna or the station\'s low-gain mode (-65 dBm) for those days.', { applies_to: 'saturation' }));
+      }
       if (!R.arrival || !R.arrival.dct) R.refusals.push(refusal('insufficient_data', 'No link is stated at the arrival (no pass that day, or the link is refused).', 'Other settings.', { applies_to: 'arrival_link' }));
     }
 
@@ -458,8 +466,10 @@
       out.juno = { ptn0: [ju.lines.ptn0, lbJ.lines.ptn0_dBHz], snt: [ju.lines.snt_K, lbJ.lines.snt_K], tAmw: [ju.lines.tAmw_K, lbJ.lines.tAmw_K], tAtm: [ju.lines.tAtm_K, lbJ.lines.tAtm_K], gain: [ju.lines.dsnGain_dBi, lbJ.lines.dsnGain_dBi], spaceLoss: [ju.lines.spaceLoss_dB, lbJ.lines.spaceLoss_dB], eirp: [ju.lines.eirp_dBm, lbJ.lines.eirp_dBm] };
       var dw = DC.dawn, sepD = HZ ? HZ.dawn.dct[0][4] : 3.618, lbD = linkBudget(rdOf('dawn'), hms(dw.owlt) * C, 'DSS-34', dw.elevation_deg, dw.cd, sepD, 0, dw.doff_dB);
       out.dawn = { ptn0: [dw.lines.ptn0, lbD.lines.ptn0_dBHz], tSun: [dw.lines.tSun_K, lbD.lines.tSun_K], sep_deg: sepD, spaceLoss: [dw.lines.spaceLoss_dB, lbD.lines.spaceLoss_dB], station: 'DSS-34' };
-      var di = DC.di, lbI = linkBudget(rdOf('di'), di.range_km * 1e3, 'DSS-14', di.elevation_deg, di.cd, 90, 0, di.doff_dB);
-      out.di = { ptn0: [di.lines.ptn0, lbI.lines.ptn0_dBHz], snt: [di.lines.snt_K, lbI.lines.snt_K], gain: [di.lines.dsnGain_dBi, lbI.lines.dsnGain_dBi], eirp: [di.lines.eirp_dBm, lbI.lines.eirp_dBm], spaceLoss: [di.lines.spaceLoss_dB, lbI.lines.spaceLoss_dB] };
+      // Deep Impact: the DCT reads "RF Band X/S:X/S", LNA-1, i.e. DSS-14 with the S/X dichroic in (101 Tables A-1, A-3); the X-only line is kept beside it
+      var di = DC.di, lbI = linkBudget(rdOf('di'), di.range_km * 1e3, 'DSS-14 (S/X)', di.elevation_deg, di.cd, 90, 0, di.doff_dB), lbX = linkBudget(rdOf('di'), di.range_km * 1e3, 'DSS-14', di.elevation_deg, di.cd, 90, 0, di.doff_dB);
+      out.di = { config: 'S/X', ptn0: [di.lines.ptn0, lbI.lines.ptn0_dBHz], snt: [di.lines.snt_K, lbI.lines.snt_K], gain: [di.lines.dsnGain_dBi, lbI.lines.dsnGain_dBi], eirp: [di.lines.eirp_dBm, lbI.lines.eirp_dBm], spaceLoss: [di.lines.spaceLoss_dB, lbI.lines.spaceLoss_dB],
+        xOnly: { ptn0: [di.lines.ptn0, lbX.lines.ptn0_dBHz], snt: [di.lines.snt_K, lbX.lines.snt_K], gain: [di.lines.dsnGain_dBi, lbX.lines.dsnGain_dBi] } };
       // 2. published rate thresholds against the computed ones
       function thr(key, ranging, minBps) {
         var r = rdOf(key, { ranging: ranging }), rows = presetRates(P[key], ranging).map(function (q) { return { bps: q.bps, published: q.reqPtN0, model: thresholdPtN0(r, q).data }; });
@@ -468,6 +478,9 @@
         return { rows: rows, minBps: minBps, maxGapHigh_dB: mx(hi), maxGapLow_dB: mx(lo), worstLow: lo.length ? lo[0] : null };
       }
       out.thresholds = { di: thr('di', false, 1000), juno: thr('juno', true, 99000), junoNoRanging: thr('juno', false, 99000) };
+      // Dawn's one published threshold (Table 5-2 line 21) against this model's formula for the same rate
+      var rdD = rdOf('dawn', { ranging: true }), qD = rdD.rates.filter(function (q) { return q.reqPtN0 !== null; })[0];
+      out.thresholds.dawnTop = { bps: qD.bps, published: qD.reqPtN0, model: thresholdPtN0(rdD, qD).data };
       // 3. Dawn's station monitor data (June 2009): carrier power, noise temperature, symbol SNR
       var M = CR.dawnMonitor, rdw = rdOf('dawn', { ranging: true });
       out.dawnMonitor = M.passes.map(function (p) {
@@ -567,7 +580,7 @@
         'Light time: Newtonian down-leg, iterated, received at the Earth\'s centre (JPL Horizons\' definition); no Shapiro delay; the round trip is an up-leg then a down-leg.',
         'Each day: the complex with the highest culmination takes one pass of up to ' + S.passHours + ' h centred on it, above ' + S.elMin_deg + ' deg; its rate is the best that closes with ' + S.margin_dB + ' dB at the pass\'s lowest elevation; ' + S.passesPerWeek + ' passes a week.',
         'DSN: 810-005 104 Rev. Q / 101 Rev. I Appendix A gain and noise, weather CD ' + S.cd + '; Sun noise 105 Rev. E eqs. (10)-(11); scintillation 106 Rev. B eq. (7) on the ray\'s equivalent elongation, blackout at m >= 0.3.',
-        'Radio: ' + rd.name + ' (' + rd.article + '); required Pt/No ' + (rd.published ? 'from its published rate table' : 'computed from its required Eb/No, losses and modulation index') + '; residual carrier needs a loop SNR of 10 dB.'
+        'Radio: ' + rd.name + ' (' + rd.article + '); required Pt/No ' + (rd.publishedCount === rd.rates.length ? 'from its published rate table' : rd.publishedCount ? 'published for ' + rd.publishedCount + ' of its ' + rd.rates.length + ' rates, the rest computed from its required Eb/No, losses and modulation index' : 'computed from its required Eb/No, losses and modulation index') + '; residual carrier needs a loop SNR of 10 dB.'
       ];
       return h;
     }
@@ -611,7 +624,7 @@
     return {
       dsn: D, craft: CR, k40: K40, k39: K39, presets40: P40, C: C, AU: AU,
       downleg: downleg, roundTrip: roundTrip, station: station, azen: azen, dsnRx: dsnRx, sunNoise: sunNoise, scintillation: scintillation, stec: stec, coronaDelay_s: coronaDelay_s,
-      radio: radio, suppression: suppression, thresholdPtN0: thresholdPtN0, linkBudget: linkBudget, presetRates: presetRates,
+      radio: radio, suppression: suppression, thresholdPtN0: thresholdPtN0, linkBudget: linkBudget, presetRates: presetRates, maxRxOf: maxRxOf,
       defaults: defaults, validSettings: validSettings, stayPath: stayPath, pathFrom: pathFrom, importLongCoast: importLongCoast, fromPreset: fromPreset,
       passesOf: passesOf, hermite: hermite, run: run, dayLink: dayLink, oracles: oracles, buildHandoff: buildHandoff, parseHandoff: parseHandoff, numDiff: numDiff, db: db
     };

@@ -78,6 +78,11 @@ const src = K.fromPreset('99942'), R = K.run(src, K.defaults('dawn', src.R40.S.n
   const p34 = num(await tileVal(page, 'Pt/No at arrival'));
   await page.click('[data-ant="70m"]'); await settle(page);
   ok(num(await tileVal(page, 'Pt/No at arrival')) - p34 > 5, '70 m is louder');
+  { // the 70-m antennas overload too, at their own -80 dBm (810-005 101 Table 2): the review's fix
+    const R70 = K.run(src, Object.assign(K.defaults('di', src.R40.S.nav), { antenna: '70m' }));   // the page is on Deep Impact's radio here
+    ok((await tileVal(page, 'Receiver overload days')) === String(R70.totals.saturation_days) && R70.totals.saturation_days > 0, '70 m overload days ' + R70.totals.saturation_days);
+    ok((await refusals(page)).some((t) => /saturation/.test(t)), '70 m saturation refusal');
+  }
   // Ka band (34 m only): its own refusal
   await page.click('[data-band="Ka"]'); await settle(page);
   ok((await refusals(page)).some((t) => t.includes('ka_band')), 'Ka refusal');
