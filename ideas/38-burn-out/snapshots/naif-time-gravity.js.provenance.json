@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/37-window/snapshots/naif-time-gravity.js",
+  "commit": "220c1379867a94b3e08186b6ebd2a8daa5132933",
+  "commitDate": "2026-10-31T13:29:51+00:00",
+  "pathLastChanged": "04d09c2 2026-10-31T12:55:54+00:00",
+  "committedBlob": "a22c65a0b0f165953f0cb6c0a6bf854558ac3365",
+  "readBlob": "a22c65a0b0f165953f0cb6c0a6bf854558ac3365",
+  "sourceSha256": "a6e8d139227c4a15c6713b5fd14b337866b73b180e91096cfe3081713ecb0c6a",
+  "sourceBytes": 2094,
+  "copiedAt": "2026-10-31T13:42:48.222Z",
+  "mode": "copy",
+  "note": "a file idea 37's kernel loads (idea 37's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a6e8d139227c4a15c6713b5fd14b337866b73b180e91096cfe3081713ecb0c6a",
+  "writtenBytes": 2094
+}

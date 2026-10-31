@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/37-window/snapshots/apollo17-window.js",
+  "commit": "220c1379867a94b3e08186b6ebd2a8daa5132933",
+  "commitDate": "2026-10-31T13:29:51+00:00",
+  "pathLastChanged": "9e25a5f 2026-10-31T13:29:40+00:00",
+  "committedBlob": "17d967986f0f4defac207070d8fe397fe880eb60",
+  "readBlob": "17d967986f0f4defac207070d8fe397fe880eb60",
+  "sourceSha256": "4335e9c95f3c7bf50fb5431d53025b871de9d881fa52846a354bcf78069504c4",
+  "sourceBytes": 5177,
+  "copiedAt": "2026-10-31T13:42:48.431Z",
+  "mode": "copy",
+  "note": "a file idea 37's kernel loads (idea 37's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "4335e9c95f3c7bf50fb5431d53025b871de9d881fa52846a354bcf78069504c4",
+  "writtenBytes": 5177
+}

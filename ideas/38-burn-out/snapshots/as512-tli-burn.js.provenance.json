@@ -1,0 +1,10 @@
+{
+ "repo": "https://ntrs.nasa.gov",
+ "path": "NTRS 19730025089 (MPR-SAT-FE-73-1, NASA-TM-X-69534): section 7.6 to 7.9 (PDF page 109); Table 2-2 items 85, 88-90, 92-94, 98 (PDF pages 40-41)",
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "sourceUrl": "https://ntrs.nasa.gov/api/citations/19730025089/downloads/19730025089.pdf",
+ "sourceSha256": "8e543894efef0d9a3862ded599001d1d9c83b0e5684f85dbe85abd981f2eaa42",
+ "license": "NASA technical memorandum: US-government work, public domain in the US",
+ "note": "Hand-transcribed by idea 38 from page images rendered with pdftoppm at 110-300 dpi (the same PDF ideas 34-37 used, same sha256): the S-IVB second burn's start impulse (182,502 lbf-s), mainstage total impulse (69.59e6 lbf-s), cutoff impulse (46,260 lbf-s), mixture-ratio positions, burn time (351.0 s) and LOX depletion margin (9.22 s), and the Table 2-2 event times of the burn. Each Table 2-2 time is cross-checked against its time-from-base column in burnout.test.mjs."
+}

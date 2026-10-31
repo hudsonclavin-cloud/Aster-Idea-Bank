@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/37-window/snapshots/erfa-iau2006.js",
+  "commit": "220c1379867a94b3e08186b6ebd2a8daa5132933",
+  "commitDate": "2026-10-31T13:29:51+00:00",
+  "pathLastChanged": "04d09c2 2026-10-31T12:55:54+00:00",
+  "committedBlob": "03f8a17c39c3c69219e3084cc391a6377fec714a",
+  "readBlob": "03f8a17c39c3c69219e3084cc391a6377fec714a",
+  "sourceSha256": "31b3306c74eb59c4c6017a124fc61f24ebf42592fa84a129a78ed992d15eba32",
+  "sourceBytes": 1729,
+  "copiedAt": "2026-10-31T13:42:48.059Z",
+  "mode": "copy",
+  "note": "a file idea 37's kernel loads (idea 37's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "31b3306c74eb59c4c6017a124fc61f24ebf42592fa84a129a78ed992d15eba32",
+  "writtenBytes": 1729
+}

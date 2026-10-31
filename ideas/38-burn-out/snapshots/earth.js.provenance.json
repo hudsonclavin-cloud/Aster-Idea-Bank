@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/37-window/snapshots/earth.js",
+  "commit": "220c1379867a94b3e08186b6ebd2a8daa5132933",
+  "commitDate": "2026-10-31T13:29:51+00:00",
+  "pathLastChanged": "04d09c2 2026-10-31T12:55:54+00:00",
+  "committedBlob": "35b6a330bf98f11ae7330677beecb21050063318",
+  "readBlob": "35b6a330bf98f11ae7330677beecb21050063318",
+  "sourceSha256": "80297e10fcc1386b7e0f4258249ac6ac62c923488b719e88089581aea1a7760a",
+  "sourceBytes": 1702,
+  "copiedAt": "2026-10-31T13:42:48.499Z",
+  "mode": "copy",
+  "note": "a file idea 37's kernel loads (idea 37's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "80297e10fcc1386b7e0f4258249ac6ac62c923488b719e88089581aea1a7760a",
+  "writtenBytes": 1702
+}

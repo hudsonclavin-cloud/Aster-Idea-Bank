@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/37-window/window.js",
+  "commit": "220c1379867a94b3e08186b6ebd2a8daa5132933",
+  "commitDate": "2026-10-31T13:29:51+00:00",
+  "pathLastChanged": "9e25a5f 2026-10-31T13:29:40+00:00",
+  "committedBlob": "34c64ac4b31eed4648a5ede54a42a64add3cf322",
+  "readBlob": "34c64ac4b31eed4648a5ede54a42a64add3cf322",
+  "sourceSha256": "63f6d4c09eeaad08bbfdb91243261585a1b9201dbf6cf8d9b09dc460a8097f88",
+  "sourceBytes": 69109,
+  "copiedAt": "2026-10-31T14:13:59.318Z",
+  "mode": "derived",
+  "note": "derived by ideas/38-burn-out/build-data.mjs: idea 37's committed kernel (window.js, through ideas/37-window/load.cjs and ideas 33-36) run on its page's default (Saturn V AS-512 guided to Apollo 17's parking orbit by idea 36, Aster's Apophis asymptote of 2026-07-02, Pad 39A, Aster's corridor, the window's opening); burnout.test.mjs regenerates it and compares",
+  "readMatchesCommitted": true,
+  "writtenSha256": "909dcb508a673eff28be1a70946d061aace61d72b7190a597475a04b551559e2",
+  "writtenBytes": 38171
+}

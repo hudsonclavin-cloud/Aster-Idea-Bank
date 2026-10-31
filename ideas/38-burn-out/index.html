@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Burn Out: the Earth-departure burn</title>
+<meta name="description" content="The departure burn flown as a finite burn: ignition time, steering, the gravity loss against the impulsive delta-v, how it grows as thrust-to-weight falls, what perigee burns buy back, the payload a stage can still send, and Apollo 17's own translunar burn replayed against the flight report.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="p-chain">
+<header>
+  <h1>Burn Out</h1>
+  <p class="lede">Idea 37 found the point where an impulsive kick would send the rocket off along its departure asymptote. Real engines take minutes: the S-IVB burned for 351 s to leave for the Moon, swinging round a quarter of an orbit as it went. This page flies the burn itself, with the thrust on, the mass falling, gravity bending the path and a steering law, and solves the ignition time so the hyperbola still leaves along the asymptote. It says what that costs against the impulsive figure, how the cost grows as the engine gets weaker, what splitting the burn at successive perigees buys back, how much payload the stage can still send, and checks itself against Apollo 17's own translunar burn.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 8 of 20. Previous: <a href="../37-window/index.html">37 Window</a>, the launch window and departure point. Next: 39 Lambert's Road, the transfer to the asteroid (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Departure</h2>
+    <div class="btnrow" role="group" aria-label="Departure presets">
+      <button type="button" id="preChain" aria-pressed="true">AS-512 to Apophis (idea 37)</button>
+      <button type="button" id="preApollo" aria-pressed="false">Apollo 17 translunar burn</button>
+      <button type="button" id="preCustom" aria-pressed="false">Your own</button>
+    </div>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+
+    <div class="chain-only">
+      <div class="ctl">
+        <div class="ctl-head"><label for="payIn">Payload on the stage <small>(kg)</small></label><input id="payIn" type="number" min="0" step="100" inputmode="decimal"></div>
+        <input id="payRange" type="range" min="0" max="80000" step="100" aria-label="Payload on the departure stage, kilograms">
+        <p class="note" id="payNote"></p>
+      </div>
+    </div>
+
+    <div class="apollo-only">
+      <label for="apEngine">Engine for the replay</label>
+      <select id="apEngine">
+        <option value="flown">As flown: start transient, EMR 4.5, EMR 5.0 (flight report)</option>
+        <option value="mean">The burn's mean thrust and flow</option>
+        <option value="chain">The chain's J-2 (idea 33's deck)</option>
+      </select>
+    </div>
+
+    <div class="custom-only">
+      <div class="grid2">
+        <div class="ctl"><label for="cAlt">Parking orbit <small>(km)</small></label><input id="cAlt" type="number" min="100" max="5000" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="cInc">Inclination <small>(deg)</small></label><input id="cInc" type="number" min="0" max="180" step="0.1" inputmode="decimal"></div>
+        <div class="ctl"><label for="cC3">C3 <small>(km²/s²)</small></label><input id="cC3" type="number" min="-20" max="200" step="0.01" inputmode="decimal"></div>
+        <div class="ctl"><label for="cPay">Payload <small>(kg)</small></label><input id="cPay" type="number" min="0" step="100" inputmode="decimal"></div>
+        <div class="ctl"><label for="cInert">Stage inert <small>(kg)</small></label><input id="cInert" type="number" min="1" step="100" inputmode="decimal"></div>
+        <div class="ctl"><label for="cProp">Propellant <small>(kg)</small></label><input id="cProp" type="number" min="1" step="100" inputmode="decimal"></div>
+        <div class="ctl"><label for="cThrust">Thrust <small>(kN, vacuum)</small></label><input id="cThrust" type="number" min="0.1" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="cIsp">Isp <small>(s, vacuum)</small></label><input id="cIsp" type="number" min="51" max="1020" step="0.1" inputmode="decimal"></div>
+      </div>
+      <label class="check"><input id="cJ2" type="checkbox" checked> Earth's J2</label>
+      <p class="note">Starts as the chain's AS-512 numbers; type your own stage. The burn starts at the ascending node and the asymptote is left free.</p>
+    </div>
+
+    <h2 class="sub">Engine and steering</h2>
+    <div class="ctl" id="twCtl">
+      <div class="ctl-head"><label for="twIn">Thrust-to-weight at ignition</label><input id="twIn" type="number" min="0.1" max="3" step="0.01" inputmode="decimal"></div>
+      <input id="twRange" type="range" min="-1" max="0.4771" step="0.001" aria-label="Thrust-to-weight at ignition, logarithmic slider from 0.1 to 3">
+      <div class="btnrow"><button type="button" id="twReset">Engine as handed</button><output id="twOut"></output></div>
+    </div>
+    <div class="ctl">
+      <span class="lab" id="steerLab">Steering</span>
+      <div class="seg" id="steerSeg" role="group" aria-labelledby="steerLab">
+        <button type="button" data-steer="tangential" aria-pressed="true">Along velocity</button>
+        <button type="button" data-steer="optimal" aria-pressed="false">Optimised</button>
+        <button type="button" data-steer="fixed" aria-pressed="false">Fixed attitude</button>
+      </div>
+    </div>
+    <div class="ctl">
+      <span class="lab" id="burnLab">Burns (perigee burns)</span>
+      <div class="seg" id="burnSeg" role="group" aria-labelledby="burnLab">
+        <button type="button" data-n="1" aria-pressed="true">1</button>
+        <button type="button" data-n="2" aria-pressed="false">2</button>
+        <button type="button" data-n="3" aria-pressed="false">3</button>
+        <button type="button" data-n="4" aria-pressed="false">4</button>
+      </div>
+    </div>
+    <p class="note" id="steerNote">Along velocity: the thrust follows the inertial velocity. Optimised: turned from it by an angle that changes linearly in time, the two numbers searched for least propellant. Fixed attitude: held in one inertial direction (a spin-stabilised kick stage), the best one searched. Perigee burns fly along velocity.</p>
+  </section>
+
+  <div id="right" class="col">
+    <section id="results" class="card" aria-labelledby="h-results">
+      <h2 id="h-results">The burn</h2>
+      <div id="verdict" class="verdict" role="status" aria-live="polite"></div>
+      <div id="refusals" class="refusals" role="alert"></div>
+      <div id="tiles" class="tiles"></div>
+      <ol id="burnList" class="burnlist"></ol>
+    </section>
+
+    <section class="card" aria-labelledby="h-tw">
+      <h2 id="h-tw">Gravity loss against thrust-to-weight</h2>
+      <div class="chart-wrap">
+        <svg id="twChart" class="chartsvg" viewBox="0 0 640 300" role="img" aria-label="Finite-burn loss against thrust-to-weight at ignition, for one, two and three burns; tap or use the arrow keys to set the thrust" tabindex="0"></svg>
+      </div>
+      <ul class="legend"><li><span class="key" style="border-color:var(--s2)"></span>1 burn</li><li><span class="key" style="border-color:var(--s1)"></span>2 perigee burns</li><li><span class="key" style="border-color:var(--s3)"></span>3 perigee burns</li><li><span class="key dot" style="background:var(--ink)"></span>this burn</li></ul>
+      <p class="chart-cap" id="twCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-plane">
+      <h2 id="h-plane">The burn in the orbit plane</h2>
+      <svg id="planeChart" class="chartsvg" viewBox="0 0 640 360" role="img" aria-label="The parking orbit, the burn arc, the departure hyperbola and the asymptote, in the plane of the orbit"></svg>
+      <ul class="legend"><li><span class="key" style="border-color:var(--s1)"></span>coast</li><li><span class="key thick" style="border-color:var(--s2)"></span>burn</li><li><span class="key" style="border-color:var(--s3)"></span>after cutoff</li><li><span class="key dash" style="border-color:var(--ink-2)"></span>asymptote</li><li><span class="key dot" style="background:var(--ink)"></span>impulsive departure point</li></ul>
+      <p class="chart-cap" id="planeCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-steer">
+      <h2 id="h-steer">Steering through the burn</h2>
+      <svg id="steerChart" class="chartsvg" viewBox="0 0 640 260" role="img" aria-label="Thrust pitch above the local horizontal and the flight-path angle against time from ignition"></svg>
+      <ul class="legend"><li><span class="key" style="border-color:var(--s2)"></span>thrust above the local horizontal</li><li><span class="key" style="border-color:var(--s1)"></span>flight-path angle</li></ul>
+      <p class="chart-cap" id="steerCap"></p>
+    </section>
+  </div>
+
+  <section id="apollo" class="card wide" aria-labelledby="h-ap">
+    <h2 id="h-ap">Against Apollo 17's translunar burn (7 December 1972)</h2>
+    <p class="small" id="apIntro">The S-IVB's second burn, replayed: Table 4-4's parking orbit coasted with J2 to the flown ignition (11,556.6 s), the engine as the flight report reconstructs it, cutoff at Table 4-2's C3. The steering is the one chosen above (the flight's own guidance was the Saturn IGM).</p>
+    <div class="tablewrap"><table class="stack" id="apTable"><thead><tr><th>Quantity</th><th>This model</th><th>Apollo 17</th><th>Gap</th><th>Source</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section id="handoff" class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 37's handoff (or this page's), or open this page from idea 37's link. Export hands module 39 the state at cutoff in J2000 with its epoch, the v-infinity, the losses and the payload the stage can send, with idea 37's handoff inside.</p>
+    <label for="importText">Paste a handoff</label>
+    <textarea id="importText" rows="3" placeholder='{"handoff": "long-way-round", "from": "37-window", ...}'></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import</button>
+      <button type="button" id="copyBtn">Copy this page's handoff</button>
+      <button type="button" id="dlBtn">Download</button>
+      <button type="button" id="linkBtn">Copy a link to this page with it</button>
+    </div>
+    <div id="status" class="status" role="status" aria-live="polite"></div>
+    <details><summary>Handoff preview</summary><pre id="hoPreview" class="small"></pre></details>
+  </section>
+
+  <section id="how" class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <ul>
+      <li><b>The burn.</b> Position, velocity and mass are integrated together (RK4, 1 s steps): gravity is idea 37's (Aster's GM plus the Earth's J2, WGS-84), thrust is the engine's vacuum thrust along the steering direction, and the mass falls at the engine's flow. The cutoff comes when the energy reaches the target C3, found inside the step by bisection. The energy counted is the one that stays constant on the coast afterwards (point mass plus J2), so the C3 reached is the C3 at infinity; the usual two-body C3 at cutoff, idea 37's and Aster's convention, is shown beside it.</li>
+      <li><b>Where to light it.</b> The burn starts before idea 37's impulsive departure point and ends after it. The ignition time, and a small constant yaw out of the plane, are solved together so that the hyperbola, followed with J2 out to 20 Earth radii, leaves exactly along idea 37's asymptote.</li>
+      <li><b>The loss.</b> The delta-v the engine spends (exhaust velocity times the log of the mass ratio) less the impulsive delta-v at idea 37's departure point (with J2's potential counted there). It grows as the inverse square of thrust-to-weight while burns are short, then much faster: a long burn throws thrust away climbing and turning.</li>
+      <li><b>Perigee burns.</b> Split the departure into N burns at successive perigee passes: the first raise the apogee by equal shares of the impulsive delta-v, the last leaves. Each burn is shorter, so the loss falls; but the phasing takes hours, J2 turns the plane meanwhile, and from idea 37's plane the last burn must yaw that out. The curve on the chart assumes the launch was aimed for the phasing; the tiles give both.</li>
+      <li><b>The payload.</b> The largest payload the stage can push to the C3 with the propellant it has, finite burn included, found by re-solving the burn for each trial payload; beside it the impulsive figure from the rocket equation. The ascent is not re-flown: a lighter payload would also have reached orbit with more propellant, so this is a lower bound.</li>
+      <li><b>The checks.</b> scipy (DOP853, SLSQP) flies the same burns independently: the integrator agrees to centimetres, and the best possible steering (a 16-knot optimal-control solution) is 0.03 to 0.6 m/s better than this page's optimised law. Apollo 17's translunar burn, replayed from the flight report, comes out 0.11 s short of the 351.0 s it burned.</li>
+      <li><b>What it is not.</b> No start or stop transients for the chain's engine, no venting, no throttling, no drag at perigee, no Moon or Sun; the asymptote is held fixed, even when perigee burns move the departure hours later. The README has the tests, the oracle and every source.</li>
+    </ul>
+  </section>
+</main>
+<footer>Idea 38 of the Aster Idea Bank. Data: MPR-SAT-FE-73-1 (the AS-512 flight report), idea 37's kernel and handoff (and through it ideas 31 to 36, NAIF, ERFA and Aster at 62ddb17). No network.</footer>
+<script src="snapshots/earth.js"></script>
+<script src="snapshots/erfa-iau2006.js"></script>
+<script src="snapshots/naif-time-gravity.js"></script>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/apollo17-window.js"></script>
+<script src="snapshots/as512-flight.js"></script>
+<script src="snapshots/as512-tli-burn.js"></script>
+<script src="snapshots/window-as512-apophis.js"></script>
+<script src="snapshots/window.js"></script>
+<script src="burnout.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

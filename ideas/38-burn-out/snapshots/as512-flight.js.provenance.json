@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/37-window/snapshots/as512-flight.js",
+  "commit": "220c1379867a94b3e08186b6ebd2a8daa5132933",
+  "commitDate": "2026-10-31T13:29:51+00:00",
+  "pathLastChanged": "04d09c2 2026-10-31T12:55:54+00:00",
+  "committedBlob": "439cdcdbbf53ce6ee0f22ce68bde6cba91172be9",
+  "readBlob": "439cdcdbbf53ce6ee0f22ce68bde6cba91172be9",
+  "sourceSha256": "34f8a6e682b4e932949224ad58731081f8049e52f126a4ebd451cee1dd2cf871",
+  "sourceBytes": 12745,
+  "copiedAt": "2026-10-31T13:42:48.579Z",
+  "mode": "copy",
+  "note": "a file idea 37's kernel loads (idea 37's own snapshot, unmodified)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "34f8a6e682b4e932949224ad58731081f8049e52f126a4ebd451cee1dd2cf871",
+  "writtenBytes": 12745
+}

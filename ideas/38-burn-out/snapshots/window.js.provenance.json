@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/37-window/window.js",
+  "commit": "220c1379867a94b3e08186b6ebd2a8daa5132933",
+  "commitDate": "2026-10-31T13:29:51+00:00",
+  "pathLastChanged": "9e25a5f 2026-10-31T13:29:40+00:00",
+  "committedBlob": "34c64ac4b31eed4648a5ede54a42a64add3cf322",
+  "readBlob": "34c64ac4b31eed4648a5ede54a42a64add3cf322",
+  "sourceSha256": "63f6d4c09eeaad08bbfdb91243261585a1b9201dbf6cf8d9b09dc460a8097f88",
+  "sourceBytes": 69109,
+  "copiedAt": "2026-10-31T13:42:47.888Z",
+  "mode": "copy",
+  "note": "idea 37's kernel, unmodified: its J2 gravity (accel), RK4 coast (rk4, propagate), Earth orientation (orient, precession), departureOf, elementsOf and as512Coast are reused for the coast to ignition and the gravity in the burn",
+  "readMatchesCommitted": true,
+  "writtenSha256": "63f6d4c09eeaad08bbfdb91243261585a1b9201dbf6cf8d9b09dc460a8097f88",
+  "writtenBytes": 69109
+}
