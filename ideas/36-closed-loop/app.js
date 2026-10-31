@@ -104,7 +104,7 @@
       return;
     }
     var o = g.orbit, e = g.errors, ge = g.guided;
-    tl.appendChild(tile('Orbit reached', o.bound && g.inOrbit ? fmt(o.perigeeAlt / 1000, 2) + ' × ' + fmt(o.apogeeAlt / 1000, 2) : 'not in orbit', 'km', 'derived', 'perigee × apogee at ' + fmt(o.inclinationDeg, 4) + ' deg; target ' + fmt(R.target.perigeeAlt / 1000, 1) + ' × ' + fmt(R.target.apogeeAlt / 1000, 1), 'hero'));
+    tl.appendChild(tile('Orbit reached', o.bound && g.inOrbit ? fmt(o.perigeeAlt / 1000, 2) + ' × ' + fmt(o.apogeeAlt / 1000, 2) : 'not in orbit', o.bound && g.inOrbit ? 'km' : '', 'derived', 'perigee × apogee at ' + fmt(o.inclinationDeg, 4) + ' deg; target ' + fmt(R.target.perigeeAlt / 1000, 1) + ' × ' + fmt(R.target.apogeeAlt / 1000, 1), 'hero'));
     tl.appendChild(tile('Off target at cutoff', fmt(e.radius, 3) + ' m', '', 'derived', 'speed ' + sgn(e.speed * 1000, 3) + ' mm/s, flight-path angle ' + sgn(e.fpaDeg, 5) + ' deg, plane ' + fmt(e.planeDeg, 6) + ' deg'));
     tl.appendChild(tile('Cutoff', fmt(g.t, 1), 's', 'derived', ge.label + ' after ' + fmt(ge.burnTime, 1) + ' s, ended by ' + (g.endedBy === 'guidance' ? 'guidance (energy reached)' : g.endedBy)));
     tl.appendChild(tile(ge.label + ' propellant', fmt(ge.propellantUsed / 1000, 2), 't', 'derived', 'burned; ' + fmt(ge.propellantLeft / 1000, 2) + ' t left for later burns' + (isAS() ? ' (the flight burned ' + fmt(ge.propellantOwn / 1000, 2) + ' t here)' : '')));
@@ -374,9 +374,9 @@
     if (!rows.length) { sm.appendChild(el('p', { class: 'small', text: 'The guided flight is refused; nothing to compare.' })); return; }
     var get = function (g, l) { return rows.filter(function (x) { return x.group === g && x.label === l; })[0]; };
     var pb = get('S-IVB first cutoff', 'Propellant burned'), lf = get('Left for the departure burn', 'S-IVB propellant'), s2 = get('S-II cutoff', 'Space-fixed velocity'), ra = get('Cutoff accuracy', 'Radius against the target');
-    sm.appendChild(tile('S-IVB propellant to orbit', sgn(100 * (pb.model / pb.flight - 1), 1) + ' %', '', 'measured gap', fmt(pb.model, 0) + ' kg against the flight\'s ' + fmt(pb.flight, 0)));
-    sm.appendChild(tile('Left for the translunar burn', sgn(lf.gap, 0), 'kg', 'measured gap', fmt(lf.model, 0) + ' against ' + fmt(lf.flight, 0) + ' kg burned in the flight\'s TLI'));
-    sm.appendChild(tile('Speed at S-II cutoff', sgn(s2.gap, 1), 'm/s', 'measured gap', fmt(s2.model, 1) + ' against ' + fmt(s2.flight, 1)));
+    sm.appendChild(tile('S-IVB propellant to orbit', sgn(100 * (pb.model / pb.flight - 1), 1) + ' %', '', 'derived vs measured', fmt(pb.model, 0) + ' kg against the flight\'s ' + fmt(pb.flight, 0)));
+    sm.appendChild(tile('Left for the translunar burn', sgn(lf.gap, 0), 'kg', 'derived vs measured', fmt(lf.model, 0) + ' against ' + fmt(lf.flight, 0) + ' kg burned in the flight\'s TLI'));
+    sm.appendChild(tile('Speed at S-II cutoff', sgn(s2.gap, 1), 'm/s', 'derived vs measured', fmt(s2.model, 1) + ' against ' + fmt(s2.flight, 1)));
     sm.appendChild(tile('Radius at cutoff vs target', fmt(ra.model, 3), 'm', 'derived', 'the flight\'s LVDC: ' + G512.insertionVsPrediction.radiusM + ' m and ' + G512.insertionVsPrediction.velocityMs + ' m/s from its own prediction'));
     tb.appendChild(el('thead', {}, [el('tr', {}, ['Event', 'Quantity', 'Model', 'Flight', 'Gap', 'Note'].map(function (h) { return el('th', { text: h }); }))]));
     var body = el('tbody');
@@ -424,7 +424,7 @@
   numIn('incNum', function (x) { cur.ctx.target = Object.assign({}, cur.ctx.target, { inclinationDeg: x, source: 'user' }); $('incRange').value = x; });
   $('incRange').addEventListener('input', function () { cur.ctx.target = Object.assign({}, cur.ctx.target, { inclinationDeg: +this.value, source: 'user' }); $('incNum').value = this.value; state.cursor = null; compute(); });
   document.querySelectorAll('[data-branch]').forEach(function (b) { b.addEventListener('click', function () { cur.ctx.target = Object.assign({}, cur.ctx.target, { branch: b.dataset.branch, source: 'user' }); syncControls(); compute(); }); });
-  numIn('startNum', function (x) { cur.ctx.guidance = Object.assign({}, cur.ctx.guidance, { startAfter: isFinite(x) && x >= 0 ? x : 0 }); });
+  numIn('startNum', function (x) { cur.ctx.guidance = Object.assign({}, cur.ctx.guidance, { startAfter: x }); }); // the kernel refuses a negative or empty start
   $('cycleSel').addEventListener('change', function () { cur.ctx.guidance = Object.assign({}, cur.ctx.guidance, { cycle: +this.value }); compute(); });
   numIn('kickNum', function (x) { cur.ctx.plan.kickDeg = x; cur.ctx.plan.fitKick = false; cur.ctx.h35 = null; $('kickRange').value = x; });
   $('kickRange').addEventListener('input', function () { cur.ctx.plan.kickDeg = +this.value; cur.ctx.plan.fitKick = false; cur.ctx.h35 = null; $('kickNum').value = this.value; state.cursor = null; compute(); });
@@ -462,7 +462,7 @@
     var rows = C.as512Rows(R.ctx, R), get = function (g, l) { return rows.filter(function (x) { return x.group === g && x.label === l; })[0]; };
     var pb = get('S-IVB first cutoff', 'Propellant burned'), s2a = get('S-II cutoff', 'Altitude'), s2v = get('S-II cutoff', 'Space-fixed velocity');
     return [
-      '[Certain] The guidance does what it says: over a flat Earth it lands on the minimum-time linear-tangent burn an independent Python solver finds (to 0.01 s); flown on AS-512, an independent integrator re-flying its commands with its own bookkeeping lands within millimetres; and a direct optimiser finds only about a kilogram of S-IVB propellant (0.96 kg of 32,897) it could have saved (README, Tests).',
+      '[Certain] The guidance does what it says, inside its envelope: over a flat Earth it lands on the minimum-time linear-tangent burn two independent Python solvers find (to 0.01 s where the optimal thrust turns through 35 deg; 1 s late at 94 deg; beyond about 100 deg at a 2 s cycle it does not converge, and the page refuses rather than claim the target); flown on AS-512 (a 42 deg turn), an independent integrator re-flying its commands with its own bookkeeping lands within millimetres; and a direct optimiser finds only about a kilogram of S-IVB propellant (0.96 kg of 32,897) it could have saved (README, Tests).',
       '[Certain as numbers] Guided to the orbit Apollo 17 reached, the chain\'s Saturn V burns ' + fmt(pb.model, 0) + ' kg of S-IVB propellant where the flight burned ' + fmt(pb.flight, 0) + ' (' + sgn(100 * (pb.model / pb.flight - 1), 1) + ' %), and reaches S-II cutoff ' + fmt(Math.abs(s2a.gap), 1) + ' km lower and ' + fmt(Math.abs(s2v.gap), 0) + ' m/s slower than the flight. Idea 33\'s J-2 at mixture ratio 5.5 (the flight shifted to 4.8 in the S-II and ran the S-IVB at 5.0) and idea 35\'s gravity-turn first stage are the likely reasons [Likely].',
       '[Certain] Navigation is perfect here and the vehicle is exactly its own model on the nominal flight, so cutoff lands within centimetres of the target; the real one landed 30.8 m and 0.20 m/s from its prediction (section 9.3).',
       '[Speculative] The dispersion sizes: one flight\'s deviations from its prediction, used as one sigma, or scaled to one published three-sigma band. They are inputs to explore, not a Saturn V dispersion analysis.',

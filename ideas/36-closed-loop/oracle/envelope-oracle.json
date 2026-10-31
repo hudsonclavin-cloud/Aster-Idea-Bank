@@ -1,0 +1,103 @@
+{
+ "generated": "python3 -I ideas/36-closed-loop/oracle/linear_tangent_stdlib.py",
+ "method": "Newton shooting on (b, c, T) for tan(pitch) = b - c t, fixed-step RK4 with 20000 steps, continuation in the climb",
+ "base": "cases.json flat.gentle with yT_m = y0_m + climb",
+ "cases": [
+  {
+   "climb_m": 5000,
+   "yT_m": 155000,
+   "T_s": 54.098217361170185,
+   "b": 0.8416914870773922,
+   "c_per_s": 0.013960667800360387,
+   "pitch0_deg": 40.08703364518707,
+   "pitchT_deg": 4.9406084714742216,
+   "sweep_deg": 35.14642517371285,
+   "max_residual": 1.8189894035458565e-12,
+   "newton_iterations": 5
+  },
+  {
+   "climb_m": 8000,
+   "yT_m": 158000,
+   "T_s": 56.646354118261335,
+   "b": 1.3401498454039886,
+   "c_per_s": 0.02756113569069392,
+   "pitch0_deg": 53.27024419422194,
+   "pitchT_deg": -12.46686525380059,
+   "sweep_deg": 65.73710944802252,
+   "max_residual": 8.149072527885437e-10,
+   "newton_iterations": 6
+  },
+  {
+   "climb_m": 10000,
+   "yT_m": 160000,
+   "T_s": 58.88974336793209,
+   "b": 1.6951496215218385,
+   "c_per_s": 0.03567959026075696,
+   "pitch0_deg": 59.462862175457474,
+   "pitchT_deg": -22.09775708713215,
+   "sweep_deg": 81.56061926258963,
+   "max_residual": 2.9103830456733704e-10,
+   "newton_iterations": 5
+  },
+  {
+   "climb_m": 12000,
+   "yT_m": 162000,
+   "T_s": 61.35823182364781,
+   "b": 2.0630168311845707,
+   "c_per_s": 0.04307067363358751,
+   "pitch0_deg": 64.13927829669063,
+   "pitchT_deg": -30.101879272281312,
+   "sweep_deg": 94.24115756897194,
+   "max_residual": 1.57160684466362e-09,
+   "newton_iterations": 5
+  },
+  {
+   "climb_m": 14000,
+   "yT_m": 164000,
+   "T_s": 63.935320210654844,
+   "b": 2.4402948036755476,
+   "c_per_s": 0.049823984203792734,
+   "pitch0_deg": 67.71684120430336,
+   "pitchT_deg": -36.69412673539723,
+   "sweep_deg": 104.41096793970058,
+   "max_residual": 1.076841726899147e-09,
+   "newton_iterations": 5
+  },
+  {
+   "climb_m": 16000,
+   "yT_m": 166000,
+   "T_s": 66.54803334281056,
+   "b": 2.824469077185506,
+   "c_per_s": 0.056035594837514066,
+   "pitch0_deg": 70.50355027143945,
+   "pitchT_deg": -42.13216438243312,
+   "sweep_deg": 112.63571465387257,
+   "max_residual": 1.7462298274040222e-10,
+   "newton_iterations": 5
+  },
+  {
+   "climb_m": 18000,
+   "yT_m": 168000,
+   "T_s": 69.1522455835384,
+   "b": 3.2137594623068058,
+   "c_per_s": 0.0617919524533052,
+   "pitch0_deg": 72.71584035951591,
+   "pitchT_deg": -46.64925034340102,
+   "sweep_deg": 119.36509070291693,
+   "max_residual": 1.3053030878396044e-12,
+   "newton_iterations": 5
+  },
+  {
+   "climb_m": 20000,
+   "yT_m": 170000,
+   "T_s": 71.72194405475915,
+   "b": 3.6069172686647675,
+   "c_per_s": 0.06716584030115155,
+   "pitch0_deg": 74.50422887028164,
+   "pitchT_deg": -50.43617297192343,
+   "sweep_deg": 124.94040184220506,
+   "max_residual": 1.1641532182693481e-09,
+   "newton_iterations": 5
+  }
+ ]
+}

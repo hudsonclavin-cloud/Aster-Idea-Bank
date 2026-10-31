@@ -39,7 +39,7 @@ async function open(opts, url = URL0, scheme = 'light') {
   return { context, page, errors };
 }
 const tileVal = (page, k, box = '#tiles') => page.evaluate(([k, box]) => { const t = [...document.querySelectorAll(box + ' .tile')].find((x) => x.querySelector('.k').textContent.startsWith(k)); return t ? t.querySelector('.v').textContent : null; }, [k, box]);
-const noNaN = async (page, where) => { const t = await page.locator('main').innerText(); ok(!/\bNaN\b|undefined|Infinity/.test(t), where + ': no NaN/undefined on the page'); };
+const noNaN = async (page, where) => { const t = await page.locator('main').innerText(); const bad = t.match(/.{0,60}(\bNaN\b|undefined|Infinity).{0,40}/); ok(!bad, where + ': no NaN/undefined on the page' + (bad ? ' (' + bad[0] + ')' : '')); };
 const setNum = async (page, sel, v) => { await page.fill(sel, String(v)); await page.dispatchEvent(sel, 'change'); await page.waitForTimeout(120); };
 const waitMC = (page) => page.waitForFunction(() => /flights, each/.test(document.getElementById('mcStatus').textContent), null, { timeout: 60000 });
 
@@ -148,6 +148,20 @@ const CTX = C.setup(DATA.as512), R = C.run(CTX, { samples: false }), G = R.guide
   const ed = JSON.parse(JSON.stringify(own)); ed.outputs.parking_orbit.value.perigee_altitude_m += 50;
   await page.fill('#importText', JSON.stringify(ed)); await page.click('#importBtn'); await page.waitForTimeout(300);
   ok(/edited/.test(await page.locator('#importStatus').innerText()), 'an edited handoff refused');
+  // review additions: an edited insertion state (what modules 37 and 38 start from) is refused too; guidance settings that
+  // cannot fly, and a first call that does not settle, are refused on the page rather than flown as a held attitude
+  const ed4 = JSON.parse(JSON.stringify(own)); ed4.outputs.insertion_state.value.r_m[0] += 100;
+  await page.fill('#importText', JSON.stringify(ed4)); await page.click('#importBtn'); await page.waitForTimeout(300);
+  ok(/edited/.test(await page.locator('#importStatus').innerText()), 'an edited insertion state refused');
+  await page.selectOption('#vehicle', 'as512'); await page.waitForTimeout(300);
+  await setNum(page, '#startNum', -5);
+  ok(/guidance: refused \(invalid_input\)/.test(await page.locator('#refusals').innerText()), 'a negative guidance start is refused');
+  await noNaN(page, 'negative start');
+  await setNum(page, '#startNum', 1000);
+  ok(/Guidance never starts/.test(await page.locator('#refusals').innerText()), 'a start after burnout is refused');
+  await setNum(page, '#startNum', 42.9); await setNum(page, '#kickNum', 2.2);
+  ok(/first call does not settle/.test(await page.locator('#refusals').innerText()), 'a flat first stage: guidance says it cannot steer');
+  await noNaN(page, 'unsteerable');
   await noNaN(page, 'desktop');
   if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'desktop-light.png'), fullPage: true });
   ok(errors.length === 0, 'desktop: no console errors ' + errors.join(' | '));

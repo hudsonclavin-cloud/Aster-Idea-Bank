@@ -146,6 +146,27 @@ test('oracle, closed form: over a flat Earth UPFG converges on the minimum-time 
   assert.ok(steep.refusals.length > 0);
 });
 
+test('oracle, envelope: as the optimal thrust turns through 35 to 125 deg, UPFG never beats the optimum, and where it misses it says so', () => {
+  // oracle/envelope-oracle.json: a second, standard-library oracle (linear_tangent_stdlib.py: its own RK4 and Newton
+  // shooting) over the gentle case with climbs of 5 to 20 km. Added by the review: the README's envelope was from trials
+  // not kept in the folder, and the kernel's refusal on a miss used to blame the propellant.
+  const E = JSON.parse(fs.readFileSync(path.join(here, 'oracle', 'envelope-oracle.json'), 'utf8'));
+  near(E.cases[0].T_s, ORACLE.flat.gentle.linear_tangent.T_s, 1e-6, 'the two oracles agree: gentle T*');
+  near(E.cases[E.cases.length - 1].T_s, ORACLE.flat.steep.linear_tangent.T_s, 1e-6, 'the two oracles agree: steep T*');
+  const seen = {};
+  for (const ec of E.cases) for (const cyc of [2, 1, 0.5]) {
+    const c = Object.assign({}, CASES.flat.gentle, { yT_m: ec.yT_m }), r = flatKernel(c)(cyc), hit = r.ok && r.endedBy === 'guidance';
+    if (hit) {
+      assert.ok(r.t >= ec.T_s - 1e-3, `never beats the optimum: ${r.t} vs ${ec.T_s}`);
+      if (ec.sweep_deg < 106) { near(r.final.altitude, ec.yT_m, 0.5, 'altitude'); near(r.final.v[0], 0, 0.5, 'vertical speed'); near(r.final.v[1], c.vxT_m_s, 0.01, 'horizontal speed'); }
+    } else assert.match(r.refusals[0].reason, /guidance diverged|cannot steer/, 'a miss says guidance may have diverged');
+    seen[ec.climb_m + '@' + cyc] = hit ? r.t - ec.T_s : 'miss';
+  }
+  // the envelope, as measured here (README): a 2 s cycle reaches a 94 deg turn (1.0 s late) and misses at 104; a 1 s cycle
+  // reaches 104 (1.2 s late) and misses at 113; 0.5 s reaches 119 (7.6 s late) and misses at 125
+  assert.ok(seen['12000@2'] < 1.1 && seen['14000@2'] === 'miss' && seen['14000@1'] < 1.3 && seen['16000@1'] === 'miss' && seen['18000@0.5'] < 8 && seen['20000@0.5'] === 'miss', JSON.stringify(seen));
+});
+
 test('oracle, replay: the guided AS-512 upper stages re-flown by scipy with their own bookkeeping land where the kernel did', () => {
   assert.ok(ORACLE, 'oracle/guidance-oracle.json is present');
   const R = ORACLE.replay, f = G.final;
@@ -177,6 +198,11 @@ test('target geometry: the plane passes over the pad at liftoff with the inclina
   near(t.vd, Math.sqrt(C.constants.MU * (2 / t.rd - 2 / (2 * C.constants.RE + 500e3))), 1e-9, 'vis-viva at perigee');
   const s = C.targetOrbit({ perigeeAlt: 200e3, apogeeAlt: 300e3, inclinationDeg: 32, branch: 'south' }, lat);
   near(s.inertialAzimuthDeg, 180 - t.inertialAzimuthDeg, 1e-12, 'south branch mirrors');
+  // the heading over the ground at insertion speed: the pad's eastward speed taken out of the inertial heading, so Earth's
+  // rotation turns a north-branch track further north and a south-branch one further south (review: the sign was untested)
+  const vE = C.constants.OMEGA * C.constants.RE * Math.cos(lat * Math.PI / 180), bN = t.inertialAzimuthDeg * Math.PI / 180;
+  near(t.groundAzimuthDeg, Math.atan2(t.vd * Math.sin(bN) - vE, t.vd * Math.cos(bN)) * 180 / Math.PI, 1e-9, 'ground azimuth');
+  assert.ok(t.groundAzimuthDeg < t.inertialAzimuthDeg - 0.5 && s.groundAzimuthDeg > s.inertialAzimuthDeg + 0.5, 'rotation turns the ground track away from east');
   const eq = C.targetOrbit({ perigeeAlt: 200e3, apogeeAlt: 200e3, inclinationDeg: lat, branch: 'north' }, lat); near(eq.inertialAzimuthDeg, 90, 1e-6, 'due east at i = latitude');
   for (const [spec, re] of [[{ perigeeAlt: 200e3, apogeeAlt: 200e3, inclinationDeg: 20 }, /cannot be inclined less/], [{ perigeeAlt: 50e3, apogeeAlt: 200e3, inclinationDeg: 30 }, /inside the atmosphere/],
     [{ perigeeAlt: 300e3, apogeeAlt: 200e3, inclinationDeg: 30 }, /at least the perigee/], [{ perigeeAlt: NaN, apogeeAlt: 200e3, inclinationDeg: 30 }, /numbers/]]) {
@@ -195,6 +221,14 @@ test('AS-512 guided: it reaches Table 4-4\'s orbit, cut off on the target energy
   near(Math.hypot(...RUN.replay.final.r), Math.hypot(...G.final.r), 1e-3, 'replay radius'); near(RUN.replay.final.speed, G.final.speed, 1e-5, 'replay speed');
   // idea 35's open-loop programme on the same plan does not reach orbit
   assert.ok(RUN.openLoop.refusals.some((x) => x.applies_to === 'orbit'));
+  // the charted yaw is the thrust's angle out of the target plane, positive toward the orbit normal: re-derived from the
+  // commands (review: its sign was untested); guidance yaws by up to about 0.15 deg to leave idea 35's launch plane
+  const cmdAt = (tt) => { let u = null; for (const c of G.commands) { if (c.t <= tt + 1e-9) u = c.u; else break; } return u; };
+  const n = RUN.target.n; let maxYaw = 0;
+  for (const s of G.samples.filter((x) => x.yaw != null && x.t > G.guidanceStart + 0.5)) {
+    const u = cmdAt(s.t); near(s.yaw, Math.asin(u[0] * n[0] + u[1] * n[1] + u[2] * n[2]) * 180 / Math.PI, 0.005, 'yaw at ' + s.t); maxYaw = Math.max(maxYaw, Math.abs(s.yaw));
+  }
+  assert.ok(maxYaw > 0.05, 'a yaw large enough for its sign to matter: ' + maxYaw);
 });
 
 test('AS-512 guided against the flight report: the gaps, pinned', () => {
@@ -222,6 +256,20 @@ test('Monte Carlo: reproducible from its seed, normal draws, the closed loop on 
   assert.ok(r.guided.inclination.sd < 1e-6 && r.replay.inclination.sd > 100 * r.guided.inclination.sd, 'plane scatter');
   assert.ok(r.replay.perigee.sd > 1000 * r.guided.perigee.sd, 'perigee scatter');
   assert.ok(r.reserve && r.reserve.threeSigma > 0 && r.guided.propellantLeft.mean < r.reserve.nominalLeft, 'dispersions cost propellant on average');
+});
+
+test('Monte Carlo summary: on target means in orbit and cut off by guidance; the reserve is three sample standard deviations', () => {
+  // review: these definitions were pinned only through the committed handoff (a regression snapshot), or not at all
+  const base = { ok: true, inOrbit: true, orbit: { perigeeAlt: 2e5, apogeeAlt: 2e5, bound: true, inclinationDeg: 28.5 }, errors: null, guided: { propellantLeft: 1 }, t: 1, stage1: { stageEnds: [{ burnTime: 1 }] } };
+  assert.equal(C.metricsOf(Object.assign({}, base, { endedBy: 'guidance' })).onTarget, true);
+  assert.equal(C.metricsOf(Object.assign({}, base, { endedBy: 'depletion' })).onTarget, false, 'in orbit but out of propellant is not on target');
+  assert.equal(C.metricsOf(Object.assign({}, base, { endedBy: 'guidance', inOrbit: false })).onTarget, false, 'cut off by guidance but not in orbit');
+  // propellant left 10, 12, 14 and 18 kg against a nominal 20: mean 13.5, sample variance 35/3, worst flight 10 kg short
+  const mk = (p) => ({ guided: C.metricsOf(Object.assign({}, base, { endedBy: 'guidance', guided: { propellantLeft: p } })), replay: { ok: false } });
+  const res = C.summarise([10, 12, 14, 18].map(mk), { guided: { ok: true, guided: { propellantLeft: 20 } } }, [], 1, 1);
+  near(res.reserve.mean, 13.5, 1e-12, 'mean'); near(res.reserve.sd, Math.sqrt(35 / 3), 1e-12, 'sample sd (n - 1)');
+  near(res.reserve.threeSigma, 3 * Math.sqrt(35 / 3), 1e-12, 'three sigma'); near(res.reserve.worstUse, 10, 1e-12, 'worst');
+  assert.equal(res.guided.onTarget, 4); assert.equal(res.replay.flown, 0);
 });
 
 test('dispersions: each row moves exactly the quantity it names, by its sigma times the draw', () => {
@@ -282,11 +330,26 @@ test('refusals: unreachable targets, vehicles that cannot be guided, and handoff
   // idea 35's sample at 38 deg: guidance dives for the plane and the upper stage falls back: refused as falling back
   const fb = C.run(Object.assign({}, s35, { target: Object.assign({}, s35.target, { inclinationDeg: 38 }) }), { samples: false }).guided;
   assert.equal(fb.ok, false); assert.match(fb.refusals[0].reason, /fall back/);
-  // AS-512 with a 2.2 deg kick: the S-IC ends at 32 km, nearly level, and the S-II sinks: refused as falling back 10 km
-  // below that, before any nozzle separates or anything reaches the ground
+  // AS-512 with a 2.2 deg kick: the S-IC ends at 32 km, nearly level. With guidance at 42.9 s the stage has sunk to 28 km
+  // and UPFG's first call does not settle: refused as guidance unable to steer (review: this used to hold the attitude
+  // silently and report the fall-back that followed as if guidance had flown it)
   const lo = C.setup(DATA.as512); lo.plan.kickDeg = 2.2;
   const lr = C.run(lo, { samples: false }).guided;
-  assert.equal(lr.ok, false); assert.match(lr.refusals[0].reason, /fall back \(below 22\.1 km/);
+  assert.equal(lr.ok, false); assert.equal(lr.refusals[0].applies_to, 'guidance'); assert.match(lr.refusals[0].reason, /first call does not settle in 60 passes/);
+  assert.equal(lr.guidance.converged, false);
+  // the same with guidance due at 80 s: the S-II sinks 10 km below the S-IC cutoff before guidance starts: refused as falling
+  // back, before any nozzle separates or anything reaches the ground, and the refusal says guidance had not started
+  const lo2 = C.setup(DATA.as512); lo2.plan.kickDeg = 2.2; lo2.guidance.startAfter = 80;
+  const lr2 = C.run(lo2, { samples: false }).guided;
+  assert.equal(lr2.ok, false); assert.match(lr2.refusals[0].reason, /fall back \(below 22\.1 km.*Guidance had not started/);
+  // a guidance start after the upper stages burn out is refused, not reported as guidance running out of propellant
+  const late = C.setup(DATA.as512); late.guidance.startAfter = 1000;
+  assert.match(C.run(late, { samples: false }).guided.refusals[0].reason, /Guidance never starts/);
+  // guidance settings arrive in imported handoffs too: a cycle outside 0.5 to 4 s, or a negative or missing start, is refused
+  for (const [k, v] of [['cycle', 0.1], ['cycle', -1], ['cycle', 5], ['cycle', 'abc'], ['startAfter', -5], ['startAfter', NaN]]) {
+    const c = C.setup(DATA.as512); c.guidance[k] = v; const g = C.run(c, { samples: false }).guided;
+    assert.equal(g.ok, false, k + ' ' + v); assert.equal(g.refusals[0].code, 'invalid_input'); assert.equal(g.refusals[0].applies_to, 'guidance');
+  }
   assert.match(C.setup('nope').refusal.reason, /not JSON/);
   assert.match(C.setup({ handoff: 'long-way-round', from: '33-engine-deck' }).refusal.reason, /engine/);
   assert.match(C.setup({ handoff: 'other' }).refusal.reason, /not a Long Way Round/);
@@ -304,6 +367,18 @@ test('handoff: every output carries units, confidence and source; it round-trips
   const ed = JSON.parse(JSON.stringify(h)); ed.outputs.parking_orbit.value.apogee_altitude_m += 5; assert.match(C.parseHandoff(ed).refusal.reason, /edited/);
   const ed2 = JSON.parse(JSON.stringify(h)); ed2.outputs.propellant_left_in_guided_stage.value -= 100; assert.match(C.parseHandoff(ed2).refusal.reason, /edited/);
   const ed3 = JSON.parse(JSON.stringify(h)); ed3.inputs.ascent_handoff.outputs.burnout_altitude.value += 1; assert.ok(C.parseHandoff(ed3).refusal, 'an edited idea 35 inside is refused by idea 35\'s own check');
+  // review: only four numbers used to be compared; every output, the refusals and the scatter are now re-made and compared
+  for (const [what, f] of [
+    ['insertion state', (e) => { e.outputs.insertion_state.value.r_m[0] += 1000; }],
+    ['departure-burn propellant', (e) => { e.outputs.remaining_burns.value[0].propellant += 1000; }],
+    ['target speed', (e) => { e.outputs.target_orbit.value.cutoff_speed_m_s += 1; }],
+    ['parking orbit deleted', (e) => { delete e.outputs.parking_orbit; e.outputs.propellant_left_in_guided_stage.value += 1000; }],
+    ['guidance cycle', (e) => { e.inputs.guidance.cycle_s = 1; }],
+    ['a refusal removed', (e) => { e.refusals = e.refusals.filter((x) => x.applies_to !== 'navigation'); }],
+    ['the reserve', (e) => { e.outputs.scatter.value.reserve_3sd_kg /= 2; }],
+    ['a sigma', (e) => { e.outputs.scatter.value.sigmas[0].sigma *= 2; }],
+  ]) { const e = JSON.parse(JSON.stringify(h)); f(e); const r = C.parseHandoff(e); assert.ok(r.refusal && /edited/.test(r.refusal.reason), what + ': ' + (r.refusal ? r.refusal.reason : 'accepted')); }
+  const bad = JSON.parse(JSON.stringify(h)); bad.inputs.guidance.cycle_s = -1; assert.match(C.parseHandoff(bad).refusal.reason, /edited|cycle/);
   // the committed file is what the kernel computes for it
   return import('./build-sample.mjs').then((mod) => { const s = mod.sample(h35); assert.deepEqual(JSON.parse(JSON.stringify(s.handoff)), h); });
 });
@@ -315,4 +390,10 @@ test('handoff for AS-512: the departure burn gets what the guided S-IVB left, an
   near(rb[0].propellant, G.guided.propellantLeft, 1e-9, 'burn 2 gets the rest'); assert.equal(rb[0].propellant_planned, 73828);
   near(rb[0].propellant + G.guided.propellantUsed, 30006 + 73828, 1e-6, 'S-IVB propellant conserved');
   assert.ok(!A.parseHandoff(h.inputs.ascent_handoff).refusal, 'the idea 35 handoff it carries is one idea 35 accepts');
+  // the ascending node handed to module 37: a point on the equator that lies in the orbit plane, where the motion is
+  // northward (review: its formula was pinned only through the committed handoff)
+  const Om = h.outputs.parking_orbit.value.ascending_node_from_launch_meridian_deg * Math.PI / 180, N = [Math.cos(Om), Math.sin(Om), 0];
+  const f = h.outputs.insertion_state.value, nh = [f.r_m[1] * f.v_m_s[2] - f.r_m[2] * f.v_m_s[1], f.r_m[2] * f.v_m_s[0] - f.r_m[0] * f.v_m_s[2], f.r_m[0] * f.v_m_s[1] - f.r_m[1] * f.v_m_s[0]];
+  near((N[0] * nh[0] + N[1] * nh[1]) / Math.hypot(...nh), 0, 1e-12, 'node in the orbit plane');
+  assert.ok(nh[0] * N[1] - nh[1] * N[0] > 0, 'moving north there');
 });

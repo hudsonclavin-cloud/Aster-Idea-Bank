@@ -226,7 +226,7 @@
       G.rgrav = scale(r, -0.5 * MU / Math.pow(norm(r), 3) * I0.tgo * I0.tgo); G.tgoPrev = I0.tgo;
       var c = null, it;
       for (it = 0; it < 60; it++) { c = upfgPass(G, r, v, phases, tgt); if (!c.ok) break; if (it > 2 && c.dtgo < 1e-3) break; }
-      G.initIterations = it + 1; G.converged = !!(c && c.ok && c.dtgo < 1e-2);
+      G.initIterations = it < 60 ? it + 1 : 60; G.converged = !!(c && c.ok && c.dtgo < 1e-2);
       return G;
     }
 
@@ -255,6 +255,12 @@
     function flyClosed(veh, engines, plan, law, tgt, opts, nominal) {
       opts = opts || {};
       var keep = opts.samples !== false;
+      // the guidance settings (they also arrive in imported handoffs): a cycle the page offers, a start that is not before
+      // first-stage cutoff (review: an imported cycle of -1 s flew a garbage orbit and one of 0.01 s took seconds)
+      if (law.mode === 'upfg') {
+        if (!(num(law.cycle) && law.cycle >= 0.5 && law.cycle <= 4)) return { ok: false, refusals: [refusal('invalid_input', 'The guidance cycle must be a number of seconds from 0.5 to 4 (got ' + fmt(law.cycle, 4) + ').', 'A cycle of 0.5, 1, 2 or 4 s.', { applies_to: 'guidance' })] };
+        if (!(num(law.startAfter) && law.startAfter >= 0)) return { ok: false, refusals: [refusal('invalid_input', 'Guidance must start zero or more seconds after first-stage cutoff (got ' + fmt(law.startAfter, 4) + ').', 'A start time in seconds after first-stage cutoff.', { applies_to: 'guidance' })] };
+      }
       var r1 = opts.stage1 || A.fly(veh, engines, plan, { burns: 1, samples: keep });
       if (!r1.ok) return { ok: false, refusals: r1.refusals, stage1: r1 };
       var stop1 = r1.refusals.filter(function (x) { return x.applies_to !== 'orbit'; });
@@ -277,8 +283,8 @@
       // first-stage thrust direction at cutoff (the gravity turn: Earth-relative velocity in the launch plane), held after
       var vrel1 = [f1.v[0] + base.omega * f1.r[1], f1.v[1] - base.omega * f1.r[0], f1.v[2]];
       var uHold = unit(sub(vrel1, scale(base.np, dot(vrel1, base.np))));
-      var tGuide = law.mode === 'upfg' ? stage1End + (law.startAfter || 0) : Infinity, cyc = law.cycle || 2;
-      var outOfReach = null, G = null, terminal = false, lastU = uHold, lastCmdT = -Infinity, cutoffAt = law.mode === 'replay' ? law.cutoffT : null, vPrev = null, rPrev = null, tPrev = null;
+      var tGuide = law.mode === 'upfg' ? stage1End + law.startAfter : Infinity, cyc = law.cycle || 2;
+      var outOfReach = null, G = null, terminal = false, gFail = null, lastU = uHold, lastCmdT = -Infinity, cutoffAt = law.mode === 'replay' ? law.cutoffT : null, vPrev = null, rPrev = null, tPrev = null;
       var maxqCtx = null;
       if (law.mode === 'maxq') {
         var up = plan.upper, T0u = null;
@@ -353,17 +359,21 @@
               var cmd;
               if (!G) {
                 atGuidance = { t: t, r: r, v: v, mass: y[6], burnClock: tc, stage: si };
-                G = upfgInit(r, v, ph, tgt); cmd = { ok: G.converged, iF: G.iF, tgo: G.tgo, short: G.short };
-                if (!G.converged) warnings.push({ applies_to: 'guidance', reason: 'UPFG\'s first call did not settle in ' + G.initIterations + ' passes.' });
-                if (G.converged && G.short > 1 && !opts.flyShort) return { ok: false, stage1: r1, guidance: G, refusals: [refusal('out_of_envelope', 'Out of reach: when guidance starts (' + fmt(t, 4) + ' s) it needs ' + fmt(norm(G.vgo), 5) + ' m/s more and the upper stages carry ' + fmt(norm(G.vgo) - G.short, 5) + ' m/s: ' + fmt(G.short, 4) + ' m/s short of this target.', 'A lower or less inclined target, more upper-stage propellant, or a lighter payload.', { applies_to: 'target', short_m_s: G.short })] };
+                G = upfgInit(r, v, ph, tgt); cmd = { ok: G.converged, iF: G.iF, tgo: G.tgo, short: G.short, why: 'its first call did not settle in ' + G.initIterations + ' passes' };
+                var from = fmt((norm(r) - RE) / 1000, 4) + ' km, ' + fmt(norm(v), 5) + ' m/s, flight-path angle ' + fmt(Math.asin(Math.max(-1, Math.min(1, dot(v, unit(r)) / norm(v)))) / DEG, 3) + ' deg';
+                // review: a first call that does not settle used to hold the attitude silently and report whatever followed
+                // (a fall-back) as if guidance had flown it; the nominal flight is now refused here, with the reason
+                if (!G.converged && !opts.flyShort) return { ok: false, stage1: r1, guidance: G, warnings: warnings, samples: samples, partial: true, stageEnds: stageEnds, commands: commands, cycles: cycles,
+                  refusals: [refusal('out_of_envelope', 'Guidance cannot steer to this target: when it starts (' + fmt(t, 4) + ' s; ' + from + ') UPFG\'s first call does not settle in ' + G.initIterations + ' passes. Either the target is out of this vehicle\'s reach from there, or it is outside what UPFG\'s small-angle thrust-rotation terms can steer to (README, the envelope); this module cannot tell which, and flies nothing past this point.', 'A first-stage cutoff nearer the target\'s path (another kick), a target nearer the vehicle\'s path, or a shorter guidance cycle.', { applies_to: 'guidance', t: t })] };
+                if (G.converged && G.short > 1 && !opts.flyShort) return { ok: false, stage1: r1, guidance: G, refusals: [refusal('out_of_envelope', 'Out of reach, by guidance\'s own estimate: when it starts (' + fmt(t, 4) + ' s; ' + from + ') UPFG puts the velocity still to gain at ' + fmt(norm(G.vgo), 5) + ' m/s and the upper stages carry ' + fmt(norm(G.vgo) - G.short, 5) + ' m/s: ' + fmt(G.short, 4) + ' m/s short of this target. This is UPFG\'s prediction, not an optimisation: outside its small-angle envelope it can call a reachable target out of reach (README).', 'A lower or less inclined target, more upper-stage propellant, or a lighter payload.', { applies_to: 'target', short_m_s: G.short })] };
               } else { G.vgo = sub(G.vgo, dvS); cmd = upfgPass(G, r, v, ph, tgt); }
-              if (!cmd.ok || !num(cmd.tgo)) { warnings.push({ applies_to: 'guidance', reason: 'UPFG failed at ' + fmt(t, 5) + ' s: ' + (cmd.why || 'no solution') + '; attitude held.' }); terminal = true; }
+              if (!cmd.ok || !num(cmd.tgo)) { gFail = { t: t, why: cmd.why || 'no solution' }; warnings.push({ applies_to: 'guidance', reason: 'UPFG failed at ' + fmt(t, 5) + ' s: ' + gFail.why + '; attitude held.' }); terminal = true; }
               else if (cmd.short > 1) {
                 // out of reach in flight (a dispersed vehicle): hold the attitude and burn to depletion; a real vehicle
                 // would change target or abort (not modelled)
                 lastU = cmd.iF; lastCmdT = t; terminal = true; outOfReach = { t: t, short: cmd.short };
                 cycles.push({ t: t, tgo: cmd.tgo, vgo: norm(G.vgo), short: cmd.short, phase: j });
-                warnings.push({ applies_to: 'guidance', reason: 'At ' + fmt(t, 5) + ' s guidance found the target ' + fmt(cmd.short, 3) + ' m/s out of reach; attitude held to depletion.' });
+                warnings.push({ applies_to: 'guidance', reason: 'At ' + fmt(t, 5) + ' s guidance\'s own estimate put the target ' + fmt(cmd.short, 3) + ' m/s out of reach; attitude held to depletion.' });
               } else {
                 lastU = cmd.iF; lastCmdT = t;
                 cycles.push({ t: t, tgo: cmd.tgo, vgo: norm(G.vgo), short: cmd.short, phase: j });
@@ -427,7 +437,12 @@
       if (crashed) refusals.filter(function (x) { return /ground/.test(x.reason); }).forEach(function (x) { x.t = crashed.t; });
       refusals.sort(function (a1, a2) { return tOf(a1) - tOf(a2); });
       if (refusals.length > 1) refusals.length = 1;
-      if (refusals.length) return { ok: false, refusals: refusals, stage1: r1, samples: samples, partial: true, stageEnds: stageEnds, commands: commands, cycles: cycles };
+      // say what guidance was doing when the flight was lost (review: a held attitude used to read as guidance's flight)
+      var gNote = law.mode !== 'upfg' ? '' : !G ? ' Guidance had not started (it was due at ' + fmt(tGuide, 4) + ' s): the attitude at first-stage cutoff was being held.'
+        : gFail ? ' Guidance had stopped steering at ' + fmt(gFail.t, 4) + ' s (UPFG: ' + gFail.why + '); the attitude was held from then on.' : '';
+      if (refusals.length) { refusals[0].reason += gNote; return { ok: false, refusals: refusals, stage1: r1, samples: samples, partial: true, stageEnds: stageEnds, commands: commands, cycles: cycles, warnings: warnings }; }
+      if (law.mode === 'upfg' && !G) return { ok: false, stage1: r1, samples: samples, partial: true, stageEnds: stageEnds, commands: commands, cycles: cycles, warnings: warnings,
+        refusals: [refusal('invalid_input', 'Guidance never starts: it is set for ' + fmt(law.startAfter, 4) + ' s after first-stage cutoff (' + fmt(tGuide, 4) + ' s), but the upper stages have burned out by ' + fmt(t, 4) + ' s. What flew was the first-stage attitude held to burnout, not guidance.', 'A guidance start before the upper stages burn out (AS-512 flew its at 42.9 s; Table 2-2).', { applies_to: 'guidance' })] };
       var fin = A.stateOf(t, y, base.omega), orbit = A.orbitOf([y[0], y[1], y[2]], [y[3], y[4], y[5]]);
       var last = stageEnds[stageEnds.length - 1];
       var out = { ok: true, refusals: [], warnings: warnings, stage1: r1, stageEnds: stageEnds, events: events, samples: samples, commands: commands, cycles: cycles, t: t, final: fin, orbit: orbit,
@@ -437,7 +452,7 @@
       if (reentry) out.refusals.push(refusal('out_of_envelope', 'The trajectory leaves the atmosphere and comes back into it (below ' + fmt(ATM_TOP / 1000, 3) + ' km at ' + fmt(reentry.t, 4) + ' s, stage ' + (reentry.stage + 1) + ').', 'Another programme, or guidance.', { applies_to: 'trajectory' }));
       if (tgt) out.errors = insertionErrors(fin, orbit, tgt);
       if (!orbit.bound) out.refusals.push(refusal('out_of_envelope', 'The cutoff state escapes Earth (C3 ' + fmt(orbit.c3 / 1e6, 4) + ' km^2/s^2).', 'A lower target energy.', { applies_to: 'orbit' }));
-      else if (!out.inOrbit) out.refusals.push(refusal('out_of_envelope', 'Not in orbit: perigee ' + fmt(orbit.perigeeAlt / 1000, 4) + ' km, inside the atmosphere' + (last.endedBy === 'depletion' && law.mode === 'upfg' ? ', because the guided stage ran out of propellant first' + (outOfReach ? ' (guidance found the target ' + fmt(outOfReach.short, 3) + ' m/s out of reach at ' + fmt(outOfReach.t, 4) + ' s)' : '') : '') + '.', law.mode === 'upfg' ? 'More upper-stage propellant, a lower or less inclined target, or a lighter payload.' : 'Closed-loop guidance, or another programme.', { applies_to: 'orbit' }));
+      else if (!out.inOrbit) out.refusals.push(refusal('out_of_envelope', 'Not in orbit: perigee ' + fmt(orbit.perigeeAlt / 1000, 4) + ' km, inside the atmosphere' + (last.endedBy === 'depletion' && law.mode === 'upfg' ? ', because the guided stage ran out of propellant before guidance cut it off' + (outOfReach ? ' (guidance\'s own estimate put the target ' + fmt(outOfReach.short, 3) + ' m/s out of reach at ' + fmt(outOfReach.t, 4) + ' s)' : '') + ': either the target is beyond this propellant, or guidance diverged (outside UPFG\'s small-angle envelope a reachable target can end this way; README, the envelope)' : '') + '.' + gNote, law.mode === 'upfg' ? 'More upper-stage propellant, a lower or less inclined target, or a lighter payload.' : 'Closed-loop guidance, or another programme.', { applies_to: 'orbit' }));
       if (law.mode === 'upfg' && last.endedBy === 'depletion' && out.inOrbit) out.refusals.push(refusal('out_of_envelope', 'The guided stage ran out of propellant before it reached the target: the orbit is ' + fmt(orbit.perigeeAlt / 1000, 4) + ' x ' + fmt(orbit.apogeeAlt / 1000, 4) + ' km, not the target.', 'More upper-stage propellant or a lower target.', { applies_to: 'orbit' }));
       return out;
     }
@@ -645,7 +660,7 @@
     }
     function summarise(samples, nominalRun, table, sc, seed) {
       var pick = function (which, key, filt) { return samples.map(function (s) { return s[which]; }).filter(function (m) { return m.ok && (!filt || filt(m)); }).map(function (m) { return m[key]; }).filter(num); };
-      var res = { n: samples.length, seed: seed, sigmaScale: sc };
+      var res = { n: samples.length, seed: seed, sigmaScale: sc, table: table.map(function (r) { return { key: r.key, sigma: r.sigma }; }) };
       ['guided', 'replay'].forEach(function (w) {
         var flown = samples.filter(function (s) { return s[w].ok; }).length, orbit = samples.filter(function (s) { return s[w].ok && s[w].inOrbit; }).length;
         res[w] = { flown: flown, inOrbit: orbit, onTarget: samples.filter(function (s) { return s[w].ok && s[w].onTarget; }).length,
@@ -761,7 +776,7 @@
       if (ol) O.open_loop_programme = qv(ol.ok ? { in_orbit: !(ol.refusals || []).some(function (x) { return x.applies_to === 'orbit'; }), perigee_altitude_m: ol.orbit.perigeeAlt, apogee_altitude_m: ol.orbit.apogeeAlt, burnout_speed_m_s: ol.final.speed, burnout_altitude_m: ol.final.altitude, speed_short_of_target_m_s: tgt && !tgt.refusal ? tgt.vd - ol.final.speed : null } : { refused: ol.refusals && ol.refusals[0] && ol.refusals[0].reason }, 'm, m/s', 'derived', '35-max-q/ascent.js fly() on the same plan (idea 35\'s open-loop upper programme)');
       if (mc) {
         var gm = mc.guided, rm = mc.replay;
-        O.scatter = qv({ n: mc.n, seed: mc.seed, sigma_scale: mc.sigmaScale,
+        O.scatter = qv({ n: mc.n, seed: mc.seed, sigma_scale: mc.sigmaScale, sigmas: mc.table || null,
           guided: { in_orbit: gm.inOrbit, on_target: gm.onTarget, perigee_sd_m: gm.perigee.sd, apogee_sd_m: gm.apogee.sd, inclination_sd_deg: gm.inclination.sd, radius_error_sd_m: gm.radiusErr.sd, speed_error_sd_m_s: gm.speedErr.sd, propellant_left_mean_kg: gm.propellantLeft.mean, propellant_left_sd_kg: gm.propellantLeft.sd, propellant_left_min_kg: gm.propellantLeft.min },
           open_loop_replay: { in_orbit: rm.inOrbit, perigee_mean_m: rm.perigee.mean, perigee_sd_m: rm.perigee.sd, apogee_sd_m: rm.apogee.sd, inclination_sd_deg: rm.inclination.sd },
           reserve_3sd_kg: mc.reserve ? mc.reserve.threeSigma : null }, 'm, m/s, deg, kg', 'derived', KERNEL + ' monteCarlo() (dispersions assumed, see refusals)');
@@ -769,11 +784,35 @@
       (g.refusals || []).forEach(function (x) { out.refusals.push(x); });
       if (noRestart) out.refusals.push({ applies_to: 'restart', code: 'insufficient_data', reason: 'Guidance cut ' + ge.label + ' off with ' + fmt(left, 5) + ' kg unburned, but idea 34\'s vehicle gives that stage no second burn: whether it can restart for a departure is not stated.', what_would_help: 'A second burn for this stage in idea 34 (a restartable engine, with its coast losses), or a separate departure stage.' });
       out.refusals.push({ applies_to: 'navigation', code: 'insufficient_data', reason: 'Navigation is perfect here: guidance knows the true state. The flight\'s own cutoff was 30.8 m and 0.20 m/s from its prediction (section 9.3).', what_would_help: 'An inertial-platform error model (ST-124M drift and accelerometer errors) to fly guidance on a navigated state.' });
-      out.refusals.push({ applies_to: 'dispersions', code: 'insufficient_data', reason: 'The dispersion sizes are one flight\'s deviations from its prediction (AS-512), used as one sigma' + (mc && mc.sigmaScale !== 1 ? ' and scaled by ' + fmt(mc.sigmaScale, 3) : '') + ': a population of flights is not in the report.', what_would_help: 'MSFC\'s three-sigma dispersion tables for Saturn V (the operational trajectory documents), or the deviations of several flights.' });
+      var def = dispersionTable(ctx.veh), changed = mc && mc.table ? mc.table.filter(function (r, i) { return !def[i] || def[i].key !== r.key || Math.abs(r.sigma - def[i].sigma) > 1e-12 * Math.max(1, def[i].sigma); }).length : 0;
+      out.refusals.push({ applies_to: 'dispersions', code: 'insufficient_data', reason: 'The dispersion sizes are one flight\'s deviations from its prediction (AS-512), used as one sigma' + (changed ? ' (' + changed + ' of them scaled or edited here: scatter.sigmas lists what was flown)' : '') + (mc && mc.sigmaScale !== 1 ? ' and scaled by ' + fmt(mc.sigmaScale, 3) : '') + ': a population of flights is not in the report.', what_would_help: 'MSFC\'s three-sigma dispersion tables for Saturn V (the operational trajectory documents), or the deviations of several flights.' });
       return out;
     }
+    /** The first place two JSON-shaped values differ (numbers to 1e-6 relative, with a 1e-6 floor), or null. */
+    function firstDiff(a, b, where) {
+      if (typeof a === 'number' || typeof b === 'number') return num(a) && num(b) && Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(b)) ? null : where;
+      if (Array.isArray(b)) {
+        if (!Array.isArray(a) || a.length !== b.length) return where;
+        for (var i = 0; i < b.length; i++) { var d = firstDiff(a[i], b[i], where + '[' + i + ']'); if (d) return d; }
+        return null;
+      }
+      if (b && typeof b === 'object') {
+        if (!a || typeof a !== 'object' || Array.isArray(a)) return where;
+        var keys = Object.keys(b).concat(Object.keys(a).filter(function (k) { return !(k in b); }));
+        for (var j = 0; j < keys.length; j++) { var d2 = firstDiff(a[keys[j]], b[keys[j]], where + '.' + keys[j]); if (d2) return d2; }
+        return null;
+      }
+      return a === b ? null : where;
+    }
+    function pathValue(o, where) {
+      var v = o; ('.' + where).replace(/\.([^.[\]]+)|\[(\d+)\]/g, function (m, k, i) { v = v == null ? undefined : v[k != null ? k : +i]; return m; });
+      return v;
+    }
     /** Read this module's handoff back: the idea 35 handoff inside is re-checked (and through it 34's), the guided flight
-     * re-flown, and the headline outputs must agree to 1e-6. */
+     * re-flown with the handoff's own target and guidance settings, every output re-made and compared (numbers to 1e-6),
+     * the list of refusals compared, and a Monte Carlo scatter re-flown from its seed, size and sigmas. (Review: it used
+     * to compare four numbers, so an edited insertion state, departure-burn propellant or reserve passed, and a handoff
+     * with its parking_orbit deleted skipped the check altogether.) */
     function parseHandoff(input) {
       var h = input;
       if (typeof input === 'string') { try { h = JSON.parse(input); } catch (e) { return { refusal: refusal('invalid_input', 'That is not JSON.', 'A handoff from idea 34, 35 or 36.') }; } }
@@ -785,16 +824,33 @@
       if (ctx.refusal) return ctx;
       ctx.target = clone(I.target); ctx.guidance = { startAfter: I.guidance.startAfterStage1Cutoff_s, cycle: I.guidance.cycle_s, startSource: 'imported' };
       ctx.from = '36-closed-loop';
-      var O = h.outputs || {};
-      if (O.parking_orbit) {
-        var R = run(ctx, { samples: false }), g = R.guided;
-        if (!g.ok) return { refusal: refusal('invalid_input', 'This handoff says it reached orbit, but flying its own ascent, target and guidance settings is refused: ' + (g.refusals[0] && g.refusals[0].reason), 'The unedited handoff this page exported.') };
-        var chk = [['perigee_altitude_m', g.orbit.perigeeAlt], ['apogee_altitude_m', g.orbit.apogeeAlt], ['inclination_deg', g.orbit.inclinationDeg]];
-        for (var i = 0; i < chk.length; i++) { var got = O.parking_orbit.value && O.parking_orbit.value[chk[i][0]]; if (!(num(got) && Math.abs(got - chk[i][1]) <= 1e-6 * Math.max(1, Math.abs(chk[i][1])))) return { refusal: refusal('invalid_input', 'The handoff says ' + chk[i][0] + ' = ' + fmt(got, 9) + ', but flying its own settings gives ' + fmt(chk[i][1], 9) + ': it was edited.', 'The unedited handoff this page exported.') }; }
-        var pl = O.propellant_left_in_guided_stage && O.propellant_left_in_guided_stage.value;
-        if (!(num(pl) && Math.abs(pl - g.guided.propellantLeft) <= 1e-6 * Math.max(1, pl))) return { refusal: refusal('invalid_input', 'The handoff says ' + fmt(pl, 9) + ' kg is left in the guided stage, but flying its own settings gives ' + fmt(g.guided.propellantLeft, 9) + ': it was edited.', 'The unedited handoff this page exported.') };
-        ctx.result = R;
+      var O = h.outputs || {}, show = function (x) { return x === undefined ? '(missing)' : typeof x === 'number' ? fmt(x, 9) : x && typeof x === 'object' ? (Array.isArray(x) ? '(a list of ' + x.length + ')' : '(an object)') : JSON.stringify(x); },
+        edited = function (where, got, want) { return { refusal: refusal('invalid_input', 'The handoff says ' + where + ' = ' + show(got) + ', but flying its own ascent, target and guidance settings gives ' + show(want) + ': it was edited, or made with other data.', 'The unedited handoff this page exported.') }; };
+      var R = run(ctx, { samples: false });
+      // every output but the scatter, and the refusals, as this kernel makes them for these inputs
+      var again = JSON.parse(JSON.stringify(makeHandoff(ctx, R, null, { produced: h.produced })));
+      var mine = clone(O); delete mine.scatter;
+      var d = firstDiff(mine, again.outputs, 'outputs');
+      if (d) return edited(d, pathValue({ outputs: mine }, d), pathValue(again, d));
+      var codes = function (list) { return (list || []).map(function (x) { return (x.applies_to || '') + ':' + x.code; }).sort().join(', '); };
+      if (codes(h.refusals) !== codes(again.refusals)) return { refusal: refusal('invalid_input', 'The handoff\'s refusals (' + (codes(h.refusals) || 'none') + ') are not the ones flying its own settings gives (' + codes(again.refusals) + '): it was edited.', 'The unedited handoff this page exported.') };
+      var sc = O.scatter && O.scatter.value;
+      if (sc) {
+        if (!R.guided.ok) return { refusal: refusal('invalid_input', 'The handoff carries a Monte Carlo scatter, but its own guided flight is refused, so there is nothing to disperse: it was edited.', 'The unedited handoff this page exported.') };
+        var base = dispersionTable(ctx.veh), table = base, list = sc.sigmas;
+        if (!(Number.isInteger(sc.n) && sc.n >= 2 && sc.n <= 1000 && Number.isInteger(sc.seed) && num(sc.sigma_scale) && sc.sigma_scale >= 0 && sc.sigma_scale <= 100)) return { refusal: refusal('invalid_input', 'The scatter\'s size, seed or sigma scale is not one this page makes (2 to 1,000 flights, an integer seed, a scale from 0 to 100).', 'The unedited handoff this page exported.') };
+        if (list != null) {
+          if (!Array.isArray(list) || list.length !== base.length || !list.every(function (x, i) { return x && x.key === base[i].key && num(x.sigma) && x.sigma >= 0 && x.sigma <= 1; })) return { refusal: refusal('invalid_input', 'The scatter\'s sigmas are not this vehicle\'s dispersion table (one per row, each a fraction from 0 to 1).', 'The unedited handoff this page exported.') };
+          table = base.map(function (row, i) { return Object.assign({}, row, { sigma: list[i].sigma }); });
+        }
+        var mc = monteCarlo(ctx, R, { n: sc.n, seed: sc.seed, sigmaScale: sc.sigma_scale, table: table }); mc.step(sc.n);
+        var res = mc.result(), want = JSON.parse(JSON.stringify(makeHandoff(ctx, R, res, { produced: h.produced }).outputs.scatter));
+        if (list == null) delete want.value.sigmas; // a scatter exported before the review carries no sigmas: flown with the defaults
+        var d3 = firstDiff(O.scatter, want, 'outputs.scatter');
+        if (d3) return edited(d3, pathValue({ outputs: { scatter: O.scatter } }, d3), pathValue({ outputs: { scatter: want } }, d3));
+        ctx.mcResult = res;
       }
+      ctx.result = R;
       return ctx;
     }
 
@@ -802,7 +858,7 @@
       holdContext: holdContext, flyClosed: flyClosed, currentPhases: currentPhases, insertionErrors: insertionErrors, A: A, S: S,
       defaultTarget: defaultTarget, defaultGuidance: defaultGuidance, setup: setup, run: run, replayLaw: replayLaw, dispersionTable: dispersionTable, msfcScale: msfcScale,
       disperse: disperse, flyDispersed: flyDispersed, nominalOf: nominalOf, monteCarlo: monteCarlo, sensitivities: sensitivities, as512Rows: as512Rows,
-      makeHandoff: makeHandoff, parseHandoff: parseHandoff, ascentHandoffOf: ascentHandoffOf, isAS512: isAS512, T0_512: T0_512,
+      makeHandoff: makeHandoff, parseHandoff: parseHandoff, ascentHandoffOf: ascentHandoffOf, isAS512: isAS512, T0_512: T0_512, metricsOf: metricsOf, summarise: summarise,
       constants: { MU: MU, RE: RE, OMEGA: OMEGA, ATM_TOP: ATM_TOP } };
   }
 
