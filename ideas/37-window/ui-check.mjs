@@ -58,7 +58,11 @@ const R = W.compute(st, spec, set), win = R.windows[0];
   ok(Math.abs(num(await tileVal(page, 'Propellant left')) - R.flight.propellant) < 0.6, 'propellant tile is idea 36 re-flown');
   ok(Math.abs(num(await tileVal(page, 'Impulsive Δv')) - R.departure.dv) < 0.6, 'impulsive delta-v tile');
   ok((await page.locator('#tiles .tile .c').count()) === (await page.locator('#tiles .tile').count()), 'a confidence chip on every tile');
-  ok((await refusals(page)).length === 0, 'no refusal on the default');
+  // (independent review) the propellant left buys less than the impulsive departure needs: one refusal, for that
+  const rf0 = await refusals(page);
+  ok(rf0.length === 1 && /departure_propellant/.test(rf0[0]) && /cannot make this departure/.test(rf0[0]), 'the default carries the departure_propellant refusal only: ' + rf0.join(' | '));
+  ok(Math.abs(num(await tileVal(page, 'Δv it buys')) - R.capacity.dv) < 0.6, 'delta-v tile is the kernel\'s capacity');
+  ok((await page.locator('#tiles .tile.short').count()) === 1, 'the capacity tile is marked short');
   const v = await page.locator('#verdict').innerText();
   ok(/AMBER/.test(v) && v.includes(hms(win.openMs) + '–' + hms(win.closeMs)) && /eq\. 14/.test(v), 'verdict: Aster\'s band, the window, the split limit');
   ok((await page.locator('#oppSeg button').count()) === R.windows.length, 'a button per window');
@@ -67,13 +71,17 @@ const R = W.compute(st, spec, set), win = R.windows[0];
   ok((await page.locator('#skyChart circle').count()) === 3, 'sky: pad, asymptote, departure point');
   // Apollo 17 table
   const ap = W.apollo17(), rows = await page.locator('#apTable tbody tr').allInnerTexts();
-  ok(rows.length === 5, 'five Apollo 17 rows');
+  ok(rows.length === 6, 'six Apollo 17 rows');
+  ok(/Table 16-7/.test(rows[5]) && rows[5].includes('3,129') && rows[5].includes('2,991'), 'the translunar-burn yardstick row: ' + rows[5].replace(/\s+/g, ' '));
   ok(rows[1].includes(hms(ap.predictedCloseMs)) && rows[1].includes('+369 s'), 'window close against the press kit: ' + rows[1].replace(/\s+/g, ' '));
   // the slider moves the launch inside the window, and the page re-flies the vehicle as the kernel does
   await page.locator('#fracRange').fill('0.5'); await page.waitForTimeout(300);
   const mid = W.compute(st, spec, Object.assign({}, set, { fraction: 0.5 }), { perf: false });
   ok(await tileVal(page, 'Launch') === hms(mid.launch.ms) + 'UTC', 'slider at 0.5 gives the kernel\'s launch');
   ok(Math.abs(num(await tileVal(page, 'Propellant left')) - mid.flight.propellant) < 0.6, 'and its propellant');
+  ok(Math.abs(num(await tileVal(page, 'Δv it buys')) - mid.capacity.dv) < 0.6, 'and what it buys');
+  const rfm = await refusals(page);
+  ok(rfm.length === 1 && rfm[0].includes(String(Math.round(mid.departure.dv - mid.capacity.dv))), 'the refusal follows the moment: ' + rfm.join(' | '));
   // a tap inside the window on the azimuth chart, then the arrow keys
   await page.locator('#azChart').scrollIntoViewIfNeeded();
   const box = await page.locator('#azChart').boundingBox();
@@ -106,6 +114,10 @@ const R = W.compute(st, spec, set), win = R.windows[0];
   ok(rf.length === 1 && /window/.test(rf[0]) && /eq\. 14/.test(rf[0]), 'DLA 70: no window, refused');
   ok((await page.locator('#tiles .tile').count()) === 0, 'no tiles on a refusal');
   await noNaN(page, 'DLA 70');
+  // a date before the leap-second table: refused for the time, and the verdict does not claim there is no window
+  await setNum(page, '#dateIn', '1965-01-01'); await page.waitForTimeout(400);
+  ok((await refusals(page)).some((t) => /time/.test(t)) && !/no launch window/.test(await page.locator('#verdict').innerText()), 'pre-1972: time refused, no false "no window"');
+  await setNum(page, '#dateIn', '2026-07-02'); await setNum(page, '#dlaIn', 70); await page.waitForTimeout(400);
   // the declination slider: at 10 deg the day has two windows
   await page.locator('#dlaRange').fill('10'); await page.waitForTimeout(900);
   ok((await page.locator('#oppSeg button').count()) === 2, 'DLA 10: two windows');

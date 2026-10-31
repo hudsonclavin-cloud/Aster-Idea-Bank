@@ -59,7 +59,7 @@ test('time: NAIF\'s leap seconds against ERFA\'s own table and Aster\'s 69.184 s
   }
   near(W.timeOf(ms('2016-12-31T23:59:59Z')).ttMinusUtc, 36 + 32.184, 1e-12, 'one second before the last leap second');
   assert.equal(W.timeOf(ms('1971-12-31T23:00:00Z')).refusal.applies_to, 'time');
-  for (const bad of ['2026-02-30', '2026-07-02T24:00', '2026-13-01', '2026-07-02T10:61', 'next tuesday']) assert.equal(W.parseUtc(bad), null, bad);
+  for (const bad of ['2026-02-30', '2026-07-02T24:00', '2026-13-01', '2026-07-02T10:61', '2026-07-02T10:00:60', 'next tuesday']) assert.equal(W.parseUtc(bad), null, bad);
   assert.equal(W.parseUtc('2026-07-02T02:50:50.5Z'), Date.UTC(2026, 6, 2, 2, 50, 50, 500));
 });
 
@@ -211,6 +211,23 @@ test('Apophis, 2026-07-02, AS-512 from Pad 39A: one 7.45 h window bounded by 35 
   assert.ok(ps.every((x) => x != null && x < due));
   near(R.flight.propellant, 56250.39, 0.05, 'at the opening'); near(Math.max(...ps), 62874, 1, 'best');
   near(R.departure.dv, 3254.9, 0.5, 'impulsive departure');
+  // (independent review) what that propellant buys: 2,525 m/s at the opening against the 3,255 m/s needed, so the
+  // departure is refused for this launch, and it would be even due east (2,991 m/s)
+  near(R.capacity.dv, 2524.5, 0.5, 'ideal delta-v of the propellant left');
+  near(R.capacity.dv, R.capacity.ve * Math.log(R.capacity.m0 / (R.capacity.m0 - R.flight.propellant)), 1e-9, 'the rocket equation');
+  near(R.capacity.ve, as512().st.ctx.engines['J-2'].ispVac, 0, 'the J-2 vacuum exhaust velocity of the imported stack (idea 33\'s deck)');
+  near(R.capacity.ve, 4146.0, 0.05);
+  const cr = R.refusals.find((x) => x.applies_to === 'departure_propellant');
+  assert.ok(cr && cr.code === 'out_of_envelope' && /cannot make this departure/.test(cr.reason), 'departure refused for want of propellant');
+  near(cr.need_m_s - cr.capacity_m_s, 730.4, 0.5, 'short by');
+  const east = W.flyAt(as512().st.ctx, as512().st.azFlownDeg), capE = W.capacityOf(as512().st.ctx, east);
+  near(capE.dv, 2990.6, 0.5, 'due east'); assert.ok(capE.dv < R.departure.dv);
+  for (const p of R.perf) { const f = W.flyAt(as512().st.ctx, p.azDeg); assert.ok(W.capacityOf(as512().st.ctx, f).dv < 2750, 'no moment of the window buys it: ' + p.azDeg); }
+  // a C3 the propellant does buy: no such refusal
+  const low = W.compute(as512().st, { c3_m2_s2: -2e6, rlaDeg: R.asym.rlaDeg, dlaDeg: R.asym.dlaDeg, dateUtc: '2026-07-02' }, as512().set, { perf: false, noJ2: false });
+  assert.ok(!low.refusals.some((x) => x.applies_to === 'departure_propellant'), 'target mode: nothing to refuse');
+  assert.equal(W.capacityRefusal({ dv: 3200, ve: 4146, mp: 1, stage: 's', engine: 'e' }, { dv: 3100 }), null);
+  assert.match(W.capacityRefusal({ dv: 3100, ve: 4146, mp: 1, stage: 's', engine: 'e' }, { dv: 3150 }).reason, /marginal/);
 });
 
 test('Apollo 17 against its flight report and press kit: the window closes 6.2 min late; the scheduled azimuth; inclination; J2 over the coast', () => {
@@ -226,13 +243,57 @@ test('Apollo 17 against its flight report and press kit: the window closes 6.2 m
   near(a.closeGap_s, 369.2, 1, 'window close vs press kit');
   near(a.openGap_s, -62.5, 1, '72.000 deg comes 62.5 s before the scheduled liftoff, whose azimuth was 72.141');
   near(a.azimuthAt(a.scheduledMs), 72.141, 1e-6); near(a.azimuthAt(a.liftoffMs), 91.504, 1e-6);
-  // with the pad's own (report-derived) latitude instead of the chain's 28.5 deg the gap moves by 21 s
-  near(W.apollo17(W.PAD39A.latDeg).closeGap_s, 348.2, 1);
+  // Table 4-3's latitudes are geodetic, so the walked-back pad latitude is too; the plane geometry needs the geocentric
+  // one (independent review): on Aster's pck00010 ellipsoid 28.4443 deg, which moves the gap the other way, to +380 s
+  near(W.PAD39A.geocentricLatDeg, 28.4443, 1e-4);
+  near(W.apollo17(W.PAD39A.geocentricLatDeg).closeGap_s, 380.3, 1, 'with the pad\'s geocentric latitude');
+  near(W.apollo17(W.PAD39A.geocentricLatDeg).inclinationAtFlownDeg, 28.481, 0.001, 'eq. 15 from the pad\'s geocentric latitude');
+  near(W.apollo17(W.PAD39A.latDeg).closeGap_s, 348.2, 1, 'the geodetic latitude used as if geocentric (what the README first said)');
   near(a.inclinationAtFlownDeg, 28.536, 0.001); near(a.inclinationTable44Deg, 28.526, 0);
   // J2 from insertion (Table 4-4) to translunar injection (Table 4-5): the coast alone against the flight, burn included
   const c = W.as512Coast();
   near(c.predictedChangeDeg, -1.0225, 0.001); near(c.flightChangeDeg, -0.917, 1e-9); near(c.eq25ChangeDeg, -1.0371, 0.001);
   near(c.dnNoJ2Deg, AP.insertion.descendingNodeDeg, 1e-6, 'no J2, no motion');
+});
+
+test('independent review: the yardstick against Apollo 17\'s own translunar burn; a yawed first stage; the pad\'s geocentric latitude; Aster\'s band edges', () => {
+  const { st, set, R } = as512();
+  // Table 16-7: the real S-IVB went from 139,750 to 65,711 kg; at idea 33's J-2 exhaust velocity that is 3,129 m/s, at
+  // least 0.9 % under the 3,155 m/s impulsive minimum Table 4-5's C3 needs from the chain's insertion radius (the burn
+  // did it, so the yardstick reads low); the chain's AS-512 on Apollo 17's own azimuth carries 2,991 m/s, 138 m/s less
+  const f2 = W.flyAt(st.ctx, L.AP17.azimuthFlownDeg), t = W.tliCheck(st.ctx, f2);
+  near(t.flownDv, 3128.5, 0.5, 'the real burn at the deck\'s exhaust velocity');
+  near(t.needDv, 3155.5, 0.5, 'impulsive need for Table 4-5\'s C3');
+  near(1 - t.flownDv / t.needDv, 0.0086, 0.0005, 'the yardstick reads at least 0.9 % low');
+  near(t.chain.dv, 2990.8, 0.5, 'the chain\'s AS-512 on 91.504 deg');
+  near(t.chain.mp, 70930.8, 0.5);
+  // the first stage flies the plane's azimuth (as the Saturn V did); yawed toward the north it keeps more inside the
+  // window: plane 45 deg, first stage 39 deg: +1,685 kg; plane 55.5 deg, first stage 50.5 deg: +1,014 kg
+  const flyYaw = (planAz, planeAz) => {
+    const ctx = st.ctx, lat = ctx.plan.site.latitudeDeg, plan = JSON.parse(JSON.stringify(ctx.plan)); plan.azimuthDeg = planAz;
+    const inc = Math.acos(Math.cos(lat * DEG) * Math.sin(planeAz * DEG)) / DEG;
+    const tgt = L.C.targetOrbit({ perigeeAlt: ctx.target.perigeeAlt, apogeeAlt: ctx.target.apogeeAlt, inclinationDeg: inc, branch: 'north' }, lat);
+    const r1 = L.A.fly(ctx.veh, ctx.engines, plan, { burns: 1, samples: false });
+    const g = L.C.flyClosed(ctx.veh, ctx.engines, plan, { mode: 'upfg', startAfter: ctx.guidance.startAfter, cycle: ctx.guidance.cycle }, tgt, { samples: false, stage1: r1 });
+    assert.ok(g.ok && g.inOrbit); return g.guided.propellantLeft;
+  };
+  near(flyYaw(45, 45), W.flyAt(st.ctx, 45).propellant, 1e-6, 'the same flight as flyAt');
+  near(flyYaw(39, 45) - flyYaw(45, 45), 1685, 2, 'plane 45, first stage 39');
+  near(flyYaw(50.5, 55.5) - flyYaw(55.5, 55.5), 1014, 2, 'plane 55.5, first stage 50.5');
+  near(flyYaw(50.5, 55.5), 63959, 2);
+  // the pad's geocentric latitude (28.444 deg) instead of the chain's 28.5 deg: the Apophis window (no J2) opens 0.85 s
+  // and closes 13.9 s earlier
+  const nj = W.dailyWindows(Object.assign({}, R.env, { j2: false }), st.prof, {}).windows[0];
+  const ng = W.dailyWindows(Object.assign({}, R.env, { j2: false, latDeg: W.PAD39A.geocentricLatDeg }), st.prof, {}).windows[0];
+  near((ng.openMs - nj.openMs) / 1000, -0.85, 0.1); near((ng.closeMs - nj.closeMs) / 1000, -13.9, 0.2);
+  // Aster's classifyFeasibility edges (feasibility.ts: GREEN |DLA| <= iMin, AMBER <= dlaCeiling 57, else RED)
+  assert.equal(W.asterBand(28.5, 'cape-canaveral').cls, 'GREEN'); assert.equal(W.asterBand(-28.5001, 'cape-canaveral').cls, 'AMBER');
+  assert.equal(W.asterBand(57, 'cape-canaveral').cls, 'AMBER'); assert.equal(W.asterBand(57.0001, 'cape-canaveral').cls, 'RED');
+  // eq. 15 puts the 35 deg plane at 59.73 deg, so a DLA of 58 deg that Aster screens RED has a window from the pad
+  const d58 = W.compute(st, { c3_m2_s2: 10e6, rlaDeg: 100, dlaDeg: 58, dateUtc: '2026-07-02' }, set, { perf: false, noJ2: false });
+  assert.equal(d58.aster.cls, 'RED'); assert.equal(d58.windows.length, 1); near(d58.windows[0].duration, 10089.6, 5);
+  // eq. 25 at the Apophis plane (59.73 deg, idea 36's 6,545 km parking orbit): 0.280 deg per revolution
+  near(W.regressionPerRev(6545036.6, 59.7304, W.constants.RJ2, W.constants.J2), -0.2799, 0.0005);
 });
 
 test('windows belong to the day they open on, followed to their close; a corridor open all day; the coast minimum', () => {
@@ -252,12 +313,17 @@ test('windows belong to the day they open on, followed to their close; a corrido
   assert.equal(sl.launch.ev.revs, 1);
   assert.ok(sl.launch.ev.t >= 7200 && sl.launch.ev.t <= set.coast.max);
   near(sl.launch.ev.t - R.launch.ev.t, 2 * Math.PI * Math.sqrt(R.flight.profile.rmag ** 3 / W.constants.MU), 90, 'one more revolution');
+  // a minimum a little under the first crossing (independent review): nothing skipped, the same departure
+  const s2 = W.compute(st, W.apophisSpec(), Object.assign({}, set, { coast: { min: R.launch.ev.t - 120, max: set.coast.max } }), { perf: false, noJ2: false });
+  assert.equal(s2.launch.ev.revs, 0); near(s2.launch.ev.t, R.launch.ev.t, 1e-6);
 });
 
 test('refusals: no window, a target vector, outside the window, before 1972, bad settings, foreign or edited handoffs', () => {
   const { st, set } = as512();
   const r1 = W.compute(st, { c3_m2_s2: 10e6, rlaDeg: 0, dlaDeg: 70, dateUtc: '2026-07-02' }, set, { perf: false, noJ2: false });
   assert.equal(r1.refusal.applies_to, 'window'); assert.match(r1.refusal.reason, /eq\. 14/);
+  // eq. 14 for DLA 70 from 28.5 deg: asin(cos 70 / cos 28.5) = 22.90 deg from north (the first version said "of east")
+  assert.match(r1.refusal.reason, /only azimuths within 22\.9 deg of north or of south are reachable and those within 67\.1 deg of east are not/);
   const r2 = W.compute(st, { c3_m2_s2: -1.7e6, rlaDeg: 120, dlaDeg: -9, dateUtc: '2026-07-02' }, set, { perf: false, noJ2: false });
   assert.ok(!r2.refusal && r2.launch && !r2.departure); assert.equal(r2.refusals[0].applies_to, 'departure');
   const r3 = W.compute(st, W.apophisSpec(), Object.assign({}, set, { launchUtc: '2026-07-02T15:00:00Z' }), { perf: false, noJ2: false });

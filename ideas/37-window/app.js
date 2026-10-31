@@ -79,6 +79,10 @@
     var sf = W.solveFlown(R.env, ms, state.st.ctx, state.st.prof);
     R.refusal = sf.refusal || null; R.launch = sf.solve || null; R.flight = sf.flight || null;
     R.departure = sf.refusal ? null : W.departureOf(sf.solve, R.env);
+    // the delta-v the propellant buys, and its refusal, belong to the moment (as the kernel's compute() does)
+    R.capacity = sf.refusal ? null : W.capacityOf(state.st.ctx, sf.flight);
+    R.refusals = (R.refusals || []).filter(function (x) { return x.applies_to !== 'departure_propellant'; });
+    var cr = W.capacityRefusal(R.capacity, R.departure); if (cr) R.refusals.push(cr);
     $('fracRange').value = state.set.fraction;
     render();
   }
@@ -94,7 +98,8 @@
     var R = state.R, v = $('verdict'), ab = R.aster, a = R.asym;
     v.className = 'verdict' + (ab ? ' ' + ab.cls.toLowerCase() : '');
     if (!a) { v.textContent = ''; return; }
-    var day = R.windows && R.windows.length ? R.windows.length + ' window' + (R.windows.length > 1 ? 's' : '') + ' on ' + a.dateUtc + ': ' + R.windows.map(function (w) { return hms(w.openMs) + '–' + hms(w.closeMs) + ' UTC (' + dur(w.duration) + ')'; }).join(', ') : 'no launch window on ' + a.dateUtc;
+    var day = R.windows && R.windows.length ? R.windows.length + ' window' + (R.windows.length > 1 ? 's' : '') + ' on ' + a.dateUtc + ': ' + R.windows.map(function (w) { return hms(w.openMs) + '–' + hms(w.closeMs) + ' UTC (' + dur(w.duration) + ')'; }).join(', ')
+      : R.refusal && R.refusal.applies_to !== 'window' ? 'not computed (' + R.refusal.applies_to + ' refused, below)' : 'no launch window on ' + a.dateUtc;
     var lim = Math.abs(a.dlaDeg) > state.st.latDeg ? ' The declination is beyond the latitude, so only azimuths within ' + fmt(Math.asin(Math.min(1, Math.cos(a.dlaDeg * DEG) / Math.cos(state.st.latDeg * DEG))) / DEG, 1) + '° of north or of south are reachable (eq. 14).' : '';
     v.textContent = (ab ? 'Aster\'s screen: ' + ab.cls + ' (|DLA| ' + fmt(Math.abs(a.dlaDeg), 2) + '° against ' + ab.iMinDeg + '° and ' + ab.ceilingDeg + '°). ' : '') + 'This day: ' + day + '.' + lim;
   }
@@ -125,6 +130,8 @@
       t.appendChild(tile('Impulsive Δv', fmt(d.dv, 0), 'm/s', 'derived', 'v∞ ' + fmt(R.asym.vinf, 0) + ' m/s; ν∞ ' + fmt(d.nuInfDeg, 2) + '°'));
     }
     if (f) t.appendChild(tile('Propellant left', fmt(f.propellant, 0), 'kg', 'derived', sgn(f.propellant - due, 0) + ' kg against the ' + fmt(state.st.azFlownDeg, 2) + '° flight'));
+    var cap = R.capacity;
+    if (cap) t.appendChild(tile('Δv it buys', fmt(cap.dv, 0), 'm/s', 'derived', 'ideal, ' + cap.engine + ' at ' + fmt(cap.ve, 0) + ' m/s' + (d ? '; ' + (cap.dv >= d.dv ? 'covers' : 'short of') + ' the ' + fmt(d.dv, 0) + ' m/s' : ''), d && cap.dv < d.dv ? 'short' : null));
   }
 
   // ------------------------------------------------------------------ charts
@@ -183,7 +190,7 @@
     });
     if (R.flight && R.launch) svg.appendChild(sv('circle', { class: 'ptx', cx: f.sx((R.launch.ms - D.d0) / 3600e3), cy: f.sy(R.flight.propellant), r: 6 }));
     var best = ps.reduce(function (a, b) { return b.propellant > a.propellant ? b : a; }), worst = ps.reduce(function (a, b) { return b.propellant < a.propellant ? b : a; });
-    $('perfCap').textContent = 'Idea 36\'s guided ascent flown again on each moment\'s azimuth: ' + fmt(worst.propellant, 0) + ' kg left at ' + fmt(worst.azDeg, 1) + '° to ' + fmt(best.propellant, 0) + ' kg at ' + fmt(best.azDeg, 1) + '°, against ' + fmt(due, 0) + ' kg as idea 36 flew it (' + fmt(state.st.azFlownDeg, 2) + '°). The first stage keeps idea 35\'s pitch plan on every azimuth.';
+    $('perfCap').textContent = 'Idea 36\'s guided ascent flown again on each moment\'s azimuth: ' + fmt(worst.propellant, 0) + ' kg left at ' + fmt(worst.azDeg, 1) + '° to ' + fmt(best.propellant, 0) + ' kg at ' + fmt(best.azDeg, 1) + '°, against ' + fmt(due, 0) + ' kg as idea 36 flew it (' + fmt(state.st.azFlownDeg, 2) + '°). The first stage keeps idea 35\'s pitch plan and flies the plane\'s azimuth, as the Saturn V did; yawed a few degrees toward the north it keeps 1 to 1.7 t more inside the window (README).';
   }
   function drawSky() {
     var R = state.R, svg = $('skyChart'), H0 = 300, W0 = size(svg, H0), m = { l: 40, r: 12, t: 10, b: 34 }, s = R.launch;
@@ -211,7 +218,9 @@
     row('Window closes (azimuth 100°)', hms(a.predictedCloseMs) + ' UT', '06:31 UT', sgn(a.closeGap_s, 0) + ' s', 'Press kit 1:31 am EST; fixed direction fitted to 72.141° at 02:53:00 and 91.504° at 05:33:00 (report 9.3.1)');
     row('Inclination at 91.504°', fmt(a.inclinationAtFlownDeg, 3) + '°', fmt(a.inclinationTable44Deg, 3) + '°', sgn(a.inclinationGapDeg, 3) + '°', 'Eq. 15 from latitude 28.5°; report Table 4-4');
     row('Node motion, insertion to TLI', sgn(c.predictedChangeDeg, 3) + '°', sgn(c.flightChangeDeg, 3) + '°', sgn(c.predictedChangeDeg - c.flightChangeDeg, 3) + '°', 'J2 coast from Table 4-4 to Table 4-5\'s time; the flight\'s includes its TLI burn (eq. 25: ' + sgn(c.eq25ChangeDeg, 3) + '°)');
-    if (!f1.refusal && !f2.refusal) row('Propellant left for TLI, 72.141° against 91.504°', fmt(f1.propellant, 0) + ' / ' + fmt(f2.propellant, 0) + ' kg', '-', sgn(f2.propellant - f1.propellant, 0) + ' kg', 'Idea 36 re-flown at each azimuth: what the 2 h 40 min hold gave the S-IVB');
+    if (!f1.refusal && !f2.refusal) row('Propellant left for TLI, 72.141° against 91.504°', fmt(f1.propellant, 0) + ' / ' + fmt(f2.propellant, 0) + ' kg', '-', sgn(f2.propellant - f1.propellant, 0) + ' kg', 'Idea 36 re-flown at each azimuth (first stage on the plane\'s azimuth, as the Saturn flew): what the 2 h 40 min hold gave the S-IVB');
+    var tli = !f2.refusal && W.tliCheck(ctx, f2);
+    if (tli) row('TLI Δv the S-IVB carried (ideal, J-2 at ' + fmt(tli.chain.ve, 0) + ' m/s)', fmt(tli.chain.dv, 0) + ' m/s', fmt(tli.flownDv, 0) + ' m/s', sgn(tli.chain.dv - tli.flownDv, 0) + ' m/s', 'Report Table 16-7: ' + fmt(tli.flownM0, 0) + ' to ' + fmt(tli.flownMf, 0) + ' kg; the impulsive need for Table 4-5\'s C3 is ' + fmt(tli.needDv, 0) + ' m/s, so this yardstick reads the real burn ' + fmt(100 * (1 - tli.flownDv / tli.needDv), 1) + ' % short');
   }
 
   // ------------------------------------------------------------------ handoff

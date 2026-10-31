@@ -42,6 +42,11 @@
     // layer 0.9710). Second S-IVB ECO at 11,907.64 s (summary, text layer, PDF page 25).
     tli: { rangeTime: 11917.65, altitudeKm: 313.5, velocityMs: 10837.0, fpaDeg: 7.384, headingDeg: 118.116, inclinationDeg: 28.474, descendingNodeDeg: 86.061, eccentricity: 0.9720, c3_m2s2: -1695985 },
     secondEcoRangeTime: 11907.64,
+    // [R] Table 16-7, Total Vehicle Mass - S-IVB Second Burn Phase - Kilograms, PDF page 233 (page image; the text
+    // layer is unreadable), ACT columns: TOTAL VEHICLE 139,750 kg at S-IVB ignition (range time 11,556.60 s) and 65,711
+    // kg at engine cutoff (11,907.64 s). Added by idea 37's independent review: the real translunar burn's mass ratio,
+    // the yardstick for the delta-v the chain's propellant buys.
+    tliBurn: { ignitionRangeTime: 11556.60, cutoffRangeTime: 11907.64, massIgnitionKg: 139750, massCutoffKg: 65711 },
     // [R] Table 2-1, Time Base Summary, PDF page 34 (text layer): T0 -16.96 s "Guidance Reference Release"; T6
     // 10,978.65 s (03:02:58.65) "Restart Equation Solution" (also section 4.2.2, PDF page 57).
     guidanceReferenceRelease_s: -16.96, timeBase6RangeTime: 10978.65,

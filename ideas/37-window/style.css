@@ -81,6 +81,7 @@ fieldset { border: 1px solid var(--ring); border-radius: 8px; margin: 12px 0 0; 
 .tile .c { display: inline-block; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); border: 1px solid var(--ring); border-radius: 4px; padding: 0 4px; margin-top: 2px; }
 .tile.refused .v { font-size: 0.9rem; font-weight: 500; color: var(--ink-2); }
 .tile.hero { background: var(--accent-bg); }
+.tile.short { border-left: 4px solid var(--warn); }
 .refusals:empty { display: none; }
 .refusal { border: 1px solid var(--ring); border-left: 4px solid var(--warn); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; font-size: 0.88rem; }
 .refusal b { display: block; }

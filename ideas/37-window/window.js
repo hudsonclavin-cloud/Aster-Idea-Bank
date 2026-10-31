@@ -29,6 +29,10 @@
  *             perigee; module 38 makes it a finite burn). The launch time and azimuth are solved so that the plane AT
  *             THE DEPARTURE POINT contains the asymptote (the handbook's biased launch, eq. 27, done numerically).
  *   window    the day scanned with the handbook's closed form (J2 by eq. 25), the edges refined with the numerical solve.
+ *   capacity  (added by the independent review) the delta-v the propellant left can buy, by the ideal rocket equation on
+ *             the guided stage's own engine; when it is below the impulsive departure's, the departure is refused for
+ *             that launch (refusal departure_propellant). Apollo 17's real translunar burn (report Table 16-7) is the
+ *             yardstick's check.
  *
  * Frames: MOD (mean equator and equinox of date, built from IAU 2006 precession) for the geometry and the coast; J2000
  * (ICRF axes, as Aster's) for everything handed on. Idea 36's frame is MOD rotated by the pad's right ascension at
@@ -139,7 +143,9 @@
      * Pad 39A placed from the flight report (the report gives no pad coordinates): Table 4-3's S-IC/S-II separation
      * point (28.580 N, -79.637 E) lies 94.7 km down range along the 91.504 deg flight azimuth and 0.3 km cross range.
      * Walking back along that great circle on a sphere of Aster's radius gives the pad; the 0.3 km cross range (side not
-     * stated) and the sphere bound the result to about 0.003 deg. [Likely]
+     * stated) and the sphere bound the result to about 0.003 deg. [Likely] Table 4-3's latitudes are geodetic, so the
+     * walked-back latitude is too; the geometry (JPL 82-43's phi_L) needs the geocentric one, returned beside it from
+     * Aster's pck00010 ellipsoid (tan phi_c = (1 - e^2) tan phi, a point on the surface). (Independent review.)
      */
     function padFromReport() {
       var s = AP.sicSiiSeparation, d = s.surfaceRangeKm * 1000 / RE, A0 = AP.azimuthFlownDeg * DEG;
@@ -157,8 +163,8 @@
         var J = [[(fa[0] - f[0]) / e, (fb[0] - f[0]) / e], [(fa[1] - f[1]) / e, (fb[1] - f[1]) / e]], det = J[0][0] * J[1][1] - J[0][1] * J[1][0];
         x = [x[0] - (J[1][1] * r[0] - J[0][1] * r[1]) / det, x[1] - (-J[1][0] * r[0] + J[0][0] * r[1]) / det];
       }
-      var cr = AP.sicSiiSeparation.crossRangeKm * 1000 / RE / DEG;
-      return { latDeg: x[0] / DEG, lonDeg: x[1] / DEG, crossRangeDeg: cr,
+      var cr = AP.sicSiiSeparation.crossRangeKm * 1000 / RE / DEG, e2 = 1 - (RPOLE / REQ) * (RPOLE / REQ);
+      return { latDeg: x[0] / DEG, geocentricLatDeg: Math.atan((1 - e2) * Math.tan(x[0])) / DEG, lonDeg: x[1] / DEG, crossRangeDeg: cr,
         source: 'Pad 39A placed from MPR-SAT-FE-73-1 Table 4-3 (S-IC/S-II separation 94.7 km down range on the 91.504 deg flight azimuth, at 28.580 N, -79.637 E), walked back on a sphere of Aster\'s radius' };
     }
     var PAD39A = padFromReport();
@@ -189,7 +195,9 @@
       }
       var day = parseUtc(spec.dateUtc);
       if (day == null) return bad('The asymptote needs the UTC date it is for (the transfer\'s departure date).');
-      if (Math.abs(c3) > 1e9) return { refusal: refusal('out_of_envelope', 'C3 of ' + fmt(c3 / 1e6, 4) + ' km^2/s^2 is outside any launch vehicle\'s reach.', 'A C3 from a real transfer (module 39 or Aster\'s porkchop).', { applies_to: 'asymptote' }) };
+      // an input guard against unit slips (a C3 typed in m^2/s^2 where km^2/s^2 was meant), not a physical limit: whether
+      // the vehicle can reach a C3 is the departure_propellant check below
+      if (Math.abs(c3) > 1e9) return { refusal: refusal('out_of_envelope', 'C3 of ' + fmt(c3 / 1e6, 4) + ' km^2/s^2 is outside this page\'s input envelope (|C3| up to 1,000 km^2/s^2, a guard against unit slips).', 'A C3 from a real transfer (module 39 or Aster\'s porkchop), in km^2/s^2.', { applies_to: 'asymptote' }) };
       return { S: S, c3: c3, vinf: c3 > 0 ? Math.sqrt(c3) : 0, rlaDeg: rla, dlaDeg: dla, mode: c3 > 0 ? 'hyperbolic' : 'target', dayMs: day - (day % 86400000 + 86400000) % 86400000, dateUtc: spec.dateUtc, source: spec.source || 'user', spec: clone(spec) };
     }
     /** Aster's own asymptote preset: the one cell in its fixtures with v-infinity components (Apophis, M=1). */
@@ -486,6 +494,29 @@
       return { r: r, v: v, rn: rn, vp: vp, dv: norm(dv), dvVec: dv, nuInfDeg: nuInf(env.asym.c3, rn) / DEG, eH: 1 + env.asym.c3 * rn / MU, gammaDeg: Math.asin(dot(unit(r), unit(v))) / DEG };
     }
 
+    /**
+     * The delta-v the propellant left can buy (added by the independent review): the ideal rocket equation on the guided
+     * stage's own numbers, dv = ve ln(m0 / (m0 - mp)), with m0 the mass at insertion (idea 36 re-flown), mp the propellant
+     * left, and ve that stage's engine vacuum exhaust velocity from idea 33's deck as idea 36 flies it (thrust / total mass
+     * flow). No gravity or steering loss: an upper bound on what the departure burn can give, so a capacity below the
+     * impulsive need (itself a lower bound) means the departure cannot be flown from this launch. {ve, m0, mf, mp, dv,
+     * stage, engine} or null.
+     */
+    function capacityOf(ctx, fl) {
+      if (!fl || !fl.flight || !fl.flight.guided || !fl.ins) return null;
+      var g = fl.flight.guided, stg = ctx.veh.stages[g.stage], eng = stg && ctx.engines[stg.engine];
+      if (!eng || !num(eng.ispVac)) return null;
+      var m0 = fl.ins.mass_kg, mp = fl.propellant, mf = m0 - mp;
+      if (!(num(m0) && num(mp) && mf > 0)) return null;
+      return { ve: eng.ispVac, m0: m0, mf: mf, mp: mp, dv: eng.ispVac * Math.log(m0 / mf), stage: stg.label, engine: eng.id };
+    }
+    /** The refusal when that capacity is below the impulsive departure's delta-v (null when it covers it). */
+    function capacityRefusal(cap, dep) {
+      if (!cap || !dep || cap.dv >= dep.dv) return null;
+      var short = dep.dv - cap.dv, marginal = short < 0.02 * dep.dv;
+      return refusal('out_of_envelope', 'The ' + fmt(cap.mp, 5) + ' kg left in the ' + cap.stage + ' buy at most ' + fmt(cap.dv, 4) + ' m/s (ideal rocket equation, ' + cap.engine + ' vacuum exhaust velocity ' + fmt(cap.ve, 4) + ' m/s, no gravity loss) against the ' + fmt(dep.dv, 4) + ' m/s an impulsive burn needs for this C3: ' + (marginal ? 'marginal, short by ' + fmt(short, 3) + ' m/s, within the error of this yardstick (it reads Apollo 17\'s own translunar burn at least 0.9 % short of what that burn did; README).' : 'this vehicle cannot make this departure from this launch (short by ' + fmt(short, 3) + ' m/s before any finite-burn loss).'), 'More upper-stage propellant or a lighter payload (module 34), a lower C3 (module 39), or a launch azimuth nearer due east.', { applies_to: 'departure_propellant', capacity_m_s: cap.dv, need_m_s: dep.dv });
+    }
+
     // ================================================================== Apollo 17: the checks on a real window
     /** The fixed direction (in the mean frame of date) whose plane through the pad gives azimuth az1 at ms1 and az2 at
      * ms2 (eastward branch), by Newton from a coarse search. */
@@ -528,6 +559,18 @@
         predictedCloseMs: close, predictedClose: iso(close), pressKitClose: AP.window.closeUtc, closeGap_s: (close - pressClose) / 1000,
         predictedOpenMs: open, predictedOpen: iso(open), pressKitOpen: AP.window.openUtc, openGap_s: (open - pressOpen) / 1000,
         inclinationAtFlownDeg: incFlown, inclinationTable44Deg: AP.insertion.inclinationDeg, inclinationGapDeg: incFlown - AP.insertion.inclinationDeg, azimuthAt: fit.eastAt };
+    }
+    /**
+     * Apollo 17's own translunar burn as the yardstick for capacityOf() (added by the independent review): the chain's
+     * vehicle re-flown on an azimuth (fl, from flyAt on the AS-512) against the S-IVB's real burn, Table 16-7's ACT total
+     * vehicle mass at ignition and at cutoff, at the same exhaust velocity, and the impulsive delta-v Table 4-5's C3 needs
+     * from the chain's insertion radius. {chain, flownDv, needDv} or null.
+     */
+    function tliCheck(ctx, fl) {
+      var cap = capacityOf(ctx, fl), B = AP.tliBurn;
+      if (!cap || !B) return null;
+      var r = norm(fl.ins.r_m), need = Math.sqrt(AP.tli.c3_m2s2 + 2 * MU / r) - Math.sqrt(MU / r);
+      return { chain: cap, flownDv: cap.ve * Math.log(B.massIgnitionKg / B.massCutoffKg), flownM0: B.massIgnitionKg, flownMf: B.massCutoffKg, needDv: need, radius: r };
     }
     /** Apollo 17 as a preset: the fitted target direction (turned from the mean frame of 1972-12-07 to J2000), Table 4-5's
      * C3 (negative: a target vector, not an asymptote), the press kit's 72 to 100 deg corridor, J2 off (the fit already
@@ -628,7 +671,7 @@
       if (!dw.windows.length) {
         var lim = Math.asin(Math.min(1, Math.cos(asym.dlaDeg * DEG) / Math.cos(st.latDeg * DEG))) / DEG;
         out.refusal = refusal('out_of_envelope', 'No launch window on ' + asym.dateUtc + ': at no time that day does the plane through the pad and the asymptote (declination ' + fmt(asym.dlaDeg, 4) + ' deg) leave on an azimuth inside ' + set.corridor[0] + ' to ' + set.corridor[1] + ' deg with a coast under ' + fmt(set.coast.max / 3600, 3) + ' h' +
-          (Math.abs(asym.dlaDeg) > st.latDeg ? ' (beyond the site latitude the azimuths within ' + fmt(lim, 4) + ' deg of east, on either side, are unreachable: JPL 82-43 eq. 14)' : '') + '.', 'A wider corridor, a longer coast limit, another day\'s asymptote, or a dogleg (not modelled here).', { applies_to: 'window' });
+          (Math.abs(asym.dlaDeg) > st.latDeg ? ' (the declination is beyond the site latitude, so only azimuths within ' + fmt(lim, 4) + ' deg of north or of south are reachable and those within ' + fmt(90 - lim, 4) + ' deg of east are not: JPL 82-43 eq. 14)' : '') + '.', 'A wider corridor, a longer coast limit, another day\'s asymptote, or a dogleg (not modelled here).', { applies_to: 'window' });
         return out;
       }
       var ms;
@@ -645,6 +688,9 @@
       if (!s.coastOk) { out.refusal = refusal('out_of_envelope', 'Launching at ' + iso(ms) + ' the departure point comes ' + fmt(s.ev.t / 3600, 4) + ' h after insertion, outside the coast limits (' + fmt(set.coast.min / 3600, 3) + ' to ' + fmt(set.coast.max / 3600, 3) + ' h).', 'A launch time inside a window, or other coast limits.', { applies_to: 'coast' }); out.launch = s; return out; }
       out.launch = s; out.flight = sf.flight;
       out.departure = departureOf(s, env);
+      out.capacity = capacityOf(st.ctx, sf.flight);
+      var cr = capacityRefusal(out.capacity, out.departure);
+      if (cr) out.refusals.push(cr);
       if (opts.perf !== false) out.perf = performance(env, st.ctx, sf.flight.profile, dw.windows, opts.perfN || 7);
       if (asym.mode === 'target') out.refusals.push(refusal('out_of_envelope', 'C3 is ' + fmt(asym.c3 / 1e6, 4) + ' km^2/s^2: an ellipse has no departure asymptote, so the direction is used as a target vector for the plane only, coasting a fixed ' + fmt(env.coast.fixed, 6) + ' s; no departure point or impulsive burn is computed.', 'A hyperbolic departure (C3 > 0), or a lunar-transfer targeting model (not built).', { applies_to: 'departure' }));
       return out;
@@ -698,6 +744,8 @@
           O.impulsive_departure = qv({ v_perigee_m_s: dep.vp, delta_v_m_s: dep.dv, delta_v_j2000_m_s: toJ2000(T, dep.dvVec), nu_inf_deg: dep.nuInfDeg, hyperbola_eccentricity: dep.eH }, 'm/s, deg', 'derived', KERNEL + ' departureOf() (JPL 82-43 eq. 21, 24; impulsive, module 38 makes it finite)');
         }
         O.propellant_for_departure = qv(f.propellant, 'kg', 'derived', '36-closed-loop/closedloop.js flyClosed() re-flown at azimuth ' + fmt(s.azDeg, 7) + ' deg (what the guided stage has left)');
+        var cap = R.capacity;
+        if (cap) O.departure_delta_v_capacity = qv({ ideal_delta_v_m_s: cap.dv, exhaust_velocity_m_s: cap.ve, mass_at_insertion_kg: cap.m0, mass_after_burn_kg: cap.mf, impulsive_need_m_s: dep ? dep.dv : null, shortfall_m_s: dep ? Math.max(0, dep.dv - cap.dv) : null }, 'm/s, kg', 'derived', KERNEL + ' capacityOf(): ideal rocket equation on the guided stage (' + cap.stage + ', ' + cap.engine + ' vacuum exhaust velocity from idea 33\'s deck); an upper bound, no gravity loss');
         if (R.perf) O.performance_across_window = qv(R.perf.map(function (p) { return { utc: p.utc, window: p.window, azimuth_deg: p.azDeg, inclination_deg: p.inclinationDeg, propellant_kg: p.propellant, refused: p.refused }; }), 'deg, kg', 'derived', '36-closed-loop/closedloop.js re-flown at each azimuth');
       }
       (R.refusals || []).forEach(function (x) { h.refusals.push(x); });
@@ -732,7 +780,7 @@
       padFromReport: padFromReport, PAD39A: PAD39A, asymptote: asymptote, apophisSpec: apophisSpec, padUnit: padUnit, azimuthToward: azimuthToward, handbookAzimuth: handbookAzimuth,
       planeOf: planeOf, chooseAzimuth: chooseAzimuth, inCorridor: inCorridor, nodeOf: nodeOf, inclinationOf: inclinationOf, angleAhead: angleAhead, nuInf: nuInf, regressionPerRev: regressionPerRev,
       profileOf: profileOf, placeAscent: placeAscent, accel: accel, rk4: rk4, propagate: propagate, coastToDeparture: coastToDeparture, solveAt: solveAt, fastAt: fastAt,
-      dailyWindows: dailyWindows, flyAt: flyAt, solveFlown: solveFlown, performance: performance, departureOf: departureOf, fitDirection: fitDirection, apollo17: apollo17, apollo17Preset: apollo17Preset, as512Coast: as512Coast,
+      dailyWindows: dailyWindows, flyAt: flyAt, solveFlown: solveFlown, performance: performance, departureOf: departureOf, capacityOf: capacityOf, capacityRefusal: capacityRefusal, tliCheck: tliCheck, fitDirection: fitDirection, apollo17: apollo17, apollo17Preset: apollo17Preset, as512Coast: as512Coast,
       asterBand: asterBand, defaults: defaults, importClosedLoop: importClosedLoop, compute: compute, makeHandoff: makeHandoff, parseHandoff: parseHandoff, elementsOf: elementsOf,
       COAST_FLOWN_S: COAST_FLOWN_S, constants: { MU: MU, RE: RE, J2: J2, RJ2: RJ2 }, C: C, A: A, rotZ: rotZ, mxv: mxv, mtxv: mtxv };
   }
