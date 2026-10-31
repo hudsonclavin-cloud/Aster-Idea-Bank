@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/catalog-elements.js",
+  "commit": "2dc8221a76e81be396e65a4ecfe075cd609a97bc",
+  "commitDate": "2026-10-31T18:48:09+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "fba8ab17d32c1d6f391d75fbcf73e11a7987fb1d",
+  "readBlob": "fba8ab17d32c1d6f391d75fbcf73e11a7987fb1d",
+  "sourceSha256": "d9b4b66929aeaef91a43c4739bcd726b83bfe4af92fa6e66f0286494e25c79c5",
+  "sourceBytes": 2957,
+  "copiedAt": "2026-10-31T19:05:46.781Z",
+  "mode": "copy",
+  "note": "idea 40's committed file, used unmodified: module 41 flies the cruise with idea 40's kernel (and through it idea 39's) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d9b4b66929aeaef91a43c4739bcd726b83bfe4af92fa6e66f0286494e25c79c5",
+  "writtenBytes": 2957
+}

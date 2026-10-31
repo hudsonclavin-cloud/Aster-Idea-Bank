@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/lambert.js",
+  "commit": "2dc8221a76e81be396e65a4ecfe075cd609a97bc",
+  "commitDate": "2026-10-31T18:48:09+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "readBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "sourceSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "sourceBytes": 67306,
+  "copiedAt": "2026-10-31T19:05:46.476Z",
+  "mode": "copy",
+  "note": "idea 40's committed file, used unmodified: module 41 flies the cruise with idea 40's kernel (and through it idea 39's) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "writtenBytes": 67306
+}

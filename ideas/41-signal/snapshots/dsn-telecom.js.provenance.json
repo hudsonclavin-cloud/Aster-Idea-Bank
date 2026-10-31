@@ -1,0 +1,19 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://deepspace.jpl.nasa.gov/dsndocs/810-005/",
+ "path": "104/104Q.pdf Appendix A Tables A-2, A-4, A-5 and Table 7; 101/101I.pdf Tables 2, A-1, A-3; 105/105E.pdf section 2.4.1 eqs. (10)-(11); 106/106B.pdf eqs. (1), (2), (7) and section 2.2.1; 202/202E.pdf eq. (3); 208/208C.pdf Tables 9 and 11; 301/301P.pdf Table 2",
+ "sourceSha256": {
+  "810-005 101I.pdf": "b751b026fe433e348ba749f3b4e9c6d003e603f7534d7ecad21b8bd119f74132",
+  "810-005 104Q.pdf": "3ad95f333082065b68e40c52cc85aedf2e7148ecd0e9f4ea4c0b6dda7017682f",
+  "810-005 105E.pdf": "e192fd7fa234c349cbf0379c9eaad873624dde0bd78c2d7f10ac95cbf9397131",
+  "810-005 106B.pdf": "bc3f56d0bbf051cc6efc8123c8f78cab39aa415e6c6f354addd5afd06263206f",
+  "810-005 202E.pdf": "29a662594bd0297981cf965de070026b078cabe03bdf4708b5c572b866de4708",
+  "810-005 208C.pdf": "19aa7bf5431aa1fdb4c628b0b97c59df1b7da06ae6e91bbef7e6fb40c64c9492",
+  "810-005 301P.pdf": "53d8c28eddde48a2212b403422689a11fc0ff75fcab830a1e2ec00cdf8a4e160"
+ },
+ "license": "JPL DSN Telecommunications Link Design Handbook, public release (California Institute of Technology, government sponsorship acknowledged); numbers transcribed with attribution",
+ "note": "hand-transcribed by build-data.mjs from pdftotext -layout of each PDF; equation signs checked against the rendered pages (106 eqs. 2 and 7) or by continuity (105 eqs. 10-11 at 0.75 deg)",
+ "writtenSha256": "6c6fcfbb94bed675bebb9e7a0a306d2f04b1cf52b51942d1a3fd8fcf1beae491",
+ "writtenBytes": 5547
+}

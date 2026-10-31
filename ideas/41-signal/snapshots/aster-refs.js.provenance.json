@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/aster-refs.js",
+  "commit": "2dc8221a76e81be396e65a4ecfe075cd609a97bc",
+  "commitDate": "2026-10-31T18:48:09+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "eb8ae2533feee4223ce9da168f3ff79d27aa0424",
+  "readBlob": "eb8ae2533feee4223ce9da168f3ff79d27aa0424",
+  "sourceSha256": "d9a27ab6b9566bad253ee221ff33eb49a546eeb2af1cef683acc4095cfc04e20",
+  "sourceBytes": 1349,
+  "copiedAt": "2026-10-31T19:05:46.711Z",
+  "mode": "copy",
+  "note": "idea 40's committed file, used unmodified: module 41 flies the cruise with idea 40's kernel (and through it idea 39's) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d9a27ab6b9566bad253ee221ff33eb49a546eeb2af1cef683acc4095cfc04e20",
+  "writtenBytes": 1349
+}

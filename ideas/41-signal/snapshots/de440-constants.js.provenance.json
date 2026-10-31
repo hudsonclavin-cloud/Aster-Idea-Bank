@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/de440-constants.js",
+  "commit": "2dc8221a76e81be396e65a4ecfe075cd609a97bc",
+  "commitDate": "2026-10-31T18:48:09+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "3a9115fec959bea4274ddbe21727cda54306daed",
+  "readBlob": "3a9115fec959bea4274ddbe21727cda54306daed",
+  "sourceSha256": "9b153c196ca651a5e16bae9c5be54076c642750af08902c3a0d24787fb4cb6fe",
+  "sourceBytes": 1265,
+  "copiedAt": "2026-10-31T19:05:47.001Z",
+  "mode": "copy",
+  "note": "idea 40's committed file, used unmodified: module 41 flies the cruise with idea 40's kernel (and through it idea 39's) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "9b153c196ca651a5e16bae9c5be54076c642750af08902c3a0d24787fb4cb6fe",
+  "writtenBytes": 1265
+}

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signal: talking to the spacecraft</title>
+<meta name="description" content="Every day from launch to the end of a stay at the asteroid: how far the spacecraft is, how late its signal arrives, where it sits against the Sun, which Deep Space Network antenna hears it, and what a real spacecraft's radio closes at, line by line against JPL's published link budgets.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Signal</h1>
+  <p class="lede">Idea 40 flew the cruise; this page listens to it. Every day from the departure to the end of a stay at the asteroid it works out how far away the spacecraft is and how long its signal takes, where it sits against the Sun, which Deep Space Network complex sees it and for how long, and what a real spacecraft's radio closes at through a 34-m or 70-m antenna, line by line the way JPL writes a link budget. Near solar conjunction the corona scintillates the signal and the Sun heats the receiver: those days are blacked out, not guessed.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 11 of 20. Previous: <a href="../40-long-coast/index.html">40 Long Coast</a>, the cruise. Next: 42 Closing In, the arrival (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Trajectory</h2>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+    <label class="lab" for="presetSel">Transfer <small>(idea 39 picks it, idea 40 flies it)</small></label>
+    <select id="presetSel" aria-label="Transfer preset"></select>
+    <div class="ctl"><div class="ctl-head"><label for="stayIn">Stay at the asteroid <small>days</small></label><input id="stayIn" type="number" min="0" max="1500" step="1" inputmode="numeric"></div>
+      <input id="stayRange" type="range" min="0" max="900" step="15" aria-label="Stay at the asteroid, days"></div>
+
+    <h2 class="sub">The spacecraft's radio</h2>
+    <label class="lab" for="craftSel">Borrowed from <small>(JPL DESCANSO)</small></label>
+    <select id="craftSel" aria-label="Spacecraft radio preset"></select>
+    <div class="ctl"><div class="ctl-head"><label for="powIn">Transmitter <small>W RF</small></label><input id="powIn" type="number" min="0.1" max="1000" step="0.1" inputmode="decimal"></div>
+      <input id="powRange" type="range" min="0" max="1" step="0.005" aria-label="Transmitter power (log scale)"></div>
+    <div class="ctl"><div class="ctl-head"><label for="diaIn">High-gain dish <small>m</small></label><input id="diaIn" type="number" min="0.1" max="6" step="0.01" inputmode="decimal"></div>
+      <input id="diaRange" type="range" min="0.2" max="5" step="0.01" aria-label="Dish diameter"></div>
+    <span class="lab" id="lab-band">Band</span>
+    <div class="seg" role="group" aria-labelledby="lab-band"><button type="button" data-band="X">X (8.4 GHz)</button><button type="button" data-band="Ka">Ka (32 GHz)</button></div>
+    <span class="lab" id="lab-rate">Data rates</span>
+    <div class="seg" role="group" aria-labelledby="lab-rate"><button type="button" data-rate="table">Its rate table</button><button type="button" data-rate="continuous">Any rate (to the decoder limit)</button></div>
+    <div class="checks"><label><input type="checkbox" id="rngChk"> Ranging on the downlink</label></div>
+    <div class="ctl"><div class="ctl-head"><label for="ptgIn">Spacecraft pointing loss <small>dB</small></label><input id="ptgIn" type="number" min="0" max="10" step="0.05" inputmode="decimal"></div></div>
+
+    <h2 class="sub">The ground</h2>
+    <span class="lab" id="lab-ant">Deep Space Network antennas</span>
+    <div class="seg" role="group" aria-labelledby="lab-ant"><button type="button" data-ant="34m">34-m BWG (DSS-26, 36, 56)</button><button type="button" data-ant="70m">70-m (DSS-14, 43, 63)</button></div>
+    <label class="lab" for="cdSel">Weather <small>(cumulative distribution: worse than this X % of the time)</small></label>
+    <select id="cdSel"><option value="0">CD 0.00 (driest)</option><option value="0.25">CD 0.25 (average clear)</option><option value="0.5">CD 0.50</option><option value="0.9">CD 0.90 (JPL's design weather)</option></select>
+    <div class="grid2">
+      <div class="ctl"><label for="marIn">Link margin <small>dB</small></label><input id="marIn" type="number" min="0" max="10" step="0.5" inputmode="decimal"></div>
+      <div class="ctl"><label for="elIn">Lowest elevation <small>deg</small></label><input id="elIn" type="number" min="6" max="45" step="1" inputmode="numeric"></div>
+      <div class="ctl"><label for="ppwIn">Passes a week</label><input id="ppwIn" type="number" min="0" max="21" step="1" inputmode="numeric"></div>
+      <div class="ctl"><label for="phIn">Pass length <small>h</small></label><input id="phIn" type="number" min="1" max="24" step="0.5" inputmode="decimal"></div>
+    </div>
+    <div class="btnrow"><button type="button" id="resetBtn">Reset</button></div>
+    <p class="note" id="runNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-res">
+      <h2 id="h-res">At the arrival, and over the mission</h2>
+      <div id="resLine" class="small"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+
+    <section class="card" aria-labelledby="h-range">
+      <h2 id="h-range">How far, and how late the news arrives</h2>
+      <canvas id="rangeChart" class="chart" role="img" aria-label="Distance from the Earth in astronomical units and one-way light time in minutes against date, with the arrival marked and the stay shaded."></canvas>
+      <ul class="legend" id="rangeLegend"></ul>
+      <p class="chart-cap" id="rangeCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-sun">
+      <h2 id="h-sun">Where it sits against the Sun</h2>
+      <canvas id="sunChart" class="chart" role="img" aria-label="Sun-Earth-probe angle against date on a logarithmic scale, with the 5 degree caution line, the band's scintillation threshold and the blacked-out days."></canvas>
+      <ul class="legend" id="sunLegend"></ul>
+      <p class="chart-cap" id="sunCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-link">
+      <h2 id="h-link">What the link closes, day by day</h2>
+      <canvas id="linkChart" class="chart" role="img" aria-label="Received total power to noise density (Pt/No, dB-Hz) at each day's pass against date, with each table rate's required Pt/No plus the margin as a threshold line."></canvas>
+      <ul class="legend" id="linkLegend"></ul>
+      <canvas id="rateChart" class="chart" role="img" aria-label="The data rate each day's pass closes, bits per second, logarithmic, against date."></canvas>
+      <p class="chart-cap" id="linkCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-view">
+      <h2 id="h-view">Who hears it: hours above the elevation limit</h2>
+      <canvas id="viewChart" class="chart" role="img" aria-label="Hours a day each Deep Space Network complex sees the spacecraft above the elevation limit, against date."></canvas>
+      <ul class="legend" id="viewLegend"></ul>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-dct">
+    <h2 id="h-dct">The link, line by line (a design control table)</h2>
+    <p class="small">Pick a day (or tap a chart). The table is that day's pass at its lowest elevation, laid out as JPL's telecom forecaster lays out a downlink.</p>
+    <div class="ctl"><div class="ctl-head"><label for="dayRange">Day</label><span id="dayLabel" class="mono"></span></div>
+      <input id="dayRange" type="range" min="0" max="1" step="1" aria-label="Day of the mission"></div>
+    <div class="tablewrap"><table id="dctTable"><thead><tr><th>Line</th><th>Value</th><th>Unit</th><th>From</th></tr></thead><tbody></tbody></table></div>
+    <div class="tablewrap"><table class="stack" id="rateTable"><thead><tr><th>Rate</th><th>Mod index</th><th>Needs Pt/No</th><th>Margin</th><th>Carrier loop</th><th>Closes</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-conj">
+    <h2 id="h-conj">Conjunctions</h2>
+    <div class="tablewrap"><table class="stack" id="conjTable"><thead><tr><th>From</th><th>To</th><th>Days</th><th>Blacked out</th><th>Closest to the Sun</th><th>Kind</th><th>Corona delay at X</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Against the oracles</h2>
+    <p class="small">Each row is computed by this page's kernel and set beside an independent number: JPL's published design control tables and rate tables (DESCANSO), Dawn's own station monitor data from 2009, the DSN handbook's worked examples, and JPL Horizons.</p>
+    <div class="tablewrap"><table class="stack" id="checkTable"><thead><tr><th>Check</th><th>Independent</th><th>This page</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 40's handoff (or one from this page); export this comms timeline for module 42. Every number carries its units, a confidence class and its source; refusals travel down the chain.</p>
+    <label class="lab" for="importText">Paste a handoff</label>
+    <textarea id="importText" rows="4" spellcheck="false" placeholder='{"handoff":"long-way-round","from":"40-long-coast",...}'></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import</button>
+      <label class="filebtn"><input type="file" id="importFile" accept="application/json,.json"> <span>Load a file</span></label>
+      <button type="button" id="copyBtn">Copy handoff</button>
+      <button type="button" id="dlBtn">Download</button>
+      <button type="button" id="linkBtn">Copy a link</button>
+    </div>
+    <div id="hoStatus" class="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <details><summary>Distance, light time and the Sun</summary>
+      <p class="small">Idea 40's cruise (every force, 2-hour nodes) and, after the arrival, the asteroid flown on by idea 40's propagator, interpolated by cubic Hermite. Each day at 00:00 UTC the signal received at the Earth's centre left the spacecraft one light time earlier, iterated to a nanosecond (JPL Horizons' definition); the round trip is an up-leg and a down-leg. The Sun-Earth-probe angle (SEP) is measured at the Earth; the ray's closest approach to the Sun gives the elongation the corona sees.</p></details>
+    <details><summary>The ground stations</summary>
+      <p class="small">One 34-m beam-waveguide antenna per complex (DSS-26 Goldstone, DSS-36 Canberra, DSS-56 Madrid) or the three 70-m antennas, at their ITRF93 positions (810-005 module 301), turned by the Earth rotation angle (idea 40's model). Each day the complex that sees the spacecraft highest takes one pass of the chosen length centred on its culmination, above the elevation limit (10 deg is the DSN's low-power transmit limit). Gain and noise temperature come from 810-005 modules 104 and 101, Appendix A: vacuum gain against elevation and frequency, antenna-microwave noise, and the atmosphere's loss and noise at the chosen weather.</p></details>
+    <details><summary>The link</summary>
+      <p class="small">Transmitter power less circuit loss plus antenna gain is the EIRP; the free-space loss is 20 log(4πdf/c); the ground adds its gain and loses pointing (0.1 dB), polarization and atmosphere. Noise is k times the system temperature, including the Sun's noise in the beam within 4 deg (module 105). A residual carrier at modulation index θ keeps cos²θ of the power for the carrier, whose loop needs 10 dB of SNR (module 202), and gives sin²θ to the data. A rate closes when the received Pt/No exceeds what it needs (the spacecraft's published threshold where the article prints one, otherwise the rate plus the coding's required Eb/No plus losses) by the margin. "Any rate" solves for the highest rate, up to the DSN decoder's limit (module 208).</p></details>
+    <details><summary>Solar conjunction</summary>
+      <p class="small">The corona scintillates the signal: module 106's index m (eq. 7) rises to 1 near the Sun, and telemetry frame errors rise sharply once m reaches 0.3, about 2.2 deg from the Sun at X band and 1.0 deg at Ka. Those days are blacked out. Inside 0.35 deg the Sun's own noise in a 34-m beam has no expression (over 300 K); for the 70-m antennas it is only a curve within 4 deg, so those days are refused. The corona's group delay (eqs. 1 and 2, integrated along the ray) is reported for ranging.</p></details>
+    <details><summary>What it does not do</summary>
+      <p class="small">No command uplink (the sources give no high-gain receive gain or receiver noise), no low-gain antennas or attitude constraints, no DSN scheduling or arraying, no solar-cycle scaling of the Sun's noise (the expressions are the 1996 solar-minimum envelope), no Shapiro delay, no precession or polar motion in the station model (0.09 deg of elevation on average, measured against Horizons). The spacecraft's radio is borrowed: the chain has no spacecraft yet.</p></details>
+  </section>
+</main>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/aster-refs.js"></script>
+<script src="snapshots/earth-cheb.js"></script>
+<script src="snapshots/catalog-elements.js"></script>
+<script src="snapshots/lambert.js"></script>
+<script src="snapshots/aster-bodies-cheb.js"></script>
+<script src="snapshots/outer-planets-cheb.js"></script>
+<script src="snapshots/de440-constants.js"></script>
+<script src="snapshots/nav-sources.js"></script>
+<script src="snapshots/erfa-iau2006.js"></script>
+<script src="snapshots/coast.js"></script>
+<script src="snapshots/coast-presets.js"></script>
+<script src="snapshots/dsn-telecom.js"></script>
+<script src="snapshots/craft-telecom.js"></script>
+<script src="snapshots/horizons-geometry.js"></script>
+<script src="signal.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

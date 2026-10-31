@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/presets.js",
+  "commit": "2dc8221a76e81be396e65a4ecfe075cd609a97bc",
+  "commitDate": "2026-10-31T18:48:09+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "06bc607e0caf6572f46080c271d7a6b908b2e6e1",
+  "readBlob": "06bc607e0caf6572f46080c271d7a6b908b2e6e1",
+  "sourceSha256": "85f2dda4731b2ea794730bb97be794e83650e70043ea4416f44d0a841e51bb8c",
+  "sourceBytes": 3588,
+  "copiedAt": "2026-10-31T19:05:46.363Z",
+  "mode": "copy",
+  "note": "idea 40's committed file, used unmodified: module 41 flies the cruise with idea 40's kernel (and through it idea 39's) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "85f2dda4731b2ea794730bb97be794e83650e70043ea4416f44d0a841e51bb8c",
+  "writtenBytes": 3588
+}

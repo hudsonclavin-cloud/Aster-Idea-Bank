@@ -1,0 +1,16 @@
+{
+ "commit": "retrieved 2026-10-31",
+ "retrieved": "2026-10-31",
+ "repo": "https://descanso.jpl.nasa.gov/DPSummary/summary.html",
+ "path": "article 13 Dawn (090924dawn-FinalCorrex--update5G.pdf) Tables 1-4, 4-2, 5-2, 5-3 and section 2; article 16 Juno (Descanso16_Juno_RevA.pdf) section 2, Tables 3-2, 3-3 and the X-band downlink DCT; article 9 Deep Impact (di_article_cmp20050922.pdf) sections 3.3, 3.5, Tables 3-1 and 9-2; article 2 Deep Space 1 (All_Article2.pdf) section 7.6",
+ "sourceSha256": {
+  "DESCANSO 090924dawn-FinalCorrex--update5G.pdf": "18bb705a6292b34c0c8dc7a1e232ba69028b1c6cb78c6ca533f6d81e0e423c5a",
+  "DESCANSO Descanso16_Juno_RevA.pdf": "3784af33c4c6fbbd8ac79d36bcc9088071974b536d66e0e274a10e450ccb7c03",
+  "DESCANSO di_article_cmp20050922.pdf": "9eea4485620f76623fc843d1b5ab970ca84ba77de9cf3305297bfb7bc680ce54",
+  "DESCANSO All_Article2.pdf": "ae5356062a1759ad2f17de52ae63e1dffc3af13fe7d75f7861a8d95029cca707"
+ },
+ "license": "JPL DESCANSO Design and Performance Summary Series, public release; numbers transcribed with attribution",
+ "note": "hand-transcribed by build-data.mjs; each table and column cited in the file",
+ "writtenSha256": "3445a7b30fa5533963f097e6445458182d57df0cfd88aaa6801804f772df04ae",
+ "writtenBytes": 8730
+}

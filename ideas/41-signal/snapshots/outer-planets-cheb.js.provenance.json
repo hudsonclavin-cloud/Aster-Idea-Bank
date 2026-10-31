@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/outer-planets-cheb.js",
+  "commit": "2dc8221a76e81be396e65a4ecfe075cd609a97bc",
+  "commitDate": "2026-10-31T18:48:09+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "44ab629c2c7f80ecf4724a74522b894ad196cb01",
+  "readBlob": "44ab629c2c7f80ecf4724a74522b894ad196cb01",
+  "sourceSha256": "750d081947812c9d3fdd6fc5afb6a0eb89b239a729097f7386babe48864e5c71",
+  "sourceBytes": 12284,
+  "copiedAt": "2026-10-31T19:05:46.932Z",
+  "mode": "copy",
+  "note": "idea 40's committed file, used unmodified: module 41 flies the cruise with idea 40's kernel (and through it idea 39's) rather than a second implementation",
+  "readMatchesCommitted": true,
+  "writtenSha256": "750d081947812c9d3fdd6fc5afb6a0eb89b239a729097f7386babe48864e5c71",
+  "writtenBytes": 12284
+}
