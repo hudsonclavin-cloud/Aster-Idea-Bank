@@ -1,9 +1,9 @@
 # Lumpy
-> Give the asteroid its real shape and read its gravity. Apophis's radar model and Bennu's laser-altimetry model are filled with uniform density, and the page gives exact polyhedron gravity anywhere, slopes and escape speeds on every plate, the points where spin and gravity balance, and which close orbits the lumps destroy. Against JPL's reconstruction of OSIRIS-REx in orbit 0.9 km from Bennu, 2-hour legs flown under the shape miss by a median 0.022 mm/s where a point mass misses by 0.252 mm/s, 5.3 m against 33.8 m after 40 hours. The field matches an independent implementation to 2e-10. The gap to reality is uniform density itself: Bennu's measured J2 is 3.7% above this model's (J3 14.6%, J4 3.4%), and Apophis's observed tumbling needs inertia ratios 0.61/0.965 where the radar shape filled evenly gives 0.730/0.947. On the chain, Apophis is 335.8 m across (2,025 kg/m³ at GM 2.68), its plates slope 14.7° on average, it spins too slowly for spin to matter, and the plate under idea 42's stand-off has 95.3 µm/s² of gravity (a point mass says 133) and a 7.1° slope.
+> Give the asteroid its real shape and read its gravity. Apophis's radar model and Bennu's laser-altimetry model are filled with uniform density, and the page gives exact polyhedron gravity anywhere, slopes and escape speeds on every plate, the points where spin and gravity balance, and which close orbits the lumps destroy. Against JPL's reconstruction of OSIRIS-REx in orbit 0.9 km from Bennu, 2-hour legs flown under the shape miss by a median 0.022 mm/s where a point mass misses by 0.252 mm/s, 5.3 m against 33.8 m after 40 hours (with the spacecraft-tracking GM; with the particle-tracking GM the page opens on, 0.043 against 0.266 mm/s and 13.7 against 14.7 m). The field matches an independent implementation to 2e-10. The gap to reality is uniform density itself: Bennu's measured J2 is 3.7% above this model's (J3 14.6%, J4 3.4%), and Apophis's observed tumbling needs inertia ratios 0.61/0.965 where the radar shape filled evenly gives 0.730/0.947. On the chain, Apophis is 335.8 m across (2,025 kg/m³ at GM 2.68), its plates slope 14.7° on average, it spins too slowly for spin to matter, and the plate under idea 42's stand-off has 95.3 µm/s² of gravity (a point mass at the centre of mass says 126, 32% more) and a 7.1° slope.
 
 **Kind:** explorable tool
 **For:** Aster
-**Run:** open `ideas/43-lumpy/index.html` in a browser (classic scripts, `file://` works, no network; it also opens on a `#h=` link carrying idea 42's or this page's handoff). Tests from the bank root: `node --test ideas/43-lumpy/lumpy.test.mjs` (14 tests, about 8 s; two run idea 42's own kernel and parser) and `node ideas/43-lumpy/ui-check.mjs` (66 checks in headless Chromium, about 50 s; `check.mjs` runs it for `tools/check.mjs`). Regeneration, none needed to run anything: `bash ideas/43-lumpy/oracle/fetch-sources.sh` in an empty directory, then in a throw-away venv with `spiceypy numpy` run `python3 ideas/43-lumpy/build_data.py <that directory>`, then `node ideas/43-lumpy/build-sample.mjs`, then with `polyhedral-gravity harmonica scipy` added run `python3 ideas/43-lumpy/oracle/oracle.py <that directory>`.
+**Run:** open `ideas/43-lumpy/index.html` in a browser (classic scripts, `file://` works, no network; it also opens on a `#h=` link carrying idea 42's or this page's handoff). Tests from the bank root: `node --test ideas/43-lumpy/lumpy.test.mjs` (15 tests, about 9 s; two run idea 42's own kernel and parser) and `node ideas/43-lumpy/ui-check.mjs` (68 checks in headless Chromium, about 50 s; `check.mjs` runs it for `tools/check.mjs`). Regeneration, none needed to run anything: `bash ideas/43-lumpy/oracle/fetch-sources.sh` in an empty directory, then in a throw-away venv with `spiceypy numpy` run `python3 ideas/43-lumpy/build_data.py <that directory>`, then `node ideas/43-lumpy/build-sample.mjs`, then with `polyhedral-gravity harmonica scipy` added run `python3 ideas/43-lumpy/oracle/oracle.py <that directory>` and the independent review's `python3 -I ideas/43-lumpy/oracle/review.py <that directory>`.
 **Made by:** Mascon
 
 ## What it is
@@ -79,7 +79,7 @@ Alternatives weighed.
 - **geopotential** Φ = −U − ½|ω×r|², and **height** = (Φ − its area mean) / |a|;
 - **escape speeds** from energy in a non-rotating field: √(2U) inertially; straight up relative to the surface (solving ½|v n + ω×r|² = U); and along the spin, √(2U) − |ω×r|.
 
-Statistics are area-weighted, with the area-weighted median. The site is the plate the ray from the centre to idea 42's stand-off (in body axes at its epoch) leaves through: the outermost crossing.
+Statistics are area-weighted, with the area-weighted median. The site is the plate the ray from the centre to idea 42's stand-off (in body axes at its epoch) leaves through: the outermost crossing. Its point mass is GM over the squared distance from the centre of mass, where the field's mass (and idea 42's point mass) sits; its radius and latitude and longitude are from the DSK origin, in the shape model's own frame.
 
 **Equilibria** (`equilibria()`, principal-axis rotators only). Newton's method on ∇U + ω²(x, y, 0) = 0, from 24 starts on the synchronous radius (GM/ω²)^{1/3}, keeping points outside the body.
 - **Stability:** det(λ² I + 2λ [Ω×] − H_eff) is a cubic in λ². It is fitted exactly through four values, solved by Durand-Kerner, and each root classed as oscillatory, real (a saddle) or complex (a quartet: an unstable centre).
@@ -124,10 +124,10 @@ The tests run idea 42's own `parseHandoff` on its committed sample. Idea 41's ha
 |---|---|---|
 | `body` `{designation, name, shape_model, shape_reference, shape_dsk, shape_dsk_sha256, plates, vertices, frame, volume_m3, equivalent_radius_m, area_m2, brillouin_radius_m, uniform_com_in_dsk_frame_m, GM_m3_s2, GM_source, GM_confidence, density_kg_m3, G_m3_kg_s2, inertia_ratios_uniform, inertia_ratios_dynamical, hill_radius_m}` | m, m³, m², m³/s², kg/m³ | measured (Bennu) or assumed |
 | `spin` `{kind, epoch_tdb_s, epoch_utc, C_icrf_to_body, omega_body_rad_s, period_h, pole_or_angular_momentum_icrf, model}` | rad/s, h | derived |
-| `field` `{model, origin, harmonics {R0_m, nmax 4, C, S, J, valid_outside_m, normalisation}, point_mass_error_at[]}` | m, – | derived |
+| `field` `{model, origin, harmonics {R0_m, nmax 4, C, S, J, valid_outside_m, normalisation}, point_mass_error_at[] {r_over_brillouin, r_m, relative_error (the worst of 64 directions), worst_direction_body, long_axis_ends, directions}}` | m, – | derived |
 | `surface` `{epoch_tdb_s, gravity_m_s2, accel_m_s2, slope_deg, height_m, escape_up_m_s, escape_min_m_s (each {mean, median, min, max}), area_fraction_steeper_30deg, ..._40deg, ..._over_90deg, slope_hist_5deg, roche_lobe_area_fraction}` | m/s², deg, m, m/s | derived |
 | `equilibria` `{synchronous_radius_m, roche_energy_J_kg, points[{body_m, r_m, lon_deg, energy_J_kg, type, stable, efold_h, periods_h}]}` or null (refused) | m, J/kg, h | derived |
-| `site` `{face, body_fixed_m, lat_deg, lon_deg, radius_m, normal_body, gravity_body_m_s2, gravity_m_s2, accel_m_s2, slope_deg, height_m, escape_up_m_s, escape_min_m_s, escape_inertial_m_s, plate_area_m2, point_mass_gravity_m_s2, epoch_tdb_s}` | m, m/s², deg, m/s | derived |
+| `site` `{face, body_fixed_m, lat_deg, lon_deg, radius_m (from the DSK origin), radius_from_centre_of_mass_m, normal_body, gravity_body_m_s2, gravity_m_s2, accel_m_s2, slope_deg, height_m, escape_up_m_s, escape_min_m_s, escape_inertial_m_s, plate_area_m2, point_mass_gravity_m_s2 (GM over the distance from the centre of mass squared), epoch_tdb_s}` | m, m/s², deg, m/s | derived |
 | `orbits` `{days, inclinations_deg, radii_m, refused_radii_m, rows[{r_m, inc_deg, outcome, t_days, rmin_m, rmax_m}]}` or null | m, deg, days | derived |
 | `orbit_b` `{GM_m3_s2, legs, sunlight, point_mass {...}, polyhedron {leg_dv_median_m_s, leg_dv_max_m_s, leg_dr_median_m, arc_end_m, arc_max_m}}` or null | m, m/s | measured |
 
@@ -146,14 +146,14 @@ The tests run idea 42's own `parseHandoff` on its committed sample. Idea 41's ha
 
 ## Tests
 
-`lumpy.test.mjs`, 14 tests, Node built-ins, about 8 s:
+`lumpy.test.mjs`, 15 tests, Node built-ins, about 9 s:
 
 - **Snapshots.** Every sidecar's sha256 matches its file. `approach-sources.js` and `aster-constants.js` are idea 42's committed files byte for byte. The integrator excerpt's two blocks are lines 77-82 and 106-146 of idea 40's `coast.js`, verbatim. The wrapped sample is idea 42's committed `handoff.json`.
 - **Shapes and mass properties.**
   - Counts as published (2,000/3,996; 1,538/3,072), Euler characteristic 2.
   - Volume, area and centroid equal the oracle's numpy values to 1e-12.
   - Bennu's 12,288-plate DSK volume is 0.061242 km³ against Barnouin et al. 2019's 0.0615 ± 0.0001 (−0.42%; a different model, SPC v20).
-  - Bennu's density from the particle GM is 1,200.45 kg/m³, inside Barnouin's 1,190 ± 13.
+  - Bennu's density from the particle GM is 1,200.45 kg/m³ on the 3,072-plate subsample (1,196.4 on the full DSK), inside Barnouin's 1,190 ± 13.
   - The centre-of-figure offset sits within 0.35 m of Barnouin's [1.38, −0.43, −0.12] (0.16 m short in x).
   - Apophis's volume-equivalent diameter is 335.80 m; its uniform inertia ratios are 0.73044 and 0.94743.
   - An open mesh and an inside-out tetrahedron are refused.
@@ -201,18 +201,29 @@ The tests run idea 42's own `parseHandoff` on its committed sample. Idea 41's ha
   - spacecraft-field GM: legs 0.0223 mm/s (shape) against 0.2521 (point mass); 40-h arc 5.34 m against 33.77 m;
   - particle-field GM: 0.0427 against 0.2655 mm/s; arc 13.70 m against 14.70 m;
   - without sunlight the shape's legs are 0.2480 mm/s;
-  - the 40-42 h leg misses by more than 5 times the worst clean leg.
+  - the 40-42 h leg misses by more than 5 times the worst clean leg;
+  - against the review's own run (fresh Horizons vectors, scipy's DOP853, the full 12,288-plate DSK): the point-mass legs to 1e-5 and the arcs to 1 cm (the point mass does not depend on the shape, so this checks the Horizons excerpt, the integrator and the sunlight interpolation), and the shape's legs within 5% (0.0223 against 0.0228 mm/s, 0.0427 against 0.0433: what the subsample costs).
 - **The chain.**
   - Idea 42's committed handoff passes idea 42's own `parseHandoff` and this import.
   - Pinned defaults: density 2,025.344, instantaneous period 29.955 h, gravity 81.637 to 95.781 µm/s², mean slope 14.723°, 4.838% steeper than 30°.
   - Site plate 346 at 46.645°/−126.669°, slope 7.126°, escape straight up 18.554 cm/s; the stand-off ray really crosses plate 346.
   - Own refusals exactly `density`, `inertia`, `equilibria`, `resolution`; 10 carried.
-  - The point-mass error is 6.79% at the Brillouin sphere and 1.03% at four times it.
+  - The site's point mass, at the centre of mass 145.757 m away, is 126.146 µm/s².
+  - The point-mass error on the Brillouin sphere is 6.79% at one end of the long axis and 34.83% at the other (both against the review's polyhedral-gravity fixture); the worst of 64 directions is 34.83%, 6.60% at twice the radius and 1.43% at four times.
 - **Refusals the inputs raise.**
   - Bad GM mode, density 100, plate 99,999: `invalid_input`. A measured mass for Apophis: `body_mass`.
   - Low and high GM scale gravity exactly. Density mode gives GM = GρV.
   - After the encounter: `spin`. Ryugu: `not_found`.
   - Editing idea 42's GM, radius, stand-off, surface gravity alone or stand-off gravity alone, or dropping its refusal, is refused. Idea 41's handoff points to idea 42; garbage is refused.
+  - Added by the review: editing only the escape speed, the Hill radius, the density or the Sun distance is refused; a handoff without its `sam` block or with a GM range that is not two numbers is refused (it threw a TypeError before); a designation swapped to Bennu's is refused by the name check, and with the name swapped too by the shape check (the handed-on 170 m radius is not Bennu's 244.5 m).
+- **The review's own oracle** (test 15, `oracle/review.py` → `oracle/review.json`, written by the independent reviewer from fresh downloads without this folder's kernel, snapshots or `oracle.py`):
+  - Apophis's attitude taken from SPICE's interpolation of the CK itself, not from this kernel's Euler integration, puts the stand-off over the same plate 346; its gravity (polyhedral-gravity) agrees to 1e-8, its distances from the centre of mass and the DSK origin to 1e-9, and the point mass at the centre of mass to 1e-9.
+  - With the spin differentiated from SPICE's attitude the mean slope agrees to 0.002° and the share over 30° to 0.001.
+  - One orbit 347 m from the tumbling Apophis, flown 12 h by this kernel, ends within 1 cm of the same orbit flown with SPICE's attitude, polyhedral-gravity and scipy (measured 2.4 mm). A frozen attitude puts it hundreds of metres off.
+  - Bennu's Hill radius equals d (GM/3GM☉)^{1/3} from the Horizons row and Aster's GM☉.
+  - A sphere spun so the centrifugal pull is half of gravity at its equator: escape speed √(2GM/r) to 0.1% (measured 7e-5: the plates are not quite on the sphere), along the spin √(2GM/r) − ωρ, straight up √(2GM/r − ω²ρ²) to 1% (0.6%), heights −(½ω²ρ² − its mean)/a to 0.5 m (0.12 m in ±16 m) with the poles high and the equator low.
+  - The share over 30° and 40° and every 5° bin of the histogram equal the per-plate slopes counted in the test.
+  - The orbit classifier: a bound start that swings past the escape radius is not called an escape; an unbound one is.
 - **The handoff.** The sample is exactly what its inputs give. Every output has units, a confidence and a source. A round trip passes, for Bennu too. An edited slope, density or refusal is refused.
 
 **Teeth.** I made 25 sabotages of `lumpy.js`, each alone, in a scratch copy of the bank. **All 25 were caught, each by at least one test other than the sample regression** (test 14, which catches any change in outputs and so proves nothing on its own). The first run caught 24: "the import skips the GM/R² check" was caught by none, because the edit tests changed GM or radius, which other checks also catch. A test that edits only the handed-on surface gravity now catches it. Failing tests in brackets:
@@ -245,12 +256,46 @@ The tests run idea 42's own `parseHandoff` on its committed sample. Idea 41's ha
 | No impacts (inside test never true) | 10 |
 | Scan out to 3, not 4, Brillouin radii | 10 |
 
+The review's 27 sabotages, each alone in a scratch copy of the bank, run against the tests before and after the review (before: "caught" where a test other than the sample regression already failed, otherwise what did; after: the failing tests):
+
+| Sabotage | Before the review | After |
+|---|---|---|
+| Edge term of the Hessian with the wrong sign | caught | 3, 4, 9, 14 |
+| Height measured downward | 14 | 14, 15 |
+| Escape straight up: surface speed's sign | caught | 12, 14 |
+| Escape along the spin adds the surface speed | 14 | 14, 15 |
+| Roche lobe counted above the energy | caught | 9 |
+| Euler term's sign on the surface | caught | 12, 14 |
+| Bennu's YORP term dropped from the spin rate | caught | 8, 9, 10 |
+| Bennu's Hill radius without its 3 | none | 15 |
+| Import skips the escape-speed check | none | 13 |
+| Import skips the Hill check | none | 13 |
+| Scan refuses at 50%, not 5% | caught | 10 |
+| J_n = +C_n0 | caught | 6, 14 |
+| Point-mass error at one end of the long axis only (as shipped) | (the shipped code) | 12, 14 |
+| Orbit starts 20% fast | caught | 10 |
+| Median not weighted by area | caught | 8, 14 |
+| "Steeper than 40°" counts from 45° | 14 | 14, 15 |
+| Site latitude about the centre of mass | caught | 12, 14 |
+| Site point mass at the DSK origin (as shipped) | (the shipped code) | 12, 14, 15 |
+| Histogram in 10° bins | 14 | 14, 15 |
+| Equilibrium energy without the spin | caught | 9 |
+| "Escape" ignores the energy | none | 15 |
+| Apophis's orbits under a frozen attitude | none | 15 |
+| Import skips the name check | (new check) | 13 |
+| Body skips the radius check | (new check) | 13 |
+| Import without the `sam` guard | (a TypeError) | 13 |
+| Solid angle without its factor 2 (a repeat) | caught | 3, 4, 5, 8, 9, 10, 11, 12, 14, 15 |
+| Coriolis halved in the stability test (a repeat) | caught | 9 |
+
+After the review all 27 are caught by a test other than the sample regression (test 14).
+
 Writing the tests caught three of my own errors:
 - the ECLIPJ2000 frame of the CK (below);
 - a hand-guessed synchronous radius (309.83 m, not the 309.44 the formula gives);
 - a point-mass error I had not measured (I had written 3.4%; it is 6.8%).
 
-`ui-check.mjs`, 66 checks in headless Chromium:
+`ui-check.mjs`, 68 checks in headless Chromium:
 - the tiles equal the kernel's (GM, density, size, mean slope, point-mass error), with the right confidence chips;
 - the site box and its escape speed; the four own refusals and ten carried; 11 check rows with no NaN;
 - the shape drawn, turned by the arrow keys and by dragging, and a tap that picks a plate whose slope is the kernel's; the site reset; colour by escape speed;
@@ -258,7 +303,8 @@ Writing the tests caught three of my own errors:
 - a 2-orbit scan whose outcomes are the kernel's, with a tapped orbit drawn;
 - the download parses in the kernel, with and without the scan;
 - Bennu: 8 equilibria, the Orbital B tile, charts drawn, the spacecraft GM;
-- imports of idea 42's handoff and this page's; garbage, idea 41's and an edited handoff refused;
+- imports of idea 42's handoff and this page's; garbage, idea 41's, an edited handoff and (review) a 42 handoff without its `sam` block refused;
+- (review) the site box's point mass is the kernel's, at the centre of mass;
 - `#h=` links with idea 42's and this page's handoffs;
 - at 390 px in dark and light: no overflow, no text under 11 px, the right background, charts drawn, a tap picks a plate, no NaN, no console errors.
 
@@ -281,11 +327,11 @@ Writing the tests caught three of my own errors:
   - At Apophis the radar shape filled evenly gives inertia ratios 0.730/0.947, where Pravec et al.'s tumbling solution needs 0.61/0.965 (+20% in I₁/I₃). Either the density is far from uniform or the shape is off. Every number beyond GM carries that doubt (refused as `inertia`).
 - **[Certain as numbers; Likely as physics] Apophis on the chain.**
   - 335.8 m across (SBDB 340 m, −1.2%), so at idea 42's GM 2.68 its density is 2,025 kg/m³, not the 1,951 idea 42 got from a 170 m sphere.
-  - Surface gravity 81.6 to 95.8 µm/s². Spin hardly matters: the instantaneous period is about 30 h, and the spin changes the acceleration a grain feels by under 0.9% on any plate.
+  - Surface gravity 81.6 to 95.8 µm/s². Spin hardly matters: the instantaneous period is about 30 h, and the spin changes the acceleration a grain feels by at most 0.89% in magnitude (0.93% as a vector) on any plate.
   - Slopes average 14.7°, and 4.8% of the area is steeper than 30°.
   - Escape straight up takes 15.8 to 19.2 cm/s.
-  - A point mass is 6.8% wrong at the Brillouin sphere along the long axis, 3.2% at twice it, 1.0% at four times.
-  - The plate under idea 42's stand-off (46.6°N, 126.7°W in the radar model's frame) has 95.3 µm/s² of gravity, where a point mass at its radius says 133.2: inside the Brillouin sphere a point mass overstates the pull by 40%.
+  - A point mass on the Brillouin sphere is up to 34.8% wrong (where the sphere touches the long axis's far tip; 6.8% at its other end), 6.6% at twice its radius and 1.4% at four times (the worst of 64 directions).
+  - The plate under idea 42's stand-off (46.6°N, 126.7°W in the radar model's frame) has 95.3 µm/s² of gravity, where a point mass at the centre of mass, 145.8 m away, says 126.1: there, deep inside the Brillouin sphere, a point mass overstates the pull by 32%.
 - **[Likely] Close orbits.**
   - In 3 days, circular starts just outside the Brillouin sphere crash at both bodies, and prograde orbits crash further out than polar or retrograde ones. Apophis: the 287 m prograde orbit hits in 2.4 days while the polar and retrograde ones survive. Bennu: the 365 m prograde orbit hits in 2.3 hours, polar and retrograde survive. From 1.5 Brillouin radii out everything survives 3 days.
   - The prograde/retrograde asymmetry is the known result for orbits close to rotating small bodies.
@@ -298,10 +344,18 @@ Writing the tests caught three of my own errors:
   - *The orbit scan flies gravity alone.* Sunlight and the tide are idea 42's; where they pass 5% the radius is refused, and on the chain they never do inside 4 Brillouin radii.
   - *Spin.* Apophis after the 2029 encounter is refused. Bennu's YORP term is in the PCK, but its spin state is taken as exact.
   - *The site* is the plate under the stand-off, or one you tap. No landing-site selection logic (that is module 44's).
-  - *Size.* 570 KB as the checker counts: over the 500 KB budget, under the 650 KB limit. The two shapes are 115 KB. Idea 42's sample appears twice (the page's stand-alone case, and inside `handoff.json`), 108 KB. Idea 40's integrator was excerpted to 4 KB instead of carried whole (87 KB) to stay under the limit.
+  - *Size.* 604 KB as the checker counts after the review (570 before; the review's oracle, tests and these notes added 34): over the 500 KB budget, under the 650 KB limit. The two shapes are 115 KB. Idea 42's sample appears twice (the page's stand-alone case, and inside `handoff.json`), 108 KB. Idea 40's integrator was excerpted to 4 KB instead of carried whole (87 KB) to stay under the limit.
+- **What the independent review changed** (another agent, reading the folder cold; it recomputed numbers from fresh downloads with its own scripts, now `oracle/review.py`).
+  - *A wrong number on the page, the handoff and this README.* The site's point mass was put at the DSK origin (141.8 m from the plate), not at the centre of mass the field and idea 42's point mass are about (145.8 m): "a point mass says 133.2, 40% high" is 126.1 and 32%. The page's own profile chart (24.8% just above the site) already disagreed. Fixed in `site()`, the tile, the site box and the handoff (`radius_from_centre_of_mass_m` added); pinned against the review's polyhedral-gravity value.
+  - *A misleading number.* "A point mass is 6.79% wrong at the Brillouin sphere along the long axis" took whichever end of the axis the eigen-solver's sign picked: at the other end it is 34.8%. The tile and the handoff now give the worst of 64 directions, and both ends.
+  - *A false finding about Aster.* The "40% high" item was replaced by what Aster's catalog really says about Apophis (270 m, above).
+  - *A crash.* A 42 handoff without its `sam` block threw a TypeError inside the import (on the page: an uncaught error and a stale "Imported" status). It is now refused, as are a GM range that is not two numbers, a name that is not the designation's, and a radius more than 20% from the shape's (Bennu's shape under Apophis's name ran before, at 658 kg/m³). The page also reports any unexpected import error as a refusal.
+  - *Weak tests.* 27 single sabotages by the reviewer (25 new, 2 repeats of the builder's): before the review 5 passed every test (the import's escape-speed and Hill checks skipped, Bennu's Hill radius without its 3, the escape classifier ignoring energy, Apophis's orbits flown with a frozen attitude) and 5 more were caught only by the sample regression (height sign, escape speed along the spin, the 40° threshold, the histogram's bins, the site's point mass). Test 15 and the new edit tests catch all of them (table above).
+  - *Wording.* The tagline names which GM gives 5.3 m against 33.8 m, and gives the particle-GM numbers the page opens on (13.7 against 14.7 m, where the shape barely beats a point mass over the arc). The spin's effect is "at most 0.89%", not "under 0.9%" without its measure. The page no longer says the navigation team used a "ten-plate" model (not in any source here). The GM tile cuts its source at a word with an ellipsis instead of mid-unit.
+  - *Confirmed, not changed:* the field (polyhedral-gravity on the review's own points), Apophis's mass properties, density and 335.8 m size, the stand-off plate (with SPICE's attitude), the slopes, Bennu's J2 against Scheeres et al. (−1.0%, +3.75%) and its 12,288-plate volume, every Orbital B number (point mass to 1e-5 on fresh Horizons vectors; shape within 2.4% on the full DSK), the close-orbit claims (Apophis's 287 m prograde start hits after 2.4 days, Bennu's 365 m after 2.3 h, the polar and retrograde ones survive), and the chain: fresh 42 handoffs from 42's kernel (stand-off 5 km and 40 km, density 3,000, another latitude) import, run and round-trip, on the page through `#h=` too.
 - **Findings about the source repo (Aster, `62ddb17`).**
   - **No body in Aster has a shape, spin or density.** The catalog fixture (`tests/fixtures/v2/nea-catalog-slice9.json`) carries a radius from an assumed albedo (`src/v2/core/constants/asteroids.ts:9`) and no rotation (BRIEFING §1). NAIF already serves public shapes and spins for Apophis and Bennu. Aster's K3 spin-barrier hint (`strategy/IDEA_KERNELS_2026-09.md`), which "needs rotation periods the catalog lacks", could start from the PCK and CK used here for these two.
-  - **A point mass is not a surface gravity.** Anything Aster derives at the surface from GM/R² is 40% high at the Apophis plate under idea 42's stand-off (95.3 against 133.2 µm/s²), because the radius there is inside the Brillouin sphere.
+  - **Aster's size for Apophis is 61% too large.** The catalog fixture gives `estimatedRadiusM` 270.04 m for 99942 (`tests/fixtures/v2/nea-catalog-slice9.json`, the `asteroid-99942` record: H 19.09 under the assumed albedo 0.14), where the radar shape's volume-equivalent radius is 167.9 m (and NAIF's PCK and SBDB say 340 m across). Any volume Aster derived from it would be 4.2 times too large, and GM/R² at 270 m (36.8 µm/s² at GM 2.68) is 2.2 to 2.6 times below the shape's surface gravity (81.6 to 95.8). (Before the review this item claimed a GM/R² surface gravity would be "40% high" at the stand-off plate; Aster computes no such number, and the 40% itself was a measuring error, below.)
 - **Findings about the sources and earlier modules.**
   - **NAIF's Apophis CK segments are relative to ECLIPJ2000 (frame 17), not J2000.** Read raw, the quaternions put the angular momentum at RA 250°, Dec −75°: exactly the ecliptic longitude and latitude in the CK comment. I made that mistake, and the test pinned to the comment's J2000 values caught it.
   - The CK's samples sit 900.0000855 s apart in a millisecond SCLK, so their ticks are fractional. Rounding them to whole ticks moves the attitude by 3e-8 rad.
@@ -309,7 +363,7 @@ Writing the tests caught three of my own errors:
   - Barnouin et al. 2019 Table 1's "Gravitational acceleration −0.000058 to 0.000080 m/s²" has a negative lower bound with no stated sign convention.
   - Idea 42's `body.radius_m` (170 m, from SBDB's diameter) gives a density 3.7% below the shape's (1,951 against 2,025 kg/m³); idea 42 flies a point mass, so its results stand.
   - JPL's reconstruction of OSIRIS-REx has an impulse between 2019-06-20 16:00 and 18:00 TDB (0.18 mm/s), presumably a momentum dump. It is not in this folder's sources by name [Speculative as to cause].
-- **Gates not passed.** Aster's multi-agent math audit; oracle validation in Aster's own harness (the polyhedral-gravity, harmonica, SPICE and Horizons oracles here are this folder's fixtures); the founding-doc DEC process; the protected core (`src/v2/core/**`). This Idea Bank's independent review has not been done yet.
+- **Gates not passed.** Aster's multi-agent math audit; oracle validation in Aster's own harness (the polyhedral-gravity, harmonica, SPICE and Horizons oracles here are this folder's fixtures); the founding-doc DEC process; the protected core (`src/v2/core/**`). This Idea Bank's independent review has been done (below); Aster's own gates have not.
 
 ## Where it would land
 

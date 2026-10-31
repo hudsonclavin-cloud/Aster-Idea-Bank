@@ -85,6 +85,8 @@
   }
 
   // ------------------------------------------------------------------------------------------------ rendering
+  /** Shorten a source line at a word boundary, marking the cut. */
+  function clip(t, n) { t = String(t); if (t.length <= n) return t; var c = t.lastIndexOf(' ', n); return t.slice(0, c > n / 2 ? c : n) + '…'; }
   function tile(k, v, u, conf, sub, cls) {
     return '<div class="tile' + (cls ? ' ' + cls : '') + '"><div class="k">' + esc(k) + '</div><div class="v">' + v + (u ? '<span class="u">' + esc(u) + '</span>' : '') + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + (conf ? '<span class="c">' + conf + '</span>' : '') + '</div>';
   }
@@ -107,26 +109,26 @@
     var gmConf = B.GMconf === 'measured' ? 'measured' : 'assumed';
     var eq = R.equilibria;
     $('tiles').innerHTML = [
-      tile('GM', f(B.GM, 4), 'm³/s²', gmConf, esc(B.GMsrc).slice(0, 90)),
+      tile('GM', f(B.GM, 4), 'm³/s²', gmConf, esc(clip(B.GMsrc, 90))),
       tile('Bulk density', f(B.rho, 4), 'kg/m³', gmConf, 'GM / (G × ' + f(P.volume / 1e9, 4) + ' km³)'),
       tile('Size', f(2 * B.Req, 4), 'm', 'measured', 'volume-equivalent diameter; Brillouin sphere ' + f(P.rMax, 4) + ' m'),
       tile('Surface gravity', f(s.gravity.min * 1e6, 3) + '–' + f(s.gravity.max * 1e6, 3), 'µm/s²', 'derived', 'mean ' + f(s.gravity.mean * 1e6, 3) + ' µm/s²; with the spin ' + f(s.accel.min * 1e6, 3) + '–' + f(s.accel.max * 1e6, 3)),
       tile('Mean slope', f(s.slope.mean, 3), '°', 'derived', 'median ' + f(s.slope.median, 3) + '°, steepest ' + f(s.slope.max, 3) + '°; ' + f(100 * s.steeper30, 2) + '% of the area over 30°'),
-      tile('Escape straight up', f(s.vUp.min * 100, 3) + '–' + f(s.vUp.max * 100, 3), 'cm/s', 'derived', 'along the spin it can take ' + f(s.vMin.min * 100, 3) + ' cm/s'),
-      tile('Point mass wrong by', f(pmTile(R) * 100, 3), '%', 'derived', 'at the Brillouin sphere along the long axis; ' + f(K.pmErrors(R)[3].relative_error * 100, 2) + '% at four times it'),
+      tile('Escape straight up', f(s.vUp.min * 100, 3) + '–' + f(s.vUp.max * 100, 3), 'cm/s', 'derived', 'launched along the spin, as little as ' + f(s.vMin.min * 100, 3) + ' cm/s'),
+      tile('Point mass wrong by', f(pmTile(R) * 100, 3), '%', 'derived', 'up to, on the Brillouin sphere (worst of 64 directions); ' + f(K.pmErrors(R)[2].relative_error * 100, 2) + '% at twice its radius, ' + f(K.pmErrors(R)[3].relative_error * 100, 2) + '% at four times'),
       tile('J2 (normalised)', f(R.sh.J[2], 4), '', 'derived', 'about the centre of mass, R0 = Brillouin radius ' + f(R.sh.R0, 4) + ' m'),
       eq.refusal ? tile('Equilibria', 'none', '', 'refused', 'a tumbler has no frame where its field stands still', 'refused') :
         tile('Equilibria', eq.points.length, '', 'derived', eq.points.filter(function (q) { return q.stability.kind === 'saddle'; }).length + ' saddles, ' + eq.points.filter(function (q) { return q.stability.kind === 'centre'; }).length + ' centres, ' + eq.points.filter(function (q) { return q.stability.stable; }).length + ' stable; ' + f(100 * R.roche, 3) + '% of the surface inside the Roche lobe'),
       R.orbitB ? tile('Orbital B: 2-h legs miss by', f(R.orbitB.poly.legDv_median_m_s * 1000, 3), 'mm/s', 'measured', 'the shape; a point mass ' + f(R.orbitB.pm.legDv_median_m_s * 1000, 3) + ' mm/s (median of ' + R.orbitB.poly.legs + ')', 'hero') :
-        tile('Site gravity', f(st.gravity_mag_m_s2 * 1e6, 4), 'µm/s²', 'derived', 'a point mass at that radius: ' + f(B.GM / (st.radius_m * st.radius_m) * 1e6, 4) + ' µm/s²', 'hero')
+        tile('Site gravity', f(st.gravity_mag_m_s2 * 1e6, 4), 'µm/s²', 'derived', 'a point mass at the centre of mass, ' + f(st.radius_com_m, 4) + ' m away: ' + f(st.point_mass_m_s2 * 1e6, 4) + ' µm/s²', 'hero')
     ].join('');
     var own = R.own, carried = R.carried;
     $('refusals').innerHTML = own.map(refusalHtml).join('');
     $('carriedSum').textContent = 'Refusals carried from earlier modules (' + carried.length + ')';
     $('carriedList').innerHTML = carried.length ? carried.map(refusalHtml).join('') : '<p class="small">None: this case starts here.</p>';
     $('carried').hidden = !carried.length;
-    $('siteBox').innerHTML = '<b>Site ' + (state.S.site === null ? '(under the stand-off)' : '(chosen)') + ': plate ' + st.face + '</b>, latitude ' + f(st.lat_deg, 3) + '°, longitude ' + f(st.lon_deg, 4) + '°, ' + f(st.radius_m, 4) + ' m from the centre. ' +
-      'Gravity <b>' + f(st.gravity_mag_m_s2 * 1e6, 4) + ' µm/s²</b> (a point mass: ' + f(B.GM / (st.radius_m * st.radius_m) * 1e6, 4) + '), slope <b>' + f(st.slope_deg, 3) + '°</b>, height ' + f(st.height_m, 3) + ' m, escape straight up <b>' + f(st.escape_up_m_s * 100, 4) + ' cm/s</b>, along the spin ' + f(st.escape_min_m_s * 100, 4) + ' cm/s. <span class="c">derived</span>';
+    $('siteBox').innerHTML = '<b>Site ' + (state.S.site === null ? '(under the stand-off)' : '(chosen)') + ': plate ' + st.face + '</b>, latitude ' + f(st.lat_deg, 3) + '°, longitude ' + f(st.lon_deg, 4) + '°, ' + f(st.radius_com_m, 4) + ' m from the centre of mass (' + f(st.radius_m, 4) + ' m from the shape model\'s origin). ' +
+      'Gravity <b>' + f(st.gravity_mag_m_s2 * 1e6, 4) + ' µm/s²</b> (a point mass: ' + f(st.point_mass_m_s2 * 1e6, 4) + '), slope <b>' + f(st.slope_deg, 3) + '°</b>, height ' + f(st.height_m, 3) + ' m, escape straight up <b>' + f(st.escape_up_m_s * 100, 4) + ' cm/s</b>, along the spin ' + f(st.escape_min_m_s * 100, 4) + ' cm/s. <span class="c">derived</span>';
     drawShape(); drawHist(); drawProfile(); drawEq(); drawTrack(); scanGrid(); drawOB(); checksTable();
   }
   function pmTile(R) { return K.pmErrors(R)[0].relative_error; }
@@ -367,8 +369,10 @@
     state.R = p.R; state.scanSel = p.R.scan ? 0 : null; render(); if (!state.checks) setTimeout(buildChecks, 30); status('Imported this page\'s handoff and recomputed it: it matches.', true); return true;
   }
   function copy(text, msg) { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { status(msg, true); }, function () { $('importText').value = text; status('Copy is blocked here: the text is in the box above.', true); }); else { $('importText').value = text; status('The text is in the box above.', true); } }
-  $('importBtn').addEventListener('click', function () { importText($('importText').value); });
-  $('importFile').addEventListener('change', function () { var fl = $('importFile').files[0]; if (!fl) return; fl.text().then(function (t) { importText(t); }); });
+  /** Anything the kernel did not expect is reported as a refusal, never left as a stale status. */
+  function importSafe(t) { try { return importText(t); } catch (e) { status('Refused (invalid input): this handoff could not be read (' + e.message + ').', false); return false; } }
+  $('importBtn').addEventListener('click', function () { importSafe($('importText').value); });
+  $('importFile').addEventListener('change', function () { var fl = $('importFile').files[0]; if (!fl) return; fl.text().then(function (t) { importSafe(t); }); });
   $('copyBtn').addEventListener('click', function () { var h = exportText(); if (h) copy(h, 'Handoff copied (' + f(h.length / 1024, 3) + ' KB).'); });
   $('dlBtn').addEventListener('click', function () { var h = exportText(); if (!h) return; var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([h], { type: 'application/json' })); a.download = 'lumpy-handoff.json'; document.body.appendChild(a); a.click(); a.remove(); status('Downloaded lumpy-handoff.json.', true); });
   $('linkBtn').addEventListener('click', function () { var h = exportText(); if (!h) return; var url = location.href.split('#')[0] + '#h=' + b64u(h); copy(url, 'Link copied (' + f(url.length / 1024, 3) + ' KB; it carries the whole chain).'); });

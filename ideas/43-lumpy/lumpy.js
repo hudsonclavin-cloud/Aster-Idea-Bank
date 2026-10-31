@@ -361,6 +361,8 @@
       var key = SHAPE_OF[src.designation];
       if (!key) return { refusal: refusal('not_found', 'No shape model for ' + src.name + ' in this folder: only Apophis (radar, Brozovic et al. 2018) and Bennu (OSIRIS-REx laser altimetry) are here.', 'A closed shape model for ' + src.name + ' (PDS Small Bodies Node or NAIF DSK); for Ryugu, JAXA\'s Hayabusa2 models; for Didymos, DART\'s.', { applies_to: 'shape' }) };
       var P = shape(key, S.centre); if (P.refusal) return { refusal: P.refusal };
+      var Req = Math.cbrt(3 * P.volume / (4 * PI));
+      if (num(src.body.radius_m) && Math.abs(src.body.radius_m / Req - 1) > 0.2) return { refusal: refusal('invalid_input', 'The handed-on radius (' + src.body.radius_m + ' m) is not this shape\'s (' + Req.toFixed(1) + ' m volume-equivalent): the handoff\'s body is not ' + src.name + '.', 'The unedited handoff idea 42 exported.', { applies_to: 'shape' }) };
       var GM, GMsrc, GMconf, rangeGM = src.body.GM_range_m3_s2 || null;
       if (S.gm === 'handoff') { GM = src.body.GM_m3_s2; GMsrc = src.body.GM_source; GMconf = src.body.GM_confidence; }
       else if (S.gm === 'low' || S.gm === 'high') {
@@ -379,7 +381,7 @@
       if (att.refusal) return { refusal: att.refusal };
       var d = src.sunDistance_m, hill = num(src.body.hill_radius_m) ? src.body.hill_radius_m * Math.pow(GM / src.body.GM_m3_s2, 1 / 3) : d * Math.pow(GM / (3 * MU_SUN), 1 / 3);
       return { key: key, P: P, name: src.name, designation: src.designation, GM: GM, GMsrc: GMsrc, GMconf: GMconf, rho: rho, Grho: G_NEWTON * rho, att: att, epoch: src.epoch,
-        hill_m: hill, sunDistance_m: d, srp_m_s2: src.env ? src.env.srp_accel_m_s2 : null, Req: Math.cbrt(3 * P.volume / (4 * PI)) };
+        hill_m: hill, sunDistance_m: d, srp_m_s2: src.env ? src.env.srp_accel_m_s2 : null, Req: Req };
     }
 
     // ---------------------------------------------------------------------------------------------------- surface
@@ -557,10 +559,10 @@
     function orbitStart(B, r, incDeg, days, opts) {
       opts = opts || {};
       var p = poleIcrf(B), z = [0, 0, 1], node = unit(Math.abs(dot(p, z)) > 0.99 ? cross(p, [1, 0, 0]) : cross(p, z)), tdir = cross(p, node);
-      var vdir = add(scale(tdir, Math.cos(incDeg * DEG)), scale(p, Math.sin(incDeg * DEG))), x0 = scale(node, r), v0 = scale(vdir, Math.sqrt(B.GM / r));
+      var vdir = add(scale(tdir, Math.cos(incDeg * DEG)), scale(p, Math.sin(incDeg * DEG))), x0 = scale(node, r), v0 = scale(vdir, (opts.vScale || 1) * Math.sqrt(B.GM / r));
       var T = 2 * PI * Math.sqrt(r * r * r / B.GM), n = Math.max(8, Math.ceil(days * DAY / (T / 24)));
       var st = { r: r, inc: incDeg, days: days, T: T, rmin: r, rmax: r, outcome: 'survive', tEnd: days * DAY, track: [] };
-      var escR = Math.min(B.hill_m, Math.max(4 * B.P.rMax, 3 * r));
+      var escR = opts.escR || Math.min(B.hill_m, Math.max(4 * B.P.rMax, 3 * r));
       st.flight = flight(B, 'poly', B.epoch, x0, v0, days * DAY, { samples: n, rtol: opts.rtol || 1e-9, stop: function (t, x, v, Cf) {
         var rr = norm(x); st.rmin = Math.min(st.rmin, rr); st.rmax = Math.max(st.rmax, rr);
         var C = bodyC(B, t, Cf); if (st.track.length < 400) st.track.push(mv(C, x));
@@ -608,9 +610,10 @@
     function site(B, surf, f) {
       var P = B.P, r = [P.FC[3 * f], P.FC[3 * f + 1], P.FC[3 * f + 2]], rd = add(r, P.shift), nrm = [P.FN[3 * f], P.FN[3 * f + 1], P.FN[3 * f + 2]];
       var raw = rawSurface(P), g = [B.Grho * raw.g[3 * f], B.Grho * raw.g[3 * f + 1], B.Grho * raw.g[3 * f + 2]];
-      return { face: f, body_fixed_m: rd, centre_of_mass_m: r, lat_deg: Math.asin(rd[2] / norm(rd)) / DEG, lon_deg: Math.atan2(rd[1], rd[0]) / DEG, radius_m: norm(rd), normal: nrm,
+      return { face: f, body_fixed_m: rd, centre_of_mass_m: r, lat_deg: Math.asin(rd[2] / norm(rd)) / DEG, lon_deg: Math.atan2(rd[1], rd[0]) / DEG, radius_m: norm(rd), radius_com_m: norm(r), normal: nrm,
         gravity_m_s2: g, gravity_mag_m_s2: surf.gravity[f], accel_mag_m_s2: surf.accel[f], slope_deg: surf.slope[f], height_m: surf.height[f], U_m2_s2: surf.U[f],
-        escape_up_m_s: surf.vUp[f], escape_min_m_s: surf.vMin[f], escape_inertial_m_s: surf.vEsc[f], area_m2: P.FA[f] };
+        escape_up_m_s: surf.vUp[f], escape_min_m_s: surf.vMin[f], escape_inertial_m_s: surf.vEsc[f], area_m2: P.FA[f],
+        point_mass_m_s2: B.GM / dot(r, r) };   // a point mass where the field's own mass centre is (the origin), as idea 42 flew it
     }
 
     // ---------------------------------------------------------------------------------------------------- reality: Orbital B
@@ -655,7 +658,9 @@
       var O = h.outputs || {}, ss = O.standoff_state && O.standoff_state.value, bd = O.body && O.body.value, env = O.environment && O.environment.value;
       if (!ss || !bd || !env) return { refusal: refusal('invalid_input', 'This 42 handoff lacks its stand-off, body or environment.', 'The unedited handoff idea 42 exported.') };
       var vec = function (v) { return Array.isArray(v) && v.length === 3 && v.every(num); };
-      if (!num(ss.tdb_s_past_j2000) || !vec(ss.r_m) || !vec(ss.v_m_s) || !ss.asteroid_heliocentric || !vec(ss.asteroid_heliocentric.r_m) || !num(bd.GM_m3_s2) || !num(bd.radius_m) || !num(bd.sun_distance_m))
+      if (!num(ss.tdb_s_past_j2000) || typeof ss.utc !== 'string' || !vec(ss.r_m) || !vec(ss.v_m_s) || !ss.asteroid_heliocentric || !vec(ss.asteroid_heliocentric.r_m) || !ss.sam || !num(ss.sam.range_m) ||
+        !num(bd.GM_m3_s2) || !num(bd.radius_m) || !num(bd.sun_distance_m) || typeof bd.designation !== 'string' || typeof bd.name !== 'string' ||
+        (bd.GM_range_m3_s2 != null && !(Array.isArray(bd.GM_range_m3_s2) && bd.GM_range_m3_s2.length === 2 && bd.GM_range_m3_s2.every(num))))
         return { refusal: refusal('invalid_input', 'The stand-off state or the body is incomplete.', 'The unedited handoff idea 42 exported.') };
       var p = [], rel = function (a, b) { return Math.abs(a - b) / Math.max(Math.abs(b), 1e-300); };
       var R = bd.radius_m, GM = bd.GM_m3_s2;
@@ -668,6 +673,7 @@
       if (rel(env.gravity_at_standoff_m_s2, GM / dot(ss.r_m, ss.r_m)) > 1e-6) p.push('gravity at the stand-off is not GM/r^2');
       if (Math.abs(tdbOfUtc(ss.utc) - ss.tdb_s_past_j2000) > 0.002) p.push('UTC and TDB disagree');
       if (Array.isArray(bd.GM_range_m3_s2) && !(bd.GM_range_m3_s2[0] <= GM && GM <= bd.GM_range_m3_s2[1])) p.push('GM lies outside its own range');
+      if (bd.name.indexOf(bd.designation + ' ') !== 0) p.push('the name (' + bd.name + ') is not the designation\'s (' + bd.designation + ')');
       if (!(h.refusals || []).some(function (r) { return r.applies_to === 'gravity_field' && !r.from; })) p.push('idea 42\'s own gravity_field refusal is missing');
       if (p.length) return { refusal: refusal('invalid_input', 'The handoff is not self-consistent: ' + p.join('; ') + '. It was edited, or is not idea 42\'s.', 'The unedited handoff idea 42 exported.') };
       return { from: '42-closing-in', h42: h, designation: bd.designation, name: bd.name, epoch: ss.tdb_s_past_j2000, standoff: { r: ss.r_m.slice(), v: ss.v_m_s.slice() },
@@ -773,18 +779,34 @@
     }
     function obOut(o) { return { leg_dv_median_m_s: r9(o.legDv_median_m_s), leg_dv_max_m_s: r9(o.legDv_max_m_s), leg_dr_median_m: r9(o.legDr_median_m), arc_end_m: r9(o.arcEnd_m), arc_max_m: r9(o.arcMax_m) }; }
     function siteOut(st, R) {
-      return { face: st.face, body_fixed_m: vr9(st.body_fixed_m), lat_deg: r9(st.lat_deg), lon_deg: r9(st.lon_deg), radius_m: r9(st.radius_m), normal_body: vr9(st.normal),
+      return { face: st.face, body_fixed_m: vr9(st.body_fixed_m), lat_deg: r9(st.lat_deg), lon_deg: r9(st.lon_deg), radius_m: r9(st.radius_m), radius_from_centre_of_mass_m: r9(st.radius_com_m), normal_body: vr9(st.normal),
         gravity_body_m_s2: vr9(st.gravity_m_s2), gravity_m_s2: r9(st.gravity_mag_m_s2), accel_m_s2: r9(st.accel_mag_m_s2), slope_deg: r9(st.slope_deg), height_m: r9(st.height_m),
         escape_up_m_s: r9(st.escape_up_m_s), escape_min_m_s: r9(st.escape_min_m_s), escape_inertial_m_s: r9(st.escape_inertial_m_s), plate_area_m2: r9(st.area_m2),
-        point_mass_gravity_m_s2: r9(R.B.GM / (st.radius_m * st.radius_m)), epoch_tdb_s: R.src.epoch };
+        point_mass_gravity_m_s2: r9(st.point_mass_m_s2), epoch_tdb_s: R.src.epoch };
     }
-    /** How wrong a point mass is (|g_pm - g| / |g|) at 1.0, 1.5, 2 and 4 Brillouin radii along the body's long axis. */
+    /** Directions for the point-mass comparison: both ends of each principal axis and 58 more spread evenly (Fibonacci). */
+    var PM_DIRS = null;
+    function pmDirections(P) {
+      var d = [], ax = P.principal.vectors;
+      for (var c = 0; c < 3; c++) { var u = [ax[c], ax[3 + c], ax[6 + c]]; d.push(u, scale(u, -1)); }
+      if (!PM_DIRS) { PM_DIRS = []; for (var i = 0; i < 58; i++) { var z = 1 - (2 * i + 1) / 58, rr = Math.sqrt(1 - z * z), ph = i * PI * (3 - Math.sqrt(5)); PM_DIRS.push([rr * Math.cos(ph), rr * Math.sin(ph), z]); } }
+      return d.concat(PM_DIRS);
+    }
+    /**
+     * How wrong a point mass is (|g_pm - g| / |g|) on spheres of 1.0, 1.5, 2 and 4 Brillouin radii: the worst of 64
+     * directions (both ends of the three principal axes and 58 spread evenly), and along each end of the long axis.
+     * (The review found the long axis alone misleading: 6.8% at one end of Apophis's, 35% at the other.)
+     */
     function pmErrors(R) {
-      var P = R.P, ax = [P.principal.vectors[0], P.principal.vectors[3], P.principal.vectors[6]];
-      return [1.0, 1.5, 2, 4].map(function (k) {
-        var x = scale(ax, k * P.rMax), f = field(P, R.B.Grho, x), r = norm(x), pm = scale(x, -R.B.GM / (r * r * r));
-        return { r_over_brillouin: k, r_m: r9(k * P.rMax), relative_error: r9(norm(sub(pm, f.g)) / norm(f.g)) };
-      });
+      if (R.pmErr) return R.pmErr;
+      var P = R.P, dirs = pmDirections(P);
+      function err(u, k) { var x = scale(u, k * P.rMax), f = field(P, R.B.Grho, x), r = norm(x), pm = scale(x, -R.B.GM / (r * r * r)); return norm(sub(pm, f.g)) / norm(f.g); }
+      return (R.pmErr = [1.0, 1.5, 2, 4].map(function (k) {
+        var worst = -1, wd = null;
+        dirs.forEach(function (u) { var e = err(u, k); if (e > worst) { worst = e; wd = u; } });
+        return { r_over_brillouin: k, r_m: r9(k * P.rMax), relative_error: r9(worst), worst_direction_body: vr9(wd),
+          long_axis_ends: [r9(err(dirs[0], k)), r9(err(dirs[1], k))], directions: dirs.length };
+      }));
     }
     function codes(rs) { return (rs || []).map(function (r) { return (r.from ? r.from + ':' : '') + r.code + '/' + (r.applies_to || ''); }).sort().join('|'); }
     function numDiff(a, b, path, tol) {

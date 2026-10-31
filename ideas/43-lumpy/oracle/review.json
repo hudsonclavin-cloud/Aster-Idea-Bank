@@ -1,0 +1,127 @@
+{
+ "sources_sha256": {
+  "naif0012.tls": "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b",
+  "orx_shape_v04.tf": "beb43ef3dd6fac8742a1e1bd2ce5144741cd09654bc3ed17616257108cf70555",
+  "orx_v15.tf": "b1687d1af234c733991ab476983e1ba7fe10b3df9790809142dd26e71dd9fc92",
+  "apophis_npa_220101_330101_nominal_pravec_v1.bc": "3d856791782b60a63a26cf6f2eaaa0c59bd7b5c4a6fd4e71ce3d6760cea64a36",
+  "bennu_v17.tpc": "cdb4bc04f2869d32503db87bddd5a9ab8ea59b6ae91a39cd144e5d9e93339a0a",
+  "apophis_g_25000mm_rad_obj_0000n00000_v001.bds": "1d37677ca5b694589590eb9f8b465eff4f077b7d2470b546f5487b2e811b3cce",
+  "bennu_g_12600mm_alt_obj_0000n00000_v021.bds": "bb9201b95a9730ecc30410163bf862036d75528804ce9ede658361c1215d53d1"
+ },
+ "G_m3_kg_s2": 6.6743e-11,
+ "apophis": {
+  "volume_m3": 19825778.758735746,
+  "equivalent_diameter_m": 335.797308664815,
+  "uniform_com_in_dsk_m": [
+   5.162143224543126,
+   0.07633279115717209,
+   -2.3531088078382156
+  ],
+  "inertia_ratios": [
+   0.7304427204238656,
+   0.9474287411880834,
+   1.0
+  ],
+  "brillouin_radius_m": 225.55689965006678,
+  "GM_m3_s2": 2.68,
+  "density_kg_m3": 2025.3440801277964,
+  "site": {
+   "epoch_tdb_s": 900182062.6823841,
+   "face": 346,
+   "centroid_from_com_m": [
+    -63.30914322454313,
+    -78.17499945782383,
+    105.47910880783822
+   ],
+   "r_from_com_m": 145.75740307425983,
+   "r_from_dsk_origin_m": 141.8289364696468,
+   "gravity_m_s2": 9.525439259486157e-05,
+   "point_mass_at_com_m_s2": 0.00012614601922218585,
+   "point_mass_at_dsk_origin_m_s2": 0.00013323094290046796
+  },
+  "spin_from_spice": {
+   "omega_body_rad_s": [
+    -1.190514358522164e-05,
+    3.587339224598669e-05,
+    4.434235104208887e-05
+   ],
+   "period_h": 29.954726435480374,
+   "max_spin_share_of_accel": 0.009106768606852505,
+   "mean_slope_deg": 14.72365919879208,
+   "steeper30": 0.04876646091149747
+  },
+  "gravity_min_max_m_s2": [
+   8.163692044196507e-05,
+   9.578095581282156e-05
+  ],
+  "long_axis_body": [
+   0.9999965672930692,
+   0.001217204668162479,
+   0.0023203049096912048
+  ],
+  "point_mass_error_long_axis_1_2_4": {
+   "+": [
+    0.06788065294121193,
+    0.032492487692625964,
+    0.010255545662905778
+   ],
+   "-": [
+    0.3483427473169825,
+    0.0652037815533409,
+    0.014312114278635891
+   ]
+  },
+  "orbit_12h": {
+   "t0_tdb_s": 900182062.6823841,
+   "x0_m": [
+    347.3576254611028,
+    0.0,
+    0.0
+   ],
+   "v0_m_s": [
+    0.0,
+    0.0,
+    0.08783730013931694
+   ],
+   "x6h_m": [
+    218.5006452681472,
+    -4.846287558990942,
+    -254.5502928013708
+   ],
+   "x12h_m": [
+    -172.41500142673456,
+    27.032910805317133,
+    -322.72283451381367
+   ],
+   "v12h_m_s": [
+    0.07620798221305561,
+    0.001508387425365564,
+    -0.0359323538445894
+   ],
+   "attitude": "SPICE pxform J2000 -> APOPHIS_CK (the CK itself)"
+  }
+ },
+ "sources_note": "Horizons text carries a generation time, so its sha256 differs per download; the vectors are what count",
+ "bennu_orbit_b_full_dsk": {
+  "spacecraft_pm": {
+   "leg_dv_median_m_s": 0.00025211451644085894,
+   "arc_end_m": 33.767154444247375,
+   "plates": null
+  },
+  "spacecraft_poly": {
+   "leg_dv_median_m_s": 2.284090042232509e-05,
+   "arc_end_m": 4.983969559896758,
+   "plates": 12288
+  },
+  "particle_pm": {
+   "leg_dv_median_m_s": 0.00026549404769242907,
+   "arc_end_m": 14.702412329596102,
+   "plates": null
+  },
+  "particle_poly": {
+   "leg_dv_median_m_s": 4.328973836214407e-05,
+   "arc_end_m": 14.066365540413086,
+   "plates": 12288
+  }
+ }
+}

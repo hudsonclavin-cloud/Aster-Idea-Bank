@@ -50,7 +50,8 @@ const src42 = K.importClosing(sample42()), RA = K.run(src42, K.defaults()), RB =
   ok(Math.abs(num(t['Bulk density'].v) - RA.B.rho) < 0.6, 'density tile ' + t['Bulk density'].v);
   ok(Math.abs(num(t['Size'].v) - 2 * RA.B.Req) < 0.06 && t['Size'].c === 'measured', 'size tile ' + t['Size'].v);
   ok(Math.abs(num(t['Mean slope'].v) - RA.surface.stats.slope.mean) < 0.06 && t['Mean slope'].c === 'derived', 'mean slope ' + t['Mean slope'].v);
-  ok(Math.abs(num(t['Point mass wrong by'].v) - 100 * K.pmErrors(RA)[0].relative_error) < 0.006, 'point mass tile');
+  { const pe = 100 * K.pmErrors(RA)[0].relative_error; ok(Math.abs(num(t['Point mass wrong by'].v) - pe) < 0.005 * pe, 'point mass tile (3 significant figures)'); }
+  ok(/centre of mass/.test(t['Site gravity'].c + (await page.textContent('#siteBox'))) && Math.abs(num((await page.textContent('#siteBox')).match(/a point mass: ([0-9.]+)/)[1]) - RA.site.point_mass_m_s2 * 1e6) < 0.06, 'site point mass at the centre of mass');
   ok(t['Equilibria'].v === 'none' && t['Equilibria'].c === 'refused', 'Apophis equilibria refused');
   const site = await page.textContent('#siteBox');
   ok(site.includes('plate ' + RA.site.face) && site.includes('under the stand-off'), 'site box: ' + site.slice(0, 60));
@@ -133,6 +134,8 @@ const src42 = K.importClosing(sample42()), RA = K.run(src42, K.defaults()), RB =
   ok(/idea 42/.test(await imp(H41)), 'idea 41\'s handoff points to idea 42');
   const ed = JSON.parse(SAMPLE); ed.outputs.site.value.slope_deg += 2;
   ok(/Refused/.test(await imp(JSON.stringify(ed))), 'an edited handoff is refused');
+  const nosam = JSON.parse(H42); delete nosam.outputs.standoff_state.value.sam; await imp(H42);
+  ok(/Refused/.test(await imp(JSON.stringify(nosam))), 'a 42 handoff without its sam block is refused, not thrown (review)');
   ok(errors.length === 0, 'desktop console errors: ' + errors.join(' | '));
   await context.close();
 }

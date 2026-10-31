@@ -11,8 +11,10 @@ import crypto from 'node:crypto';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const HERE = path.dirname(new URL(import.meta.url).pathname);
-const { K, Lumpy, sample42 } = require('./load.cjs');
+const { K, Lumpy, sample42, deps } = require('./load.cjs');
 const O = JSON.parse(fs.readFileSync(path.join(HERE, 'oracle', 'oracle.json'), 'utf8'));
+// the independent review's own fixture (oracle/review.py): SPICE's CK attitude, the full DSKs, fresh Horizons vectors, scipy
+const RV = JSON.parse(fs.readFileSync(path.join(HERE, 'oracle', 'review.json'), 'utf8'));
 const DEG = Math.PI / 180, DAY = 86400;
 const close = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b} (tol ${tol})`);
 const rclose = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol * Math.abs(b), `${msg}: ${a} vs ${b} (rel tol ${tol})`);
@@ -253,6 +255,13 @@ test('reality: OSIRIS-REx in Orbital B (JPL Horizons), 20 two-hour legs and a 40
   close(mm(r.measured_scpolynone), 0.2480, 0.0005, 'polyhedron without sunlight: sunlight is the other half');
   close(r.measured_scpoly.arcEnd_m, 5.34, 0.05, '40-h arc, polyhedron'); close(r.measured_scpm.arcEnd_m, 33.77, 0.05, 'point mass');
   close(r.measuredpoly.arcEnd_m, 13.70, 0.05, 'particle GM, polyhedron'); close(r.measuredpm.arcEnd_m, 14.70, 0.05, 'point mass');
+  // the review's run (fresh Horizons vectors, scipy DOP853, the full 12,288-plate DSK): the point mass is shape-free, so it
+  // checks this module's Horizons excerpt, integrator and sunlight interpolation; the shape checks what the subsample costs
+  const ob = RV.bennu_orbit_b_full_dsk;
+  for (const [gm, k] of [['measured_sc', 'spacecraft'], ['measured', 'particle']]) {
+    rclose(r[gm + 'pm'].legDv_median_m_s, ob[k + '_pm'].leg_dv_median_m_s, 1e-5, k + ' point-mass legs vs the review'); close(r[gm + 'pm'].arcEnd_m, ob[k + '_pm'].arc_end_m, 0.01, k + ' point-mass arc');
+    rclose(r[gm + 'poly'].legDv_median_m_s, ob[k + '_poly'].leg_dv_median_m_s, 0.05, k + ' shape legs: 3,072 plates vs 12,288'); close(r[gm + 'poly'].arcEnd_m, ob[k + '_poly'].arc_end_m, 0.5, k + ' shape arc');
+  }
   // the reconstruction has an impulse in the 40-42 h leg: excluded, and visible
   const B = K.bodyModel(K.bennuCase(), Object.assign(K.defaults(), { gm: 'measured_sc' })), ti = K.tdbOfJd(ORB.jd[20]);
   const leg = K.fly(B, 'poly', ti, ORB.rel[20].slice(0, 3), ORB.rel[20].slice(3), 7200, { extra: (t) => K.sunlightTable(t) }), o = leg.out[1];
@@ -269,12 +278,19 @@ test('the chain: idea 42\'s committed handoff passes 42\'s own parser and this i
   close(s.steeper30, 0.04838, 0.00001, 'area steeper than 30 deg');
   const st = chain.site; assert.equal(st.face, 346); close(st.lat_deg, 46.645, 0.001, 'site lat'); close(st.lon_deg, -126.669, 0.001, 'site lon'); close(st.slope_deg, 7.126, 0.001, 'site slope');
   close(st.escape_up_m_s, 0.18554, 1e-5, 'escape straight up'); close(st.gravity_mag_m_s2, 9.5254e-5, 1e-9, 'site gravity');
+  // the point mass sits where the field's mass centre is, 145.76 m from the site (not the DSK origin's 141.83 m: 133.2, the shipped bug)
+  close(st.radius_com_m, 145.757, 0.001, 'site from the centre of mass'); close(st.point_mass_m_s2, 1.26146e-4, 1e-9, 'a point mass there: 32% over the shape');
   // the stand-off direction really crosses that plate
   assert.equal(K.rayFace(chain.P, chain.B.att.C.slice(0, 3).map((_, i) => dot(chain.B.att.C.slice(3 * i, 3 * i + 3), src42.standoff.r))), 346);
   assert.equal(K.codes(chain.own), K.codes([{ code: 'insufficient_data', applies_to: 'density' }, { code: 'insufficient_data', applies_to: 'inertia' }, { code: 'out_of_envelope', applies_to: 'equilibria' }, { code: 'insufficient_data', applies_to: 'resolution' }]));
   assert.equal(chain.carried.length, 10); assert.ok(chain.carried.some((r) => r.from === '42-closing-in' && r.applies_to === 'gravity_field'));
-  // along Apophis's long axis a point mass is 6.8% off at the Brillouin sphere, 3.2% at twice it and 1.0% at four times
-  const pe = K.pmErrors(chain); close(pe[0].relative_error, 0.06788, 0.00001, 'pm error at 1x'); close(pe[2].relative_error, 0.03249, 0.00001, 'at 2x'); close(pe[3].relative_error, 0.01026, 0.00001, 'at 4x');
+  // a point mass on the Brillouin sphere: 6.8% off at one end of Apophis's long axis but 34.8% at the other (the review's
+  // fixture computes both with polyhedral-gravity); the worst of 64 directions is handed on: 34.8%, 6.6% at 2x, 1.4% at 4x
+  const pe = K.pmErrors(chain), oe = RV.apophis.point_mass_error_long_axis_1_2_4, ax = chain.P.principal.vectors;
+  const sg = Math.sign(ax[0] * RV.apophis.long_axis_body[0] + ax[3] * RV.apophis.long_axis_body[1] + ax[6] * RV.apophis.long_axis_body[2]);
+  [0, 2, 3].forEach((k, j) => { rclose(pe[k].long_axis_ends[sg > 0 ? 0 : 1], oe['+'][j], 1e-6, 'long axis + end at ' + pe[k].r_over_brillouin); rclose(pe[k].long_axis_ends[sg > 0 ? 1 : 0], oe['-'][j], 1e-6, 'long axis - end'); });
+  close(pe[0].relative_error, 0.34834, 0.00001, 'worst at 1x'); close(pe[2].relative_error, 0.06597, 0.00001, 'worst at 2x'); close(pe[3].relative_error, 0.01431, 0.00001, 'worst at 4x');
+  assert.ok(pe.every((q) => q.relative_error >= Math.max(...q.long_axis_ends)), 'the worst is at least each end');
 });
 
 test('refusals the inputs raise, and edited handoffs', () => {
@@ -295,6 +311,17 @@ test('refusals the inputs raise, and edited handoffs', () => {
   assert.match(edit((h) => { h.outputs.environment.value.gravity_at_standoff_m_s2 *= 1.01; }).refusal.reason, /gravity at the stand-off/, 'only the stand-off gravity edited');
   assert.equal(edit((h) => { h.outputs.standoff_state.value.r_m[0] += 500; }).refusal.code, 'invalid_input', 'stand-off moved');
   assert.equal(edit((h) => { h.refusals = h.refusals.filter((r) => r.applies_to !== 'gravity_field'); }).refusal.code, 'invalid_input', 'refusal dropped');
+  // each consistency check alone (the review found escape speed and Hill radius edits passed unseen by the tests)
+  assert.match(edit((h) => { h.outputs.body.value.escape_speed_m_s *= 1.01; }).refusal.reason, /escape speed/, 'only the escape speed edited');
+  assert.match(edit((h) => { h.outputs.body.value.hill_radius_m *= 1.01; }).refusal.reason, /Hill radius/, 'only the Hill radius edited');
+  assert.match(edit((h) => { h.outputs.body.value.bulk_density_kg_m3 *= 1.01; }).refusal.reason, /density/, 'only the density edited');
+  assert.match(edit((h) => { h.outputs.body.value.sun_distance_m *= 1.01; }).refusal.reason, /Sun distance/, 'only the Sun distance edited');
+  // a missing block is refused, not thrown (it threw a TypeError before the review); a swapped body is refused
+  assert.equal(edit((h) => { delete h.outputs.standoff_state.value.sam; }).refusal.code, 'invalid_input', 'no sam block');
+  assert.equal(edit((h) => { h.outputs.body.value.GM_range_m3_s2 = 'x'; }).refusal.code, 'invalid_input', 'GM range not two numbers');
+  assert.match(edit((h) => { h.outputs.body.value.designation = '101955'; }).refusal.reason, /not the designation/, 'designation swapped');
+  const swapped = edit((h) => { h.outputs.body.value.designation = '101955'; h.outputs.body.value.name = '101955 Bennu'; });
+  assert.equal(K.run(swapped, {}).refusal.applies_to, 'shape', 'Bennu\'s shape under Apophis\'s radius');
   assert.match(K.importClosing(JSON.parse(fs.readFileSync(path.join(HERE, '..', '41-signal', 'handoff.json'), 'utf8'))).refusal.what_would_help, /idea 42/);
   assert.equal(K.importClosing('{not json').refusal.code, 'invalid_input');
 });
@@ -311,6 +338,49 @@ test('the handoff: the sample is what its inputs give; a round trip passes; edit
   const hb = K.buildHandoff(bennu, '2026-10-31T12:00:00Z'), pb = K.parseHandoff(JSON.parse(JSON.stringify(hb)));
   assert.ok(!pb.refusal, 'Bennu round trip ' + JSON.stringify(pb.refusal)); assert.equal(hb.outputs.equilibria.value.points.length, 8);
   close(hb.outputs.orbit_b.value.polyhedron.leg_dv_median_m_s * 1000, 0.0427, 0.0002, 'handed on');
+});
+
+test('review: the site under SPICE\'s own attitude, a tumbling orbit against SPICE, and the surface formulas on a spinning sphere', () => {
+  // Apophis's attitude straight from the CK (SPICE pxform), not from this kernel's Euler integration: the same plate
+  const A = RV.apophis, st = chain.site;
+  close(chain.P.volume, A.volume_m3, 1e-3, 'volume'); close(chain.B.rho, A.density_kg_m3, 1e-6, 'density');
+  assert.equal(st.face, A.site.face, 'the plate under the stand-off');
+  rclose(st.gravity_mag_m_s2, A.site.gravity_m_s2, 1e-8, 'site gravity (polyhedral-gravity)');
+  rclose(st.radius_com_m, A.site.r_from_com_m, 1e-9, 'from the centre of mass'); rclose(st.radius_m, A.site.r_from_dsk_origin_m, 1e-9, 'from the DSK origin');
+  rclose(st.point_mass_m_s2, A.site.point_mass_at_com_m_s2, 1e-9, 'point mass at the centre of mass');
+  assert.ok(Math.abs(st.point_mass_m_s2 / A.site.point_mass_at_dsk_origin_m_s2 - 1) > 0.05, 'not at the DSK origin (5.6% more)');
+  // the surface with the spin differentiated from SPICE's attitude: same mean slope, nearly the same steep share
+  close(chain.surface.stats.slope.mean, A.spin_from_spice.mean_slope_deg, 0.002, 'mean slope'); close(chain.surface.stats.steeper30, A.spin_from_spice.steeper30, 0.001, 'share over 30 deg');
+  close(chain.B.att.period_h, A.spin_from_spice.period_h, 0.01, 'instantaneous period');
+  // an orbit about the tumbling shape for 12 h: this kernel (Euler's equations, its field, idea 40's integrator) against
+  // SPICE's attitude, polyhedral-gravity and scipy: millimetres apart (a frozen attitude puts it hundreds of metres off)
+  const o = A.orbit_12h, fl = K.fly(chain.B, 'poly', o.t0_tdb_s, o.x0_m, o.v0_m_s, 12 * 3600, { samples: 2 });
+  assert.ok(norm(sub(fl.out[1].x, o.x6h_m)) < 0.01 && norm(sub(fl.out[2].x, o.x12h_m)) < 0.01, 'orbit vs SPICE: ' + norm(sub(fl.out[2].x, o.x12h_m)) + ' m');
+  // Bennu's Hill radius, d (GM / 3 GM_sun)^(1/3), from the Horizons row and Aster's GM_sun
+  const d = norm(K.orbitBData.bennuHelio[0].slice(0, 3)); rclose(bennu.B.hill_m, d * Math.cbrt(bennu.B.GM / (3 * deps.constants.gmSun_m3_s2)), 1e-12, 'Bennu Hill radius');
+  // the surface formulas on a sphere spun fast (centrifugal half of gravity at the equator), against closed forms
+  const P = Lumpy.prepare(icosphere(3, 100)); P.cacheKey = 'test:spinning-icosphere';
+  const GM = P.volume, w = Math.sqrt(0.5 * GM / 100 ** 3), B = { P, Grho: 1, GM, att: { w: [0, 0, w], wdot: [0, 0, 0] } }, sf = K.surface(B);
+  const cen = [], q = []; for (let f = 0; f < P.nf; f++) { const x = [P.FC[3 * f], P.FC[3 * f + 1], P.FC[3 * f + 2]]; cen.push(x); q.push(0.5 * w * w * (x[0] ** 2 + x[1] ** 2)); }
+  let A0 = 0, qbar = 0; for (let f = 0; f < P.nf; f++) { A0 += P.FA[f]; qbar += P.FA[f] * q[f]; } qbar /= A0;
+  let worstH = 0, poleUp = 0, eqDown = 0;
+  for (let f = 0; f < P.nf; f++) {
+    const r = norm(cen[f]), vrot = w * Math.hypot(cen[f][0], cen[f][1]), U = GM / r;
+    rclose(sf.vEsc[f], Math.sqrt(2 * U), 1e-3, 'escape speed sqrt(2GM/r)');
+    close(sf.vMin[f], sf.vEsc[f] - vrot, 1e-9, 'launched along the spin: the surface speed helps');
+    rclose(sf.vUp[f], Math.sqrt(2 * U - vrot * vrot), 0.01, 'straight up: the surface speed is sideways');
+    const hExp = -(q[f] - qbar) / sf.accel[f]; worstH = Math.max(worstH, Math.abs(sf.height[f] - hExp));   // the equator is low
+    if (Math.abs(cen[f][2]) > 0.95 * r) poleUp += sf.height[f] > 0; if (Math.abs(cen[f][2]) < 0.1 * r) eqDown += sf.height[f] < 0;
+  }
+  assert.ok(worstH < 0.5 && poleUp > 0 && eqDown > 0, 'heights against -(w^2 rho^2/2 - mean)/a: ' + worstH);
+  // the statistics against the per-plate slopes, counted here: thresholds and 5-degree bins
+  const c = chain.surface, tot = c.stats.area_m2, frac = (fn) => { let a = 0; for (let f = 0; f < chain.P.nf; f++) if (fn(c.slope[f])) a += chain.P.FA[f]; return a / tot; };
+  close(c.stats.steeper30, frac((x) => x > 30), 1e-12, 'over 30'); close(c.stats.steeper40, frac((x) => x > 40), 1e-12, 'over 40');
+  c.stats.slopeHist5deg.forEach((h, k) => close(h, frac((x) => Math.min(18, Math.floor(x / 5)) === k), 1e-12, 'bin ' + k));
+  // the orbit classifier: a bound start that swings past the escape radius is not an escape; an unbound one is
+  const rB = 1.5 * bennu.P.rMax, eB = 1.5 * rB;
+  assert.notEqual(K.orbitOne(bennu.B, rB, 90, 0.5, { vScale: 1.2, escR: eB }).outcome, 'escape', 'bound (apoapsis 2.6 r) is not an escape');
+  assert.equal(K.orbitOne(bennu.B, rB, 90, 0.5, { vScale: 1.5, escR: eB }).outcome, 'escape', 'unbound escapes');
 });
 
 /** An icosphere of radius R subdivided n times (a test body with a known answer). */
