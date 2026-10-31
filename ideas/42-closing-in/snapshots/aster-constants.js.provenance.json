@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/39-lamberts-road/snapshots/aster-constants.js",
+  "commit": "ba8a1a266011609db677f7403e901d92cd2a6f1f",
+  "commitDate": "2026-10-31T20:12:42+00:00",
+  "pathLastChanged": "80204bc 2026-10-31T15:55:02+00:00",
+  "committedBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "readBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "sourceSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "sourceBytes": 1986,
+  "copiedAt": "2026-10-31T20:29:26.035Z",
+  "mode": "copy",
+  "note": "Aster constants as ideas 39-41 use them (Sun GM, au, TDB-UTC); this module reads gmSun_m3_s2, au_m and tdbMinusUtc_s",
+  "readMatchesCommitted": true,
+  "writtenSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "writtenBytes": 1986
+}

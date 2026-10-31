@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closing In: arriving at the asteroid</title>
+<meta name="description" content="The last two months to the asteroid: the braking burns that take out the arrival speed, the waypoints of a slow approach, the asteroid's first appearance in the camera, and holding station near a body whose gravity is weaker than sunlight. Checked against OSIRIS-REx's flown approach to Bennu.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Closing In</h1>
+  <p class="lede">Idea 40 delivered the spacecraft at the asteroid with its arrival speed still on it. This page flies the last two months: the braking burns that take that speed out, a slow approach through waypoints, the asteroid's first appearance in the camera, and the spacecraft holding station near a body whose gravity is weaker than sunlight. The approach plan is OSIRIS-REx's at Bennu (AAS 19-035), and the page re-flies that approach from JPL Horizons' reconstruction to show how close it comes.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 12 of 20. Previous: <a href="../41-signal/index.html">41 Signal</a>, the comms timeline. Next: 43 Lumpy, the asteroid's gravity field (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Arrival</h2>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+    <span class="lab" id="lab-case">Case</span>
+    <div class="seg" role="group" aria-labelledby="lab-case"><button type="button" data-case="chain">The chain: Apophis</button><button type="button" data-case="orex2018">OSIRIS-REx at Bennu, 2018</button></div>
+
+    <h2 class="sub">The spacecraft</h2>
+    <span class="lab" id="lab-craft">Propulsion</span>
+    <div class="seg" role="group" aria-labelledby="lab-craft"><button type="button" data-craft="near">NEAR Shoemaker (NSSDCA)</button><button type="button" data-craft="custom">Custom</button></div>
+    <div class="grid2">
+      <div class="ctl"><label for="dryIn">Dry mass <small>kg</small></label><input id="dryIn" type="number" min="50" max="20000" step="1" inputmode="decimal"></div>
+      <div class="ctl"><label for="propIn">Propellant as built <small>kg</small></label><input id="propIn" type="number" min="0" max="50000" step="1" inputmode="decimal"></div>
+      <div class="ctl"><label for="thrIn">Main engine <small>N</small></label><input id="thrIn" type="number" min="0.01" max="50000" step="1" inputmode="decimal"></div>
+      <div class="ctl"><label for="ispIn">Specific impulse <small>s</small></label><input id="ispIn" type="number" min="100" max="5000" step="1" inputmode="decimal"></div>
+    </div>
+    <span class="lab" id="lab-tanks">Tanks</span>
+    <div class="seg" role="group" aria-labelledby="lab-tanks"><button type="button" data-tanks="sized">Sized to the job</button><button type="button" data-tanks="asbuilt">As built</button></div>
+    <label class="lab" for="tcmSel">Cruise corrections before arrival <small>(idea 40's TCM budget)</small></label>
+    <select id="tcmSel"><option value="p99">99th percentile</option><option value="p9973">99.73th percentile</option><option value="mean">mean</option><option value="none">none</option></select>
+    <div class="ctl"><div class="ctl-head"><label for="amIn">Sunlit area per mass <small>m²/kg</small></label><input id="amIn" type="number" min="0" max="0.2" step="0.0001" inputmode="decimal"></div>
+      <input id="amRange" type="range" min="0" max="0.05" step="0.0001" aria-label="Sunlit area per mass, square metres per kilogram">
+      <div class="btnrow"><button type="button" id="amApex">OSIRIS-APEX (AAS 24-063)</button><button type="button" id="amFit">Fitted to Orbital A</button><button type="button" id="amZero">No sunlight</button></div></div>
+
+    <h2 class="sub">The asteroid</h2>
+    <span class="lab" id="lab-gm">Mass</span>
+    <div class="seg" role="group" aria-labelledby="lab-gm"><button type="button" data-gm="measured">Measured or published</button><button type="button" data-gm="density">From a density</button></div>
+    <div id="gmCaseRow"><span class="lab" id="lab-gmcase">Apophis GM (AAS 24-063: 1.36 to 4.37 m³/s²)</span>
+      <div class="seg" role="group" aria-labelledby="lab-gmcase"><button type="button" data-gmcase="min">Low 1.36</button><button type="button" data-gmcase="best">Best 2.68</button><button type="button" data-gmcase="max">High 4.37</button></div></div>
+    <div class="ctl" id="densRow"><div class="ctl-head"><label for="densIn">Bulk density <small>kg/m³</small></label><input id="densIn" type="number" min="200" max="8000" step="10" inputmode="decimal"></div>
+      <input id="densRange" type="range" min="500" max="4000" step="10" aria-label="Bulk density, kilograms per cubic metre"></div>
+
+    <h2 class="sub">The approach</h2>
+    <span class="lab" id="lab-tpl">Plan</span>
+    <div class="seg" role="group" aria-labelledby="lab-tpl"><button type="button" data-tpl="orex">OSIRIS-REx's waypoints</button><button type="button" data-tpl="direct">One braking leg</button></div>
+    <div class="ctl"><div class="ctl-head"><label for="fbIn">First braking burn at <small>km</small></label><input id="fbIn" type="number" min="100" max="5000000" step="1000" inputmode="decimal"></div>
+      <input id="fbRange" type="range" min="2" max="6.5" step="0.01" aria-label="Range of the first braking burn (log scale)"></div>
+    <div class="ctl" id="directRow"><div class="ctl-head"><label for="ddIn">That leg lasts <small>days</small></label><input id="ddIn" type="number" min="1" max="120" step="1" inputmode="numeric"></div></div>
+    <div class="grid2">
+      <div class="ctl"><label for="loopIn">Maneuver design lead <small>days</small></label><input id="loopIn" type="number" min="0" max="60" step="0.5" inputmode="decimal"></div>
+      <div class="ctl"><label for="lateIn">Late update <small>h</small></label><input id="lateIn" type="number" min="0" max="720" step="1" inputmode="decimal"></div>
+    </div>
+
+    <h2 class="sub">Stand-off</h2>
+    <div class="ctl"><div class="ctl-head"><label for="soIn">Distance <small>km</small></label><input id="soIn" type="number" min="0.1" max="100000" step="0.1" inputmode="decimal"></div>
+      <input id="soRange" type="range" min="-0.3" max="2" step="0.01" aria-label="Stand-off distance (log scale)"></div>
+    <div class="grid2">
+      <div class="ctl"><label for="latIn">Solar latitude <small>deg</small></label><input id="latIn" type="number" min="-90" max="90" step="0.1" inputmode="decimal"></div>
+      <div class="ctl"><label for="lonIn">Solar longitude <small>deg</small></label><input id="lonIn" type="number" min="-180" max="180" step="0.1" inputmode="decimal"></div>
+    </div>
+    <div class="btnrow"><button type="button" id="soOrex">OSIRIS-REx's arrival point</button><button type="button" id="soSun">Sunward</button><button type="button" id="soTerm">Terminator</button></div>
+    <div class="grid2">
+      <div class="ctl"><label for="boxIn">Deadband <small>m</small></label><input id="boxIn" type="number" min="1" max="1000000" step="10" inputmode="decimal"></div>
+      <div class="ctl"><label for="stayIn">Stay <small>days</small></label><input id="stayIn" type="number" min="0" max="3650" step="1" inputmode="numeric"></div>
+    </div>
+    <div class="checks"><label><input type="checkbox" id="scanChk"> Scan orbits for 30 days</label></div>
+    <div class="btnrow"><button type="button" id="resetBtn">Reset</button></div>
+    <p class="note" id="runNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-res">
+      <h2 id="h-res">The approach and the stand-off</h2>
+      <div id="resLine" class="small"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+
+    <section class="card" aria-labelledby="h-rv">
+      <h2 id="h-rv">Speed against distance: how fast it closes</h2>
+      <canvas id="rvChart" class="chart" role="img" aria-label="Speed relative to the asteroid against distance from it, both logarithmic: this plan, OSIRIS-REx as flown to Bennu, and JPL's planned OSIRIS-APEX approach to Apophis, with lines of one day, one week and one month to go."></canvas>
+      <ul class="legend" id="rvLegend"></ul>
+      <p class="chart-cap" id="rvCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-rt">
+      <h2 id="h-rt">Distance against time</h2>
+      <canvas id="rtChart" class="chart" role="img" aria-label="Distance from the asteroid, logarithmic, against days from the first braking burn, with each burn, the first sight of the asteroid in the camera, and the stand-off marked."></canvas>
+      <ul class="legend" id="rtLegend"></ul>
+      <p class="chart-cap" id="rtCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-f">
+      <h2 id="h-f">What pulls on it near the asteroid</h2>
+      <canvas id="fChart" class="chart" role="img" aria-label="Accelerations against distance from the asteroid, both logarithmic: the asteroid's gravity, sunlight, and the Sun's tide, with the surface, the dark-side equilibrium, the Hill radius and the stand-off marked."></canvas>
+      <ul class="legend" id="fLegend"></ul>
+      <p class="chart-cap" id="fCap"></p>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-geo">
+    <h2 id="h-geo">The corridor, and holding station</h2>
+    <div class="twocharts">
+      <div><canvas id="geoChart" class="chart" role="img" aria-label="The approach seen from the asteroid's orbit pole: direction in the Sun anti-momentum frame (the Sun up), distance on a logarithmic radius, burns marked."></canvas>
+        <p class="chart-cap" id="geoCap"></p></div>
+      <div><canvas id="dbChart" class="chart" role="img" aria-label="Holding station: distance from the hold point in metres against days, with the deadband's wall and each station-keeping burn."></canvas>
+        <p class="chart-cap" id="dbCap"></p></div>
+    </div>
+    <div id="scanBox"></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-burns">
+    <h2 id="h-burns">Burn by burn</h2>
+    <p class="small">Each burn is aimed at the next waypoint's position at its time, under the asteroid's pull, the Sun's tide and sunlight. Tap a row to mark it on the charts.</p>
+    <div class="tablewrap"><table class="stack" id="burnTable"><thead><tr><th>Burn</th><th>When (UTC)</th><th>Distance</th><th>Sun lat / lon</th><th>Speed before → after</th><th>Δv</th><th>Engine</th><th>Propellant</th><th>Burn time</th></tr></thead><tbody></tbody></table></div>
+    <h3>Mass ledger</h3>
+    <div class="tablewrap"><table class="stack" id="ledgerTable"><thead><tr><th>Step</th><th>Δv</th><th>Mass after</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Against the oracles</h2>
+    <p class="small">Computed by this page's kernel, live, and set beside independent numbers: OSIRIS-REx's approach maneuvers as AAS 19-035 tabulates them, JPL Horizons' reconstruction of the flight, JPL's Small-Body Database, and Horizons' own magnitudes.</p>
+    <div class="tablewrap"><table class="stack" id="checkTable"><thead><tr><th>Check</th><th>Independent</th><th>This page</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 41's handoff (or one from this page); export the spacecraft at stand-off for module 43. Every number carries its units, a confidence class and its source; refusals travel down the chain.</p>
+    <label class="lab" for="importText">Paste a handoff</label>
+    <textarea id="importText" rows="4" spellcheck="false" placeholder='{"handoff":"long-way-round","from":"41-signal",...}'></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import</button>
+      <label class="filebtn"><input type="file" id="importFile" accept="application/json,.json"> <span>Load a file</span></label>
+      <button type="button" id="copyBtn">Copy handoff</button>
+      <button type="button" id="dlBtn">Download</button>
+      <button type="button" id="linkBtn">Copy a link</button>
+    </div>
+    <div id="hoStatus" class="status" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <details><summary>The forces, and the frame</summary>
+      <p class="small">Everything is flown relative to the asteroid in non-rotating ICRF axes. The asteroid itself goes round the Sun on a conic (idea 39's Kepler propagator) from the state idea 40 handed on. On the spacecraft: the asteroid as a point mass; the Sun's tide, exactly (its pull on the spacecraft minus its pull on the asteroid); and sunlight on a flat absorber of the given area per mass, with idea 40's solar pressure (luminosity over 4π r² c), switched off in the asteroid's shadow. Integration is idea 40's Dormand-Prince 5(4), unmodified. Directions are shown in AAS 19-035's Sun Anti-Momentum frame: x toward the Sun, z against the asteroid's orbital angular momentum; solar latitude and longitude are angles in it, and the phase angle is the angle from x.</p></details>
+    <details><summary>The approach</summary>
+      <p class="small">The arrival idea 40 hands on is aimed at the asteroid's centre at its arrival speed. Flown backwards (without the asteroid's pull, which bends a km/s path by about 1e-8 rad), it gives the incoming arc; the first braking burn is where that arc is at the chosen distance. Each burn then aims at the next waypoint, a distance, solar latitude and longitude at a time (OSIRIS-REx's, from AAS 19-035 Table 1, at the same days after its first burn; AAM-2a was waived in flight, so it is left out), solved by Newton iteration to 1 m. The last burn stops the spacecraft at the stand-off point, which is fixed in the rotating frame. Burns are impulsive for aiming; their lengths come from the rocket equation at the main engine's thrust (above 1 m/s) or the small thrusters' (below), and the distance covered while braking from the closed form for a constant-thrust burn.</p></details>
+    <details><summary>Seeing it, and knowing where it is</summary>
+      <p class="small">The asteroid's brightness on the way in is the IAU H-G law that Horizons uses (H and G from JPL's Small-Body Database); the camera is taken to see it once it is as bright as Bennu was when OSIRIS-REx's PolyCam first imaged it (17 August 2018, V 13.08 by the same law). After that the direction to it is known to the camera's pixel (13.5 µrad) times the centroid's 0.1 pixel (AAS 19-035). Before it, the asteroid's position is as uncertain as its orbit (Horizons' 1-sigma for Apophis at the arrival) and the spacecraft's as idea 40's navigation left it. If the asteroid appears later than the time the ground needs to design a burn (5 to 7 days in AAS 19-035), the burn would be aimed blind and the page refuses it.</p></details>
+    <details><summary>Holding station</summary>
+      <p class="small">A point fixed in the rotating frame needs an acceleration ω̇ × r + ω × (ω × r); the control must supply the difference between that and what gravity, the tide and sunlight give. Its size per day is the station-keeping cost. In a deadband, the spacecraft drifts across the box and is turned back at the wall it is pushed out of: a burn of 2√(2aL) every 2√(2L/a) for a box of width L. The page flies that deadband under every force and compares the cost. Near a small asteroid sunlight is stronger than gravity beyond a few kilometres, which is why OSIRIS-REx and Hayabusa2 hovered or flew slow passes rather than orbit there, and why the orbits that last are terminator orbits close in.</p></details>
+    <details><summary>The Hill sphere and the regimes</summary>
+      <p class="small">The Hill radius d (μ/3μ☉)^(1/3) is where the Sun's tide equals the asteroid's pull on the Sun line. AAS 24-063 scales the problem by d (μ/μ☉)^(1/3) and measures sunlight by β̃; on the night side gravity balances sunlight and the tide at 1/x² = β̃ + 3x (an unstable equilibrium). The orbit scan starts circular orbits at a range of radii in the terminator plane and in the noon-midnight plane and flies each for 30 days.</p></details>
+    <details><summary>What it does not do</summary>
+      <p class="small">The asteroid is a point mass (its shape is module 43's). No planets: the page refuses where the Earth's tide passes 1% of the Sun's, as at Apophis in April 2029. Sunlight on a flat absorber, not OSIRIS-REx's ten-plate model with thermal re-radiation; no momentum dumps, no maneuver execution errors, no navigation filter. One specific impulse for every engine. The spacecraft is borrowed: NEAR Shoemaker's engine and tanks, OSIRIS-APEX's area per mass.</p></details>
+  </section>
+</main>
+<footer><p class="small">Idea 42 of the Aster Idea Bank: an idea-bank prototype, not Aster's audited code. Sources: AAS 19-035 and AAS 24-063 (NASA NTRS), JPL Horizons and the Small-Body Database, NASA NSSDCA, NIST CODATA, ideas 39 to 41.</p></footer>
+
+<script src="snapshots/lambert.js"></script>
+<script src="snapshots/coast.js"></script>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/nav-sources.js"></script>
+<script src="snapshots/horizons-approach.js"></script>
+<script src="snapshots/bodies.js"></script>
+<script src="snapshots/approach-sources.js"></script>
+<script src="snapshots/signal-handoff.js"></script>
+<script src="closing.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

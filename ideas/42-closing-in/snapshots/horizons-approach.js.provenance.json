@@ -1,0 +1,22 @@
+{
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "path": "Horizons API queries in oracle/fetch-sources.sh (vec/tvec/obs lines)",
+  "license": "US Government work (NASA/JPL), public domain",
+  "sourceSha256": "5810656fba239996478f1c0434102f3f07cec964b514488d3717d47a75e0b53e",
+  "sourceFiles": {
+    "orex-daily.txt": "a9b6d63165b507ca758a8d9a0765058e8fdf3f17e4b8329bd2ccdf943bb66f33",
+    "bennu-daily.txt": "b5a08e83b0164bac6644a5ded5ad98b7f5fd4d72693f1e1f14291e318cb0e24f",
+    "orex-orbita.txt": "8e100d0da9b625e0795af10cb33164e0250d7f3a83e1bfe0d2f433ca6791296b",
+    "bennu-orbita.txt": "c5da170ef609e624f29e5ea60bc7d178d7a5c6033c5a6500369b84dcc6c4d2f6",
+    "orex-burns.txt": "53a8c2b335480e10c17a006ecdafd74d2603911c5200528faa01ae1442449262",
+    "bennu-burns.txt": "fbadb15f7b146d636b28478be876804c1acfba95f354dc812fcd329895995fd7",
+    "apex-apophis.txt": "0ba8a808fe302031193ea027ffdbcdd0c825b775a985f968e07b909f82249a72",
+    "apophis-arrival.txt": "7bf98fe865a7aca63cbf2e39a1ab1575687e9e793c49adfcc3caf011d8e45bb1",
+    "bennu-from-orex.txt": "7dd54fcf89c7d3ec18b764a6ee8accdb4b9ad1a15e955ecaa1d8175baff80828",
+    "apophis-from-earth.txt": "7310ac65e00df516d681b45991136c36b936842294b77a18abf5f58d49bb56ef"
+  },
+  "note": "derived by build-data.mjs: Horizons km and km/s converted to m and m/s, relative states kept to 0.1 mm and 1e-10 m/s, heliocentric ones to 1 m and 1e-6 m/s, Orbital A every second hour; observer tables reduced to [jd UT, APmag, r, delta, phase]; nothing else changed",
+  "writtenSha256": "f20e1b19d7a23361c3bc8c4fc5d8a169236d7e823d2843ce516a213ea698357a"
+}

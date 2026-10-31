@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/coast.js",
+  "commit": "ba8a1a266011609db677f7403e901d92cd2a6f1f",
+  "commitDate": "2026-10-31T20:12:42+00:00",
+  "pathLastChanged": "000758c 2026-10-31T18:47:55+00:00",
+  "committedBlob": "4cee52c8e28a32d52218031625302900a85adb03",
+  "readBlob": "4cee52c8e28a32d52218031625302900a85adb03",
+  "sourceSha256": "60c4cd64731513f80e2b660932882bab3adf2d04e6cbf359eb78691721f14639",
+  "sourceBytes": 87389,
+  "copiedAt": "2026-10-31T20:29:25.960Z",
+  "mode": "copy",
+  "note": "idea 40's committed kernel, used unmodified for its Dormand-Prince 5(4) integrator dopri() (exported at the top level; no ephemerides are loaded)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "60c4cd64731513f80e2b660932882bab3adf2d04e6cbf359eb78691721f14639",
+  "writtenBytes": 87389
+}

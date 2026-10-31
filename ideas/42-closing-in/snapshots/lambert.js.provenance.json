@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/39-lamberts-road/lambert.js",
+  "commit": "ba8a1a266011609db677f7403e901d92cd2a6f1f",
+  "commitDate": "2026-10-31T20:12:42+00:00",
+  "pathLastChanged": "0ade548 2026-10-31T16:36:12+00:00",
+  "committedBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "readBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "sourceSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "sourceBytes": 67306,
+  "copiedAt": "2026-10-31T20:29:25.877Z",
+  "mode": "copy",
+  "note": "idea 39's committed kernel, used unmodified: its two-body propagate() flies the asteroid about the Sun (the Sun's tide on the approach is computed from it), elementsOf() and the date helpers",
+  "readMatchesCommitted": true,
+  "writtenSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "writtenBytes": 67306
+}

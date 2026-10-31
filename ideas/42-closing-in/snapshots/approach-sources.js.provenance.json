@@ -1,0 +1,22 @@
+{
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "repo": "https://ntrs.nasa.gov (AAS 19-035, AAS 24-063); https://nssdc.gsfc.nasa.gov; https://www.nasa.gov (press kit); https://ssd.jpl.nasa.gov/horizons/manual.html; https://physics.nist.gov",
+  "path": "NTRS 20190002612 Tables 1-3 and pp. 4-15; NTRS 20240000812 Tables 2-3 and eqs. (1)-(3); NSSDCA 1996-008A, 2016-055A, 2007-043A; osiris-rex_press_kit_0.pdf p. 3; Horizons manual \"Magnitude laws\"; NIST CODATA 2022 G",
+  "license": "NASA and NIST works are US Government works (public domain); AAS papers on NTRS are NASA-funded works posted by NASA",
+  "sourceSha256": "0f538a60c65613a125c0e0391755aa1d0d6726e17f54752ec929a056a87ef283",
+  "documents": {
+    "aas19-035.pdf": "07de13deb67999f5fb20220144f28dea0a0b0f5a5806566733b8aea0b366114b",
+    "aas24-063.pdf": "7bc230b832aac5acf04aecc850e98ccbb9381e00616708aaded576361418ec7b",
+    "orex-presskit.pdf": "0b5261bc6fdb4ee3f0ddf1c6542434fcfca15dc9dbb70dab9f6c0ac3b652b782",
+    "nssdc-1996-008A.html": "acdff5d1fb810032a351263e39a878da01a11ccab1f4ea65300fd1d80d78be5b",
+    "nssdc-2016-055A.html": "58b9b0f55a23c35a5bc9d040512d72b4bab5378b0ab21a1b65a87e95bf8d7126",
+    "nssdc-2007-043A.html": "ebe6359cc1fe7b7578f68d3f5e4ef8cc508aedaa95af2a317a84e7845e6caf34",
+    "horizons-manual.html": "be45b0137b37068c48760bbaf306f52a72c10239c175ba91119a30eb30612a81",
+    "nist-G.html": "ffb0970f93fc3477ad82010f3a06afde759cf2d34c26c54b24d0345bdfcc2f07",
+    "horizons-record-64.txt": "8493906c32f91a8a8fcec237b293fe76f617cb199fef8c7c1a884abce874e047",
+    "horizons-record-37.txt": "afc1c48e775614e93db08b7edd37eaa86cae452dce1c580e99e858570b499a70"
+  },
+  "note": "hand-transcribed by build-data.mjs (values typed from the documents, page and table cited per key); the H-G phase-function coefficients are from secondary knowledge of Bowell et al. (1989) and are pinned against Horizons' APmag by the tests",
+  "writtenSha256": "c6195d2d211b67d7968990d53e8831660fb4f3c43c4844f333e7f127deed7402"
+}

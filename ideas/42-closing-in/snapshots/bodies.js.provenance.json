@@ -1,0 +1,10 @@
+{
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "repo": "https://ssd-api.jpl.nasa.gov/sbdb.api",
+  "path": "sbdb.api?sstr={99942,101955,162173,25143,433,65803}&phys-par=1",
+  "license": "US Government work (NASA/JPL), public domain",
+  "sourceSha256": "67efe2128babb8513c3513306b217fcc66bc9f6dfa2c1751b231f0fc3865ed75",
+  "note": "derived by build-data.mjs: phys_par values and refs per body; GM converted from km^3/s^2 to m^3/s^2, diameter km to m, density g/cm^3 to kg/m^3",
+  "writtenSha256": "50eff9992943a81b453d2d4dd92f8a13e3153f750f981a67264c7ddd55a00eeb"
+}

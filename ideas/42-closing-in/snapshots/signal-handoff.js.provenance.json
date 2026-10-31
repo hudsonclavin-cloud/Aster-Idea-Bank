@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/41-signal/handoff.json",
+  "commit": "ba8a1a266011609db677f7403e901d92cd2a6f1f",
+  "commitDate": "2026-10-31T20:12:42+00:00",
+  "pathLastChanged": "c5f97f6 2026-10-31T20:12:28+00:00",
+  "committedBlob": "583ab98d199f989fca08e70a9ec2bb3ccd64f99f",
+  "readBlob": "583ab98d199f989fca08e70a9ec2bb3ccd64f99f",
+  "sourceSha256": "17e293b6553f3a078e0167b9c180bcbdb083546c8bcd07ad5ac03346312ba436",
+  "sourceBytes": 36117,
+  "copiedAt": "2026-10-31T20:43:50.982Z",
+  "mode": "derived",
+  "note": "derived by build-sample.mjs: idea 41's committed sample handoff wrapped unmodified (JSON.stringify of the parsed file) as a classic script, so the page opens on the chain's case with no network",
+  "readMatchesCommitted": true,
+  "writtenSha256": "c0be6512ec36cff7241cc79a1d6383991e06068862958f17615064e095f879ca",
+  "writtenBytes": 36527
+}
