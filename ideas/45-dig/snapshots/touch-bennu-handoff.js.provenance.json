@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/44-touch-and-go/touch.js (run via ideas/44-touch-and-go/load.cjs)",
+  "commit": "735ba86933cad6bdd03197fc441f1a7e085d8294",
+  "committedBlob": "46b3cd363f8934c87fb0065b6fd280704fe44f0d",
+  "sourceSha256": "713a5c3a05ebc8bac8f1c30c544a946c1c2ff3f53802cea51c43f33f8a4fd347",
+  "sourceBytes": 63377,
+  "mode": "derived",
+  "note": "derived by build-data.mjs --handoffs: idea 44's kernel run on bennuCase('measured') with its defaults, buildHandoff(R, '2026-11-01T00:00:00Z'), and checked with idea 44's own parseHandoff (it reads it back)",
+  "writtenSha256": "72f43e0892956e0c264213a4f5e36d5e00f04634ef7b30b789383527dd07ab9b",
+  "writtenBytes": 9160
+}

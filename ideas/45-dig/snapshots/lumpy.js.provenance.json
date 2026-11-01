@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/lumpy.js",
+  "commit": "735ba86933cad6bdd03197fc441f1a7e085d8294",
+  "commitDate": "2026-11-01T01:03:30+00:00",
+  "pathLastChanged": "1707e24 2026-10-31T23:16:07+00:00",
+  "committedBlob": "59aafafe641c2b0370f45e35ff95a423a8596c48",
+  "readBlob": "59aafafe641c2b0370f45e35ff95a423a8596c48",
+  "sourceSha256": "1a1390fd28ff897f0a2300502035ca7a4daf53425f1c90c05c8a627a4f6394a9",
+  "sourceBytes": 75547,
+  "copiedAt": "2026-11-01T01:22:32.943Z",
+  "mode": "copy",
+  "note": "idea 43's kernel, unmodified: attitudeAt() (Apophis tumbling from NAIF CK samples, Bennu's IAU spin) for the site's day and night",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1a1390fd28ff897f0a2300502035ca7a4daf53425f1c90c05c8a627a4f6394a9",
+  "writtenBytes": 75547
+}

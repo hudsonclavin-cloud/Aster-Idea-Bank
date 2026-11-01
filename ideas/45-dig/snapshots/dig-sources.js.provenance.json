@@ -1,0 +1,24 @@
+{
+  "repo": "PubMed Central (eutils.ncbi.nlm.nih.gov), NASA Technical Reports Server (ntrs.nasa.gov), USGS Publications Warehouse (pubs.usgs.gov), NIST CODATA (physics.nist.gov), JPL Small-Body Database API (ssd-api.jpl.nasa.gov)",
+  "path": "PMC11339282 Tables 1-2; PMC9668287 (Methods: hydrogen pyrolysis); PMC11842271; PMC6527261; NTRS 20205006710 (Praet et al. 2021 manuscript); NTRS 20210025846 Tables 1-3; USGS Bulletin 2131 (summary table, Cp equations, detailed tables for chrysotile, forsterite, enstatite, steam); SBDB phys-par for 99942, 101955, 162173, 25143; NIST CODATA sigma",
+  "commit": "retrieved 2026-11-01",
+  "retrieved": "2026-11-01",
+  "sourceSha256": {
+    "suttle2024-murchison-heating.xml": "c0cdaf406bb89344d66ff8737c02e293ae68eaecca5b9f43dbb3e62d2cdbc1c8",
+    "king2022-winchcombe.xml": "f771935ff49788effe9c783b59c6e699f75c196e1c30e5c1c19036ec0d9b011a",
+    "praet2021-bennu-hydrogen.docx": "095e06091ff9548fec6a4df9da6d19288fec99ec08baa97fe6a67026c8a11df3",
+    "glavin2025-bennu-ammonia.xml": "2636ef2ef24ab9b5541c0349744574d5bdaac0b32dd527482a2321ba2e49ba3b",
+    "jin-bose2019-itokawa-water.xml": "0f45fc6c280ff462cba940841eb0fa8211dd3f57b6c18e2a202209d5c789f2d6",
+    "robie-hemingway-1995-b2131.pdf": "ca89fc07fd110a0441f3bc01d5fe67d749a944da2e7f2537520dbaf367f49dd8",
+    "ipex2022-bucket-drum-scaling.pdf": "e84c7608056de5f434f0850afbcd94b5b9738c457b434c20203d73e8cd042218",
+    "sbdb-99942.json": "30c62d6d27308b1062cf52bc696ff292f488edfb9c0b2d209898c32e71fe75a4",
+    "sbdb-101955.json": "c31c5ddedb9adc688426211a6ad04847061f7b10247bf63422cc8ad4aeabc96d",
+    "sbdb-162173.json": "0c24bc0ab10e46681a0220870a73c04653c95f50893673db8aed84cc5cd88086",
+    "sbdb-25143.json": "eece4741314b6fea9736c3c3f217f4f0988611bfaafe7685fe21aa1cd41075eb",
+    "nist-sigma.html": "3d13ea6b74032deeb98afe781e324400367e43b0ca2e27fcaa2bd55e10f1aad9"
+  },
+  "license": "Suttle et al. 2024, King et al. 2022 and Glavin et al. 2025 are CC BY 4.0; Jin and Bose 2019 is CC BY-NC 4.0 (figures quoted with attribution); NASA NTRS documents and USGS Bulletin 2131 are US government works; SBDB is a NASA/JPL service",
+  "note": "hand-transcribed; build-data.mjs found every one of the 50 quoted strings in its source text (whitespace-normalised; R&H is an OCR text layer, so its rows are checked as OCR'd, e.g. '£' for 'E', and the transcription reads them)",
+  "writtenSha256": "75f025861ccf5a247eb1f21ea1d243cb26b6fadb2407cf32ad6c1ade0dd18a82",
+  "writtenBytes": 6710
+}

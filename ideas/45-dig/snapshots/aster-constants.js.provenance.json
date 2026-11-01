@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/aster-constants.js",
+  "commit": "735ba86933cad6bdd03197fc441f1a7e085d8294",
+  "commitDate": "2026-11-01T01:03:30+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "readBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "sourceSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "sourceBytes": 1986,
+  "copiedAt": "2026-11-01T01:22:33.240Z",
+  "mode": "copy",
+  "note": "Aster constants as idea 43 carries them, unmodified (AU, TDB-UTC)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "writtenBytes": 1986
+}

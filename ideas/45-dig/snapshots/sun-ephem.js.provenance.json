@@ -1,0 +1,14 @@
+{
+  "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "path": "COMMAND '99942;' 2026-01-01 to 2029-04-15 and '2101955' 2020-01-01 to 2021-12-31, step 2 d, CENTER '500@10'",
+  "commit": "retrieved 2026-11-01",
+  "retrieved": "2026-11-01",
+  "sourceSha256": {
+    "horizons-apophis-helio.txt": "ae1c7b70012692132172cafcadf0e4d789fdef091cf8e1be1d0ed3dacd67e3ed",
+    "horizons-bennu-helio.txt": "88f8d9a520b67ab5a1872dfaa4a54b52d916d9d9df879f78c21c042a875d3a18"
+  },
+  "license": "NASA/JPL service; ephemerides are public",
+  "note": "positions rounded to 1e-8 au (1.5 km); Horizons stamps each reply with the time it ran, so the raw files are not byte-reproducible by re-fetching; the rows are",
+  "writtenSha256": "b96a634aaf9a8f6d296ddbbe8a6113c6d20e728da2b29bd9b65f602ad09a06ea",
+  "writtenBytes": 35771
+}

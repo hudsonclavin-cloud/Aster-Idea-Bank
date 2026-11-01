@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/attitude.js",
+  "commit": "735ba86933cad6bdd03197fc441f1a7e085d8294",
+  "commitDate": "2026-11-01T01:03:30+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "581895ae9366f7c6eda008600f7eeca366c2e5de",
+  "readBlob": "581895ae9366f7c6eda008600f7eeca366c2e5de",
+  "sourceSha256": "d5c889ef6dbb7984379c307bea93ba5be01124b9fe61c49f9763df3771e2e448",
+  "sourceBytes": 12089,
+  "copiedAt": "2026-11-01T01:22:33.022Z",
+  "mode": "copy",
+  "note": "idea 43's spin data (NAIF CK knots for Apophis, bennu_v17.tpc), unmodified, required by lumpy.js attitudeAt()",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d5c889ef6dbb7984379c307bea93ba5be01124b9fe61c49f9763df3771e2e448",
+  "writtenBytes": 12089
+}

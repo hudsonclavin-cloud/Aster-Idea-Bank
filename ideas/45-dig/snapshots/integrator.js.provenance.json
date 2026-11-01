@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/integrator.js",
+  "commit": "735ba86933cad6bdd03197fc441f1a7e085d8294",
+  "commitDate": "2026-11-01T01:03:30+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "df79246d9f3178e55907127ffe07e3c097b912ee",
+  "readBlob": "df79246d9f3178e55907127ffe07e3c097b912ee",
+  "sourceSha256": "9ebf7e2d3413d1f5c1669b447c6b2cfafcc7e78f9a55936fe462c89e02efd1aa",
+  "sourceBytes": 3685,
+  "copiedAt": "2026-11-01T01:22:33.091Z",
+  "mode": "copy",
+  "note": "idea 40's integrator excerpt as idea 43 carries it, unmodified (lumpy.js integrates Euler's equations with it)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "9ebf7e2d3413d1f5c1669b447c6b2cfafcc7e78f9a55936fe462c89e02efd1aa",
+  "writtenBytes": 3685
+}

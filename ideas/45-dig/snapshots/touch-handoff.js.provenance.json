@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/44-touch-and-go/handoff.json",
+  "commit": "735ba86933cad6bdd03197fc441f1a7e085d8294",
+  "committedBlob": "274c05465364aff96e1876bf090644ba97c23530",
+  "sourceSha256": "6a1451ba70c061585ca98cde88c05dac7b5b3f7eff9463b3f61f226447a517a8",
+  "sourceBytes": 74800,
+  "mode": "derived",
+  "note": "derived by build-data.mjs --handoffs: idea 44's committed handoff.json wrapped unmodified as a classic script (window.DigTouchSample) so the page opens on the chain's case with no network",
+  "writtenSha256": "10c30573410deff751ad5a72f10e4f7ec9cac1eb03085fe8d83885a32efff7af",
+  "writtenBytes": 75206
+}
