@@ -1,4 +1,4 @@
-// Idea 47 (Way Home): tests. node --test ideas/47-way-home/home.test.mjs (from the bank root; about 15 s)
+// Idea 47 (Way Home): tests. node --test ideas/47-way-home/home.test.mjs (from the bank root; about 25 s)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -61,7 +61,8 @@ test('2 the oracle: JPL NHATS return legs (61, four bodies) reproduced with idea
   // two-body from Aster's elements (idea 39) is the wrong ephemeris for a return: Apophis's median error is km/s
   const tb = X.nhats.filter((q) => q.des === '99942').map((q) => Math.abs(q.dv_two_body_m_s - q.dv_nhats_m_s)).sort((a, b) => a - b);
   assert.ok(tb[Math.floor(tb.length / 2)] > 1000, 'two-body Apophis median ' + tb[Math.floor(tb.length / 2)]);
-  // NHATS dates read as 0h TDB: twelve hours later the agreement is lost
+  // NHATS dates are midnight: twelve hours later the agreement is lost (whether midnight TDB or UTC, 69 s apart, NHATS's
+  // 1 m/s rounding cannot tell: the median moves from 0.280 to 0.290 m/s; the page reads TDB)
   const t = X.nhats.find((q) => q.des === '101955'), b = K.K39.findBody('101955'), eph = K.ephemeris(b);
   const tDep = Date.parse(t.departure) / 1000 - K.constants.unixToJ2000Days * DAY + K.constants.tdbMinusUtc_s;
   const c12 = K.cell(eph, tDep + 12 * 3600, t.tof_days * DAY, [0]);
@@ -70,7 +71,8 @@ test('2 the oracle: JPL NHATS return legs (61, four bodies) reproduced with idea
 
 test('3 the oracle: JPL\'s close approach of Apophis on 2029-04-13 from Aster\'s 2026 elements', () => {
   const A = K.reality().apophis;
-  near(A.here.tdb, A.jpl.tdb, 1, 'time (s)');                         // golden section to 0.5 s; measured 0.002 s
+  near(A.here.tdb, A.jpl.tdb, 1, 'time (s)');
+  near(A.here.tdb - A.jpl.tdb, 0.0814, 0.005, 'time refined to 1 ms: 0.081 s after JPL\'s');   // review: was 0.000 s, the search landing on JPL's own time
   near(A.here.distance_m, A.jpl.distance_m, 3000, 'distance');         // 38,013.1 km against JPL's 38,011.5 km
   near(A.here.v_infinity_m_s, A.jpl.v_infinity_m_s, 0.01, 'v_inf');    // 5841.3556 against 5841.3559 m/s
   near(A.here.speed_m_s, A.jpl.v_rel_m_s, 0.2, 'v_rel');               // 7422.48 against 7422.54 m/s
@@ -255,4 +257,49 @@ test('10 the handoff: the sample is the defaults, reads back, refuses edits, tra
   assert.equal(hg.inputs.split_handoff.from, '46-split'); assert.ok(!hg.inputs.split_handoff.pruned && !K.parseHandoff(hg).refusal);
   assert.ok(K.parseHandoff(L.chain()).src, 'idea 46\'s handoff is accepted as an import');
   assert.ok(K.parseHandoff({ handoff: 'long-way-round', from: '45-dig', version: 1 }).refusal);
+});
+
+test('11 review: empty fields, the encounter threshold, a hold without zero boil-off, braking, the correction\'s hydrogen, independent oracles', () => {
+  // an emptied field reaches the kernel as null (NaN through JSON); null >= 0 is true in JavaScript, so it ran as 0
+  for (const k of ['waitMaxDays', 'waitMinDays', 'tofMinDays', 'aimAlt_m', 'entryLimit_m_s', 'margin']) {
+    const R = K.run(Object.assign(K.defaults(), { [k]: null }), { split: L.chain() });
+    assert.ok(R.refusal && R.refusal.code === 'invalid_input', k + ' empty');
+  }
+  const cu = Object.assign(K.customDefaults(), { propellant_kg: null });
+  const Rc = K.run(Object.assign(K.defaults(), { case: 'custom', custom: cu }), null);
+  assert.ok(Rc.refusal && Rc.refusal.code === 'invalid_input', 'a stand-alone craft with no propellant typed is refused, not "idea 46 refused the propellant"');
+  // Aster's 0.05 au: 2000 SG344's 2029 approaches at 0.0342 and 0.0453 au are encounters, its 0.0527 au one is not
+  const eph = K.ephemeris(K.K39.findBody('2000 SG344')), en = K.encounters(eph, K.K39.parseUtc('2029-01-01T00:00:00Z'), K.K39.parseUtc('2030-01-01T00:00:00Z'));
+  assert.deepEqual(en.map((e) => +(e.distance_m / K.constants.au_m).toFixed(3)), [0.034, 0.045]);
+  // the coolers cannot hold what idea 46 did not run at zero boil-off
+  const z = L.chain(); z.outputs.cryo.value.zbo = false;
+  assert.equal(K.importSplit(z).holdAllowed, false);
+  const Rz = K.run(Object.assign(K.defaults(), { hold: 'held' }), { split: z });
+  assert.ok(codes(Rz).includes('hold') && Rz.mass.ledger.boiloff_wait_kg > 0, 'held refused without zero boil-off');
+  // least delta-v counts the braking burn too: the ride would need 1.35 km/s of braking; the cheapest braked return about 1.0 km/s
+  const Rb = K.run(Object.assign(K.defaults(), { objective: 'dv', arrival: 'brake' }), { split: L.chain() });
+  assert.ok(Rb.burns.dv1 + Rb.burns.dv2 < 1100 && Rb.burns.dv2 > 0, 'least total delta-v with braking: ' + (Rb.burns.dv1 + Rb.burns.dv2));
+  // the correction's propellant is burned with the departure burn; its hydrogen, kept, boils in days (by hand)
+  const R = chainRun(), Lg = R.mass.ledger, ve = R.src.ve_m_s, tcm = 0.03 + 0.04 * R.flight.dvMag;
+  const corr = Lg.mass_departure_kg * (Math.exp(-(R.burns.dv1 - tcm) / ve) - Math.exp(-R.burns.dv1 / ve));
+  near(R.tcmHold.fuel_kg, corr / (1 + R.src.of), 1e-12, 'the correction\'s hydrogen');
+  near(R.tcmHold.days, corr / (1 + R.src.of) / R.src.boil.fuel, 1e-9, 'days it lasts at the passive rate');
+  assert.ok(R.tcmHold.days > 2 && R.tcmHold.days < 4, 'about 2.8 days: ' + R.tcmHold.days);
+  assert.ok(/boil away in 2\.8 days/.test(R.refusals.find((r) => r.applies_to === 'navigation').reason));
+  assert.ok(!K.run(Object.assign(K.defaults(), { hold: 'held' }), { split: L.chain() }).tcmHold, 'nothing boils when held');
+  // independent oracles (oracle/review-oracles.py): JPL Horizons states + Gooding's Lambert, and an n-body model of its own
+  const O = JSON.parse(fs.readFileSync(path.join(HERE, 'oracle/review-oracles.json'), 'utf8')), byTid = Object.fromEntries(O.nhats_on_jpl.map((r) => [r[0], r]));
+  const X = K.reality();
+  for (const q of X.nhats) {
+    const o = byTid[q.tid], d = Math.abs(q.dv_m_s - o[1]);
+    if (q.des !== '99942') assert.ok(d < 0.01 && Math.abs(q.vinf_m_s - o[2]) < 0.02 && Math.abs(q.dec_deg - o[3]) < 2e-4, q.des + ' ' + q.tid + ' against JPL states: ' + d);
+    else if (q.departure < '2030') assert.ok(d < 0.2, 'Apophis before 2030: ' + d);
+  }
+  const late = X.nhats.filter((q) => q.des === '99942' && q.departure > '2030').map((q) => Math.abs(q.dv_m_s - byTid[q.tid][1]));
+  assert.ok(Math.max(...late) > 3, 'after the 2029 pass the integrated Apophis parts from JPL\'s: ' + Math.max(...late));
+  assert.ok(O.nhats_on_jpl_vs_nhats_dv_m_s.max < 0.5, 'NHATS itself on JPL states: within its rounding');
+  near(R.sel.q.dvMag, O.chain_patched_on_jpl.dv_m_s, 1e-3, 'the chain\'s patched conic on JPL\'s Apophis and Earth');
+  near(R.flight.flown.perigee_altitude_m, O.chain_nbody.flown_gr.perigee_alt_m, 2000, 'flown burn, independent n-body perigee');
+  near(R.flight.uncorrected.perigee_altitude_m, O.chain_nbody.patched_gr.perigee_alt_m, 2000, 'patched burn, independent n-body perigee');
+  near((R.flight.flown.perigee_tdb / 86400 + 2451545 - O.chain_nbody.flown_gr.perigee_jd_tdb) * 86400, 0, 1, 'perigee time (s)');
 });

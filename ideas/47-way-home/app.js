@@ -49,21 +49,22 @@
   numIn('ispIn', function (v) { custom('isp_s', v === null ? NaN : v); });
   numIn('dryIn', function (v) { custom('dry_kg', v === null ? NaN : v); });
   numIn('boilIn', function (v) { custom('boiloff_kg_per_day', v === null ? 0 : v); });
-  numIn('waitIn', function (v) { setS('waitMaxDays', v); sync(); });
+  numIn('waitIn', function (v) { setS('waitMaxDays', v === null ? NaN : v); sync(); });
   $('waitRange').addEventListener('input', function () { $('waitIn').value = $('waitRange').value; });
   $('waitRange').addEventListener('change', function () { setS('waitMaxDays', +$('waitRange').value); });
   numIn('wait0In', function (v) { setS('waitMinDays', v === null ? 0 : v); });
-  numIn('tofMinIn', function (v) { setS('tofMinDays', v); });
-  numIn('tofMaxIn', function (v) { setS('tofMaxDays', v); });
+  numIn('tofMinIn', function (v) { setS('tofMinDays', v === null ? NaN : v); });
+  numIn('tofMaxIn', function (v) { setS('tofMaxDays', v === null ? NaN : v); });
   $('gridSel').addEventListener('change', function () { var p = $('gridSel').value.split('x'); state.S.nDep = +p[0]; setS('nTof', +p[1]); });
   numIn('marginIn', function (v) { setS('margin', v === null ? NaN : v / 100); sync(); });
   $('marginRange').addEventListener('input', function () { $('marginIn').value = $('marginRange').value; });
   $('marginRange').addEventListener('change', function () { setS('margin', +$('marginRange').value / 100); });
   numIn('tcmIn', function (v) { setS('tcm', v === null ? 'execution' : v); });
   numIn('matIn', function (v) { setS('material', v === null ? 'max' : v, true); });
-  numIn('limIn', function (v) { setS('entryLimit_m_s', v * 1000); });
-  numIn('altIn', function (v) { setS('entryAlt_m', v * 1000); });
-  numIn('aimIn', function (v) { setS('aimAlt_m', v * 1000, true); });
+  // an emptied field is NaN, which the kernel refuses (null * 1000 would have been read as 0 km: review)
+  numIn('limIn', function (v) { setS('entryLimit_m_s', v === null ? NaN : v * 1000); });
+  numIn('altIn', function (v) { setS('entryAlt_m', v === null ? NaN : v * 1000); });
+  numIn('aimIn', function (v) { setS('aimAlt_m', v === null ? NaN : v * 1000, true); });
   $('nbodyChk').addEventListener('change', function () { setS('nbody', $('nbodyChk').checked, true); });
   $('bestBtn').addEventListener('click', function () { state.S.selection = null; schedule(10); });
   $('resetBtn').addEventListener('click', function () { var c = state.S.case; state.S = K.defaults(); state.S.case = c; if (c === 'custom') state.S.custom = K.customDefaults(); state.colorBy = 'dv'; sync(); schedule(10); });
@@ -218,15 +219,19 @@
   function drawDates() {
     var R = state.R, G = R.grid, o = canvasFor('dateChart', 0.62), g = o.g, P = { l: 46, r: 10, t: 8, b: 32 }, B = K.budgetOf(R.src, R.S);
     var need = G.deps.map(function (td, i) { var m = Infinity; for (var j = 0; j < G.nTof; j++) { var k = j * G.nDep + i; if (!G.excl[k] && num(G.dv[k])) { var b = K.burnsOf(G.dv[k], G.vinf[k], R.S); m = Math.min(m, b.dv1 + b.dv2); } } return m; });
-    var cap = B ? G.deps.map(function (td) { return K.capacity(B, td - R.src.stayEnd); }) : null, vals = need.concat(cap || []).filter(function (v) { return num(v) && v > 0; });
+    var cap = B ? G.deps.map(function (td) { return K.capacity(B, td - R.src.stayEnd); }) : null, chosenDv = R.sel && R.burns ? R.burns.dv1 + R.burns.dv2 : null;
+    var vals = need.concat(cap || [], num(chosenDv) ? [chosenDv] : []).filter(function (v) { return num(v) && v > 0; });
     var y0 = Math.pow(10, Math.floor(Math.log10(Math.max(0.1, Math.min.apply(null, vals))))), y1 = Math.pow(10, Math.ceil(Math.log10(Math.max.apply(null, vals) * 1.01)));
     var A = axes(o, G.deps[0], G.deps[G.nDep - 1], y0, y1, P, 'departure (UTC)', 'Δv (m/s, log)', true);
     function line(a, col, dash) { g.strokeStyle = col; g.lineWidth = 2; g.setLineDash(dash || []); g.beginPath(); var on = false; a.forEach(function (v, i) { if (!(num(v) && v > 0)) { on = false; return; } var x = A.X(G.deps[i]), y = A.Y(Math.max(v, y0)); if (on) g.lineTo(x, y); else g.moveTo(x, y); on = true; }); g.stroke(); g.setLineDash([]); }
     line(need, css('--s1')); if (cap) line(cap, css('--s2'), [6, 4]);
     if (R.sel) { g.strokeStyle = css('--ink'); g.setLineDash([2, 3]); g.beginPath(); g.moveTo(A.X(R.sel.depTdb), P.t); g.lineTo(A.X(R.sel.depTdb), o.h - P.b); g.stroke(); g.setLineDash([]); }
-    $('dateLegend').innerHTML = '<li><span class="key" style="border-color:' + css('--s1') + '"></span>least Δv any flight time needs (with margin)</li>' + (cap ? '<li><span class="key dash" style="border-color:' + css('--s2') + '"></span>Δv the propellant gives, empty, after boil-off</li>' : '') + '<li><span class="key dotted" style="border-color:' + css('--ink') + '"></span>chosen departure</li>';
+    // the chosen return's own cost (with margin): the ride and the refined windows fall between the grid's flight times (review)
+    if (num(chosenDv) && chosenDv > 0) { g.fillStyle = css('--ink'); g.strokeStyle = css('--surface'); g.lineWidth = 1.5; g.beginPath(); g.arc(A.X(R.sel.depTdb), A.Y(Math.max(chosenDv, y0)), 5, 0, 2 * Math.PI); g.fill(); g.stroke(); }
+    $('dateLegend').innerHTML = '<li><span class="key" style="border-color:' + css('--s1') + '"></span>least Δv any flight time needs (with margin)</li>' + (cap ? '<li><span class="key dash" style="border-color:' + css('--s2') + '"></span>Δv the propellant gives, empty, after boil-off</li>' : '') + '<li><span class="key dotted" style="border-color:' + css('--ink') + '"></span>chosen departure</li>' + (num(chosenDv) ? '<li><span class="key dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:' + css('--ink') + ';margin-right:6px"></span>the chosen return\'s Δv (with margin)</li>' : '');
     var cross = null; if (cap) for (var i = 0; i < G.nDep; i++) if (cap[i] < need[i]) { cross = G.deps[i]; break; }
-    $('dateCap').textContent = cap ? (cross ? 'From ' + day(cross) + ' the cheapest return costs more than the propellant left can give.' : 'Every departure date in the window has a return the propellant can pay for.') + (R.S.hold === 'passive' && (R.src.boil.fuel > 0 || R.src.boil.ox > 0) ? ' Waiting costs propellant: idea 46\'s passive boil-off is ' + f(R.src.boil.fuel, 3) + ' kg/day of fuel.' : '') : 'No propellant to compare with (refused upstream).';
+    var chosenTxt = num(chosenDv) ? ' The dot is the chosen return, ' + f(chosenDv, chosenDv < 100 ? 2 : 0) + ' m/s with margin' + (R.sel.source === 'ride' || R.sel.source === 'grid' ? ' (refined between the grid\'s flight times)' : '') + (cap ? (chosenDv <= K.capacity(B, R.sel.depTdb - R.src.stayEnd) ? ', inside what the propellant gives.' : ', more than the propellant gives.') : '.') : '';
+    $('dateCap').textContent = (cap ? (cross ? 'On the grid\'s flight times, from ' + day(cross) + ' the cheapest return costs more than the propellant left can give.' : 'Every departure date in the window has a grid return the propellant can pay for.') + (R.S.hold === 'passive' && (R.src.boil.fuel > 0 || R.src.boil.ox > 0) ? ' Waiting costs propellant: idea 46\'s passive boil-off is ' + f(R.src.boil.fuel, 3) + ' kg/day of fuel.' : '') : 'No propellant to compare with (refused upstream).') + chosenTxt;
   }
   function drawOrbit() {
     var R = state.R, o = canvasFor('orbitChart', 0.62), g = o.g;
@@ -244,7 +249,7 @@
     g.fillStyle = css('--ink'); g.beginPath(); g.arc(cx + d0[0] * s, cy - d0[1] * s, 4, 0, 2 * Math.PI); g.fill(); g.fillStyle = css('--s1'); g.beginPath(); g.arc(cx + d1[0] * s, cy - d1[1] * s, 5, 0, 2 * Math.PI); g.fill();
     g.fillStyle = css('--ink-2'); g.font = '11px system-ui'; g.fillText('1 au', cx + AU * s - 12, cy + 14); g.strokeStyle = css('--grid'); g.beginPath(); g.arc(cx, cy, AU * s, 0, 2 * Math.PI); g.stroke();
     $('orbitLegend').innerHTML = '<li><span class="key" style="border-color:' + css('--s2') + '"></span>the return (Kepler arc, patched conic)</li><li><span class="key dash" style="border-color:' + css('--muted') + '"></span>' + esc(R.body.name) + ' meanwhile (n-body)</li><li><span class="key" style="border-color:' + css('--s1') + '"></span>the Earth, one year</li>';
-    $('orbitCap').textContent = 'Seen from the ecliptic pole, Sun at the centre (heliocentric J2000 ecliptic). Departure ' + day(sel.depTdb) + ' (black dot), arrival ' + day(sel.arrTdb) + ' (blue dot).';
+    $('orbitCap').textContent = 'Seen from the ecliptic pole, Sun at the centre (heliocentric J2000 ecliptic). Departure ' + day(sel.depTdb) + ' (black dot); the patched conic reaches the Earth\'s centre ' + hm(sel.arrTdb) + ' UTC (blue dot)' + (R.flight && R.flight.converged ? ', the flight through the planets its perigee ' + hm(R.flight.flown.perigee_tdb) + ' UTC.' : '.');
   }
 
   // ------------------------------------------------------------------ checks against reality
@@ -256,12 +261,12 @@
     row('NHATS: return declination', 'of the arrival v∞, from the ICRF equator', 'dec_arr', 'asin(v∞z / v∞)', 'median ' + f(st.dec.median, 3) + '°, max ' + f(st.dec.max, 3) + '°');
     row('NHATS, the asteroid drawn two-body', 'the same legs with Aster\'s elements as a fixed ellipse (idea 39, Aster\'s porkchop)', 'vrel_dep_neo', 'two-body Lambert', 'median ' + f(st.twoBody.median) + ' m/s, max ' + f(st.twoBody.max), 'gap-bad');
     if (A.here) {
-      row('Apophis\'s 2029 pass: time', 'JPL Small-Body Database close approach (orbit ' + K.oracles.apophis2029.orbit_id + ')', K.oracles.apophis2029.cd_tdb + ' TDB', K39.tdbDate(A.here.tdb).slice(0, 10) + ' ' + new Date((A.here.tdb + K.constants.unixToJ2000Days * DAY) * 1000).toISOString().slice(11, 19) + ' TDB', f(A.here.tdb - A.jpl.tdb, 2) + ' s');
+      row('Apophis\'s 2029 pass: time', 'JPL Small-Body Database close approach (orbit ' + K.oracles.apophis2029.orbit_id + ')', K.oracles.apophis2029.cd_tdb + ' TDB', K39.tdbDate(A.here.tdb).slice(0, 10) + ' ' + new Date((A.here.tdb + K.constants.unixToJ2000Days * DAY) * 1000).toISOString().slice(11, 19) + ' TDB', f(A.here.tdb - A.jpl.tdb, 3) + ' s');
       row('Apophis\'s 2029 pass: distance', 'from the Earth\'s centre', f(A.jpl.distance_m / 1000, 1) + ' km', f(A.here.distance_m / 1000, 1) + ' km', (A.here.distance_m >= A.jpl.distance_m ? '+' : '') + f((A.here.distance_m - A.jpl.distance_m) / 1000, 2) + ' km');
       row('Apophis\'s 2029 pass: v∞', 'two-body at closest approach, as JPL tabulates it', f(A.jpl.v_infinity_m_s, 3) + ' m/s', f(A.here.v_infinity_m_s, 3) + ' m/s', f(A.here.v_infinity_m_s - A.jpl.v_infinity_m_s, 4) + ' m/s');
     }
     row('OSIRIS-REx leaving Bennu', 'JPL Horizons\' reconstruction: the velocity change across its 2021-05-10 departure burn, against Lambert (' + O.M + ' rev, ' + O.branch + ') to the Earth at its flown perigee, ' + f(O.tof_days, 1) + ' days later', f(O.actual_dv_m_s, 1) + ' m/s', f(O.lambert_dv_m_s, 1) + ' m/s, ' + f(O.dv_angle_deg, 1) + '° off', (O.lambert_dv_m_s > O.actual_dv_m_s ? '+' : '') + f(100 * (O.lambert_dv_m_s / O.actual_dv_m_s - 1), 2) + ' %');
-    row('OSIRIS-REx arriving', 'its geocentric hyperbola on 2023-09-24 before the capsule release', f(O.actual_vinf_m_s, 1) + ' m/s, dec ' + f(O.actual_dec_deg, 2) + '°', f(O.lambert_vinf_m_s, 1) + ' m/s, dec ' + f(O.lambert_dec_deg, 2) + '°', f(100 * (O.lambert_vinf_m_s / O.actual_vinf_m_s - 1), 2) + ' %');
+    row('OSIRIS-REx arriving', 'its geocentric hyperbola from the last hourly Horizons row still bound for the atmosphere (' + O.approach_row_tdb.slice(0, 17) + ' TDB), before the divert', f(O.actual_vinf_m_s, 1) + ' m/s, dec ' + f(O.actual_dec_deg, 2) + '°', f(O.lambert_vinf_m_s, 1) + ' m/s, dec ' + f(O.lambert_dec_deg, 2) + '°', f(100 * (O.lambert_vinf_m_s / O.actual_vinf_m_s - 1), 2) + ' %');
     var R = state.R;
     if (X.outbound && R && R.flight && R.flight.converged && R.src.body.designation === '99942') row('Aster\'s sample-return burn', 'delta-v.ts prices the return burn as the outbound arrival v∞ (the chain\'s, idea 39); NHATS\'s ' + st.symmetric.n + ' round trips put return / arrival at ' + f(X.nhatsStats.symMin, 2) + ' to ' + f(st.symmetric.max, 2) + ' (median ' + f(st.symmetric.median, 2) + ')', f(X.outbound.lamberts_road.v_infinity_arrival_m_s) + ' m/s', f(R.flight.dvMag, 2) + ' m/s', '×' + (R.flight.dvMag / X.outbound.lamberts_road.v_infinity_arrival_m_s).toPrecision(2), 'gap-bad');
     state.checks = true;

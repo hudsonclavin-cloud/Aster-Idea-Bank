@@ -4,6 +4,7 @@
 //   node ideas/47-way-home/build-data.mjs --chain    writes snapshots/split-handoff.js (idea 46's committed handoff)
 //                                                    and snapshots/chain-outbound.js (two numbers from ideas 39 and 40)
 //   node ideas/47-way-home/build-data.mjs --sample   writes handoff.json (this page's defaults on the chain)
+//   node ideas/47-way-home/build-data.mjs --review-inputs <dir>   writes <dir>/inputs.json for oracle/review-oracles.py
 // Every quoted figure is searched for verbatim in the fetched text; a missing one stops the build.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -79,21 +80,21 @@ function buildOracles(dir) {
   const ea = horizonsRows(read('earth-helio-arrival.json', 'Horizons COMMAND=399 CENTER=500@10 2023-09-24 12:00..17:00 TDB 1h VECTORS ICRF'));
   const bennuSoln = /Soln\.date: ([^\s#]+)/.exec(JSON.parse(fs.readFileSync(path.join(dir, 'bennu-helio-adm.json'))).result);
   const osirisRex = {
-    note: 'JPL Horizons reconstructed trajectory of OSIRIS-REx (-64). The Asteroid Departure Maneuver falls between 20:00 and 20:10 TDB on 2021-05-10 (the velocity relative to Bennu jumps from 0.26 m/s to 266 m/s there); the approach state is before the capsule release (10:42 UTC) and the spacecraft divert.',
+    note: 'JPL Horizons reconstructed trajectory of OSIRIS-REx (-64). The Asteroid Departure Maneuver falls between 20:00 and 20:10 TDB on 2021-05-10 (the velocity relative to Bennu jumps from 0.26 m/s to 266 m/s there). On 2023-09-24 every hourly row from 06:00 to 11:00 TDB is still on a hyperbola with its perigee inside the atmosphere (the spacecraft had not yet diverted); the fetched record does not say when the capsule was released.',
     spacecraft_target: horizonsTarget(fs.readFileSync(path.join(dir, 'orex-helio-adm.json'))), bennu_solution: bennuSoln ? bennuSoln[1] : null,
     craft_helio_adm: sc, bennu_helio_adm: bn, craft_geo_arrival: geo, earth_helio_arrival: ea,
   };
   if (Math.abs(sc[0].jd_tdb - bn[0].jd_tdb) > 1e-9 || sc.length !== 3) throw new Error('OSIRIS-REx and Bennu epochs differ');
   const out = { retrieved, nhats_api_version: nhatsVersion, nhats_quotes: nhatsQuotes, nhats_bodies: bodies, nhats_columns: nhatsColumns, nhats, apophis2029, osiris_rex: osirisRex, sources };
   const p = path.join(HERE, 'snapshots/return-oracles.js');
-  fs.writeFileSync(p, wrap('WayHomeOracles', "JPL's NHATS return legs (61 distinct trajectories for six bodies), NHATS's stated method, JPL's close approach of Apophis in 2029, and OSIRIS-REx's flown return from JPL Horizons: the independent figures this page is checked against.", out));
+  fs.writeFileSync(p, wrap('WayHomeOracles', "JPL's NHATS return legs (61 distinct trajectories, on the four of the six bodies queried that NHATS lists), NHATS's stated method, JPL's close approach of Apophis in 2029, and OSIRIS-REx's flown return from JPL Horizons: the independent figures this page is checked against.", out));
   const w = fs.readFileSync(p);
   const side = {
     repo: 'https://ssd-api.jpl.nasa.gov (NHATS API 1.3, SBDB close-approach API) ; https://ssd.jpl.nasa.gov/api/horizons.api (Horizons API) ; https://cneos.jpl.nasa.gov/nhats/caveats.html',
     path: 'nhats.api?des=<6 bodies>&dv=6|8|12&dur=360|450&stay=8|32&launch=2025-2030|2030-2035|2035-2040 (216 queries); cad.api?des=99942 2028-2030; horizons.api VECTORS for -64, DES=2101955; and 399 (see sources[] in the file)',
     commit: 'retrieved ' + retrieved, retrieved, sourceSha256: sha(Buffer.from(sources.map((s) => s.sha256).join('\n'))), sourceSha256Rule: 'sha256 of the newline-joined per-file sha256 values in sources[] (in that order)',
     license: 'US Government work (NASA/JPL, public domain in the US); JPL APIs are public',
-    note: 'derived by build-data.mjs from the raw responses oracle/fetch-sources.sh saves: NHATS min-dv and min-duration trajectories de-duplicated by object and trajectory id; four quoted sentences of the NHATS caveats page and six field definitions of the API doc, each found verbatim; the single 2028-2030 Apophis close approach; Horizons rows parsed unmodified (km, km/s, TDB, ICRF)',
+    note: 'derived by build-data.mjs from the raw responses oracle/fetch-sources.sh saves: NHATS min-dv and min-duration trajectories de-duplicated by object and trajectory id; five quoted passages of the NHATS caveats page and six field definitions of the API doc, each found verbatim; the single 2028-2030 Apophis close approach; Horizons rows parsed unmodified (km, km/s, TDB, ICRF)',
     writtenSha256: sha(w), writtenBytes: w.length, mode: 'derived',
   };
   fs.writeFileSync(p + '.provenance.json', JSON.stringify(side, null, 2) + '\n');
@@ -133,8 +134,21 @@ function buildSample() {
   console.log('wrote handoff.json', fs.statSync(path.join(HERE, 'handoff.json')).size, 'bytes; departs', h.outputs.return_transfer.value.departure_utc, 'arrives', a.utc, 'v_inf', a.v_infinity_m_s, 'material', m.material_kg);
 }
 
+// The review's independent oracles (oracle/review-oracles.py) read <dir>/inputs.json: the NHATS legs, the chain's chosen
+// return (departure, the asteroid's state, both burn vectors, the flown perigee) and DE440's constants.
+function reviewInputs(dir) {
+  const L = require(path.join(HERE, 'load.cjs')), K = L.K, DE = L.deps.de440, R = K.run(K.defaults(), { split: L.chain() }), jd = (t) => 2451545 + t / 86400;
+  if (R.refusal || !R.flight || !R.flight.converged) throw new Error('the chain did not run');
+  const out = { nhats: L.deps.oracles.nhats, nhats_columns: L.deps.oracles.nhats_columns, mu_sun_aster_m3_s2: K.constants.gmSun_m3_s2, mu_earth_aster_m3_s2: K.MU_E,
+    chain: { jd_dep_tdb: jd(R.sel.depTdb), jd_arr_tdb: jd(R.sel.arrTdb), jd_perigee_tdb: jd(R.flight.flown.perigee_tdb), asteroid: R.sel.cell.asteroid, dv_patched_m_s: R.sel.q.dv,
+      dv_flown_m_s: R.flight.dv, perigee_alt_m: R.flight.flown.perigee_altitude_m, uncorrected_alt_m: R.flight.uncorrected.perigee_altitude_m },
+    de440: { gm_m3_s2: DE.gm_m3_s2, earthJ2: DE.earthJ2, earthRadius_m: DE.earthRadius_m, c_m_s: DE.c_m_s } };
+  fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, 'inputs.json'), JSON.stringify(out)); console.log('wrote', path.join(dir, 'inputs.json'));
+}
+
 const arg = process.argv[2];
-if (arg === '--chain') buildChain();
+if (arg === '--review-inputs' && process.argv[3]) reviewInputs(process.argv[3]);
+else if (arg === '--chain') buildChain();
 else if (arg === '--sample') buildSample();
 else if (arg && fs.existsSync(arg)) buildOracles(arg);
-else { console.error('usage: node ideas/47-way-home/build-data.mjs <dir from oracle/fetch-sources.sh> | --chain | --sample'); process.exit(2); }
+else { console.error('usage: node ideas/47-way-home/build-data.mjs <dir from oracle/fetch-sources.sh> | --chain | --sample | --review-inputs <dir>'); process.exit(2); }

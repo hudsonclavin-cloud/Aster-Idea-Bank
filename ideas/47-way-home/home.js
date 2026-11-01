@@ -428,7 +428,8 @@
       var b = K39.findBody(cu.body), t = K39.parseUtc(cu.stay_end_utc);
       if (!b) return bad('Choose one of the six bodies.');
       if (!num(t)) return bad('The stay\'s end must be a date.');
-      if (!(cu.propellant_kg >= 0 && cu.isp_s > 0 && cu.dry_kg > 0 && cu.boiloff_kg_per_day >= 0)) return bad('Propellant, Isp, dry mass and boil-off must be positive numbers.');
+      // num() first: an emptied field reaches here as null (NaN through JSON), and null >= 0 is true (review)
+      if (!(num(cu.propellant_kg) && cu.propellant_kg >= 0 && num(cu.isp_s) && cu.isp_s > 0 && num(cu.dry_kg) && cu.dry_kg > 0 && num(cu.boiloff_kg_per_day) && cu.boiloff_kg_per_day >= 0 && num(cu.g0) && cu.g0 > 0)) return bad('Propellant, Isp, dry mass and boil-off must be numbers, positive (propellant and boil-off may be zero).');
       var ve = cu.isp_s * cu.g0;
       return { from: 'custom', body: b, stayEnd: t, stayEndUtc: cu.stay_end_utc, dry_kg: cu.dry_kg, propellant_kg: cu.propellant_kg, isp_s: cu.isp_s, ve_m_s: ve, species: false, of: null,
         fuel_kg: cu.propellant_kg, ox_kg: 0, boil: { fuel: cu.boiloff_kg_per_day, ox: 0 }, holdAllowed: false, holdWhyNot: 'stand-alone inputs carry no cooler', material_available_kg: null, refusals46: [], route: 'custom' };
@@ -448,6 +449,9 @@
     function validSettings(Sin) {
       var S = defaults(); for (var k in Sin || {}) S[k] = Sin[k];
       function bad2(w, h) { return { refusal: refusal('invalid_input', w, h) }; }
+      // every number must be a number: an emptied field arrives as null, which JavaScript's >= would read as 0 (review)
+      var nums = ['waitMinDays', 'waitMaxDays', 'tofMinDays', 'tofMaxDays', 'nDep', 'nTof', 'margin', 'entryLimit_m_s', 'entryAlt_m', 'aimAlt_m'].filter(function (k) { return !num(S[k]); });
+      if (nums.length) return bad2('Not a number: ' + nums.join(', ') + ' (an empty field is not read as zero).', 'Type a value, or Reset.');
       if (!(S.waitMinDays >= 0 && S.waitMaxDays >= S.waitMinDays && S.waitMaxDays - S.waitMinDays <= 4000)) return bad2('The departure window must run forward from the stay\'s end (0 to 4,000 days of waiting).', 'A wait from 0 days, and a window under 11 years.');
       if (!(S.tofMinDays >= 5 && S.tofMaxDays > S.tofMinDays && S.tofMaxDays <= 2000)) return bad2('Flight times must run from at least 5 days to at most 2,000 days, shortest first.', 'For example 20 to 720 days.');
       if (!(S.nDep >= 10 && S.nDep <= 240 && S.nTof >= 10 && S.nTof <= 200)) return bad2('The grid must be 10 to 240 departures by 10 to 200 flight times.', 'The default 90 by 70.');
@@ -532,6 +536,13 @@
       var chosen = S.material === 'max' ? Math.max(0, cap === null ? mMax : Math.min(mMax, cap)) : S.material;
       var L = ledger(B, wait, sel.tofS, bu, chosen);
       R.mass = { material_max_kg: mMax, material_available_kg: cap, material_kg: mMax >= 0 ? chosen : null, ledger: mMax >= 0 ? L : ledger(B, wait, sel.tofS, bu, 0), capacity_m_s: capacity(B, wait), limited_by: cap !== null && mMax > cap ? 'material' : 'propellant' };
+      // The ledger burns the correction's propellant with the departure burn. Kept for a correction made later, the fuel
+      // share of it boils at idea 46's passive rate: how long it would last (review).
+      var tcm = tcmOf(dvDep, S);
+      if (tcm > 0 && B.rf > 0) {
+        var M0 = R.mass.ledger.mass_departure_kg, corr = M0 * (Math.exp(-(bu.dv1 - tcm) / B.ve) - Math.exp(-bu.dv1 / B.ve)), fuel = B.species ? corr / (1 + B.of) : corr;
+        R.tcmHold = { dv_m_s: tcm, propellant_kg: corr, fuel_kg: fuel, days: fuel / B.rf };
+      }
       if (!(mMax >= 0)) R.refusals.push(refusal('out_of_envelope', 'The craft cannot get home on this window even empty: it needs ' + fmt(bu.dv1 + bu.dv2, 4) + ' m/s (with margin) and its propellant gives ' + fmt(R.mass.capacity_m_s, 4) + ' m/s on ' + fmt(B.dry, 5) + ' kg dry.', 'A cheaper window (the porkchop), more propellant (idea 46: more arrays or a longer stay), or a lighter craft.', { applies_to: 'return' }));
       else if (S.material !== 'max' && S.material > mMax) R.refusals.push(refusal('out_of_envelope', fmt(S.material, 5) + ' kg of material is more than the propellant can push home on this window (' + fmt(mMax, 5) + ' kg).', 'Less material or a cheaper window.', { applies_to: 'material' }));
       else if (S.material !== 'max' && cap !== null && S.material > cap) R.refusals.push(refusal('out_of_envelope', fmt(S.material, 5) + ' kg is more than idea 45 dug (' + fmt(cap, 5) + ' kg).', 'Less material, or a longer stay at idea 45.', { applies_to: 'material' }));
@@ -541,7 +552,7 @@
       src.refusals46.forEach(function (r) { R.refusals.push(r); });
       R.refusals.push(refusal('insufficient_data', 'The asteroid\'s orbit is Aster\'s elements (epoch ' + K39.tdbDateOfJd(src.body.elements.epochTdbJd) + ') integrated through idea 40\'s forces, without Yarkovsky or asteroid perturbers and without its orbit uncertainty. JPL\'s NHATS return legs, computed with JPL\'s own ephemerides, are the check (this page\'s reality table): the gap grows after an Earth encounter.', 'JPL\'s SPK for the body and its covariance (Horizons, or the Small-Body Database).', { applies_to: 'asteroid_ephemeris' }));
       R.refusals.push(refusal('insufficient_data', 'The asteroid\'s own gravity is left out of the departure burn and the craft leaves from its centre of mass.', 'The escape speed from the stand-off (idea 43\'s field) added to the burn.', { applies_to: 'asteroid_gravity' }));
-      R.refusals.push(refusal('insufficient_data', 'The return\'s navigation is not analysed: the departure burn carries Aster\'s ' + fmt(S.margin * 100, 3) + ' % margin and ' + (S.tcm === 'execution' ? 'one correction the size of its own 3-sigma execution error (Lucy\'s 30 mm/s + 4 %, idea 40)' : fmt(S.tcm, 4) + ' m/s for corrections') + '; orbit-determination errors and the TCMs that cut them are not budgeted.', 'A covariance analysis of the return like idea 40\'s for the outbound (its 116.6 m/s was mostly the launcher\'s injection error, which does not apply here).', { applies_to: 'navigation' }));
+      R.refusals.push(refusal('insufficient_data', 'The return\'s navigation is not analysed: the departure burn carries Aster\'s ' + fmt(S.margin * 100, 3) + ' % margin and ' + (S.tcm === 'execution' ? 'one correction the size of its own 3-sigma execution error (Lucy\'s 30 mm/s + 4 %, idea 40)' : fmt(S.tcm, 4) + ' m/s for corrections') + '; orbit-determination errors and the TCMs that cut them are not budgeted.' + (R.tcmHold ? ' The correction\'s propellant is counted as burned with the departure burn; kept for a correction made later, its ' + (src.species ? 'hydrogen' : 'fuel') + ' (' + fmt(R.tcmHold.fuel_kg, 3) + ' kg) would boil away in ' + fmt(R.tcmHold.days, 2) + ' days at the passive rate, so a later correction needs the coolers held or a separate storable thruster.' : ''), 'A covariance analysis of the return like idea 40\'s for the outbound (its 116.6 m/s was mostly the launcher\'s injection error, which does not apply here).', { applies_to: 'navigation' }));
       if (src.material_available_kg === null && src.from === '46-split') R.refusals.push(refusal('insufficient_data', 'How much material was collected is not in this handoff (idea 45\'s output is not carried whole inside it), so the material home is limited by the propellant only.', 'Idea 46\'s handoff with idea 45\'s handoff inside it unpruned.', { applies_to: 'material_available' }));
       if (src.from === 'custom') R.refusals.push(refusal('insufficient_data', 'Stand-alone craft: the propellant, Isp, dry mass and boil-off are typed in, not made by the chain.', 'Idea 46\'s handoff.', { applies_to: 'craft' }));
       R.refusals.push(refusal('insufficient_data', 'No structure, container or heat shield is counted for the material: the craft\'s dry mass is idea 46\'s, and whatever holds the material home (and protects it at entry, module 49) is not on file.', 'A container and capsule mass (OSIRIS-REx\'s and Hayabusa2\'s capsules are the flown references).', { applies_to: 'material_structure' }));
@@ -574,8 +585,8 @@
       var X = O.osiris_rex, k = 1, sc = X.craft_helio_adm[k], bn = X.bennu_helio_adm[k], before = X.craft_helio_adm[0], bn0 = X.bennu_helio_adm[0];
       var km = function (a) { return scale(a, 1000); }, tAdm = K39.jdTdbToTdb(sc.jd_tdb);
       var actual = sub(km(sc.v_km_s), km(bn.v_km_s)), pre = sub(km(before.v_km_s), km(bn0.v_km_s));
-      // the last hourly approach row still bound for the atmosphere (osculating perigee below the entry altitude):
-      // after it the capsule is released and the spacecraft diverts to fly by
+      // the last hourly approach row still bound for the atmosphere (osculating perigee below the entry altitude); the
+      // spacecraft diverts to fly by after it (the fetched rows do not say when the capsule was released: review)
       var g = null, rp = null;
       X.craft_geo_arrival.forEach(function (row) {
         var r1 = km(row.r_km), v1 = km(row.v_km_s), en1 = dot(v1, v1) / 2 - MU_E / norm(r1), a1 = -MU_E / (2 * en1), h1 = cross(r1, v1), e1 = Math.sqrt(1 + 2 * en1 * dot(h1, h1) / (MU_E * MU_E));
@@ -595,6 +606,12 @@
     function apophisCheck() {
       var b = K39.findBody('99942'), eph = ephemeris(b), J = O.apophis2029, tJ = K39.jdTdbToTdb(J.jd_tdb);
       var en = encounters(eph, tJ - 5 * DAY, tJ + 5 * DAY)[0];
+      // encounters() stops its golden section at 0.5 s, and here its bracket is centred on JPL's own time, so it can land
+      // on JPL's value (it did: a 0.000 s gap). The time is refined to 1 ms from this page's own minimum (review).
+      if (en) {
+        var tc = goldenMin(function (s) { return earthDistance(eph, s); }, en.tdb - 30, en.tdb + 37, 1e-3), A = eph.state(tc), E = K39.earthState(tc), r = sub(A.r, E.r), v = sub(A.v, E.v), rn = norm(r), e2 = dot(v, v) / 2 - MU_E / rn;
+        en = { tdb: tc, utc: utc(tc), distance_m: rn, speed_m_s: norm(v), v_infinity_m_s: e2 > 0 ? Math.sqrt(2 * e2) : null, search_tdb: en.tdb };
+      }
       return { jpl: { tdb: tJ, distance_m: J.dist_au * C.au_m, v_infinity_m_s: J.v_inf_km_s * 1000, v_rel_m_s: J.v_rel_km_s * 1000 }, here: en };
     }
     var CHECKS = null;

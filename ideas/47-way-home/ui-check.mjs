@@ -74,6 +74,9 @@ const RD = K.run(Object.assign(K.defaults(), { objective: 'dv' }), { split: L.ch
   ok(rows.some((r) => /median 0\.28 m\/s, max 5\.50/.test(r)), 'NHATS departure-burn row');
   ok(rows.some((r) => /\+2\.65 %/.test(r)) && rows.some((r) => /-0\.30 %/.test(r)), 'OSIRIS-REx rows');
   ok(rows.some((r) => /38,011\.5 km/.test(r) && /\+1\.66 km/.test(r)), 'Apophis 2029 distance row');
+  ok(rows.some((r) => /pass: time/.test(r) && /0\.081 s/.test(r)), 'Apophis 2029 time row, refined to 1 ms (review)');
+  ok(/The dot is the chosen return, 2\.33 m\/s/.test(await page.$eval('#dateCap', (e) => e.textContent)) && /chosen return/.test(await page.$eval('#dateLegend', (e) => e.textContent)), 'the date chart shows the chosen return\'s cost (review)');
+  ok(/flight through the planets its perigee 2029-04-13 20:18/.test(await page.$eval('#orbitCap', (e) => e.textContent)), 'the orbit caption tells the patched-conic arrival from the flown perigee (review)');
   ok(rows.some((r) => /×0\.00048/.test(r)), 'Aster\'s symmetric sample-return row');
 
   // controls
@@ -110,6 +113,12 @@ const RD = K.run(Object.assign(K.defaults(), { objective: 'dv' }), { split: L.ch
   await page.click('#copyBtn');
   ok(/Nothing to export/.test(await page.$eval('#hoStatus', (e) => e.textContent)), 'export says why there is nothing');
   await setNum(page, 'tofMinIn', 20);
+  // review: an emptied field was read as zero (the latest departure ran as the stay's end, the aim as 0 km)
+  for (const id of ['waitIn', 'aimIn']) {
+    await setNum(page, id, '');
+    ok((await own(page)).some((x) => /invalid_input/.test(x)) && (await page.$$('.tile')).length === 0, 'an empty ' + id + ' is refused, not read as zero');
+    await act(page, () => page.click('#resetBtn'));
+  }
 
   // export, read back in Node (another JavaScript engine's run)
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#dlBtn')]);
