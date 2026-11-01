@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/47-way-home/snapshots/erfa-iau2006.js",
+  "commit": "eb0fd0c0606ea1055646c102d4fc07ca84743304",
+  "commitDate": "2026-11-01T05:32:11+00:00",
+  "pathLastChanged": "4e9bb61 2026-11-01T04:56:16+00:00",
+  "committedBlob": "03f8a17c39c3c69219e3084cc391a6377fec714a",
+  "readBlob": "03f8a17c39c3c69219e3084cc391a6377fec714a",
+  "sourceSha256": "31b3306c74eb59c4c6017a124fc61f24ebf42592fa84a129a78ed992d15eba32",
+  "sourceBytes": 1729,
+  "copiedAt": "2026-11-01T05:56:09.676Z",
+  "mode": "copy",
+  "note": "IAU 2006 Earth rotation angle (ERFA era00.c) as idea 37 parsed it, via idea 47",
+  "readMatchesCommitted": true,
+  "writtenSha256": "31b3306c74eb59c4c6017a124fc61f24ebf42592fa84a129a78ed992d15eba32",
+  "writtenBytes": 1729
+}

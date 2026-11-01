@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/pck00010-earth.txt",
+  "commit": "eb0fd0c0606ea1055646c102d4fc07ca84743304",
+  "commitDate": "2026-11-01T05:32:11+00:00",
+  "pathLastChanged": "3335518 2026-10-31T08:57:06+00:00",
+  "committedBlob": "c3dbe88a228008ba5475f2a5357c0f0c5160bf9a",
+  "readBlob": "c3dbe88a228008ba5475f2a5357c0f0c5160bf9a",
+  "sourceSha256": "8d65ff7d758619d78c1106e11de7989cbe92ef85cec8cc1c8a683c7d7b201a11",
+  "sourceBytes": 692,
+  "copiedAt": "2026-11-01T06:05:45.946Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --earth: the BODY399_RADII line of idea 35's excerpt of Aster's vendor/naif/pck00010.tpc (62ddb17), parsed (equatorial 6378.1366 km, polar 6356.7519 km)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "64c73b337867d3b4022bdc4a622b938ee26682d1c962841d01c0e76effcfed96",
+  "writtenBytes": 638
+}

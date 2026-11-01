@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/35-max-q/snapshots/isa.js",
+  "commit": "eb0fd0c0606ea1055646c102d4fc07ca84743304",
+  "commitDate": "2026-11-01T05:32:11+00:00",
+  "pathLastChanged": "3335518 2026-10-31T08:57:06+00:00",
+  "committedBlob": "944fd5b005b01407aaeb7639a55899f0446a6085",
+  "readBlob": "944fd5b005b01407aaeb7639a55899f0446a6085",
+  "sourceSha256": "50dd915e3f3f1e65674ccd80887f23d58e70e716ed80dca0c72e8a37749c605e",
+  "sourceBytes": 3637,
+  "copiedAt": "2026-11-01T05:51:39.490Z",
+  "mode": "copy",
+  "note": "PartForge's 1976 atmosphere isa(), verbatim via ideas 02, 32, 33, 34, 35",
+  "readMatchesCommitted": true,
+  "writtenSha256": "50dd915e3f3f1e65674ccd80887f23d58e70e716ed80dca0c72e8a37749c605e",
+  "writtenBytes": 3637
+}

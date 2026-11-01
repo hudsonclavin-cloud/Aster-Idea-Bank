@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/01-tip-match/snapshots/aster.data.js",
+  "commit": "eb0fd0c0606ea1055646c102d4fc07ca84743304",
+  "commitDate": "2026-11-01T05:32:11+00:00",
+  "pathLastChanged": "4e7f224 2026-10-26T16:21:13+00:00",
+  "committedBlob": "370b55f5669b814ee3220ff97f5c1d67d2424fec",
+  "readBlob": "370b55f5669b814ee3220ff97f5c1d67d2424fec",
+  "sourceSha256": "1e1195b974aedc172c8b895db9909893c988747a049d78d9d4b63e3cf9ac3d2d",
+  "sourceBytes": 35202,
+  "copiedAt": "2026-11-01T05:51:41.907Z",
+  "mode": "copy",
+  "note": "Idea 01's Aster constants and NHATS records (its kernel refuses without them)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1e1195b974aedc172c8b895db9909893c988747a049d78d9d4b63e3cf9ac3d2d",
+  "writtenBytes": 35202
+}

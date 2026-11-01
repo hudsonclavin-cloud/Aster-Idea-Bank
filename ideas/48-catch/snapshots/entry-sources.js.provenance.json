@@ -1,0 +1,13 @@
+{
+  "repo": "https://ntrs.nasa.gov (NASA Technical Reports Server, 12 documents) ; https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+  "path": "stardust-edl-ops: https://ntrs.nasa.gov/citations/20090004445 ; stardust-reconstruction: https://ntrs.nasa.gov/citations/20080008567 ; stardust-aero: https://ntrs.nasa.gov/citations/20040105538 ; genesis-edl-ops: https://ntrs.nasa.gov/citations/20080020376 ; genesis-reconstruction: https://ntrs.nasa.gov/citations/20080019649 ; orex-edl: https://ntrs.nasa.gov/citations/20240000629 ; orex-edl-performance: https://ntrs.nasa.gov/citations/20240014280 ; orex-nav: https://ntrs.nasa.gov/citations/20240000800 ; sutton-graves: https://ntrs.nasa.gov/citations/19720003329 ; transhab-aerocapture: https://ntrs.nasa.gov/citations/20000102372 ; apollo-aerothermo: https://ntrs.nasa.gov/citations/19720018273 ; arrm-trajectory: https://ntrs.nasa.gov/citations/20150001236 ; nssdca-moon: https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+  "commit": "retrieved 2026-11-01",
+  "retrieved": "2026-11-01",
+  "sourceSha256": "2d8e09115eb7942d1d607dde1cc6b1f21ef2191a3f06579f7e0d5cae05ebc53c",
+  "sourceSha256Rule": "sha256 of the newline-joined per-document sha256 values in documents[] (in that order)",
+  "license": "US Government work (NASA technical reports on NTRS and the NSSDCA fact sheet; public domain in the US). The AIAA/AAS papers are NASA-authored and carry no US copyright.",
+  "note": "derived by build-data.mjs: every number sits beside its quote, each quote found verbatim in pdftotext output of its document (raw or -layout), each number found inside its quote; Stardust's C_A table transcribed from the page image (six of nine values also in the text layer); Moon values parsed from the fact sheet table",
+  "writtenSha256": "2c47f7ed43047dd435fc7d26fe963f2213c5a89a58b16ac5a1d7263ab31e5304",
+  "writtenBytes": 17014,
+  "mode": "derived"
+}
