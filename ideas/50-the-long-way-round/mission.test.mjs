@@ -132,17 +132,22 @@ test('5. the mission as committed: events, masses, delta-v, seams and verdict, a
   assert.ok(Math.abs(asc - d36.delta_v_ideal_flown.value) < 1e-9, 'the ascent bars add to idea 36\'s ideal delta-v flown');
   const dep = m.deltaV.find((d) => d.n === 38);
   assert.equal(dep.flown, false); assert.equal(dep.dv_m_s, C[38].outputs.burns.value[0].delta_v_m_s);
-  assert.deepEqual(m.verdict.blockers.map((b) => b.id), ['departure', 'tag_propellant']);
-  assert.equal(m.verdict.closes, false); assert.equal(m.verdict.lands, true);
+  // review: idea 48's re-aim with no propellant is a break too (as idea 47 aims it, the capsule flies past the Earth)
+  assert.deepEqual(m.verdict.blockers.map((b) => b.id), ['departure', 'tag_propellant', 'retarget']);
+  assert.equal(m.verdict.closes, false); assert.equal(m.verdict.lands, true); assert.deepEqual(m.verdict.missing, []);
   const ids = m.seams.map((s) => s.id);
-  for (const id of ['payload', 'departure', 'ascent_refly', 'departure_epoch', 'tag_propellant', 'plant_mass', 'container', 'comms', 'heat_shield', 'refusals_dropped']) assert.ok(ids.includes(id), id);
+  for (const id of ['payload', 'departure', 'ascent_refly', 'departure_epoch', 'tag_propellant', 'retarget', 'plant_mass', 'container', 'comms', 'heat_shield', 'refusals_dropped']) assert.ok(ids.includes(id), id);
+  const rt = m.seams.find((s) => s.id === 'retarget'), r48 = C[48].outputs.retarget.value;
+  assert.equal(rt.severity, 'breaks'); assert.equal(rt.a, r48.perigee_alt47_m); assert.equal(rt.b, r48.perigee_alt_m);
+  assert.ok(r48.needed && r48.flyby47 && r48.propellant_needed > C[48].outputs.mass.value.propellant_available_kg, 'idea 48 by hand: a flyby as aimed, a re-aim it cannot pay');
+  assert.ok(C[48].refusals.some((r) => (!r.from || r.from === '48-catch') && r.applies_to === 'retarget'), 'idea 48 refuses it itself');
   const pay = m.seams.find((s) => s.id === 'payload');
   assert.equal(pay.a, 10000); assert.equal(pay.b, C[42].outputs.mass.value.launch_kg);
   const ep = m.seams.find((s) => s.id === 'departure_epoch');
   assert.ok(Math.abs(ep.jump - (C[40].outputs.departure.value.tdb_s_past_j2000 - C[37].outputs.departure_point.value.tdb_s_past_j2000)) < 1e-6);
   // which refusals stop the mission, and which a later module answers
   const blk = m.refusals.filter((r) => r.blocking).map((r) => r.from + ':' + r.applies_to);
-  for (const id of ['38-burn-out:departure_propellant', '39-lamberts-road:chain_departure', '42-closing-in:tankage']) assert.ok(blk.includes(id), id + ' blocking');
+  for (const id of ['38-burn-out:departure_propellant', '39-lamberts-road:chain_departure', '42-closing-in:tankage', '48-catch:retarget']) assert.ok(blk.includes(id), id + ' blocking');
   assert.equal(m.refusals.find((r) => r.from === '34-stack' && r.applies_to === 'losses').answered_by, 35);
   assert.equal(m.refusals.find((r) => r.from === '35-max-q' && r.applies_to === 'guidance').answered_by, 36);
   assert.ok(m.refusals.filter((r) => r.answered_by).every((r) => !r.blocking));
@@ -202,8 +207,10 @@ test('7. the what-if\'s closed forms and decisions', () => {
   for (const d of [NaN, 5, 1e6, null]) if (d !== null) assert.ok(K.closure(m, { dry_kg: d }).refusals.some((r) => r.code === 'invalid_input'), 'dry ' + d);
   assert.ok(K.closure(m, { touchdown_m_s: 0.5 }).refusals.some((r) => r.applies_to === 'touchdown'));
   assert.ok(K.closure(m, { launcher: 99 }).refusals.some((r) => r.code === 'invalid_input'));
-  const vc6 = A.elvperf.vehicles.findIndex((v) => v.config === 'VC6');
-  const b = mis('as512|-|101955'); assert.ok(b.record.links[42], 'Bennu reaches 42');
+  // review: the what-if holds idea 47's aim, so on the committed chain idea 48's unpaid re-aim keeps it open even with the touch-and-go paid
+  const tg = K.closure(m, { tag: true, launcher: 0 });
+  assert.equal(tg.outbound.tag_ok, true); assert.equal(tg.launch.closes, true); assert.equal(tg.retarget_ok, false); assert.equal(tg.closes, false);
+  assert.ok(tg.refusals.some((r) => r.applies_to === 'retarget'));
 });
 
 test('8. JPL NHATS: the chain\'s round trips, summed as NHATS sums them, against NHATS\'s totals', () => {
@@ -216,19 +223,26 @@ test('8. JPL NHATS: the chain\'s round trips, summed as NHATS sums them, against
   const cmp = K.nhatsCompare(NC), st = K.nhatsStats(cmp);
   assert.equal(cmp.length, 61);
   assert.equal(st.inside.total.n, 26);
-  assert.ok(st.inside.total.median < 6, 'median total gap ' + st.inside.total.median);
-  assert.ok(st.inside.total.max < 450, 'worst total gap ' + st.inside.total.max);
-  assert.ok(st.inside.back.median < 0.5, 'idea 47 legs ' + st.inside.back.median);
-  assert.ok(st.outside.total.median > 1000, 'outside idea 39\'s envelope the two-body outbound leg is km/s off');
+  // review: pinned to the reviewer's own Python recomputation from snapshots/nhats.js and nhats-chain.js (Aster's mu and
+  // Earth radius, 400 km, 12 km/s at 125 km; statistics.median), not to this kernel: a median or a constant changed is caught
+  const pin = (x, v, tol, what) => assert.ok(Math.abs(x - v) <= tol, what + ' ' + x + ' vs ' + v);
+  pin(st.inside.total.median, 3.960154, 2e-6, 'median total gap'); pin(st.inside.total.max, 415.884648, 2e-6, 'worst total gap');
+  pin(st.inside.rel.median, 0.00038478, 1e-8, 'median relative gap');
+  pin(st.inside.dep.median, 6.916782, 2e-6, 'Earth departure'); pin(st.inside.arr.median, 6.003476, 2e-6, 'arrival');
+  pin(st.inside.back.median, 0.317040, 2e-6, 'NEA departure'); pin(st.inside.brake.median, 0.065766, 2e-6, 'braking');
+  pin(st.outside.total.median, 3088.2640, 2e-4, 'outside idea 39\'s envelope');
+  const inBodies = {}; cmp.filter((r) => !r.outside_39).forEach((r) => { inBodies[r.des] = (inBodies[r.des] || 0) + 1; });
+  assert.deepEqual(inBodies, { 101955: 14, 162173: 7, '2000 SG344': 3, 99942: 2 });
   assert.deepEqual(st.outside.bodies.sort(), ['162173', '2000 SG344', '99942']);
   // a broken summation is caught: NHATS's total without the Earth departure is kilometres off
   const r0 = cmp.find((r) => r.tid === 4417);
   assert.ok(Math.abs(r0.chain.dv_total_m_s - r0.nhats.dv_total_m_s) < 1);
 });
 
-test('9. the NHATS legs are not stale: ideas 39 and 47 recompute three of them now', async () => {
+test('9. the NHATS legs are not stale: ideas 39 and 47 recompute all 61 of them now', async () => {
   const F = await R.nhatsLegs();
-  for (const tid of [4417, 157834, 49238]) {
+  assert.equal(F.rows.length, 61);
+  for (const tid of NC.rows.map((r) => r.tid)) {
     const a = F.rows.find((r) => r.tid === tid), b = NC.rows.find((r) => r.tid === tid);
     for (const k of Object.keys(b.legs)) assert.ok(rel(a.legs[k], b.legs[k]) < 1e-9, tid + ' ' + k);
     assert.equal(!!a.outside_39, !!b.outside_39);
@@ -240,13 +254,34 @@ test('10. every mission flown: where each stops and why', () => {
   assert.equal(D.runs.length, R.SCENARIOS.length + 1);
   for (const [a, n] of [['101955', 45], ['162173', 43], ['65803', 43], ['433', 42], ['2000 SG344', 41]]) for (const r of ['chain-sc|lox-rp1|', 'as512|-|', 'as512-sc|-|']) assert.equal(stop[r + a].halted_at, n, r + a);
   assert.equal(stop['chain-sc|lox-lh2|99942'].halted_at, 36);
-  assert.equal(stop['chain|lox-eth75|99942'].halted_at, 38); assert.equal(stop['chain|htp-rp1|99942'].halted_at, 38);
+  // review: the ethanol and peroxide stacks stop at idea 37, with idea 37's own refusal (UPFG short on the window's azimuth)
+  for (const [k, short] of [['chain|lox-eth75|99942', '16.16 m/s short'], ['chain|htp-rp1|99942', '142.7 m/s short']]) {
+    const r = M.unpack(D, k);
+    assert.equal(r.halt.at, 37, k); assert.equal(r.halt.refusal.applies_to, 'target'); assert.ok(r.halt.refusal.reason.includes(short), k + ': ' + r.halt.refusal.reason.slice(0, 120));
+  }
+  // every mission reads, exports and prints (review: a refused launch left events with no epoch, and the page, the export
+  // and the CLI report threw on it)
+  for (const r of D.runs) {
+    const m = mis(r.key);
+    assert.ok(m.events.every((e) => Number.isFinite(e.t)), r.key + ' events');
+    const h = M.makeHandoff(m, { produced: '2026-11-02T00:00:00Z' }); assert.ok(M.parseHandoff(JSON.stringify(h)).own, r.key + ' reads back');
+    assert.ok(M.textReport(m).length > 100);
+  }
   // only AS-512 carrying the spacecraft departs; it is left one break short, the touch-and-go
   for (const r of D.runs) {
     const m = mis(r.key), dep = m.record.links[38] && Number.isFinite(m.record.links[38].v.hds_tdb);
     if (r.key === 'as512-sc|-|99942') { assert.ok(dep); assert.deepEqual(m.verdict.blockers.map((b) => b.id), ['tag_propellant']); }
     else if (r.key.startsWith('as512-sc')) continue;
     else assert.ok(!dep, r.key + ' should not depart');
+  }
+  // review: idea 48's re-aim. Every mission that reaches idea 48 on idea 47's default aim breaks there; the closed-loop
+  // rockets fly idea 47 at idea 48's perigee and need none
+  for (const r of D.runs) {
+    const m = mis(r.key), l48 = m.record.links[48]; if (!l48 || r.halt) continue;
+    const sc = /-sc\|/.test(r.key), ids = m.verdict.blockers.map((b) => b.id);
+    assert.equal(ids.includes('retarget'), !sc, r.key + ' retarget');
+    if (sc) { assert.ok(m.record.aim.length >= 1 && !m.record.aim[m.record.aim.length - 1].retarget_needed, r.key + ' aimed'); assert.equal(m.record.links[47].v.aim_alt_m, m.record.aim[m.record.aim.length - 1].aim_alt_m); assert.equal(l48.v.retarget_needed, false); }
+    else { assert.deepEqual(m.record.aim, []); assert.equal(m.record.links[47].v.aim_alt_m, 125000); }
   }
   // the closed loop converged and the rocket carries what idea 42 sized
   const sc = M.unpack(D, 'as512-sc|-|99942');
@@ -262,8 +297,12 @@ test('11. the handoff: reads back, refuses edits, walks the committed chain from
   const m = mis('as512-sc|-|99942'), h = M.makeHandoff(m, { produced: '2026-11-01T23:00:00Z', closure: K.closure(m, { tag: true }), whatIf: { tag: true } });
   for (const [k, o] of Object.entries(h.outputs)) { assert.ok('units' in o && o.confidence && o.source, k); }
   assert.ok(h.refusals.every((r) => r.from && r.reason && 'what_would_help' in r));
-  const back = M.parseHandoff(JSON.parse(JSON.stringify(h)));
+  const back = M.parseHandoff(JSON.parse(JSON.stringify(h)), { K });
   assert.ok(back.own && !back.refusal);
+  // review: the what-if and the links are checked on read-back too
+  const e4 = JSON.parse(JSON.stringify(h)); e4.outputs.closure.value.outbound.launch_kg *= 1.01; assert.ok(M.parseHandoff(e4, { K }).refusal, 'an edited what-if');
+  const e5 = JSON.parse(JSON.stringify(h)); e5.inputs.what_if.tag = false; assert.ok(M.parseHandoff(e5, { K }).refusal, 'a what-if whose settings were edited');
+  const e6 = JSON.parse(JSON.stringify(h)); e6.outputs.links.value[3].sha256 = '0'.repeat(16); assert.ok(M.parseHandoff(e6).refusal, 'an edited link digest');
   assert.ok(M.parseHandoff(JSON.stringify(h)).own, 'as text');
   const e1 = JSON.parse(JSON.stringify(h)); e1.outputs.verdict.value.closes = true; assert.ok(M.parseHandoff(e1).refusal);
   const e2 = JSON.parse(JSON.stringify(h)); e2.refusals.pop(); assert.ok(M.parseHandoff(e2).refusal);
@@ -284,6 +323,11 @@ test('11. the handoff: reads back, refuses edits, walks the committed chain from
   const odd = JSON.parse(JSON.stringify(C[49])); odd.inputs.catch_handoff.sha256 = '0'.repeat(64);
   const q = M.parseHandoff(odd, { sha256: sha, known, knownChain: chain });
   assert.deepEqual(q.walked.missing, [48]);
+  // review: a chain with links missing is never called closed (it used to be, from idea 49 alone)
+  assert.equal(q.mission.verdict.closes, false); assert.equal(q.mission.verdict.blockers[0].id, 'missing_links');
+  assert.deepEqual(q.mission.verdict.missing, Array.from({ length: 18 }, (_, i) => 31 + i));
+  const p46 = M.parseHandoff(C[46], { sha256: sha, known: {}, knownChain: {} });
+  assert.equal(p46.mission.verdict.lands, false); assert.equal(p46.mission.verdict.closes, false); assert.match(p46.mission.verdict.summary, /Does not reach the ground/);
   // the committed samples nested whole (32 to 40) walk without help
   const w = M.walk(C[40], sha, {}, {});
   assert.deepEqual(Object.keys(w.links).map(Number), [31, 32, 33, 34, 35, 36, 37, 38, 39, 40]);
@@ -293,16 +337,29 @@ test('12. the sample handoff.json is this page\'s default mission, and reads bac
   const h = JSON.parse(fs.readFileSync(path.join(here, 'handoff.json'), 'utf8'));
   const m = mis('chain|lox-rp1|99942'), again = M.makeHandoff(m, { produced: h.produced, source: 'bundled', whatIf: h.inputs.what_if, closure: K.closure(m, {}) });
   assert.deepEqual(h, JSON.parse(JSON.stringify(again)));
-  assert.ok(M.parseHandoff(h).own);
+  assert.ok(M.parseHandoff(h, { K }).own);
 });
 
-test('13. the closed loop flown again: AS-512 carrying the spacecraft is the bundled mission, link by link', async () => {
+test('13. the closed loop flown again: AS-512 carrying the spacecraft is the bundled mission, link by link (and LOX/ethanol stops at 37)', async () => {
   const run = await R.runMission({ rocket: 'as512-sc', asteroid: '99942' });
   const rec = M.recordOf(run, sha), fresh = M.unpack(M.packRecords([rec]), rec.key), bundled = M.unpack(D, rec.key);
   assert.deepEqual(Object.keys(fresh.links), Object.keys(bundled.links));
   for (const n of Object.keys(fresh.links)) assert.deepEqual(fresh.links[n].v, bundled.links[n].v, 'link ' + n);
   assert.deepEqual(fresh.loop, bundled.loop);
+  assert.deepEqual(fresh.aim, bundled.aim, 'the way home aimed the same');
+  // review: idea 49's handoff from this fresh run (it prunes idea 44 to a digest, which only the flown mission knows, by
+  // its 16-hex prefix) walks whole against the bundle, the page's way, and gives the bundled mission's verdict
+  const known = {};
+  for (const r of D.runs) { const u = M.unpack(D, r.key); for (const n of Object.keys(u.links)) if (!known[u.links[n].sha256]) known[u.links[n].sha256] = { link: u.links[n], chain: u.links }; }
+  const w = M.parseHandoff(run.links[49], { sha256: sha, known, knownChain: {} });
+  assert.deepEqual(w.walked.missing, []);
+  assert.deepEqual(Object.keys(w.mission.record.links).map(Number), Array.from({ length: 16 }, (_, i) => 34 + i));
+  assert.deepEqual(w.mission.verdict.blockers.map((b) => b.id), M.mission(bundled).verdict.blockers.map((b) => b.id));
   assert.equal(run.links[38].inputs.settings.payloadKg, run.loop[run.loop.length - 1].payload_kg, 'idea 38 departs with the payload the loop settled on');
   assert.ok(run.links[38].outputs.hyperbolic_departure_state, 'and departs');
   assert.equal(run.links[40].outputs.departure.value.kind, 'flown_38', 'idea 40 flies from idea 38\'s state');
+  // review: the runner stops at idea 37 when idea 37 hands on no launch (about 2 s: ideas 31 to 37 only)
+  const eth = await R.runMission({ rocket: 'chain', propellant: 'lox-eth75', asteroid: '99942' });
+  assert.equal(eth.halt.at, 37); assert.equal(eth.halt.refusal.applies_to, 'target'); assert.ok(!eth.links[38]);
+  assert.deepEqual(eth.halt, M.unpack(D, 'chain|lox-eth75|99942').halt);
 });

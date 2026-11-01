@@ -60,6 +60,8 @@ async function pick(page, rocket, prop, ast) {
   ok(Object.values(T).every((t) => t.chip), 'every tile has a confidence chip');
   const v = await page.$eval('#verdict', (e) => ({ cls: e.className, text: e.textContent }));
   ok(/open/.test(v.cls) && /does not close/.test(v.text) && /runs dry/.test(v.text), 'verdict: lands but does not close, the departure named');
+  ok((await page.$$eval('#verdict li', (l) => l.map((x) => x.textContent))).some((t) => /flies past the Earth/.test(t)), 'verdict: idea 48\'s unpaid re-aim named as a break (review)');
+  ok((await page.$eval('#plantLabel', (e) => e.textContent)).includes(M.fmt(L[46].v.coolers_kg, 5) + ' kg'), 'the plant toggle names idea 46\'s coolers from the mission (review)');
   ok(await page.$$eval('#massChart circle', (c) => c.length) === 9, 'nine masses on the mass chart');
   ok(await page.$$eval('#dvChart rect[fill="url(#hatch)"]', (r) => r.length) === m.deltaV.filter((d) => !d.flown).length, 'unflown burns hatched');
   ok(await page.$$eval('#timeChart circle', (c) => c.length) === m.events.length, 'every event on the timeline');
@@ -96,6 +98,7 @@ async function pick(page, rocket, prop, ast) {
   await page.check('#tag');
   W = await tiles(page, '#whatTiles');
   ok(/paid/.test(W['Touch and go'].v), 'touch-and-go paid when sized in');
+  ok(/Not closed yet/.test(await page.$eval('#whatRefusals', (e) => e.textContent)) && /re-aim for entry is not paid/.test(await page.$eval('#whatRefusals', (e) => e.textContent)), 'the chain\'s re-aim keeps the what-if open (review)');
   await page.fill('#dryNum', '5'); await page.press('#dryNum', 'Tab');
   ok(/must be 10 to 50,000 kg/.test(await page.$eval('#whatRefusals', (e) => e.textContent)), 'a 5 kg spacecraft refused');
   ok(!/NaN/.test(await page.$eval('main', (e) => e.textContent)), 'no NaN after a refused input');
@@ -116,7 +119,9 @@ async function pick(page, rocket, prop, ast) {
   T = await tiles(page);
   ok(/to spare/.test(T['Earth departure'].v), 'AS-512 with the spacecraft departs');
   ok(await page.$eval('#propellant', (e) => e.disabled), 'propellant disabled for AS-512');
-  ok(/touch-and-go/.test(await page.$eval('#verdict', (e) => e.textContent)), 'its one break is the touch-and-go');
+  const lis = await page.$$eval('#verdict li', (l) => l.map((x) => x.textContent));
+  ok(lis.length === 1 && /touch-and-go/.test(lis[0]), 'its one break is the touch-and-go (its way home is aimed): ' + lis.join(' | ').slice(0, 160));
+  ok(/Way home aimed at the entry/.test(await page.$eval('#verdict', (e) => e.textContent)), 'the aim loop is stated');
   await page.check('#tag');
   ok(/every budget closes/.test(await page.$eval('#whatRefusals', (e) => e.textContent)), 'the what-if closes it');
   // an asteroid where the chain stops
@@ -126,6 +131,11 @@ async function pick(page, rocket, prop, ast) {
   T = await tiles(page);
   ok(T['Landed'].refused && /stops at idea 43/.test(T['Landed'].s), 'its landed mass refused with the reason');
   ok(/No shape model/.test(await page.$eval('#refusals', (e) => e.textContent)), 'the halt\'s refusal listed');
+  // review: the ethanol stack stops at idea 37 with its own refusal, and the page draws it (it used to throw)
+  await pick(page, 'chain', 'lox-eth75', '99942');
+  const ve = await page.$eval('#verdict', (e) => e.textContent);
+  ok(/stops at idea 37/.test(ve) && /16\.16 m\/s short/.test(ve), 'LOX/ethanol stops at idea 37: ' + ve.slice(0, 100));
+  ok(!/NaN|undefined|Invalid/.test(await page.$eval('main', (e) => e.textContent)) && await page.$$eval('#seams tr', (r) => r.length) > 0, 'and the rest of the page is drawn');
   // a combination that was not flown
   await pick(page, 'chain', 'lox-lh2', '433');
   ok(/Not flown/.test(await page.$eval('#verdict', (e) => e.textContent)) && /run-chain\.mjs --rocket chain --propellant lox-lh2 --asteroid "433"/.test(await page.$eval('#verdict', (e) => e.textContent)), 'not flown: refused with the command');
@@ -146,6 +156,11 @@ async function pick(page, rocket, prop, ast) {
   ok(/31 to 49/.test(io) && /resolved/.test(io), 'idea 49\'s committed handoff walked to 31: ' + io.slice(0, 160));
   ok(await page.$$eval('#links tr', (r) => r.length) === 20, 'nineteen links');
   ok(/12,792|12,790|12,79/.test(await page.$eval('#verdict', (e) => e.textContent)), 'the walked chain names the departure shortfall');
+  // review: idea 49 with a digest nobody knows: the page says what is missing and never calls it closed
+  const odd = JSON.parse(fs.readFileSync(path.join(IDEAS, '49-hot-return/handoff.json'), 'utf8')); odd.inputs.catch_handoff.sha256 = '0'.repeat(64);
+  await page.fill('#importText', JSON.stringify(odd)); await page.click('#importBtn');
+  const vo = await page.$eval('#verdict', (e) => e.textContent);
+  ok(!/The mission closes/.test(vo) && /not in this chain/.test(vo), 'a partial chain is not called closed: ' + vo.slice(0, 120));
   // the page's own SHA-256 agrees with node:crypto (it resolves digests)
   for (const s of ['', 'abc', 'é€'.repeat(40), 'x'.repeat(55), 'y'.repeat(64)]) ok(await page.evaluate((x) => window.LWRsha256(x), s) === crypto.createHash('sha256').update(s).digest('hex'), 'sha256 of ' + JSON.stringify(s.slice(0, 8)));
   ok(errors.length === 0, 'no console errors (desktop): ' + errors.join(' | '));
@@ -176,6 +191,9 @@ for (const scheme of ['dark', 'light']) {
   const tiny = await page.$$eval('body *', (es) => es.filter((e) => e.childNodes.length && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && e.getBoundingClientRect().height > 0 && parseFloat(getComputedStyle(e).fontSize) < 11).length);
   ok(tiny === 0, scheme + ': no text under 11 px (' + tiny + ')');
   for (const id of ['massChart', 'dvChart', 'timeChart', 'lvChart']) ok(await page.$$eval('#' + id + ' svg *', (e) => e.length) > 10, scheme + ': ' + id + ' drawn');
+  // review: the seams read as blocks at phone width (the six-column table squeezed its text to a word per line)
+  const sw = await page.$$eval('#seams td', (ts) => ts.filter((t) => t.textContent.length > 40).map((t) => [getComputedStyle(t).display, t.getBoundingClientRect().width]));
+  ok(sw.length > 3 && sw.every((x) => x[0] === 'block' && x[1] > 250), scheme + ': seams as blocks, full width (' + JSON.stringify(sw.slice(0, 2)) + ')');
   await page.tap('#massChart circle >> nth=5');
   ok(/ideas\//.test(await page.$eval('#massRead', (e) => e.textContent)), scheme + ': a tap reads the mass chart');
   await page.tap('#matrix button >> nth=19');

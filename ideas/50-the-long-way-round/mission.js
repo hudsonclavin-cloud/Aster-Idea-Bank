@@ -111,11 +111,13 @@
       ['prop_stay_end_kg', 'mass', 'propellant_stay_end_kg'], ['boil_wait_kg', 'mass', 'boiloff_wait_kg'], ['burned_dep_kg', 'mass', 'burned_departure_kg'],
       ['boil_cruise_kg', 'mass', 'boiloff_cruise_kg'], ['mass_dep_kg', 'mass', 'mass_departure_kg'], ['mass_arr_kg', 'mass', 'mass_arrival_kg'], ['hold', 'mass', 'hold'],
       ['boil_fuel_kg_day', 'mass', 'boiloff_rates_kg_per_day.fuel'], ['boil_ox_kg_day', 'mass', 'boiloff_rates_kg_per_day.oxidizer'], ['boil_applied', 'mass', 'boiloff_rates_kg_per_day.applied'],
-      ['ve_m_s', 'propulsion', 've_m_s'], ['enc_utc', 'asteroid', 'encounters.0.utc'], ['enc_dist_m', 'asteroid', 'encounters.0.distance_m']],
+      ['ve_m_s', 'propulsion', 've_m_s'], ['enc_utc', 'asteroid', 'encounters.0.utc'], ['enc_dist_m', 'asteroid', 'encounters.0.distance_m'],
+      ['aim_alt_m', 'nbody_check', 'aim_perigee_altitude_m'], ['perigee_alt_m', 'earth_arrival', 'perigee_altitude_m']],
     48: [['choice', 'capture', 'choice'], ['destination', 'capture', 'destination'], ['ei_utc', 'entry_interface', 'utc'], ['ei_tdb', 'entry_interface', 'tdb_s_past_j2000'],
       ['ei_speed_m_s', 'entry_interface', 'speed_inertial_m_s'], ['ei_fpa_deg', 'entry_interface', 'fpa_inertial_deg'], ['vehicle', 'vehicle', 'label'], ['veh_kg', 'vehicle', 'mass_kg'],
       ['area_m2', 'vehicle', 'area_m2'], ['peak_g', 'screening', 'peak_g'], ['passes', 'screening', 'passes'], ['entry_kg', 'mass', 'entry_kg'], ['heat_shield_kg', 'mass', 'heat_shield_kg'],
-      ['retarget_dv_m_s', 'retarget', 'dv'], ['retarget_prop_kg', 'retarget', 'propellant_needed'], ['retarget_needed', 'retarget', 'needed'], ['prop_avail_kg', 'mass', 'propellant_available_kg']],
+      ['retarget_dv_m_s', 'retarget', 'dv'], ['retarget_prop_kg', 'retarget', 'propellant_needed'], ['retarget_needed', 'retarget', 'needed'], ['prop_avail_kg', 'mass', 'propellant_available_kg'],
+      ['retarget_perigee_m', 'retarget', 'perigee_alt_m'], ['retarget_perigee47_m', 'retarget', 'perigee_alt47_m'], ['retarget_flyby47', 'retarget', 'flyby47'], ['retarget_tcm_days', 'retarget', 'tcm_days']],
     49: [['land_utc', 'landing', 'utc'], ['land_tdb', 'landing', 'tdb_s_past_j2000'], ['lat_deg', 'landing', 'latitude_deg'], ['lon_deg', 'landing', 'longitude_deg'],
       ['ground_alt_m', 'landing', 'ground_alt_m'], ['td_m_s', 'landing', 'touchdown_speed_m_s'], ['entry_kg', 'mass', 'entry_kg'], ['ablated_kg', 'mass', 'ablated_kg'], ['landed_kg', 'mass', 'landed_kg'],
       ['material_kg', 'mass', 'material_kg'], ['peak_g', 'loads', 'peak_g_entry'], ['peak_q_W_m2', 'loads', 'peak_q_total_W_m2'], ['heat_load_J_m2', 'loads', 'heat_load_total_J_m2'],
@@ -173,7 +175,7 @@
       var s = JSON.stringify(h);
       e.sha256 = sha256(s); e.bytes = s.length; links[e.n] = e; hs[e.n] = h;
     });
-    return { choice: clone(run.choice), key: keyOf(run.choice), halt: run.halt ? { at: run.halt.at, refusal: clone(run.halt.refusal) } : null, loop: clone(run.loop || []), notes: clone(run.notes || []),
+    return { choice: clone(run.choice), key: keyOf(run.choice), halt: run.halt ? { at: run.halt.at, refusal: clone(run.halt.refusal) } : null, loop: clone(run.loop || []), aim: clone(run.aim || []), notes: clone(run.notes || []),
       links: links, flow: refusalFlow(hs) };
   }
   function keyOf(c) { return [c.rocket, c.rocket === 'as512' || c.rocket === 'as512-sc' ? '-' : c.propellant, c.asteroid].join('|'); }
@@ -200,7 +202,7 @@
         var s = JSON.stringify(body); if (!(s in Lidx)) { Lidx[s] = L.length; L.push(body); }
         ids[k] = Lidx[s]; meta[k] = [rec.choice.rocket === 'committed' ? e.sha256 : e.sha256.slice(0, 16), e.bytes, e.carried];
       });
-      return { key: rec.key, choice: rec.choice, halt: rec.halt, loop: deep(rec.loop), notes: (rec.notes || []).map(note), links: ids, meta: meta, flow: rec.flow || [] };
+      return { key: rec.key, choice: rec.choice, halt: rec.halt, loop: deep(rec.loop), aim: deep(rec.aim || []), notes: (rec.notes || []).map(note), links: ids, meta: meta, flow: rec.flow || [] };
     });
     return { version: 2, links: L, refusals: R, notes: N, runs: runs };
   }
@@ -210,12 +212,12 @@
     var links = {};
     Object.keys(run.links).forEach(function (k) {
       var b = data.links[run.links[k]], m = run.meta[k], v = {}, c = {};
-      EXTRACT[b.n].forEach(function (q, i) { if (b.a[i] !== null) v[q[0]] = b.a[i]; if (b.c[i] !== '-') c[q[0]] = CONF_BACK[b.c[i]] || b.c[i]; });
+      EXTRACT[b.n].forEach(function (q, i) { if (b.a[i] != null) v[q[0]] = b.a[i]; if (b.c[i] && b.c[i] !== '-') c[q[0]] = CONF_BACK[b.c[i]] || b.c[i]; });
       for (var x in b.x) v[x] = b.x[x];
       links[k] = { n: b.n, from: b.from, produced: b.produced, v: v, c: c, own: b.own.map(function (i) { var r = data.refusals[i], o = { code: r[0] }; if (r[1] != null) o.applies_to = r[1]; o.reason = r[2]; if (r[3] != null) o.what_would_help = r[3]; return o; }),
         sha256: m[0], bytes: m[1], carried: m[2] };
     });
-    return { choice: clone(run.choice), key: run.key, halt: clone(run.halt), loop: clone(run.loop), notes: run.notes.map(function (i) { return data.notes[i]; }), links: links, flow: clone(run.flow || []) };
+    return { choice: clone(run.choice), key: run.key, halt: clone(run.halt), loop: clone(run.loop), aim: clone(run.aim || []), notes: run.notes.map(function (i) { return data.notes[i]; }), links: links, flow: clone(run.flow || []) };
   }
 
   // ================================================================== the mission
@@ -231,8 +233,9 @@
       E.push(Object.assign({ t: l.v[tKey], utc: l.v[uKey] || null, label: label, n: n, mass_kg: massKey && num(l.v[massKey]) ? l.v[massKey] : null, mass_from: massKey ? sourceOf(n, massKey) : null }, extra || {}));
     }
     var l34 = L(rec, 34), l37 = L(rec, 37);
-    if (l37 && l34) E.push({ t: l37.v.launch_tdb, utc: l37.v.launch_utc, label: 'Liftoff', n: 37, mass_kg: l34.v.liftoff_kg, mass_from: sourceOf(34, 'liftoff_kg') });
-    if (l37 && L(rec, 35) && num(L(rec, 35).v.maxq_t_s)) E.push({ t: l37.v.launch_tdb + L(rec, 35).v.maxq_t_s, utc: null, label: 'Max Q (' + fmt(L(rec, 35).v.maxq_Pa / 1000, 3) + ' kPa)', n: 35, mass_kg: null, note: 'on idea 35\'s ascent; idea 37 re-flies it on the window\'s azimuth' });
+    // review: idea 37 can refuse its launch (LOX/ethanol and peroxide stacks short on the window's azimuth); no epoch, no event
+    if (l37 && l34 && num(l37.v.launch_tdb)) E.push({ t: l37.v.launch_tdb, utc: l37.v.launch_utc, label: 'Liftoff', n: 37, mass_kg: l34.v.liftoff_kg, mass_from: sourceOf(34, 'liftoff_kg') });
+    if (l37 && num(l37.v.launch_tdb) && L(rec, 35) && num(L(rec, 35).v.maxq_t_s)) E.push({ t: l37.v.launch_tdb + L(rec, 35).v.maxq_t_s, utc: null, label: 'Max Q (' + fmt(L(rec, 35).v.maxq_Pa / 1000, 3) + ' kPa)', n: 35, mass_kg: null, note: 'on idea 35\'s ascent; idea 37 re-flies it on the window\'s azimuth' });
     add(37, 'ins_tdb', 'ins_utc', 'Parking orbit', 'ins_kg');
     add(38, 'ign_tdb', 'ign_utc', 'Departure burn ignition', 'mass_ign_kg');
     if (departed(rec)) add(38, 'hds_tdb', 'hds_utc', 'Departure burn cutoff: on the way', 'hds_kg');
@@ -300,6 +303,9 @@
     }
     if (l39 && l40 && num(l39.v.vinf_arr_m_s) && num(l40.v.vinf_arr_m_s)) add('arrival_vinf', 'note', [39, 40], 'The arrival speed flown through the planets differs from the conic\'s.', l39.v.vinf_arr_m_s, l40.v.vinf_arr_m_s, 'm/s', 'Nothing: idea 40\'s flown arrival is the one idea 42 brakes from.');
     if (l42 && l44 && l44.v.prop_need_kg > l44.v.prop_avail_kg) add('tag_propellant', 'breaks', [42, 44], 'Idea 42 sizes the tanks for the approach and station-keeping only; the touch-and-go needs ' + fmt(l44.v.prop_need_kg, 3) + ' kg and ' + fmt(l44.v.prop_avail_kg, 3) + ' kg is left.', l44.v.prop_avail_kg, l44.v.prop_need_kg, 'kg', 'Size the tanks for the touch-and-go too (the what-if\'s toggle).');
+    // review: idea 48's re-aim for entry. Idea 47 aims the way home at its own perigee; when that is above the air the
+    // capsule flies past the Earth, and idea 48 refuses the correction it has no propellant for (applies_to `retarget`)
+    if (retargetOpen(l48)) add('retarget', 'breaks', [47, 48], 'Idea 47 aims the way home at a ' + fmt(l48.v.retarget_perigee47_m / 1000, 4) + ' km perigee' + (l48.v.retarget_flyby47 ? ', above the air: as aimed, the capsule flies past the Earth' : ', where idea 48\'s entry does not work as flown') + '. The entry idea 48 flies needs a perigee at ' + fmt(l48.v.retarget_perigee_m / 1000, 4) + ' km: a re-aim of ' + fmt(l48.v.retarget_dv_m_s * 1000, 3) + ' mm/s ' + (num(l48.v.retarget_tcm_days) ? fmt(l48.v.retarget_tcm_days, 3) + ' days out' : 'on the way in') + ', ' + fmt(l48.v.retarget_prop_kg * 1000, 3) + ' g of propellant, and ' + fmt(l48.v.prop_avail_kg || 0, 3) + ' kg arrives.', l48.v.retarget_perigee47_m, l48.v.retarget_perigee_m, 'm', 'Aim idea 47 at that perigee (its aim setting, as idea 48\'s refusal says; the rockets carrying the spacecraft here do), or bring the correction\'s propellant home.');
     if (l42 && l46 && num(l46.v.coolers_kg) && l46.v.coolers_kg > 0) add('plant_mass', 'gap', [42, 46], 'Idea 46 adds ' + fmt(l46.v.coolers_kg, 4) + ' kg of coolers to the dry mass at the asteroid that the spacecraft idea 42 launched did not carry (and the electrolyser and tanks are refused, not weighed).', l42.v.dry_kg, l46.v.dry_total_kg, 'kg', 'Launch the plant: the what-if adds its mass to the outbound dry mass.');
     if (l45 && l47 && num(l47.v.material_kg)) add('container', 'gap', [45, 48], 'The ' + fmt(l47.v.material_kg, 5) + ' kg of material rides home with no container, structure or heat-shield mass booked: idea 48 calls the whole ' + fmt(l48 ? l48.v.entry_kg : NaN, 5) + ' kg an Apollo-derived capsule and refuses the heat-shield mass.', null, null, 'kg', 'A return vehicle design (capsule structure, heat shield, parachutes) in the dry mass; idea 49 gives the parachute area it would need.');
     if (l47 && l48 && Math.abs(l47.v.mass_arr_kg - l48.v.entry_kg) > 1e-6 * l48.v.entry_kg) add('entry_mass', 'breaks', [47, 48], 'The mass idea 47 brings to the Earth is not the mass idea 48 enters with.', l47.v.mass_arr_kg, l48.v.entry_kg, 'kg', 'Re-export idea 48 from idea 47\'s handoff.');
@@ -314,8 +320,11 @@
     });
     return S;
   }
-  // refusal codes (applies_to) that stop the mission itself, not only a number's confidence
-  var BLOCKING = { departure_propellant: 1, chain_departure: 1, payload_capability: 1, tankage: 1, parachute_sequence: 1, return: 1, landing: 1 };
+  /** Idea 48 needs a re-aim for its entry and has not the propellant for it (its `retarget` refusal). */
+  function retargetOpen(l48) { return !!(l48 && l48.v.retarget_needed && !(l48.v.retarget_prop_kg <= (l48.v.prop_avail_kg || 0))); }
+  // refusal codes (applies_to) that stop the mission itself, not only a number's confidence (review: + retarget, idea
+  // 48's re-aim with no propellant, without which the capsule as idea 47 aims it flies past the Earth)
+  var BLOCKING = { departure_propellant: 1, chain_departure: 1, payload_capability: 1, tankage: 1, parachute_sequence: 1, return: 1, landing: 1, retarget: 1 };
   function refusalsOf(rec) {
     var out = [], seen = {}, ans = {};
     (rec.flow || []).forEach(function (f) { f.answered.forEach(function (id) { ans[id] = f.n; }); });
@@ -333,23 +342,30 @@
   function mission(rec) {
     var E = events(rec), D = deltaV(rec), S = seams(rec), R = refusalsOf(rec), l;
     // launch to landing (the asteroid's own Earth pass can come after the capsule is down: Apophis's does, by 4 minutes)
-    var t0 = L(rec, 37) ? L(rec, 37).v.launch_tdb : E.length ? E[0].t : null, tEnd = L(rec, 49) ? L(rec, 49).v.land_tdb : E.length ? E[E.length - 1].t : null;
+    var t0 = L(rec, 37) && num(L(rec, 37).v.launch_tdb) ? L(rec, 37).v.launch_tdb : E.length ? E[0].t : null, tEnd = L(rec, 49) ? L(rec, 49).v.land_tdb : E.length ? E[E.length - 1].t : null;
     var durations = {};
-    if ((l = L(rec, 37)) && L(rec, 40)) durations.launch_to_cruise_s = L(rec, 40).v.dep_tdb - l.v.launch_tdb;
+    if ((l = L(rec, 37)) && num(l.v.launch_tdb) && L(rec, 40)) durations.launch_to_cruise_s = L(rec, 40).v.dep_tdb - l.v.launch_tdb;
     if (L(rec, 40)) durations.cruise_s = L(rec, 40).v.arr_tdb - L(rec, 40).v.dep_tdb;
     if (L(rec, 42) && L(rec, 47)) durations.stay_s = L(rec, 47).v.dep_tdb - L(rec, 42).v.so_tdb;
     if (L(rec, 47)) durations.return_s = L(rec, 47).v.ea_tdb - L(rec, 47).v.dep_tdb;
     if (num(t0) && num(tEnd)) durations.total_s = tEnd - t0;
     var lands = !!L(rec, 49) && !rec.halt, breaks = S.filter(function (s) { return s.severity === 'breaks'; });
     var blockers = breaks.map(function (s) { return { id: s.id, between: s.between, what: s.what }; });
+    // review: a chain with links missing (an import that stops early, or a digest this page cannot resolve) is not
+    // called closed; AS-512's own engines leave ideas 31 to 33 off its path
+    var first = L(rec, 34) && L(rec, 34).v.vehicle_id === 'AS-512' ? 34 : 31, missing = [];
+    if (!rec.halt) for (var q = first; q <= 49; q++) if (!rec.links[q]) missing.push(q);
+    if (missing.length) blockers.unshift({ id: 'missing_links', between: missing, what: (missing.length > 1 ? 'Ideas ' + missing.join(', ') + ' are' : 'Idea ' + missing[0] + ' is') + ' not in this chain (not carried, or carried as a digest this page cannot resolve): nothing is known about ' + (missing.length > 1 ? 'them' : 'it') + ', so the mission cannot be called closed.' });
     if (rec.halt) blockers.unshift({ id: 'halt', between: [rec.halt.at], what: 'The chain stops at idea ' + rec.halt.at + ' (' + TITLE[rec.halt.at] + '): ' + rec.halt.refusal.reason });
     var closes = lands && blockers.length === 0;
+    var lastN = Object.keys(rec.links).map(Number).sort(function (a, b) { return b - a; })[0];
     var summary = rec.halt ? 'Stops at idea ' + rec.halt.at + ' (' + TITLE[rec.halt.at] + ').'
       : closes ? 'Closes: every link runs on what the one before it handed on.'
+      : !lands ? 'Does not reach the ground: the chain read here ends at idea ' + lastN + '.'
       : 'Lands on paper, but does not close: ' + blockers.map(function (b) { return b.id.replace(/_/g, ' '); }).join(', ') + '.';
     var l47 = L(rec, 47), l49 = L(rec, 49), l42 = L(rec, 42), l34 = L(rec, 34);
     return { record: rec, choice: rec.choice, key: rec.key, events: E, deltaV: D, seams: S, refusals: R, durations: durations,
-      verdict: { closes: closes, lands: lands, halted_at: rec.halt ? rec.halt.at : null, blockers: blockers, summary: summary },
+      verdict: { closes: closes, lands: lands, halted_at: rec.halt ? rec.halt.at : null, missing: missing, blockers: blockers, summary: summary },
       headline: { liftoff_kg: l34 ? l34.v.liftoff_kg : null, spacecraft_launch_kg: l42 ? l42.v.launch_kg : null, material_home_kg: l47 ? l47.v.material_kg : null,
         landed_kg: l49 ? l49.v.landed_kg : null, launch_utc: L(rec, 37) ? L(rec, 37).v.launch_utc : null, landing_utc: l49 ? l49.v.land_utc : null, target: L(rec, 39) ? L(rec, 39).v.name : null } };
   }
@@ -451,7 +467,10 @@
         }
       }
       if (l48 && l48.v.choice !== 'direct' && l48.v.choice !== 'skip') out.assumptions.push('Idea 48 chose ' + l48.v.choice + '; the entry mass here is idea 47\'s arrival mass.');
-      out.closes = !!(out.launch.closes && out.outbound.tag_ok && out.home && out.home.material_kg != null && out.entry);
+      // review: idea 48's re-aim for entry is a budget too; the what-if holds idea 47's aim, so it cannot pay it
+      out.retarget_ok = !retargetOpen(l48);
+      if (!out.retarget_ok) out.refusals.push(refusal('out_of_envelope', 'Idea 48\'s re-aim for entry is not paid: idea 47 aims at a ' + fmt(l48.v.retarget_perigee47_m / 1000, 4) + ' km perigee and the entry needs ' + fmt(l48.v.retarget_perigee_m / 1000, 4) + ' km, a ' + fmt(l48.v.retarget_dv_m_s * 1000, 3) + ' mm/s correction (' + fmt(l48.v.retarget_prop_kg * 1000, 3) + ' g) with ' + fmt(l48.v.prop_avail_kg || 0, 3) + ' kg arriving. The what-if holds idea 47\'s aim.', 'Aim the way home at the entry: the rockets that carry the spacecraft (the closed loop) fly idea 47 aimed at idea 48\'s perigee.', { applies_to: 'retarget' }));
+      out.closes = !!(out.launch.closes && out.outbound.tag_ok && out.home && out.home.material_kg != null && out.entry && out.retarget_ok);
       return out;
     }
 
@@ -517,8 +536,8 @@
       if (!up) { if (n === 34) break; }
       if (up && up.pruned) {
         pruned.push({ n: n - 1, sha256: up.sha256, bytes: up.bytes });
-        var hit = known && known[up.sha256];
-        if (hit) { links[n - 1] = clone(hit); var m = n - 2; while (m >= 31 && knownChain && knownChain[m]) { links[m] = clone(knownChain[m]); m--; } }
+        var hit = known && (known[up.sha256] || known[String(up.sha256).slice(0, 16)]);
+        if (hit) { var chainOf = hit.chain || knownChain; links[n - 1] = clone(hit.link || hit); var m = n - 2; while (m >= 31 && chainOf && chainOf[m]) { links[m] = clone(chainOf[m]); m--; } }
         else missing.push(n - 1);
         break;
       }
@@ -554,7 +573,21 @@
         'Times are TDB seconds past J2000 with TDB - UTC = 69.184 s (Aster\'s offset for this span), as every module uses.',
         'The what-if holds every link except the spacecraft mass it changes: windows, delta-v, water, propellant made and the entry are the chain\'s.'] };
   }
-  /** Read a handoff back: this module's own (re-derived from its record and compared), or any of ideas 31 to 49 (walked). */
+  /** The page's what-if settings {dry, plant, tag, launcher, td} (as a handoff's inputs.what_if carries them) as closure() options. */
+  function whatIfOpts(w) {
+    w = w || {};
+    return { dry_kg: w.dry == null ? null : +w.dry, plant: !!w.plant, tag: !!w.tag, launcher: w.launcher == null || w.launcher === 'flown' ? 'flown' : +w.launcher, touchdown_m_s: w.td == null ? null : +w.td };
+  }
+  // two JSON values equal to a relative 1e-8 on every number (a closure made on a walked chain's unrounded numbers
+  // against the same closure re-made on its record, packed to 10 figures)
+  function near(a, b) {
+    if (typeof a === 'number' && typeof b === 'number') return a === b || Math.abs(a - b) <= 1e-8 * Math.max(1e-6, Math.abs(a), Math.abs(b));
+    if (Array.isArray(a)) return Array.isArray(b) && a.length === b.length && a.every(function (x, i) { return near(x, b[i]); });
+    if (a && typeof a === 'object') { if (!b || typeof b !== 'object' || Array.isArray(b)) return false; var ka = Object.keys(a).sort(), kb = Object.keys(b).sort(); if (ka.join() !== kb.join()) return false; return ka.every(function (k) { return near(a[k], b[k]); }); }
+    return a === b;
+  }
+  /** Read a handoff back: this module's own (re-derived from its record and compared), or any of ideas 31 to 49 (walked).
+   * ctx: {sha256, known, knownChain, K} (K = create(deps): with it, an exported what-if is re-run and compared too). */
   function parseHandoff(input, ctx) {
     ctx = ctx || {};
     var h = input;
@@ -565,8 +598,10 @@
       var pk = h.inputs && h.inputs.record, rec = pk && pk.version === 2 && pk.runs && pk.runs.length === 1 ? unpack(pk, pk.runs[0].key) : null;
       if (!rec || !rec.links) return { refusal: refusal('invalid_input', 'This handoff carries no mission record.', 'The unedited handoff this page exported.') };
       var mis = mission(rec), again = makeHandoff(mis, { produced: h.produced, source: h.inputs.source, whatIf: h.inputs.what_if, closure: h.outputs.closure ? h.outputs.closure.value : null });
-      var keys = ['verdict', 'timeline', 'mass_ledger', 'delta_v_budget', 'durations', 'seams'];
-      for (var i = 0; i < keys.length; i++) if (JSON.stringify(again.outputs[keys[i]]) !== JSON.stringify(h.outputs[keys[i]])) return { refusal: refusal('invalid_input', 'Its ' + keys[i] + ' is not what its own record gives: it was edited.', 'The unedited handoff this page exported.') };
+      var keys = ['verdict', 'timeline', 'mass_ledger', 'delta_v_budget', 'durations', 'seams', 'links'];
+      for (var i = 0; i < keys.length; i++) if (JSON.stringify(again.outputs[keys[i]]) !== JSON.stringify(h.outputs[keys[i]])) return { refusal: refusal('invalid_input', 'Its ' + keys[i] + ' is not what its own record gives: it was edited, or exported by an earlier version of this page (the review changed the verdict\'s rules).', 'The unedited handoff this page exports now (run-chain.mjs --handoff writes one).') };
+      // review: the what-if is re-run from its own settings when the caller can (the page and the tests pass K)
+      if (h.outputs.closure && ctx.K && !near(JSON.parse(JSON.stringify(ctx.K.closure(mis, whatIfOpts(h.inputs.what_if)))), h.outputs.closure.value)) return { refusal: refusal('invalid_input', 'Its what-if (closure) is not what its own settings give on its own record: it was edited.', 'The unedited handoff this page exported.') };
       if (JSON.stringify(again.refusals.map(function (r) { return r.code + (r.applies_to || ''); })) !== JSON.stringify((h.refusals || []).map(function (r) { return r.code + (r.applies_to || ''); }))) return { refusal: refusal('invalid_input', 'Its refusals are not what its own record gives: one was dropped or added.', 'The unedited handoff this page exported.') };
       return { mission: mis, own: true, whatIf: h.inputs.what_if };
     }
@@ -597,5 +632,5 @@
   return { FROM: FROM, TITLE: TITLE, EXTRACT: EXTRACT, ANSWERED: ANSWERED, refusalFlow: refusalFlow, UPSTREAM: UPSTREAM, BLOCKING: BLOCKING, G0: G0, extract: extract, sourceOf: sourceOf, recordOf: recordOf, keyOf: keyOf,
     packRecords: packRecords, unpack: unpack, events: events, deltaV: deltaV, seams: seams, refusalsOf: refusalsOf, mission: mission, utcToTdb: utcToTdb, tdbToUtc: tdbToUtc,
     payloadAtC3: payloadAtC3, injectionDvFromC3: injectionDvFromC3, BEYOND_CURVE: BEYOND_CURVE, create: create, walk: walk, makeHandoff: makeHandoff, parseHandoff: parseHandoff,
-    textReport: textReport, b64urlEncode: b64urlEncode, b64urlDecode: b64urlDecode, fmt: fmt };
+    textReport: textReport, b64urlEncode: b64urlEncode, b64urlDecode: b64urlDecode, fmt: fmt, whatIfOpts: whatIfOpts, retargetOpen: retargetOpen };
 });

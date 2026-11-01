@@ -145,7 +145,7 @@ function nhats(dir) {
     commit: 'retrieved ' + D.retrieved, retrieved: D.retrieved, sourceSha256: rollup, sha256Rule: 'sha256 of the newline-joined per-file sha256 values of the 43 NHATS responses, files in name order',
     caveatsSha256: sha(cav), docSha256: sha(doc), writtenSha256: sha(body),
     license: 'NASA/JPL (CNEOS, SSD API) public data; US Government work, no copyright asserted in the United States',
-    note: 'derived by build-data.mjs --nhats from the directory oracle/fetch-sources.sh writes: min_dv_traj and min_dur_traj of each response, once per tid (' + rows.length + ' trajectories), and seven quoted sentences found verbatim (after tags are stripped)',
+    note: 'derived by build-data.mjs --nhats from the directory oracle/fetch-sources.sh writes: min_dv_traj and min_dur_traj of each response, once per tid (' + rows.length + ' trajectories), and eight quoted phrases found verbatim (after tags are stripped)',
   }, null, 1) + '\n');
   console.log('nhats.js:', rows.length, 'trajectories from', files.length, 'responses; parking orbit', leo, 'km');
 }

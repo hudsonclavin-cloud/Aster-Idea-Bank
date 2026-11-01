@@ -25,9 +25,9 @@
   // ------------------------------------------------------------------ choices
   var ROCKETS = [
     { id: 'chain', label: 'Idea 34\'s stack, 10 t payload', note: 'Idea 34\'s sample stack: seven of the engine ideas 31 to 33 build from the propellant you pick, on 400 t; one J-2 on 100 t; 10 t of payload (assumed masses, scaled from AS-512\'s inert fractions).' },
-    { id: 'chain-sc', label: 'Idea 34\'s stack, carrying the spacecraft', note: 'The same stack with its payload closed on the spacecraft: the launch mass idea 42 sizes for the arrival this departure gives, iterated until the two agree.' },
-    { id: 'as512', label: 'Saturn V AS-512, as flown', note: 'Apollo 17\'s Saturn V from its flight report (ideas 34 to 36), carrying its 50.6 t Apollo stack: the propellant picker does not apply (its F-1 and J-2 are idea 33\'s presets).' },
-    { id: 'as512-sc', label: 'Saturn V AS-512, carrying the spacecraft', note: 'AS-512 flown as Apollo 17 to the parking orbit, then departing with the spacecraft instead of the Apollo stack (idea 38\'s own payload setting; the ascent is not re-flown, so this is a lower bound), closed on idea 42\'s launch mass.' },
+    { id: 'chain-sc', label: 'Idea 34\'s stack, carrying the spacecraft', note: 'The same stack with its payload closed on the spacecraft: the launch mass idea 42 sizes for the arrival this departure gives, iterated until the two agree; and the way home aimed at the entry idea 48 flies (idea 47 re-flown at the perigee idea 48 asks for).' },
+    { id: 'as512', label: 'Saturn V AS-512, as flown', note: function () { var r = byKey['as512|-|99942'] && LW.unpack(D, 'as512|-|99942'); return 'Apollo 17\'s Saturn V from its flight report (ideas 34 to 36), carrying its ' + (r ? kg(r.links[34].v.payload_kg) + ' ' : '') + 'Apollo stack (idea 34\'s payload): the propellant picker does not apply (its F-1 and J-2 are idea 33\'s presets).'; } },
+    { id: 'as512-sc', label: 'Saturn V AS-512, carrying the spacecraft', note: 'AS-512 flown as Apollo 17 to the parking orbit, then departing with the spacecraft instead of the Apollo stack (idea 38\'s own payload setting; the ascent is not re-flown, so this is a lower bound), closed on idea 42\'s launch mass; the way home aimed at the entry idea 48 flies.' },
     { id: 'committed', label: 'The chain as committed (19 samples)', note: 'The 19 handoff.json files as they sit in the bank, read one by one: the chain each module was built and reviewed on. Apophis, LOX/RP-1 only.' },
   ];
   var PROPS = { 'lox-rp1': 'LOX / RP-1 (the chain\'s)', 'lox-lh2': 'LOX / LH2', 'lox-ch4': 'LOX / methane', 'nto-mmh': 'N2O4 / MMH', 'nto-udmh': 'N2O4 / UDMH', 'nto-a50': 'N2O4 / Aerozine 50', 'nto-n2h4': 'N2O4 / hydrazine', 'lox-eth75': 'LOX / 75 % ethanol', 'htp-rp1': '98 % H2O2 / RP-1' };
@@ -59,7 +59,7 @@
     $('asteroid').value = state.ast; $('asteroid').disabled = com || !!state.imported;
     $('propHint').textContent = as ? '(AS-512 carries its own)' : com ? '(the chain\'s)' : '';
     var r = ROCKETS.filter(function (x) { return x.id === state.rocket; })[0];
-    $('rocketNote').textContent = state.imported ? state.importedNote : r ? r.note : '';
+    $('rocketNote').textContent = state.imported ? state.importedNote : r ? (typeof r.note === 'function' ? r.note() : r.note) : '';
   }
 
   // ------------------------------------------------------------------ verdict and tiles
@@ -73,12 +73,13 @@
       return;
     }
     var V = mis.verdict;
-    v.className = 'verdict ' + (V.closes ? 'closes' : V.halted_at ? 'halts' : 'open');
-    v.appendChild(el('h2', { text: V.closes ? 'The mission closes.' : V.halted_at ? 'The chain stops at idea ' + V.halted_at + ' (' + LW.TITLE[V.halted_at] + ').' : 'It lands on paper, but the mission does not close.' }));
+    v.className = 'verdict ' + (V.closes ? 'closes' : V.halted_at || !V.lands ? 'halts' : 'open');
+    v.appendChild(el('h2', { text: V.closes ? 'The mission closes.' : V.halted_at ? 'The chain stops at idea ' + V.halted_at + ' (' + LW.TITLE[V.halted_at] + ').' : V.lands ? 'It lands on paper, but the mission does not close.' : 'The chain read here does not reach the ground.' }));
     var ul = el('ul'); V.blockers.forEach(function (b) { ul.appendChild(el('li', { text: (b.between.length > 1 ? b.between.join(' → ') + ': ' : '') + b.what })); });
     if (V.blockers.length) v.appendChild(ul);
     var rec = mis.record, extra = [];
     if (rec.loop && rec.loop.length) extra.push('Payload closed on the spacecraft in ' + rec.loop.length + ' pass' + (rec.loop.length > 1 ? 'es' : '') + ': ' + rec.loop.map(function (q) { return kg(q.payload_kg) + ' → ' + kg(q.launch_kg); }).join(', then ') + '.');
+    if (rec.aim && rec.aim.length) extra.push('Way home aimed at the entry in ' + rec.aim.length + ' pass' + (rec.aim.length > 1 ? 'es' : '') + ': ' + rec.aim.map(function (q) { return 'aim ' + fmt(q.aim_alt_m / 1000, 4) + ' km, flown perigee ' + fmt(q.perigee_alt_m / 1000, 4) + ' km' + (q.retarget_needed ? ', idea 48 still asks for a re-aim' : ', no re-aim needed'); }).join('; then ') + '.');
     (rec.notes || []).forEach(function (n) { extra.push(n); });
     if (extra.length) v.appendChild(el('p', { cls: 'small', text: extra.join(' ') }));
   }
@@ -247,12 +248,14 @@
     $('dry').value = Math.min(5000, Math.max(100, dry)); $('dryNum').value = dry; $('dryOut').textContent = kg(dry);
     $('td').value = td; $('tdOut').textContent = fmt(td, 3) + ' m/s';
     $('plant').checked = w.plant; $('tag').checked = w.tag; $('launcher').value = String(w.launcher);
+    var l46 = L(mis, 46);
+    $('plantLabel').textContent = 'Launch the propellant plant\'s coolers from the Earth' + (l46 && num(l46.v.coolers_kg) ? ' (idea 46\'s ' + kg(l46.v.coolers_kg) + ')' : ' (no idea 46 in this chain)');
     ['dry', 'dryNum', 'td', 'plant', 'tag', 'launcher', 'resetWhat'].forEach(function (id) { $(id).disabled = !l42; });
   }
   function closureNow(mis) {
     if (!mis || !L(mis, 42)) return null;
     var w = state.what;
-    return K.closure(mis, { dry_kg: w.dry, plant: w.plant, tag: w.tag, launcher: w.launcher === 'flown' ? 'flown' : +w.launcher, touchdown_m_s: w.td });
+    return K.closure(mis, LW.whatIfOpts(w));
   }
   function renderWhat(mis, cl) {
     var T = $('whatTiles'); T.textContent = ''; var R = $('whatRefusals'); R.textContent = '';
@@ -324,7 +327,7 @@
     var order = { breaks: 0, gap: 1, note: 2 };
     mis.seams.slice().sort(function (a, b) { return order[a.severity] - order[b.severity]; }).forEach(function (s) {
       var f = function (x) { return num(x) ? (s.units === 's' ? LW.tdbToUtc(x).slice(0, 16).replace('T', ' ') : fmt(x, 6) + ' ' + s.units) : ''; };
-      t.appendChild(el('tr', {}, [el('td', {}, [el('span', { cls: 'sev ' + s.severity, text: s.severity })]), el('td', { text: s.between.join(' → ') }), el('td', { text: s.what }), el('td', { cls: 'num', text: f(s.a) }), el('td', { cls: 'num', text: f(s.b) }), el('td', { text: s.what_would_help })]));
+      t.appendChild(el('tr', {}, [el('td', {}, [el('span', { cls: 'sev ' + s.severity, text: s.severity })]), el('td', { text: s.between.join(' → '), 'data-label': 'Between' }), el('td', { text: s.what }), el('td', { cls: 'num', text: f(s.a), 'data-label': 'From' }), el('td', { cls: 'num', text: f(s.b), 'data-label': 'To' }), el('td', { text: s.what_would_help, 'data-label': 'What would help' })]));
     });
     if (!mis.seams.length) t.appendChild(el('tr', {}, [el('td', { colspan: 6, text: 'No seams in the links present.' })]));
   }
@@ -393,21 +396,27 @@
   }
 
   // ------------------------------------------------------------------ import / export
+  // review: a digest is resolved against every mission in the bundle (the committed chain keeps full sha256 digests, the
+  // flown missions their first 16 hex), each with its own upstream, so a handoff exported on any flown mission walks whole
   var known = null, knownChain = null;
   function committedIndex() {
     if (known) return;
     known = {}; knownChain = {};
-    var rec = LW.unpack(D, 'committed|lox-rp1|99942');
-    Object.keys(rec.links).forEach(function (n) { known[rec.links[n].sha256] = rec.links[n]; knownChain[n] = rec.links[n]; });
+    D.runs.forEach(function (r) {
+      var rec = LW.unpack(D, r.key);
+      Object.keys(rec.links).forEach(function (n) { var k = rec.links[n].sha256; if (k && !known[k]) known[k] = { link: rec.links[n], chain: rec.links, key: r.key }; });
+      if (r.key === 'committed|lox-rp1|99942') Object.keys(rec.links).forEach(function (n) { knownChain[n] = rec.links[n]; });
+    });
   }
   function exportObj() {
     var mis = current(); if (!mis) return null;
     var cl = closureNow(mis);
-    return LW.makeHandoff(mis, { produced: new Date().toISOString(), source: state.imported ? 'imported' : 'bundled', whatIf: state.what, closure: cl });
+    var w = Object.assign({}, state.what); if (w.dry != null && !num(w.dry)) w.dry = 'invalid';   // JSON would turn NaN into null, the chain's own
+    return LW.makeHandoff(mis, { produced: new Date().toISOString(), source: state.imported ? 'imported' : 'bundled', whatIf: w, closure: cl });
   }
   function doImport(text, where) {
     committedIndex();
-    var p = LW.parseHandoff(text, { sha256: sha256, known: known, knownChain: knownChain });
+    var p = LW.parseHandoff(text, { sha256: sha256, known: known, knownChain: knownChain, K: K });
     if (p.refusal) { $('ioMsg').textContent = 'Refused (' + where + '): ' + p.refusal.reason + ' What would help: ' + p.refusal.what_would_help; return false; }
     if (p.own) {
       var c = p.mission.choice, key = p.mission.key;
@@ -418,7 +427,8 @@
     } else {
       state.imported = p.mission; state.rocket = 'committed';
       var w = p.walked, found = Object.keys(w.links).map(Number).sort(function (a, b) { return a - b; });
-      state.importedNote = 'Imported (' + where + '): idea ' + found[found.length - 1] + '\'s handoff and the links it carries, ' + found[0] + ' to ' + found[found.length - 1] + (w.pruned.length ? '; ' + w.pruned.map(function (q) { return 'idea ' + q.n + ' carried as a digest ' + (known[q.sha256] ? '(the committed sample: resolved)' : '(not one this page knows: missing)'); }).join('; ') : '') + (w.missing.length ? '; missing: ' + w.missing.join(', ') : '') + '.';
+      var hitOf = function (q) { return known[q.sha256] || known[String(q.sha256).slice(0, 16)]; };
+      state.importedNote = 'Imported (' + where + '): idea ' + found[found.length - 1] + '\'s handoff and the links it carries, ' + found[0] + ' to ' + found[found.length - 1] + (w.pruned.length ? '; ' + w.pruned.map(function (q) { var hit = hitOf(q); return 'idea ' + q.n + ' carried as a digest ' + (hit ? '(resolved: ' + (hit.key === 'committed|lox-rp1|99942' ? 'the committed sample' : 'the flown mission ' + hit.key) + ')' : '(not one this page knows: missing)'); }).join('; ') : '') + (w.missing.length ? '; missing: ' + w.missing.join(', ') : '') + '.';
       $('ioMsg').textContent = state.importedNote;
     }
     render();

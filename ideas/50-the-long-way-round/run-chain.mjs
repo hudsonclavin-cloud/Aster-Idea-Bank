@@ -9,7 +9,8 @@
 //     or AS-512 departing with the spacecraft instead ("as512-sc", idea 38's own payload setting: the ascent is not
 //     re-flown, so that departure is idea 38's stated lower bound);
 //   * the closed loop: the spacecraft mass the rocket carries is the launch mass idea 42 sizes for the arrival this very
-//     departure produces, iterated until the two agree;
+//     departure produces, iterated until the two agree; and (since the review) the way home aimed where idea 48 says the
+//     entry needs it (idea 47's aim perigee setting), so idea 48 needs no re-aim the capsule has no propellant for;
 //   * an asteroid: Apophis takes Aster's own cell (the chain's); any other body of idea 40's six is solved by idea 39
 //     first (least delta-v for a sample return), and that transfer's asymptote is handed to idea 37.
 // It never writes outside its own folder. Run from the bank root:
@@ -36,9 +37,9 @@ const PRODUCED = { 31: '2026-10-31T12:00:00Z', 32: '2026-10-31T12:00:00Z', 33: '
   48: '2026-11-01T18:00:00Z', 49: '2026-11-01T22:00:00Z' };
 export const ROCKETS = {
   chain: 'Idea 34\'s sample stack: seven of idea 33\'s engine (built from the propellant chosen) on 400 t, one J-2 on 100 t, 10 t of payload',
-  'chain-sc': 'The same stack carrying only the spacecraft idea 42 sizes (closed loop)',
+  'chain-sc': 'The same stack carrying only the spacecraft idea 42 sizes (closed loop; the way home aimed at the entry idea 48 flies)',
   as512: 'Saturn V AS-512 as flown (ideas 34 to 36: the flight report\'s stack and its Apollo payload)',
-  'as512-sc': 'Saturn V AS-512, departing with the spacecraft idea 42 sizes instead of the Apollo stack (idea 38\'s payload setting)',
+  'as512-sc': 'Saturn V AS-512, departing with the spacecraft idea 42 sizes instead of the Apollo stack (idea 38\'s payload setting; the way home aimed at the entry idea 48 flies)',
 };
 // Propellants offered for the chain's own stack: idea 31's presets a first stage can burn (GOX/RP-1 is a test chamber).
 export const PROPELLANTS = ['lox-rp1', 'lox-lh2', 'lox-ch4', 'nto-mmh', 'nto-udmh', 'nto-a50', 'nto-n2h4', 'lox-eth75', 'htp-rp1'];
@@ -127,6 +128,13 @@ function window37(m, h36, spec) {
   if (R.refusal) throw new Halt(37, R.refusal);
   return W.makeHandoff(st, spec, set, R, { produced: PRODUCED[37] });
 }
+// Review: idea 37 can hand on a handoff with no launch (its guidance refuses the target, e.g. 16 m/s short on the
+// window's azimuth); the chain stops there, with idea 37's own refusal, not at idea 38 with a missing-output error.
+function launched37(h37) {
+  if (h37 && h37.outputs && h37.outputs.launch) return h37;
+  const own = ((h37 && h37.refusals) || []).filter((r) => !r.from || r.from === h37.from);
+  throw new Halt(37, own.find((r) => r.code === 'out_of_envelope') || own[0] || { code: 'not_found', reason: 'Idea 37 found no launch on this window.', what_would_help: 'Open idea 37\'s page on idea 36\'s handoff.' });
+}
 function burn38(m, h37, payloadKg) {
   if (payloadKg == null) return m.s38.sample(h37).handoff;
   const B = m.L38.B, st = must(38, B.importWindow(h37)), set = Object.assign(B.defaults(), { payloadKg }), src = { window: st }, R = B.compute(src, set);
@@ -151,10 +159,37 @@ function deepHalf(m, h39, H, upTo = 49) {
   H[44] = guard(44, () => { const K = m.K44, src = must(44, K.importLumpy(H[43])), R = must(44, K.run(src, K.defaults())); return K.buildHandoff(R, PRODUCED[44]); });
   H[45] = guard(45, () => { const K = m.K45, p = must(45, K.parseHandoff(H[44])), R = must(45, K.run(p.src, {})); return K.buildHandoff(R, PRODUCED[45]); });
   H[46] = guard(46, () => { const K = m.K46, p = must(46, K.parseHandoff(H[45])), R = must(46, K.run(p.src, K.defaults(p.src))); return K.buildHandoff(R, PRODUCED[46]); });
-  H[47] = guard(47, () => { const K = m.K47, R = must(47, K.run(K.defaults(), { split: H[46] })); return K.buildHandoff(R, PRODUCED[47]); });
-  H[48] = guard(48, () => { const K = m.K48, R = must(48, K.run(K.defaults(), { h47: H[47] })); return K.buildHandoff(R, PRODUCED[48]); });
-  H[49] = guard(49, () => { const K = m.K49, R = must(49, K.run(Object.assign(K.defaults(), { source: 'imported' }), { h48: H[48] })); return K.buildHandoff(R, PRODUCED[49]); });
+  H[47] = home47(m, H[46], null);
+  H[48] = catch48(m, H[47]);
+  H[49] = hot49(m, H[48]);
   return H;
+}
+function home47(m, h46, aimAlt) {
+  return guard(47, () => { const K = m.K47, S = Object.assign(K.defaults(), aimAlt == null ? {} : { aimAlt_m: aimAlt }), R = must(47, K.run(S, { split: h46 })); return K.buildHandoff(R, PRODUCED[47]); });
+}
+function catch48(m, h47) { return guard(48, () => { const K = m.K48, R = must(48, K.run(K.defaults(), { h47 })); return K.buildHandoff(R, PRODUCED[48]); }); }
+function hot49(m, h48) { return guard(49, () => { const K = m.K49, R = must(49, K.run(Object.assign(K.defaults(), { source: 'imported' }), { h48 })); return K.buildHandoff(R, PRODUCED[49]); }); }
+/**
+ * Review: the closed loop at the Earth. Idea 47 aims the way home at a 125 km perigee (its default), which flies past the
+ * Earth for the skip entry idea 48 chooses; idea 48 says so in its `retarget` refusal and names the perigee to aim at
+ * ("Set module 47's aim perigee to ..."). For the closed-loop rockets the runner does what that refusal asks: idea 47
+ * re-flown with aimAlt_m at idea 48's perigee, then 48 and 49, until idea 48 needs no re-aim (three passes at most).
+ * If an aimed link refuses, the unaimed links are kept and a note says why.
+ */
+function aimHome(m, H, out) {
+  for (let it = 0; it < 3; it++) {
+    const rt = H[48] && H[48].outputs && H[48].outputs.retarget && H[48].outputs.retarget.value;
+    if (!rt || !rt.needed) return;
+    const aim = rt.perigee_alt_m, keep = { 47: H[47], 48: H[48], 49: H[49] };
+    try { H[47] = home47(m, H[46], aim); H[48] = catch48(m, H[47]); H[49] = hot49(m, H[48]); } catch (e) {
+      if (!(e instanceof Halt)) throw e;
+      Object.assign(H, keep);
+      out.notes.push('Aiming the way home at idea 48\'s ' + (aim / 1000).toFixed(3) + ' km perigee stopped at idea ' + e.at + ' (' + e.refusal.reason.slice(0, 200) + '); the unaimed return is kept.');
+      return;
+    }
+    const now = H[48].outputs.retarget && H[48].outputs.retarget.value;
+    out.aim.push({ aim_alt_m: aim, perigee_alt_m: H[47].outputs.earth_arrival.value.perigee_altitude_m, retarget_needed: !!(now && now.needed) });
+  }
 }
 const launchKgOf = (h42) => h42.outputs.mass.value.launch_kg;
 
@@ -181,7 +216,7 @@ export async function runMission(choice) {
   const chainRocket = ch.rocket === 'chain' || ch.rocket === 'chain-sc';
   if (chainRocket && PROPELLANTS.indexOf(ch.propellant) < 0) throw new Error('unknown propellant ' + ch.propellant);
   if (!chainRocket) ch.propellant = null;
-  const H = {}, out = { choice: ch, links: H, halt: null, loop: [], notes: [] };
+  const H = {}, out = { choice: ch, links: H, halt: null, loop: [], aim: [], notes: [] };
   try {
     // the transfer first when the body is not the chain's: its asymptote is what idea 37 aims the launch at
     const set39 = transferSettings(m, ch.asteroid);
@@ -225,6 +260,7 @@ export async function runMission(choice) {
         H[36] = guard(36, () => m.s36.sample(H[35]).handoff);
       } else H[36] = front;
       H[37] = guard(37, () => window37(m, H[36], spec37));
+      launched37(H[37]);
       H[38] = guard(38, () => burn38(m, H[37], ch.rocket === 'as512-sc' ? payload : null));
       H[39] = guard(39, () => road39(m, H[38], settings39));
       if (!sc) break;
@@ -236,6 +272,10 @@ export async function runMission(choice) {
       if (it === 5) out.notes.push('The closed loop did not settle to 0.01 kg in six passes.');
     }
     deepHalf(m, H[39], H, 49);
+    if (sc) {
+      aimHome(m, H, out);
+      if (out.aim.length) out.notes.push('Way home aimed at the entry: idea 47 re-flown with its aim perigee at the ' + (out.aim[0].aim_alt_m / 1000).toFixed(3) + ' km idea 48 asks for (its default 125 km flies past the Earth), then ideas 48 and 49.');
+    }
   } catch (e) {
     if (!(e instanceof Halt)) throw e;
     out.halt = { at: e.at, refusal: e.refusal };
@@ -327,7 +367,7 @@ async function build(outFile) {
     runs.push(M50.recordOf(r, sha256));
     process.stderr.write(keyOf(c) + ': ' + (r.halt ? 'halts at ' + r.halt.at : 'lands') + ', ' + r.ms + ' ms\n');
   }
-  const committed = M50.recordOf({ choice: { rocket: 'committed', propellant: 'lox-rp1', asteroid: '99942' }, links: committedLinks(), halt: null, loop: [], notes: ['The 19 sample handoffs as committed in the bank, each read from its folder.'] }, sha256);
+  const committed = M50.recordOf({ choice: { rocket: 'committed', propellant: 'lox-rp1', asteroid: '99942' }, links: committedLinks(), halt: null, loop: [], aim: [], notes: ['The 19 sample handoffs as committed in the bank, each read from its folder.'] }, sha256);
   const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: BANK, encoding: 'utf8' }).trim();
   const data = M50.packRecords(runs.concat([committed]));
   data.built = { bank_commit: head, scenarios: SCENARIOS.length + 1, by: 'ideas/50-the-long-way-round/run-chain.mjs --build' };

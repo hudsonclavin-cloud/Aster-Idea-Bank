@@ -99,3 +99,11 @@ footer { padding: 10px 16px 30px; }
   ol.events li { grid-template-columns: 1fr; gap: 0; }
   h1 { font-size: 1.45rem; }
 }
+/* review: at phone width the six-column seams table squeezed its text to a word per line; each seam is a block instead */
+@media (max-width: 560px) {
+  #seams tr:first-child { display: none; }
+  #seams tr { display: block; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  #seams td { display: block; border: 0; padding: 2px 0; text-align: left; white-space: normal; }
+  #seams td:empty { display: none; }
+  #seams td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); }
+}
