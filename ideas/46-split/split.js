@@ -146,7 +146,8 @@
     // ------------------------------------------------------------------------------------------ cryogenics
     var NIST = S.nist;
     function table(t) { return { T: t.gas.map(function (r) { return r[0]; }), h: t.gas.map(function (r) { return r[1]; }), sat: t.sat }; }
-    var PH2 = table(NIST.ph2_1atm), LO2 = table(NIST.o2_1atm);
+    var PH2 = table(NIST.ph2_1atm), LO2 = table(NIST.o2_1atm), NH2 = table(NIST.nh2_1atm);
+    NH2.liq = NIST.nh2_1atm.liq;
     var CAL = S.calorie_th_J;
     var Q_CONV = S.orthoPara.conversion_cal_mol * CAL / MW.h2; // J per kg of H2, normal -> para at 20 K
     var T_UP = S.twoStage.T_upper_K, T_LOW = S.twoStage.T_lower_K;
@@ -156,16 +157,26 @@
     var CC_UNIT_KG = S.cryoKpp.lift_W * S.cryoKpp.specificMass_kg_W;
     var T_REJ = CC.T_reject_K;
     function hfg(t) { return t.sat.h_v - t.sat.h_l; }
-    /** Heat to remove from 1 kg of gas at 1 atm from Tin down to saturated liquid, split at the upper stage's temperature. */
+    /**
+     * Heat to remove from 1 kg of gas at 1 atm from Tin down to saturated liquid, split at the upper stage's temperature.
+     * The cell makes normal hydrogen (3:1 ortho-para) and nothing converts it on the way down (no catalyst in the 90 K
+     * stage), so the gas is cooled along NIST's normal-hydrogen isobar, condensed as normal liquid, and converted to para
+     * at the cold end, releasing NBS 1958's 254 cal/mol there. (Cooling it along the parahydrogen isobar and then adding
+     * the conversion heat would count that heat twice: below about 300 K the para table's extra rotational heat is it.)
+     */
     function liquefaction(Tin) {
-      if (!(Tin >= T_UP && Tin <= PH2.T[PH2.T.length - 1])) return { refusal: refusal('out_of_envelope', 'Gas entering the liquefier at ' + fmt(Tin) + ' K is outside the NIST tables carried here (' + T_UP + ' to ' + PH2.T[PH2.T.length - 1] + ' K).', 'An electrolyser temperature inside that span.') };
-      var hH = interp(PH2.T, PH2.h, Tin), hH1 = interp(PH2.T, PH2.h, T_UP);
+      var Tmax = Math.min(PH2.T[PH2.T.length - 1], NH2.T[NH2.T.length - 1], LO2.T[LO2.T.length - 1]);
+      if (!(Tin >= T_UP && Tin <= Tmax)) return { refusal: refusal('out_of_envelope', 'Gas entering the liquefier at ' + fmt(Tin) + ' K is outside the NIST tables carried here (' + T_UP + ' to ' + Tmax + ' K).', 'An electrolyser temperature inside that span.') };
+      var hN = interp(NH2.T, NH2.h, Tin), hN1 = interp(NH2.T, NH2.h, T_UP);
+      // normal liquid at parahydrogen's boiling point (subcooled 0.1 K below its own), from NIST's liquid rows
+      var hNl = interp(NH2.liq.map(function (r) { return r[0]; }), NH2.liq.map(function (r) { return r[1]; }), PH2.sat.T);
       var hO = interp(LO2.T, LO2.h, Tin);
       if (!(LO2.sat.T > T_UP)) return { refusal: refusal('out_of_envelope', 'The upper stage at ' + T_UP + ' K cannot condense oxygen boiling at ' + fmt(LO2.sat.T) + ' K.', 'A colder upper stage.') };
       return {
-        h2_hi: hH - hH1, // J/kg H2 removed by the 90 K stage
-        h2_lo: hH1 - PH2.sat.h_l + Q_CONV, // J/kg H2 removed by the 20 K stage, conversion to para included
+        h2_hi: hN - hN1, // J/kg H2 removed by the 90 K stage: normal hydrogen gas from Tin to 90 K
+        h2_lo: hN1 - hNl + Q_CONV, // J/kg H2 removed by the 20 K stage: condense, then convert to para (NBS 1958)
         h2_conv: Q_CONV,
+        h2_para_table: interp(PH2.T, PH2.h, Tin) - PH2.sat.h_l, // the same total along the para isobar, for the check
         o2: hO - LO2.sat.h_l, // J/kg O2, all by the 90 K stage
         Tin: Tin,
       };
@@ -191,6 +202,8 @@
     function material(key) { var m = MAT.metals[key]; return m ? { key: key, name: m.name, rho: m.den_g_cm3 * 1000, su: m.su_MPa * 1e6, verify: m.verify, src: m.src } : null; }
     /** Thin-walled sphere that bursts at FS x p: wall mass = 3/2 p V rho_m FS / su. */
     function tankMass(p, V, mat) { return 1.5 * p * V * mat.rho * FS / mat.su; }
+    /** Wall thickness over radius of that thin-walled sphere, t/r = FS p / (2 su): the formula holds while this is small. */
+    function wallRatio(p, mat) { return FS * p / (2 * mat.su); }
     function gasDensity(which, p) {
       var rows = NIST[which].rows;
       var xs = rows.map(function (r) { return r[0]; }), ys = rows.map(function (r) { return r[1]; });
@@ -385,7 +398,7 @@
     // ------------------------------------------------------------------------------------------ the stay, day by day
     function ledger(src, st, ctx) {
       var cellR = ctx.cell, e = cellR ? cellR.e_J_per_kg_water : 0;
-      var rows = [], buffer = 0, H = 0, O = 0, made = { h2: 0, o2: 0 }, vented = 0, boil = { h2: 0, o2: 0 }, split = 0, energy = 0, zboShort = 0, coolMax = 0;
+      var rows = [], buffer = 0, H = 0, O = 0, made = { h2: 0, o2: 0 }, vented = 0, boil = { h2: 0, o2: 0 }, split = 0, energy = 0, zboShort = 0, idleShort = 0, coolMax = 0, peakH = 0, peakO = 0;
       var keepO = ctx.keepO; // kg of O2 kept per kg of H2 made
       src.days.forEach(function (d) {
         var lit = d.lit_h * 3600, dark = DAY - lit;
@@ -405,6 +418,7 @@
             var c20 = cooler20(q20);
             return { P: pel + c20.P + q90 * ctx.sp90, cool: c20 };
           };
+          if (st.route === 'cryo' && P < CC_PIN[0]) idleShort++;
           zboOn = st.route === 'cryo' && st.zbo && (H > 0 || O > 0 || maxW > 0);
           if (zboOn && loads(0, true).P > P) { zboOn = false; zboShort++; }
           var top = loads(maxW, zboOn);
@@ -422,15 +436,17 @@
         var hMade = sp * FH, oMade = sp * FO, oKeep = Math.min(oMade, hMade * keepO);
         made.h2 += hMade; made.o2 += oMade; vented += oMade - oKeep;
         H += hMade; O += oKeep;
+        var topH = H, topO = O; // what the tanks hold after the day's making, before the night's boil-off
+        peakH = Math.max(peakH, H); peakO = Math.max(peakO, O); // the most the tanks hold: after the day's making, before the night
         var bH = 0, bO = 0;
         if (st.route === 'cryo') {
           var tb = zboOn ? dark : DAY;
           bH = Math.min(H, ctx.leak.h2 * tb / hfg(PH2)); bO = Math.min(O, ctx.leak.o2 * tb / hfg(LO2));
           H -= bH; O -= bO; boil.h2 += bH; boil.o2 += bO;
         }
-        rows.push({ day: d.day, utc0: d.utc0, r_au: d.r_au, lit_h: d.lit_h, P_W: P, used_W: Pused, water_in: d.water_kg, split_kg: sp, buffer_kg: buffer, h2_kg: H, o2_kg: O, boil_h2: bH, boil_o2: bO, limit: limit, zbo: zboOn, coolers: cool.units });
+        rows.push({ day: d.day, utc0: d.utc0, r_au: d.r_au, lit_h: d.lit_h, P_W: P, used_W: Pused, water_in: d.water_kg, split_kg: sp, buffer_kg: buffer, h2_kg: H, o2_kg: O, h2_top_kg: topH, o2_top_kg: topO, boil_h2: bH, boil_o2: bO, limit: limit, zbo: zboOn, coolers: cool.units });
       });
-      return { rows: rows, buffer: buffer, H: H, O: O, made: made, vented: vented, boil: boil, split: split, energy: energy, zboShort: zboShort, coolMax: coolMax };
+      return { rows: rows, buffer: buffer, H: H, O: O, made: made, vented: vented, boil: boil, split: split, energy: energy, zboShort: zboShort, idleShort: idleShort, coolMax: coolMax, peakH: peakH, peakO: peakO };
     }
 
     function run(src, settings) {
@@ -460,10 +476,12 @@
         ctx.liq = liq; ctx.mli = mf; ctx.sp90 = sp90(st.fCarnot90);
         res.liq = liq; res.mli = mf; res.sp90 = ctx.sp90;
       }
-      // Tanks are sized at the start for everything idea 45 could make (its total water), so the insulation's leak is
-      // that of the full-size tank all stay. In 'optimal' mode the oxygen kept depends on the burn, so iterate.
-      function sizeTanks(keepO) {
-        var mH = waterTotal * FH, mO = mH * keepO;
+      // Tanks hold mH kg of hydrogen and mO kg of oxygen. They are sized for the most the stay puts in them (the peak
+      // inventory), not for all the water idea 45 could make: when the arrays leave water unsplit, a tank sized for it
+      // would carry metal (gas) or leak heat (liquid) for propellant that never exists. A smaller cryogenic tank leaks
+      // less, so the stay and the tank are iterated together (sizeAndRun); in 'optimal' mode the oxygen kept depends on
+      // the burn, so that is iterated around it.
+      function sizeTanks(mH, mO) {
         if (st.route === 'cryo') {
           var VH = mH / PH2.sat.rho_l, VO = mO / LO2.sat.rho_l;
           var AH = VH > 0 ? sphereArea(VH) : 0, AO = VO > 0 ? sphereArea(VO) : 0;
@@ -478,18 +496,35 @@
         var Vw = waterTotal / WATER_RHO;
         return { VW: Vw, mW_tank: tankMass(st.pc_steam, Vw, mat), rhoW: WATER_RHO };
       }
+      /** Run the stay with tanks that just hold its peak inventory: damped fixed point, starting from tanks for all the water. */
+      function sizeAndRun(keepO) {
+        var capH = waterTotal * FH, capO = capH * keepO, T, Lr, k, done = false;
+        for (k = 0; k < 200 && !done; k++) {
+          T = sizeTanks(capH, capO);
+          T.capH = capH; T.capO = capO;
+          if (st.route === 'cryo') ctx.leak = T.leak;
+          Lr = ledger(src, st, ctx);
+          var near = function (a, b) { return Math.abs(a - b) <= 1e-9 * Math.max(a, b) + 1e-15; };
+          done = near(Lr.peakH, capH) && near(Lr.peakO, capO);
+          if (!done) {
+            var w = st.route === 'cryo' ? 0.5 : 1; // the gas route's tanks do not change the stay: one step lands on it
+            capH = Lr.peakH > 0 ? capH + w * (Lr.peakH - capH) : 0; capO = Lr.peakO > 0 ? capO + w * (Lr.peakO - capO) : 0;
+          }
+        }
+        T.sizing_iterations = k; T.sizing_converged = done;
+        return { tanks: T, L: Lr };
+      }
       var tanks, L, trade = null, rTarget, it;
       if (st.route === 'steam') {
-        tanks = sizeTanks(0);
+        tanks = sizeTanks(0, 0);
         L = ledger(src, st, ctx);
       } else {
         rTarget = st.of_mode === 'fixed' ? st.of : R_ST;
         var craftDry = st.dry_kg;
         for (it = 0; it < 4; it++) {
           ctx.keepO = rTarget;
-          tanks = sizeTanks(rTarget);
-          if (st.route === 'cryo') ctx.leak = tanks.leak;
-          L = ledger(src, st, ctx);
+          var sz = sizeAndRun(rTarget);
+          tanks = sz.tanks; L = sz.L;
           var dryNow = craftDry + (tanks.mH_tank || 0) + (tanks.mO_tank || 0) + (st.route === 'cryo' ? L.coolMax * CC_UNIT_KG : 0);
           trade = ofTrade(state, L.H, L.O, dryNow, eng);
           if (st.of_mode !== 'optimal') break;
@@ -512,6 +547,7 @@
           isp_ideal_s: sp.shifting ? sp.shifting / G0 : null, isp_frozen_s: sp.frozen ? sp.frozen / G0 : null, ve_m_s: isp, Tc_K: sp.Tc, pc_Pa: st.pc_steam, eps: st.eps_steam,
           reactant_state: 'water stored liquid at ' + NIST.h2_293K.T_K + ' K, heated to ' + fmt(st.T_heat) + ' K as steam', heat_J_per_kg: sp.heat, tank: { material: mat2.name, mass_kg: tanks.mW_tank, volume_m3: tanks.VW } };
         if (sp.refusal) own.push(Object.assign({ applies_to: 'steam' }, sp.refusal));
+        if (!(L.buffer > 0)) own.push({ applies_to: 'propellant', code: 'out_of_envelope', reason: 'Idea 45 made no water over this stay, so there is nothing to boil.', what_would_help: 'A stay that makes water (idea 45).' });
       } else {
         var choose = st.of_mode === 'fixed' ? trade.dv(Math.min(st.of, trade.rMax)) : st.of_mode === 'stoich' ? trade.dv(trade.rMax) : trade.opt;
         dryHome = st.dry_kg + (tanks.mH_tank || 0) + (tanks.mO_tank || 0) + (st.route === 'cryo' ? L.coolMax * CC_UNIT_KG : 0);
@@ -520,9 +556,11 @@
           own.push(Object.assign({ applies_to: 'engine' }, (choose && choose.refusal) || refusal('insufficient_data', 'No hydrogen was made, so there is no mixture to burn.', 'Water and the power to split it.')));
         }
         var ok = choose && !choose.refusal && finite(choose.isp) && choose.fuel > 0;
+        // the engine model refused this ratio while there is hydrogen to burn: the propellant is unknown, not zero
+        var engineRefused = !ok && L.H > 0 && !!(choose && (choose.refusal || !finite(choose.isp)));
         if (choose && !choose.refusal && finite(choose.isp) && !(choose.fuel > 0)) own.push({ applies_to: 'propellant', code: 'out_of_envelope', reason: 'No hydrogen is left at the end of the stay: ' + fmt(L.made.h2, 3) + ' kg was made and ' + fmt(L.boil.h2, 3) + ' kg boiled off' + (L.split < 1e-9 ? ' (nothing was split)' : '') + ', so there is nothing to burn.', what_would_help: 'More array power for the coolers and the cell, smaller tanks, or the gas or steam route.' });
         var eAt = ok ? engineIsp(PROP[state], state, choose.r, eng.pc, eng.eps, eng.Lf, eng.eta) : null;
-        prop = { route: st.route, fuel: 'H2', oxidizer: 'O2', mixture_ratio: ok ? choose.r : null, mass_kg: ok ? choose.fuel + choose.ox : 0, fuel_kg: ok ? choose.fuel : 0, oxidizer_kg: ok ? choose.ox : 0,
+        prop = { route: st.route, fuel: 'H2', oxidizer: 'O2', mixture_ratio: ok ? choose.r : null, mass_kg: ok ? choose.fuel + choose.ox : engineRefused ? null : 0, fuel_kg: ok ? choose.fuel : engineRefused ? null : 0, oxidizer_kg: ok ? choose.ox : engineRefused ? null : 0,
           isp_s: ok ? choose.isp / G0 : null, isp_ideal_s: ok ? choose.ideal / G0 : null, isp_frozen_s: ok && choose.frozen ? choose.frozen / G0 : null, ve_m_s: ok ? choose.isp : null, Tc_K: ok ? eAt.Tc : null, pc_Pa: st.pc, eps: st.eps,
           reactant_state: st.route === 'cryo' ? 'liquid oxygen and parahydrogen at their 1 atm boiling points (idea 31\'s O2(L) 90.17 K and H2(L) 20.27 K records)' : 'gaseous oxygen and hydrogen at ' + NIST.h2_293K.T_K + ' K',
           calibration: { engine: 'RL10A-3-3', published_isp_s: RL10.published / G0, shifting_isp_s: RL10.shifting / G0, eta: RL10.eta, of: RL10.of, source: 'NASA SP-8120 Table I via idea 32\'s engineCase()' },
@@ -532,7 +570,7 @@
       }
       res.prop = prop;
       res.dryHome = dryHome;
-      res.dv = prop && prop.ve_m_s && prop.mass_kg > 0 ? prop.ve_m_s * Math.log((dryHome + prop.mass_kg) / dryHome) : 0;
+      res.dv = prop && prop.ve_m_s && prop.mass_kg > 0 ? prop.ve_m_s * Math.log((dryHome + prop.mass_kg) / dryHome) : prop && prop.mass_kg === null ? null : 0;
       res.trade = trade;
       res.rTarget = rTarget;
       ownRefusals(res);
@@ -564,12 +602,13 @@
       if (st.route !== 'steam') {
         own.push({ applies_to: 'electrolyser', code: 'insufficient_data', reason: 'The electrolyser\'s mass, and its pumps, dryers and power conditioning, are not on file (DOE gives $/kW and kWh/kg, not kg/kW); it is assumed to stay on the asteroid and is not in the return dry mass.', what_would_help: 'A flight electrolyser\'s mass per kW (the ISS OGA\'s, for instance).' });
         own.push({ applies_to: 'arrays', code: 'insufficient_data', reason: 'Array power is scaled as 1/r² from its 1 au value, ignoring cell temperature: checked only beyond 1 au, where it reads 7.0 % low for NEAR at 2.2 au and 3.5 to 17 % low for Psyche; ' + (Math.min.apply(null, src.days.map(function (d) { return d.r_au; })) < 1 ? 'this stay is inside 1 au, where hotter cells make it likely optimistic.' : 'this stay is beyond 1 au, so the power is likely a little low.'), what_would_help: 'The array\'s measured power against Sun distance and temperature.' });
-        if (Math.abs(res.prop.mixture_ratio - RL10.of) > 0.25) own.push({ applies_to: 'engine', code: 'insufficient_data', reason: 'Delivered Isp is the shifting ideal times ' + fmt(RL10.eta, 4) + ', the RL10A-3-3\'s published/ideal at O/F ' + RL10.of + ' (SP-8120 Table I). At O/F ' + fmt(res.prop.mixture_ratio, 3) + ' that factor is carried, not measured; no flown hydrogen-oxygen engine on file runs there.', what_would_help: 'Hot-fire data for a hydrogen-oxygen engine at this mixture ratio.' });
+        if (finite(res.prop.mixture_ratio) && Math.abs(res.prop.mixture_ratio - RL10.of) > 0.25) own.push({ applies_to: 'engine', code: 'insufficient_data', reason: 'Delivered Isp is the shifting ideal times ' + fmt(RL10.eta, 4) + ', the RL10A-3-3\'s published/ideal at O/F ' + RL10.of + ' (SP-8120 Table I). At O/F ' + fmt(res.prop.mixture_ratio, 3) + ' that factor is carried, not measured; no flown hydrogen-oxygen engine on file runs there.', what_would_help: 'Hot-fire data for a hydrogen-oxygen engine at this mixture ratio.' });
       }
       if (st.route === 'cryo') {
         own.push({ applies_to: 'cryo_tanks', code: 'insufficient_data', reason: 'Cryogenic tank walls, insulation blankets and supports are not given a mass (they are set by minimum gauge and structure, not by pressure, and none are on file); their volumes and areas are computed.', what_would_help: 'A small flight cryogenic tank\'s mass per litre.' });
         own.push({ applies_to: 'mli', code: 'insufficient_data', reason: 'The heat leak is MHTB\'s ' + S.mhtb.layers + '-layer insulation on an ' + S.mhtb.tank_m3 + ' m³ tank, ' + fmt(res.mli.q, 3) + ' W/m² at ' + fmt(st.Twb) + ' K; tanks this small (' + fmt(res.tanks.VH * 1000, 3) + ' L of hydrogen) leak more per m² through supports and pipes, so boil-off here is a lower bound.', what_would_help: 'Heat-leak data for a tank of this size.' });
         own.push({ applies_to: 'cooler90', code: 'insufficient_data', reason: 'No 90 K cryocooler\'s measured efficiency or mass is on file: the 90 K stage is costed at ' + fmt(st.fCarnot90 * 100, 4) + ' % of Carnot (the 20 K unit\'s at full lift, NASA/Creare 2026), ' + fmt(res.sp90, 4) + ' W per W, and given no mass.', what_would_help: 'A flight 90 K cryocooler\'s measured input power and mass (NASA\'s 150 W class).' });
+        if (L.idleShort > 0) own.push({ applies_to: 'cooler20', code: 'out_of_envelope', reason: 'On ' + L.idleShort + ' of ' + L.rows.length + ' days the arrays gave less than one 20 K cooler draws idling (' + CC_PIN[0] + ' W, NASA/Creare\'s measured no-lift point), so no hydrogen could be liquefied on those days.', what_would_help: 'More array power, or the gas or steam route.' });
         if (L.zboShort > 0) own.push({ applies_to: 'zbo', code: 'out_of_envelope', reason: 'On ' + L.zboShort + ' day(s) the arrays could not even run the coolers that hold the boil-off, so the tanks boiled all day.', what_would_help: 'More array power, or turning zero boil-off off.' });
         if (st.zbo) own.push({ applies_to: 'night', code: 'insufficient_data', reason: 'There are no batteries: coolers and electrolyser run only while the Sun is up at the site, and the tanks boil in the dark.', what_would_help: 'A battery and its mass.' });
       }
@@ -584,6 +623,8 @@
         var Ttop = stagnation(res.src.collector);
         if (Ttop && st.T_heat > Ttop) own.push({ applies_to: 'steam', code: 'out_of_envelope', reason: 'Idea 45\'s concentrator (' + fmt(res.src.collector.concentration) + '×, η ' + fmt(res.src.collector.eta_opt) + ') reaches at most ' + fmt(Ttop, 4) + ' K at the first day\'s sunlight, below this ' + fmt(st.T_heat) + ' K heater; the heater would have to be electric.', what_would_help: 'More concentration, or an electric heater and its power.' });
       }
+      var tw = st.route === 'gas' ? wallRatio(st.p_store_MPa * 1e6, material(st.material)) : st.route === 'steam' ? wallRatio(st.pc_steam, material(st.material)) : 0;
+      if (tw > 0.1) own.push({ applies_to: 'tank', code: 'out_of_envelope', reason: 'At ' + fmt((st.route === 'gas' ? st.p_store_MPa * 1e6 : st.pc_steam) / 1e6, 4) + ' MPa the wall of a thin ' + material(st.material).name + ' sphere would be ' + fmt(tw * 100, 3) + ' % of its radius; the thin-walled formula used here holds below about 10 % and underestimates a thicker wall\'s mass.', what_would_help: 'A thick-walled (Lamé) vessel design, a lower pressure or a stronger material.' });
       if (L.buffer > 1e-9 && st.route !== 'steam') own.push({ applies_to: 'power', code: 'out_of_envelope', reason: fmt(L.buffer, 3) + ' kg of the stay\'s ' + fmt(res.src.water.total_kg, 4) + ' kg of water is left unsplit: the arrays limited ' + L.rows.filter(function (r) { return r.limit === 'power'; }).length + ' of ' + L.rows.length + ' days.', what_would_help: 'More array power, a more efficient cell, or a longer stay.' });
     }
     /** Highest cavity temperature idea 45's concentrator reaches (eps sigma T^4 = C eta S) on the stay's first day. */
@@ -611,7 +652,9 @@
       rows.push({ id: 'psyche-Q', check: 'Psyche\'s arrays at aphelion ' + po.Q_au + ' au (SBDB)', reality: ps.P_orbit_W[0], model: arrayPower(ps.P_1au_W, po.Q_au), units: 'W', source: 'NASA Psyche spacecraft page (low end of 2.3 to 3.4 kW)' });
       rows.push({ id: 'psyche-q', check: 'Psyche\'s arrays at perihelion ' + po.q_au + ' au (SBDB)', reality: ps.P_orbit_W[1], model: arrayPower(ps.P_1au_W, po.q_au), units: 'W', source: 'NASA Psyche spacecraft page (high end)' });
       rows.push({ id: 'rl10', check: 'RL10A-3-3 vacuum Isp, ideal shifting (ideas 31 and 32) at its own conditions', reality: RL10.published / G0, model: RL10.shifting / G0, units: 's', source: 'NASA SP-8120 Table I: 444 s; this ratio is the delivered-Isp factor' });
-      rows.push({ id: 'hvap', check: 'Heat of vaporization of liquid hydrogen (NIST, parahydrogen, 1 atm)', reality: S.orthoPara.vaporization_cal_mol * CAL / MW.h2, model: hfg(PH2), units: 'J/kg', source: 'Weitzel et al. (1958): 216 cal/mol' });
+      rows.push({ id: 'hvap', check: 'Heat of vaporization of freshly made (normal) liquid hydrogen, NIST at 1 atm; the boil-off uses parahydrogen\'s, ' + fmt(hfg(PH2) / 1000, 4) + ' kJ/kg', reality: S.orthoPara.vaporization_cal_mol * CAL / MW.h2, model: hfg(NH2), units: 'J/kg', source: 'Weitzel et al. (1958): 216 cal/mol' });
+      var lq = liquefaction(333.15);
+      rows.push({ id: 'liq', check: 'Heat to liquefy cell hydrogen at 333.15 K: NIST normal-hydrogen isobar plus NBS 1958\'s conversion, against NIST\'s parahydrogen isobar alone', reality: lq.h2_para_table, model: lq.h2_hi + lq.h2_lo, units: 'J/kg', source: 'NIST WebBook SRD 69: the two fluid models; the gap is the ortho-para energy left at 333 K' });
       rows.push({ id: 'lox', check: 'Liquid oxygen density at its 1 atm boiling point (this NIST table) against idea 31\'s at 90.17 K', reality: densityOf('O2(L)'), model: LO2.sat.rho_l, units: 'kg/m\u00b3', source: 'idea 31\'s snapshot: NIST WebBook at 90.17 K' });
       rows.push({ id: 'lh2', check: 'Liquid parahydrogen density at its 1 atm boiling point against idea 31\'s at 20.27 K', reality: densityOf('H2(L)'), model: PH2.sat.rho_l, units: 'kg/m\u00b3', source: 'idea 31\'s snapshot: NIST WebBook at 20.27 K' });
       rows.forEach(function (r) { r.gap = finite(r.reality) && finite(r.model) ? (r.model - r.reality) / r.reality : null; });
@@ -699,9 +742,9 @@
     }
 
     return {
-      F: F, FH: FH, FO: FO, R_ST: R_ST, MW: MW, RL10: RL10, OGA_ETA: OGA_ETA, OGA_IDEAL: OGA_IDEAL, CELL_PRESETS: CELL_PRESETS, ARRAYS: ARRAYS, PH2: PH2, LO2: LO2, Q_CONV: Q_CONV, CC_QMAX: CC_QMAX, CC_FCARNOT: CC_FCARNOT, CC_UNIT_KG: CC_UNIT_KG, FS: FS, T_CELL_ENV: T_CELL_ENV, P_GAS_ENV: P_GAS_ENV, WATER_RHO: WATER_RHO,
+      F: F, FH: FH, FO: FO, R_ST: R_ST, MW: MW, RL10: RL10, OGA_ETA: OGA_ETA, OGA_IDEAL: OGA_IDEAL, CELL_PRESETS: CELL_PRESETS, ARRAYS: ARRAYS, PH2: PH2, LO2: LO2, NH2: NH2, Q_CONV: Q_CONV, CC_QMAX: CC_QMAX, CC_FCARNOT: CC_FCARNOT, CC_UNIT_KG: CC_UNIT_KG, FS: FS, T_CELL_ENV: T_CELL_ENV, P_GAS_ENV: P_GAS_ENV, WATER_RHO: WATER_RHO,
       electrolysis: electrolysis, nernst: nernst, cell: cell, arrayPower: arrayPower, liquefaction: liquefaction, cooler20: cooler20, sp90: sp90, mliFlux: mliFlux, hfg: hfg, sphereArea: sphereArea,
-      material: material, tankMass: tankMass, gasDensity: gasDensity, engineIsp: engineIsp, engineSteam: engineSteam, PROP: PROP, steamProp: steamProp, ofTrade: ofTrade, stagnation: stagnation,
+      material: material, tankMass: tankMass, wallRatio: wallRatio, CC_IDLE_W: CC_PIN[0], gasDensity: gasDensity, engineIsp: engineIsp, engineSteam: engineSteam, PROP: PROP, steamProp: steamProp, ofTrade: ofTrade, stagnation: stagnation,
       importDig: importDig, defaults: defaults, validSettings: validSettings, ledger: ledger, run: run, reality: reality, buildHandoff: buildHandoff, parseHandoff: parseHandoff,
       b64urlEncode: b64urlEncode, b64urlDecode: b64urlDecode, clearCache: clearCache, sources: S, materials: MAT, pruneUpstream: pruneUpstream, sha256: sha256,
     };

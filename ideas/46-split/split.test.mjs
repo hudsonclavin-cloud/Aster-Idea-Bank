@@ -46,7 +46,8 @@ test('1. snapshots: sidecars match, earlier kernels byte-identical, idea 45\'s h
   assert.equal(d.bytes, JSON.stringify(h45.inputs.touch_handoff).length);
   h45.inputs.touch_handoff = d;
   assert.deepEqual(L.sample45(), h45, 'everything else unmodified');
-  assert.equal(S.quotes.length, 31, 'build-data.mjs found 31 quoted strings in their sources');
+  assert.equal(S.quotes.length, 33, 'build-data.mjs found 33 quoted strings in their sources');
+  assert.match(S.cryoKpp.note, /flight-like projection/, 'the cooler\'s 5.5 kg/W is a projection, and says so');
   assert.equal(S.codata.F, F, 'Faraday = N_A e');
   assert.equal(K.F, F);
   assert.equal(S.calorie_th_J, 4.184);
@@ -124,18 +125,37 @@ test('4. arrays: 1/r^2 against two flown spacecraft (NEAR, the chain\'s own, and
 
 test('5. cryogenics: NIST tables, the NBS 1958 heats, the 20 K cooler\'s measured turndown, MHTB insulation', () => {
   const r = Object.fromEntries(K.reality().map((x) => [x.id, x]));
-  close(r.hvap.gap, -0.005012, 2e-5, 'NIST latent heat 0.50 % under NBS 1958\'s 216 cal/mol');
+  // NBS 1958's 216 cal/mol is freshly made (normal) liquid hydrogen's: NIST's normal hydrogen agrees to +0.09 %, its
+  // parahydrogen (the stored liquid, used for boil-off) is 0.50 % under
+  close(r.hvap.gap, 8.886e-4, 2e-5, 'NIST normal-hydrogen latent heat against NBS 1958\'s 216 cal/mol');
+  close(K.hfg(K.PH2) / (216 * 4.184 / 0.00201588) - 1, -0.005012, 2e-5, 'parahydrogen\'s latent heat 0.50 % under');
   close(r.lox.gap, -7.70e-5, 2e-6); close(r.lh2.gap, -1.99e-5, 2e-6);
   close(K.Q_CONV, 254 * 4.184 / 0.00201588, 1e-6);
   close(K.Q_CONV, 527182.17, 0.01, 'normal -> para heat per kg');
   close(K.hfg(K.PH2), 446065.4, 1e-6); close(K.hfg(K.LO2), 79688.192 + 133367.75, 1e-6);
-  // the loads, interpolated by hand from the NIST rows that bracket 333.15 K
-  const rows = S.nist.ph2_1atm.gas, i = rows.findIndex((x) => x[0] > 333.15), a = rows[i - 1], b = rows[i];
+  // the loads, interpolated by hand from NIST's NORMAL-hydrogen rows (the cell's gas; no catalyst above 20 K)
+  const rows = S.nist.nh2_1atm.gas, i = rows.findIndex((x) => x[0] > 333.15), a = rows[i - 1], b = rows[i];
   const h333 = a[1] + (b[1] - a[1]) * (333.15 - a[0]) / (b[0] - a[0]);
   const h90 = rows.find((x) => x[0] === 90)[1];
+  const [l0, l1] = S.nist.nh2_1atm.liq, Tp = S.nist.ph2_1atm.sat.T;
+  const hl = l0[1] + (l1[1] - l0[1]) * (Tp - l0[0]) / (l1[0] - l0[0]); // normal liquid at para's boiling point
   const liq = K.liquefaction(333.15);
   close(liq.h2_hi, h333 - h90, 1e-6);
-  close(liq.h2_lo, h90 - 0 + K.Q_CONV, 1e-6, 'the saturated liquid is the NIST zero');
+  close(liq.h2_hi, 3240673.62, 0.01, '90 K stage: 3.241 MJ/kg of normal hydrogen');
+  close(liq.h2_lo, h90 - hl + K.Q_CONV, 1e-6, 'condense as normal liquid, then convert to para');
+  close(liq.h2_lo, 1721800.27, 0.01, '20 K stage: 1.722 MJ/kg');
+  // two independent NIST fluid models must agree on the total once the ortho-para heat is counted once: the normal
+  // table plus NBS 1958's conversion against the para table alone. The para table already holds the rotational heat
+  // below ~300 K, so adding the conversion to it (the first build) read 10.7 % high.
+  // What is left between them is the ortho-para energy still in the gas at T, which fades as the rotational levels
+  // fill: 31, 18, 12 and 7 kJ/kg at 300, 333, 360 and 400 K.
+  let last = Infinity;
+  for (const T of [300, 333.15, 360, 400]) {
+    const q = K.liquefaction(T), d = q.h2_hi + q.h2_lo - q.h2_para_table;
+    assert.ok(d > 0 && d / q.h2_para_table < 0.01 && d < last, 'normal + conversion vs para table at ' + T + ' K: ' + d + ' J/kg');
+    last = d;
+  }
+  close(r.liq.gap, 0.0035478, 2e-6, 'the live reality row');
   const orows = S.nist.o2_1atm.gas, j = orows.findIndex((x) => x[0] > 333.15);
   const hO = orows[j - 1][1] + (orows[j][1] - orows[j - 1][1]) * (333.15 - orows[j - 1][0]) / (orows[j][0] - orows[j - 1][0]);
   close(liq.o2, hO + 133367.75, 1e-6);
@@ -157,7 +177,8 @@ test('5. cryogenics: NIST tables, the NBS 1958 heats, the 20 K cooler\'s measure
   const d0 = Rc.L.rows[0], leak = Rc.tanks.leak;
   close(d0.boil_h2, Math.min(d0.split_kg * K.FH, leak.h2 * (86400 - d0.lit_h * 3600) / K.hfg(K.PH2)), 1e-15);
   const Rn = K.run(C, { zbo: false });
-  close(Rn.L.rows[0].boil_o2, Math.min(Rn.L.rows[0].o2_kg + Rn.L.rows[0].boil_o2, leak.o2 * 86400 / K.hfg(K.LO2)), 1e-15);
+  close(Rn.L.rows[0].boil_o2, Math.min(Rn.L.rows[0].o2_kg + Rn.L.rows[0].boil_o2, Rn.tanks.leak.o2 * 86400 / K.hfg(K.LO2)), 1e-15);
+  assert.ok(Rn.tanks.capH < Rc.tanks.capH, 'passive tanks hold less at their peak, so they are smaller');
   assert.ok(Rn.L.boil.h2 > Rc.L.boil.h2, 'turning zero boil-off off loses more hydrogen');
 });
 
@@ -176,7 +197,22 @@ test('6. tanks: NIST gas densities, the thin-walled sphere by hand, PartForge\'s
   const per = (p) => K.tankMass(p, 1, al) / K.gasDensity('h2_293K', p);
   close(per(20e6) / per(5e6), (20e6 / K.gasDensity('h2_293K', 20e6)) / (5e6 / K.gasDensity('h2_293K', 5e6)), 1e-12);
   assert.ok(per(70e6) > per(5e6) * 1.2, 'hydrogen tanks get heavier per kg as pressure rises (Z)');
-  close(R.prop.tanks.h2_kg, K.tankMass(20e6, C.water.total_kg * K.FH / K.gasDensity('h2_293K', 20e6), al), 1e-9);
+  // tanks hold the gas the stay makes (here all of it), not idea 45's rounded total
+  close(R.prop.tanks.h2_kg, K.tankMass(20e6, R.L.made.h2 / K.gasDensity('h2_293K', 20e6), al), 1e-12);
+  close(R.prop.tanks.o2_kg, K.tankMass(20e6, R.L.O / K.gasDensity('o2_293K', 20e6), al), 1e-12);
+  // Z by hand from the NIST row and idea 31's R at 293.15 K
+  close(R.tanks.ZH, 20e6 * 0.00201588 / (14.706899 * 8.31451 * 293.15), 1e-12);
+  close(R.tanks.ZH, 1.12472670, 1e-8);
+  // thin-wall validity: t/r = 1.4 p / (2 su); refused above 10 %
+  close(K.wallRatio(70e6, al), 1.4 * 70e6 / (2 * 310e6), 1e-15);
+  const R70 = K.run(C, { route: 'gas', p_store_MPa: 70 });
+  assert.ok(R70.own.some((x) => x.applies_to === 'tank' && /15\.8 %/.test(x.reason)), '70 MPa aluminium is past thin-wall');
+  assert.ok(!R.own.some((x) => x.applies_to === 'tank'), '20 MPa is not');
+  // the steam route's water tank by hand: NIST water density at 293.15 K (between the 290 and 295 K rows)
+  const Rs = K.run(C, { route: 'steam' }), w0 = S.nist.water_1atm.rows.find((x) => x[0] === 290), w1 = S.nist.water_1atm.rows.find((x) => x[0] === 295);
+  const rhoW = w0[1] + (w1[1] - w0[1]) * (293.15 - 290) / 5;
+  close(K.WATER_RHO, rhoW, 1e-9);
+  close(Rs.prop.tank.mass_kg, 1.5 * 1e6 * (C.water.total_kg / rhoW) * 2700 * 1.4 / 310e6, 1e-12);
 });
 
 test('7. engines: ideas 31 and 32 at this module\'s conditions against NASA CEA 3.3.4 (the oracle), and the RL10A-3-3 factor', () => {
@@ -224,10 +260,16 @@ test('8. the mixture ratio worth burning: the Delta-v trade against brute force'
   close(small.opt.r, 7.9, 1e-9);
   const one = small.dv(6);
   close(one.dv, one.isp * Math.log((590 + 1.0 + 6.0) / 590), 1e-9, 'Tsiolkovsky');
-  // the oxygen pays for itself until the propellant outweighs the dry craft about 90 to 1: at 1,800 kg on 100 kg the
-  // water's own ratio still wins; at 20 kg of hydrogen per kg of dry mass the optimum moves inside, below 7.94
-  const mid = K.ofTrade('liquid', 200, 200 * K.R_ST, 100, eng);
-  close(mid.opt.r, K.R_ST, 0.05, 'mass ratio 18: still the water\'s ratio');
+  // the oxygen pays for itself until the propellant outweighs the dry craft about 17 to 1 (the first build said 90):
+  // at 16 to 1 the water's own ratio wins exactly, at 19 to 1 the optimum is already inside
+  const at = (x, st = 'liquid') => { const mH = x * 100 / (1 + K.R_ST); return K.ofTrade(st, mH, mH * K.R_ST, 100, eng); };
+  close(at(16).opt.r, K.R_ST, 1e-9, '16 to 1: the water\'s ratio');
+  assert.ok(at(19).opt.r < K.R_ST - 0.02, '19 to 1: inside ' + at(19).opt.r);
+  // where d(dv)/d(O/F) at the water's ratio changes sign, by bisection
+  const slope = (x, st) => { const t = at(x, st); return t.dv(K.R_ST).dv - t.dv(K.R_ST - 1e-3).dv; };
+  const edge = (st) => { let lo = 5, hi = 40; for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (slope(m, st) > 0) lo = m; else hi = m; } return lo; };
+  close(edge('liquid'), 17.29, 0.05, 'liquid: about 17 to 1');
+  close(edge('gas'), 17.76, 0.05, 'gas: about 18 to 1');
   const big = K.ofTrade('liquid', 2000, 2000 * K.R_ST, 100, eng);
   assert.ok(big.opt.r < K.R_ST - 0.5 && big.opt.r > 4, 'interior optimum ' + big.opt.r);
   let best = { r: 0, dv: -1 };
@@ -261,15 +303,37 @@ test('9. the stay day by day: conservation, the power limit, and the chain and B
     out[name] = R;
   }
   const p = (n) => out[n].prop;
-  close(p('chain cryo').mass_kg, 5.623261, 2e-6); close(p('chain cryo').isp_s, 423.29993, 1e-4); close(p('chain cryo').mixture_ratio, K.R_ST, 1e-9);
-  close(out['chain cryo'].L.boil.h2, 0.6359082, 2e-6, 'half the chain\'s hydrogen boils off in the dark');
+  close(p('chain cryo').mass_kg, 7.111535, 2e-6); close(p('chain cryo').isp_s, 423.29993, 1e-4); close(p('chain cryo').mixture_ratio, K.R_ST, 1e-9);
+  close(out['chain cryo'].L.boil.h2, 0.4693729, 2e-6, 'over a third of the chain\'s hydrogen boils off in the dark');
   close(p('chain gas').mass_kg, 11.30617, 1e-5); close(p('chain gas').isp_s, 432.24332, 1e-4);
   close(p('chain steam').mass_kg, 11.30617, 1e-5); close(p('chain steam').isp_s, 176.17930, 1e-4);
-  assert.equal(p('bennu cryo near').mass_kg, 0, 'NEAR\'s arrays cannot run a cryogenic plant at Bennu');
-  assert.ok(out['bennu cryo near'].own.some((r) => r.applies_to === 'propellant' && r.code === 'out_of_envelope'));
+  // NEAR's arrays run one idling cooler at Bennu but split only 33 kg of the 1,131 (every day power-limited); with tanks
+  // sized for what they hold, 24 kg survives (the first build sized them for all 1,131 kg and boiled every gram away)
+  close(p('bennu cryo near').mass_kg, 24.05569, 1e-4);
   assert.equal(out['bennu cryo near'].L.rows.filter((r) => r.limit === 'power').length, 90);
-  close(p('bennu cryo psyche').mass_kg, 715.4987, 1e-3); close(out['bennu cryo psyche'].L.coolMax, 3, 0);
-  close(out['bennu gas psyche'].dryHome, 5342.8325, 1e-3, 'gas storage: about 4 kg of aluminium per kg of propellant');
+  assert.equal(out['bennu cryo near'].L.coolMax, 1); assert.equal(out['bennu cryo near'].L.zboShort, 0);
+  close(p('bennu cryo psyche').mass_kg, 765.3202, 1e-3); close(out['bennu cryo psyche'].L.coolMax, 3, 0);
+  close(out['bennu gas psyche'].dryHome, 5342.8359, 1e-3, 'gas storage: about 4 kg of aluminium per kg of propellant');
+  // NEAR's arrays at Bennu split 184 kg for the gas route; the tanks are for that gas, not for 1,131 kg (the first build: 4,463 kg)
+  close(out['bennu gas near'].dryHome, 880 + K.tankMass(20e6, out['bennu gas near'].L.made.h2 / K.gasDensity('h2_293K', 20e6), K.material('6061-T6')) + K.tankMass(20e6, out['bennu gas near'].L.O / K.gasDensity('o2_293K', 20e6), K.material('6061-T6')), 1e-9);
+  close(out['bennu gas near'].dryHome, 1604.7818, 1e-3);
+  // the cryogenic tanks just hold the stay's peak inventory (the fixed point converged) and never less than any day's;
+  // a stay whose mining stops half way peaks mid-stay and boils down after, so its peak is not its last day
+  const half = C.days.map((d, i) => Object.assign({}, d, { water_kg: i < 45 ? d.water_kg : 0 }));
+  const front = Object.assign({}, C, { days: half, water: Object.assign({}, C.water, { total_kg: half.reduce((a, d) => a + d.water_kg, 0) }) });
+  out['front-loaded'] = K.run(front, { zbo: false });
+  const fr = out['front-loaded'].L.rows;
+  assert.ok(fr[44].h2_top_kg > fr[89].h2_top_kg * 1.05, 'the front-loaded stay peaks on day 45');
+  for (const n of ['chain cryo', 'bennu cryo near', 'bennu cryo psyche', 'front-loaded']) {
+    const T = out[n].tanks, L0 = out[n].L;
+    assert.ok(T.sizing_converged, n + ' sizing converged');
+    close(T.capH, L0.peakH, 1e-8 * L0.peakH + 1e-15, n + ' H tank = peak'); close(T.capO, L0.peakO, 1e-8 * L0.peakO + 1e-15, n + ' O tank = peak');
+    close(T.VH, T.capH / K.PH2.sat.rho_l, 1e-15); close(T.AH, K.sphereArea(T.VH), 1e-15);
+    // the fullest the tanks get is after a day's making, before that night's boil-off
+    close(T.capH, Math.max(...L0.rows.map((r) => r.h2_top_kg)), 1e-8 * T.capH + 1e-15, n + ' H tank = fullest day');
+    close(T.capO, Math.max(...L0.rows.map((r) => r.o2_top_kg)), 1e-8 * T.capO + 1e-15, n + ' O tank = fullest day');
+    L0.rows.forEach((r) => assert.ok(r.h2_top_kg <= T.capH * (1 + 1e-8) && r.o2_top_kg <= T.capO * (1 + 1e-8) && r.h2_kg <= r.h2_top_kg, n + ' day ' + r.day + ' overfills'));
+  }
   close(p('bennu gas psyche').mass_kg, 1131.213, 1e-3);
   close(p('bennu steam').mass_kg, 1131.213, 1e-3);
   // more array power splits more water where power limits
@@ -278,9 +342,24 @@ test('9. the stay day by day: conservation, the power limit, and the chain and B
   assert.ok(out['bennu gas near'].own.some((r) => r.applies_to === 'power'));
   // the default dry mass is idea 45's mass on the ground
   assert.equal(K.defaults(C).dry_kg, C.site.mass_kg);
-  // arrays too small to run even an idle 20 K cooler (631 W): zero boil-off is dropped and said so, never overdrawn
-  assert.ok(out['bennu cryo weak'].own.some((r) => r.applies_to === 'zbo' && /90 day/.test(r.reason)));
-  assert.equal(out['bennu cryo weak'].L.zboShort, 90);
+  // arrays too small to run even an idle 20 K cooler (631 W): nothing is liquefied, and it is said so
+  assert.ok(out['bennu cryo weak'].own.some((r) => r.applies_to === 'cooler20' && /On 90 of 90 days/.test(r.reason)));
+  assert.equal(out['bennu cryo weak'].L.idleShort, 90); assert.equal(p('bennu cryo weak').mass_kg, 0);
+  assert.ok(out['bennu cryo weak'].own.some((r) => r.applies_to === 'propellant'));
+  // arrays that idle a cooler but cannot also hold the tanks' leak: zero boil-off is dropped and said so, never overdrawn
+  const Rz = K.run(Bn, { P1au: 1160 });
+  assert.equal(Rz.L.zboShort, 14); assert.equal(Rz.L.idleShort, 0);
+  assert.ok(Rz.own.some((r) => r.applies_to === 'zbo' && /14 day/.test(r.reason)));
+  Rz.L.rows.forEach((r) => assert.ok(r.used_W <= r.P_W * (1 + 1e-9)));
+  // the engine model refusing a ratio leaves the propellant unknown, not zero, and never prints "null"
+  const R2f = K.run(C, { of_mode: 'fixed', of: 2 });
+  assert.equal(R2f.prop.mass_kg, null); assert.equal(R2f.dv, null);
+  assert.ok(R2f.own.some((r) => r.applies_to === 'engine' && r.code === 'out_of_envelope'));
+  assert.ok(R2f.own.every((r) => !/O\/F null|\bundefined\b|NaN/.test(r.reason)), 'no "O/F null" in a refusal');
+  assert.ok(!K.parseHandoff(JSON.parse(JSON.stringify(K.buildHandoff(R2f, '2026-11-01T18:00:00Z')))).refusal, 'and it reads back');
+  // steam with no water at all: a refusal, not a 0 kg propellant at 176 s
+  const dry = Object.assign({}, C, { days: C.days.map((d) => Object.assign({}, d, { water_kg: 0 })), water: Object.assign({}, C.water, { total_kg: 0 }) });
+  assert.ok(K.run(dry, { route: 'steam' }).own.some((r) => r.applies_to === 'propellant'));
   // the steam heater's energy per kg: liquid water at 293.15 K to steam at 1023.15 K, from idea 31's thermo by hand
   const w = L.M.thermoAt(L.db.products['H2O(L)'], 293.15), g = L.M.thermoAt(L.db.products.H2O, 1023.15);
   const dh = (g.h * L.M.R * 1023.15 - w.h * L.M.R * 293.15) / 0.01801528;
@@ -346,10 +425,12 @@ test('11. refusals the inputs raise', () => {
   }
   assert.equal(K.run(C, { T_cell: 250 }).refusal.code, 'out_of_envelope');
   assert.equal(K.run(C, { Twb: 400 }).refusal.code, 'out_of_envelope');
-  // idea 45's concentrator cannot heat steam past its stagnation temperature: (C eta S / sigma)^(1/4) = 1713 K on the chain
+  // idea 45's concentrator cannot heat steam past its stagnation temperature: (C eta S / sigma)^(1/4) = 1712.30 K on the
+  // chain (300 x 0.85 x 1911.587 W/m^2 / 5.670374419e-8, to the quarter); Bennu's dimmer Sun gives 1351.39 K
   const col = C.collector;
   close(K.stagnation(col), Math.pow(col.concentration * col.eta_opt * col.S_epoch_W_m2 / 5.670374419e-8, 0.25), 1e-9);
-  close(K.stagnation(col), 1712.6, 0.5);
+  close(K.stagnation(col), Math.pow(300 * 0.85 * 1911.58702 / 5.670374419e-8, 0.25), 1e-9);
+  close(K.stagnation(col), 1712.303, 1e-3); close(K.stagnation(Bn.collector), 1351.387, 1e-3);
   const Rs = K.run(C, { route: 'steam', T_heat: 2000 });
   assert.ok(Rs.own.some((r) => /reaches at most/.test(r.reason)));
   // always-on honesty refusals for the routes

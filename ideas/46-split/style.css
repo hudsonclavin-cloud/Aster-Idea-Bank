@@ -88,6 +88,7 @@ fieldset { border: 1px solid var(--ring); border-radius: 8px; margin: 12px 0 0; 
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.82rem; color: var(--ink-2); margin: 6px 0 0; padding: 0; list-style: none; }
 .legend .key { display: inline-block; width: 18px; height: 0; border-top: 2px solid; vertical-align: middle; margin-right: 6px; }
 .legend .key.dash { border-top-style: dashed; }
+.legend .key.dotted { border-top-style: dotted; }
 .legend .key.dot { width: 9px; height: 9px; border: 0; border-radius: 50%; }
 .chart-cap { font-size: 0.82rem; color: var(--ink-2); margin: 6px 0 0; }
 table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }

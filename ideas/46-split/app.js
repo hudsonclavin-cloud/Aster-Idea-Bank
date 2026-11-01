@@ -12,7 +12,7 @@
   function f(x, d) { if (x === null || x === undefined || !isFinite(x)) return '–'; var a = Math.abs(x); if (a !== 0 && (a < 1e-3 || a >= 1e7)) return x.toExponential(Math.max(1, (d || 3) - 1)); return String(+x.toPrecision(d || 3)); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim() || '#888'; }
-  function kg(x) { return !isFinite(x) ? '–' : Math.abs(x) >= 1 || x === 0 ? f(x, 4) + ' kg' : f(x * 1000, 3) + ' g'; }
+  function kg(x) { return x === null || x === undefined || !isFinite(x) ? '–' : Math.abs(x) >= 1 || x === 0 ? f(x, 4) + ' kg' : f(x * 1000, 3) + ' g'; }
   function pct(x) { return (x >= 0 ? '+' : '') + f(x * 100, 3) + ' %'; }
 
   var CASES = { chain: { label: 'the chain at Apophis (idea 45\'s committed handoff)', h: window.SplitDigSample }, bennu: { label: 'Bennu (idea 45\'s kernel on its OSIRIS-REx case)', h: window.SplitDigBennu } };
@@ -105,7 +105,8 @@
     var win = L0.rows.reduce(function (a, r) { return a + r.water_in; }, 0);
     $('resLine').innerHTML = esc(st.route === 'cryo' ? 'Split by ' + f(st.P1au / 1000, 3) + ' kW arrays (at 1 au), liquefied at 1 atm and kept in insulated spheres.' : st.route === 'gas' ? 'Split by ' + f(st.P1au / 1000, 3) + ' kW arrays (at 1 au), delivered by the cell itself at ' + f(st.p_store_MPa, 3) + ' MPa into metal spheres.' : 'Not split: the water is kept liquid and boiled in a steam thruster on the way home.');
     var t = '';
-    t += tile('Return propellant', p.mass_kg > 0 ? f(p.mass_kg, 4) : '0', 'kg', conf, st.route === 'steam' ? 'water' : p.mass_kg > 0 ? f(p.fuel_kg, 3) + ' kg H₂ + ' + f(p.oxidizer_kg, 3) + ' kg O₂' : 'nothing left to burn', 'hero' + (p.mass_kg > 0 ? '' : ' bad'));
+    var noEngine = p.mass_kg === null;
+    t += tile('Return propellant', noEngine ? '–' : p.mass_kg > 0 ? f(p.mass_kg, 4) : '0', 'kg', noEngine ? 'refused' : conf, st.route === 'steam' ? 'water' : noEngine ? 'the engine model refused this mixture ratio (see the refusals); ' + f(L0.H, 3) + ' kg H₂ and ' + f(L0.O, 3) + ' kg O₂ are in the tanks' : p.mass_kg > 0 ? f(p.fuel_kg, 3) + ' kg H₂ + ' + f(p.oxidizer_kg, 3) + ' kg O₂' : 'nothing left to burn', 'hero' + (p.mass_kg > 0 ? '' : ' bad'));
     t += tile('Specific impulse, vacuum', p.isp_s ? f(p.isp_s, 4) : '–', 's', st.route === 'steam' ? 'derived · ideal' : 'derived', st.route === 'steam' ? (R.steam && R.steam.frozenOnly ? 'frozen expansion (equilibrium has no answer here)' : 'shifting; frozen ' + f(p.isp_frozen_s, 4) + ' s') : 'ideal ' + f(p.isp_ideal_s, 4) + ' s × RL10A-3-3 ' + f(K.RL10.eta, 4) + '; frozen ' + f(p.isp_frozen_s, 4) + ' s');
     if (st.route !== 'steam') t += tile('Mixture ratio burned', p.mixture_ratio ? f(p.mixture_ratio, 3) : '–', 'O/F', 'derived', (st.of_mode === 'optimal' ? 'the most Δv' : st.of_mode === 'stoich' ? 'all the oxygen' : 'set here') + (p.Tc_K ? '; chamber ' + f(p.Tc_K, 4) + ' K' : '') + '; water carries ' + f(K.R_ST, 4));
     else t += tile('Heater', f(st.T_heat, 4), 'K', 'assumed', f(R.steam.heat / 1e6, 3) + ' MJ per kg of water; ' + f(R.steam.thrustPerW * 1000, 3) + ' mN per kW of heat');
@@ -116,8 +117,8 @@
     }
     if (st.route === 'cryo') {
       t += tile('Boil-off over the stay', f(L0.boil.h2 + L0.boil.o2, 3), 'kg', 'derived · lower bound', f(L0.boil.h2, 3) + ' kg H₂ (' + f(L0.made.h2 > 0 ? L0.boil.h2 / L0.made.h2 * 100 : 0, 3) + ' % of it), ' + f(L0.boil.o2, 3) + ' kg O₂; leak ' + f((R.tanks.leak.h2 + R.tanks.leak.o2), 3) + ' W at ' + f(R.mli.q, 3) + ' W/m²', L0.boil.h2 > 0.2 * L0.made.h2 ? 'warn' : '');
-      t += tile('20 K coolers', String(L0.coolMax), L0.coolMax === 1 ? 'unit' : 'units', 'measured · NASA/Creare', f(L0.coolMax * K.CC_UNIT_KG, 4) + ' kg carried home (no electronics); a 90 K stage at ' + f(R.sp90, 3) + ' W per W, mass not on file');
-      t += tile('Tanks (volume)', f((R.tanks.VH + R.tanks.VO) * 1000, 4), 'L', 'derived', f(R.tanks.VH * 1000, 4) + ' L LH₂ at ' + f(K.PH2.sat.rho_l, 4) + ' kg/m³, ' + f(R.tanks.VO * 1000, 4) + ' L LOX; wall mass refused');
+      t += tile('20 K coolers', String(L0.coolMax), L0.coolMax === 1 ? 'unit' : 'units', 'derived · power measured, mass projected', f(L0.coolMax * K.CC_UNIT_KG, 4) + ' kg carried home (NASA/Creare\'s flight-like projection, no electronics); a 90 K stage at ' + f(R.sp90, 3) + ' W per W, mass not on file');
+      t += tile('Tanks (volume)', f((R.tanks.VH + R.tanks.VO) * 1000, 4), 'L', 'derived', f(R.tanks.VH * 1000, 4) + ' L LH₂ at ' + f(K.PH2.sat.rho_l, 4) + ' kg/m³, ' + f(R.tanks.VO * 1000, 4) + ' L LOX: sized for the most the stay holds, no ullage; wall mass refused');
     }
     if (st.route === 'gas') t += tile('Tanks carried home', f(p.tanks.h2_kg + p.tanks.o2_kg, 4), 'kg', 'derived', f((p.tanks.h2_kg + p.tanks.o2_kg) / Math.max(p.mass_kg, 1e-12), 3) + ' kg per kg of propellant; hydrogen Z ' + f(R.tanks.ZH, 4) + ' at ' + f(st.p_store_MPa, 3) + ' MPa', 'warn');
     if (st.route === 'steam') t += tile('Water tank', f(p.tank.mass_kg, 4), 'kg', 'derived', f(p.tank.volume_m3 * 1000, 4) + ' L at ' + f(st.pc_steam / 1e5, 3) + ' bar (pressure-fed), ' + esc(p.tank.material));
@@ -179,7 +180,7 @@
     var maxX = Math.max(3, Math.floor(W / 60)); while (xt.length > maxX) xt = xt.filter(function (_, i) { return i % 2 === 0; });
     while (yt.length > 7) yt = yt.filter(function (_, i) { return i % 2 === 0; });
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    xt.forEach(function (v) { var X = tx(v); ctx.beginPath(); ctx.moveTo(X, pt); ctx.lineTo(X, pt + H); ctx.stroke(); ctx.fillText(lab(v, o.xlog), X, pt + H + 4); });
+    xt.forEach(function (v) { var X = tx(v), t = lab(v, o.xlog), half = ctx.measureText(t).width / 2; ctx.beginPath(); ctx.moveTo(X, pt); ctx.lineTo(X, pt + H); ctx.stroke(); ctx.fillText(t, Math.min(X, c.w - half - 1), pt + H + 4); });
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
     yt.forEach(function (v) { var Y = ty(v); ctx.beginPath(); ctx.moveTo(pl, Y); ctx.lineTo(pl + W, Y); ctx.stroke(); ctx.fillText(lab(v, o.ylog), pl - 4, Y); });
     if (ty2) { ctx.textAlign = 'left'; var y2t = ticks(o.y2[0], o.y2[1], false); while (y2t.length > 7) y2t = y2t.filter(function (_, i) { return i % 2 === 0; }); y2t.forEach(function (v) { ctx.fillText(lab(v, false), pl + W + 4, ty2(v)); }); }
@@ -248,7 +249,7 @@
     var rb = R.prop.mixture_ratio, same = rb && Math.abs(rb - K.R_ST) < 0.35;
     c.vmark(K.R_ST, css('--muted'), same ? null : 'water 7.94', [2, 3], true);
     if (rb) c.vmark(rb, css('--s2'), same ? 'burned ' + f(rb, 3) + ' = the water\'s' : 'burned ' + f(rb, 3), null, rb > 6);
-    var items = [['delivered Isp (ideal × RL10 factor)', css('--s1')], ['ideal, shifting', css('--s1'), 'dash'], ['ideal, frozen', css('--s1'), 'dash'], ['Δv on the dry mass (right axis)', css('--s3')]];
+    var items = [['delivered Isp (ideal × RL10 factor)', css('--s1')], ['ideal, shifting', css('--s1'), 'dash'], ['ideal, frozen', css('--s1'), 'dotted'], ['Δv on the dry mass (right axis)', css('--s3')]];
     if (R.settings.route === 'cryo') items.push(['RL10A-3-3, 444 s at O/F 5 (SP-8120)', css('--s2'), 'dot']);
     if (R.trade.rMax < K.R_ST - 1e-6) items.push(['not enough oxygen left', css('--refused'), 'band']);
     legend('ofLegend', items);

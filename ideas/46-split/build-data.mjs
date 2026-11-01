@@ -111,6 +111,8 @@ function buildSources(dir) {
   must('ntrs-20220009350-cryocooler.txt', 'txt', '1) Lift Capacity (W) 1 17 20 19.2 20.4');
   must('ntrs-20220009350-cryocooler.txt', 'txt', '2) Specific Mass (kg/W)3 18.7 5.5 4.4 5.5 5.2');
   must('ntrs-20220009350-cryocooler.txt', 'txt', 'KPPs assume a fully integrated cryocooler operating and are based on a 20K design point, and do not include the mass and inefficiency of the drive electronics.');
+  must('ntrs-20220009350-cryocooler.txt', 'txt', 'Tested values were only able to be achieved at a heat rejection temperature of 285K.');
+  must('ntrs-20220009350-cryocooler.txt', 'txt', 'Specific mass values are based on flight-like projections.');
 
   // --- Ortho-para conversion (Weitzel et al. 1958; OCR text layer).
   must('nbs-jres60-221.txt', 'txt', 'about 254 calories per mole');
@@ -123,18 +125,18 @@ function buildSources(dir) {
     const col = (name) => { const i = head.findIndex((h) => h.indexOf(name) === 0); if (i < 0) throw new Error(f + ': no column ' + name); return i; };
     return { rows: L.slice(1).map((l) => l.split('\t')), col: col };
   }
-  function isobar(f) {
+  function isobar(f, withLiquid) {
     const t = tsv(f), iT = t.col('Temperature'), iR = t.col('Density'), iH = t.col('Enthalpy'), iS = t.col('Entropy'), iPh = t.col('Phase');
-    let sat = null; const gas = [];
+    let sat = null; const gas = [], liq = [];
     t.rows.forEach((r) => {
       const T = +r[iT], rho = +r[iR], h = +r[iH] * 1e3, s = +r[iS] * 1e3, ph = r[iPh];
-      if (ph === 'liquid') sat = Object.assign(sat || {}, { T: T, rho_l: rho, h_l: h, s_l: s });
+      if (ph === 'liquid') { sat = Object.assign(sat || {}, { T: T, rho_l: rho, h_l: h, s_l: s }); liq.push([T, +h.toPrecision(10)]); }
       if (ph === 'vapor') {
         if (sat && sat.h_v === undefined) Object.assign(sat, { rho_v: rho, h_v: h, s_v: s });
         gas.push([T, +h.toPrecision(10)]);
       }
     });
-    return { sat: sat, gas: gas };
+    return withLiquid ? { sat: sat, gas: gas, liq: liq } : { sat: sat, gas: gas };
   }
   function isotherm(f) {
     const t = tsv(f), iP = t.col('Pressure'), iR = t.col('Density'), iPh = t.col('Phase');
@@ -143,6 +145,11 @@ function buildSources(dir) {
     return out;
   }
   const ph2 = isobar('nist-ph2-isobar.tsv'), o2 = isobar('nist-o2-isobar.tsv');
+  // Normal hydrogen (added in review): the cell makes 3:1 ortho-para gas and nothing converts it until a catalyst at the
+  // cold end, so the liquefier cools normal hydrogen. Cooling it along the parahydrogen isobar instead counts the
+  // ortho-para heat twice (the para table's rotational heat below about 300 K is that same heat).
+  const nh2 = isobar('nist-nh2-isobar.tsv', true);
+  if (!(nh2.sat && nh2.sat.T > 20.3 && nh2.sat.T < 20.45 && nh2.liq.length >= 2)) throw new Error('normal hydrogen isobar: unexpected saturation or liquid rows');
   const water = tsv('nist-water-isobar.tsv');
   const wcol = [water.col('Temperature'), water.col('Density')];
 
@@ -175,13 +182,14 @@ function buildSources(dir) {
       peakCarnot_pct: 17.68, maxLift21K_W: 24.4 },
     twoStage: { cite: 'Nugent, Johnson, Guzik and Stephens (2020), "Space Exploration Applications for Development of High Capacity Cryocoolers", NTRS 20205010721 (abstract)', T_upper_K: 90, T_lower_K: 20,
       note: 'two-stage cooling with 20 K and 90 K systems; 150 W of 90 K cooling for oxygen liquefaction, 300 W of 20 K cooling for hydrogen liquefaction (lunar ISRU)' },
-    cryoKpp: { cite: 'Nugent, Grotenrath and Johnson (2022), "20 Watt 20 Kelvin Reverse Turbo-Brayton Cycle Cryocooler Testing and Applications", NTRS 20220009350, Table 1 (tested values)', lift_W: 19.2, specificMass_kg_W: 5.5, note: 'excludes the drive electronics' },
+    cryoKpp: { cite: 'Nugent, Grotenrath and Johnson (2022), "20 Watt 20 Kelvin Reverse Turbo-Brayton Cycle Cryocooler Testing and Applications", NTRS 20220009350, Table 1 (tested values)', lift_W: 19.2, specificMass_kg_W: 5.5, note: 'tested lift at 285 K heat rejection (note 1); the specific mass is a flight-like projection (note 3), not a weighed unit; both exclude the mass and inefficiency of the drive electronics' },
     orthoPara: { cite: 'Weitzel, Loebenstein, Draper and Park (1958), "Ortho-Para Catalysis in Liquid-Hydrogen Production", J. Res. NBS 60(3):221, Introduction', conversion_cal_mol: 254, vaporization_cal_mol: 216,
       note: 'read as per mole of hydrogen freshly liquefied as the 3:1 ortho-para (normal) mixture, the comparison the authors draw with the heat of vaporization' },
     nist: {
       cite: 'NIST Chemistry WebBook, SRD 69, Thermophysical Properties of Fluid Systems (Lemmon, McLinden and Friend), default reference states, retrieved 2026-11-01',
       ph2_1atm: { fluid: 'parahydrogen', P_Pa: 101325, sat: ph2.sat, gas: ph2.gas, columns: 'gas: T K, h J/kg (density and entropy columns not carried)' },
       o2_1atm: { fluid: 'oxygen', P_Pa: 101325, sat: o2.sat, gas: o2.gas, columns: 'gas: T K, h J/kg (density and entropy columns not carried)' },
+      nh2_1atm: { fluid: 'hydrogen (normal, 3:1 ortho-para)', P_Pa: 101325, sat: nh2.sat, gas: nh2.gas, liq: nh2.liq, columns: 'gas and liq: T K, h J/kg (density and entropy columns not carried); default reference state, h = 0 at its own saturated liquid' },
       h2_293K: { fluid: 'hydrogen (normal)', T_K: 293.15, rows: isotherm('nist-nh2-isotherm.tsv'), columns: 'p Pa, rho kg/m^3' },
       o2_293K: { fluid: 'oxygen', T_K: 293.15, rows: isotherm('nist-o2-isotherm.tsv'), columns: 'p Pa, rho kg/m^3' },
       water_1atm: { fluid: 'water', P_Pa: 101325, rows: water.rows.map((r) => [+r[wcol[0]], +(+r[wcol[1]]).toPrecision(8)]), columns: 'T K, rho kg/m^3' },
@@ -189,12 +197,12 @@ function buildSources(dir) {
     quotes: quotes.map((q) => q.file + ': ' + q.quote),
   };
   const files = ['doe-pem-targets.html', 'ntrs-20240006776-aoga.pdf', 'ntrs-20150016494-oga.pdf', 'codata-na.html', 'codata-e.html', 'codata-sigma.html', 'nist-sp811-b9.html', 'janaf-H-063.txt', 'nssdca-near.html', 'nasa-psyche-spacecraft.html',
-    'sbdb-16.json', 'ntrs-19990084079.json', 'ntrs-20205010721.json', 'ntrs-20260005078-cryocooler.pdf', 'ntrs-20220009350-cryocooler.pdf', 'nbs-jres60-221.pdf', 'nist-ph2-isobar.tsv', 'nist-o2-isobar.tsv', 'nist-nh2-isotherm.tsv', 'nist-o2-isotherm.tsv', 'nist-water-isobar.tsv'];
+    'sbdb-16.json', 'ntrs-19990084079.json', 'ntrs-20205010721.json', 'ntrs-20260005078-cryocooler.pdf', 'ntrs-20220009350-cryocooler.pdf', 'nbs-jres60-221.pdf', 'nist-ph2-isobar.tsv', 'nist-nh2-isobar.tsv', 'nist-o2-isobar.tsv', 'nist-nh2-isotherm.tsv', 'nist-o2-isotherm.tsv', 'nist-water-isobar.tsv'];
   const shas = {};
   files.forEach((f) => { shas[f] = sha(read(f)); });
   writeWithSidecar('snapshots/split-sources.js', wrap('SplitSources', 'What splitting, storing and burning asteroid water rests on: exact constants, JANAF, DOE, the ISS OGA, two flown solar arrays, MHTB insulation, a flight-class 20 K cryocooler, NIST fluid tables.', S), {
     repo: 'energy.gov (DOE HFTO), ntrs.nasa.gov, physics.nist.gov and nist.gov (CODATA, SP 811), janaf.nist.gov, nssdc.gsfc.nasa.gov, science.nasa.gov, ssd-api.jpl.nasa.gov, nvlpubs.nist.gov (J. Res. NBS), webbook.nist.gov (SRD 69)',
-    path: 'DOE PEM electrolysis technical targets table; NTRS 20240006776 and 20150016494 (ISS OGA); CODATA N_A, e and sigma; SP 811 B.9; JANAF H-063; NSSDCA 1996-008A; NASA Psyche spacecraft page; SBDB 16 Psyche; NTRS 19990084079 (MHTB abstract); NTRS 20205010721 (two-stage cooling abstract); NTRS 20260005078 Table 2 and 20220009350 Table 1 (20 K cryocooler); J. Res. NBS 60:221; NIST WebBook isobars (parahydrogen, oxygen, water at 0.101325 MPa) and isotherms (hydrogen, oxygen at 293.15 K)',
+    path: 'DOE PEM electrolysis technical targets table; NTRS 20240006776 and 20150016494 (ISS OGA); CODATA N_A, e and sigma; SP 811 B.9; JANAF H-063; NSSDCA 1996-008A; NASA Psyche spacecraft page; SBDB 16 Psyche; NTRS 19990084079 (MHTB abstract); NTRS 20205010721 (two-stage cooling abstract); NTRS 20260005078 Table 2 and 20220009350 Table 1 (20 K cryocooler); J. Res. NBS 60:221; NIST WebBook isobars (parahydrogen, normal hydrogen, oxygen, water at 0.101325 MPa) and isotherms (hydrogen, oxygen at 293.15 K)',
     commit: 'retrieved ' + RETRIEVED, retrieved: RETRIEVED, sourceSha256: shas,
     license: 'US government works (DOE, NASA, NIST incl. SRD 69 and JANAF, JPL SBDB service); figures quoted with attribution',
     note: 'hand-transcribed figures, each with a quoted string build-data.mjs found in its source (' + quotes.length + ' quotes, whitespace-normalised; the 1958 J. Res. NBS text is an OCR layer); the JANAF, NIST WebBook and SBDB numbers are parsed from the fetched files by build-data.mjs. Re-fetch with oracle/fetch-sources.sh; HTML pages and the SBDB reply carry timestamps, so their bytes may differ while the figures do not.',

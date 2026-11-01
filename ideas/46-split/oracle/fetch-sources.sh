@@ -40,6 +40,8 @@ get nbs-jres60-221.pdf "https://nvlpubs.nist.gov/nistpubs/jres/60/jresv60n3p221_
 U="TUnit=K&PUnit=MPa&DUnit=kg%2Fm3&HUnit=kJ%2Fkg&WUnit=m%2Fs&VisUnit=uPa*s&STUnit=N%2Fm&RefState=DEF&Digits=8"
 W="https://webbook.nist.gov/cgi/fluid.cgi?Action=Data&Wide=on"
 get nist-ph2-isobar.tsv "$W&ID=B5000001&Type=IsoBar&P=0.101325&THigh=400&TLow=20&TInc=2&$U"
+# Normal hydrogen (3:1 ortho-para, as the cell makes it) at 1 atm: the gas the liquefier actually cools (added in review).
+get nist-nh2-isobar.tsv "$W&ID=C1333740&Type=IsoBar&P=0.101325&THigh=400&TLow=20&TInc=2&$U"
 get nist-o2-isobar.tsv "$W&ID=C7782447&Type=IsoBar&P=0.101325&THigh=400&TLow=90&TInc=2&$U"
 get nist-nh2-isotherm.tsv "$W&ID=C1333740&Type=IsoTherm&T=293.15&PHigh=70&PLow=1&PInc=1&$U"
 get nist-o2-isotherm.tsv "$W&ID=C7782447&Type=IsoTherm&T=293.15&PHigh=70&PLow=1&PInc=1&$U"

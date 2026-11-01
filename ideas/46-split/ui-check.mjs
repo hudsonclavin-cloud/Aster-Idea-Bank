@@ -109,11 +109,18 @@ const RC = K.run(srcC, {}), RG = K.run(srcC, { route: 'gas' }), RS = K.run(srcC,
   const R5 = K.run(srcC, { of_mode: 'fixed', of: await page.evaluate(() => window.SplitPage.state.S.of) });
   ok(close(num(T['Specific impulse, vacuum'].v), R5.prop.isp_s, 0.06), 'Isp at the clicked ratio ' + T['Specific impulse, vacuum'].v);
   ok(num(T['Δv on the way home'].v) < RC.dv, 'burning at 5 buys less delta-v than the water\'s ratio on the chain');
-  ok((await refusals(page)).some((t) => /engine/.test(t)) === false || Math.abs(num(T['Mixture ratio burned'].v) - 5) > 0.25 || true, 'engine refusal only away from O/F 5');
+  ok(!/is carried, not measured/.test(await page.textContent('#refusals')), 'no carried-calibration refusal at the RL10\'s own O/F 5');
   b0 = await seq(page);
   await page.focus('#ofChart'); await page.keyboard.press('ArrowRight');
   await waitRun(page, b0);
   ok(close(await page.evaluate(() => window.SplitPage.state.S.of), R5.settings.of + 0.1, 0.011), 'arrow key steps the ratio');
+  // the left edge of the chart, O/F 2: idea 31 cannot expand it, so the propellant is refused, not shown as 0 kg
+  b0 = await seq(page);
+  await page.mouse.click(box.x + 52 + 1, box.y + box.h / 2);
+  await waitRun(page, b0);
+  T = await tiles(page);
+  ok(T['Return propellant'].v.trim().startsWith('–') && /refused/.test(T['Return propellant'].c), 'O/F 2: propellant refused, not zero: ' + T['Return propellant'].v);
+  ok(!/O\/F null|NaN|undefined/.test(await page.textContent('main')), 'O/F 2: no "null", NaN or undefined on the page');
   await click(page, '[data-of="optimal"]');
   // refusals the inputs raise
   await setNum(page, 'tcIn', 250);
@@ -155,8 +162,15 @@ const RC = K.run(srcC, {}), RG = K.run(srcC, { route: 'gas' }), RS = K.run(srcC,
   const { context, page, errors } = await open(DESK, URL0 + '#h=' + b64(HB));
   ok(/Bennu/.test(await page.textContent('#srcLine')), 'a #h= link with idea 45\'s Bennu handoff opens Bennu');
   let T = await tiles(page);
-  ok(num(T['Return propellant'].v) === 0 && /bad/.test(T['Return propellant'].cls), 'NEAR\'s arrays cannot run a cryogenic plant at Bennu');
-  ok((await refusals(page)).some((t) => /propellant/.test(t)) && (await refusals(page)).some((t) => /cleanup/.test(t)), 'no propellant left, and the CO2/SO2 cleanup refusal');
+  const RB = K.run(srcB, {});
+  ok(close(num(T['Return propellant'].v), RB.prop.mass_kg, 0.006) && RB.prop.mass_kg > 20, 'NEAR\'s arrays at Bennu: ' + T['Return propellant'].v + ' vs ' + RB.prop.mass_kg + ' (tanks sized for what they hold)');
+  ok((await refusals(page)).some((t) => /power/.test(t)) && (await refusals(page)).some((t) => /cleanup/.test(t)), 'water left unsplit (power), and the CO2/SO2 cleanup refusal');
+  // arrays too small to idle a 20 K cooler there: nothing liquefied, said so
+  await setNum(page, 'pIn', 900);
+  T = await tiles(page);
+  ok(num(T['Return propellant'].v) === 0 && /bad/.test(T['Return propellant'].cls), '900 W arrays at Bennu make no liquid propellant');
+  ok((await refusals(page)).some((t) => /cooler20/.test(t)), 'the idle-cooler refusal shows');
+  await click(page, '[data-arr="near"]');
   await click(page, '[data-arr="psyche"]');
   const RP = K.run(srcB, { array: 'psyche', P1au: 21000 });
   T = await tiles(page);
