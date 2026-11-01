@@ -1,0 +1,13 @@
+{
+  "repo": "https://ssd-api.jpl.nasa.gov (NHATS API 1.3, SBDB close-approach API) ; https://ssd.jpl.nasa.gov/api/horizons.api (Horizons API) ; https://cneos.jpl.nasa.gov/nhats/caveats.html",
+  "path": "nhats.api?des=<6 bodies>&dv=6|8|12&dur=360|450&stay=8|32&launch=2025-2030|2030-2035|2035-2040 (216 queries); cad.api?des=99942 2028-2030; horizons.api VECTORS for -64, DES=2101955; and 399 (see sources[] in the file)",
+  "commit": "retrieved 2026-11-01",
+  "retrieved": "2026-11-01",
+  "sourceSha256": "d66900ed9275a034e45aff59bffae62eac71ac3d496d11fef15d8037e1e77453",
+  "sourceSha256Rule": "sha256 of the newline-joined per-file sha256 values in sources[] (in that order)",
+  "license": "US Government work (NASA/JPL, public domain in the US); JPL APIs are public",
+  "note": "derived by build-data.mjs from the raw responses oracle/fetch-sources.sh saves: NHATS min-dv and min-duration trajectories de-duplicated by object and trajectory id; four quoted sentences of the NHATS caveats page and six field definitions of the API doc, each found verbatim; the single 2028-2030 Apophis close approach; Horizons rows parsed unmodified (km, km/s, TDB, ICRF)",
+  "writtenSha256": "ecd5e6bd8e5744d3932e0f4f75fb31bcd61ba1c500f8562a483a4b1738b5f182",
+  "writtenBytes": 14519,
+  "mode": "derived"
+}

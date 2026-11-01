@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/aster-bodies-cheb.js",
+  "commit": "be8ae986856ccc4a87f38ff52afe873afe7e942f",
+  "commitDate": "2026-11-01T03:47:58+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "b27c89f985e3f0464328531e152d3e9036818692",
+  "readBlob": "b27c89f985e3f0464328531e152d3e9036818692",
+  "sourceSha256": "a0fb0761cd42b5c10c296d0f577e5447f1caa39b371fbd49c3943c2d979c0410",
+  "sourceBytes": 77759,
+  "copiedAt": "2026-11-01T04:07:52.880Z",
+  "mode": "copy",
+  "note": "idea 40's snapshot, unmodified: a dependency of its kernel (coast.js create())",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a0fb0761cd42b5c10c296d0f577e5447f1caa39b371fbd49c3943c2d979c0410",
+  "writtenBytes": 77759
+}

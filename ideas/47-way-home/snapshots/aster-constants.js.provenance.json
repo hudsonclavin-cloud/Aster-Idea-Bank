@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/aster-constants.js",
+  "commit": "be8ae986856ccc4a87f38ff52afe873afe7e942f",
+  "commitDate": "2026-11-01T03:47:58+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "readBlob": "4a779281ca33a97c9b7d994433f0da33f9af4ef6",
+  "sourceSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "sourceBytes": 1986,
+  "copiedAt": "2026-11-01T04:07:52.689Z",
+  "mode": "copy",
+  "note": "idea 40's snapshot, unmodified: a dependency of its kernel (coast.js create())",
+  "readMatchesCommitted": true,
+  "writtenSha256": "3908578fb08677424de1592d6d780a6a1dbd872069d8adc222e727dfe0d8e0f8",
+  "writtenBytes": 1986
+}

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Way Home: leaving the asteroid</title>
+<meta name="description" content="Return windows from the asteroid to the Earth: a porkchop flown through the planets, what the propellant made at the asteroid can push home, and the Earth-arrival v-infinity, date and entry speed handed to the next module.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Way Home</h1>
+  <p class="lede">Idea 46 made propellant at the asteroid. This page finds the ways home: every return from the asteroid to the Earth over the next years (a porkchop of departure date against flight time), what each costs at the asteroid, how much material the propellant can push home with it, and what the Earth sees arriving. The asteroid is where it really is (Aster's elements integrated through the planets by idea 40), and the chosen return is flown through the same forces and re-aimed at the atmosphere.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 17 of 20. Previous: <a href="../46-split/index.html">46 Split</a>, the propellant. Next: 48 Catch, the Earth arrival (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">The craft and the window</h2>
+    <span class="lab" id="lab-case">Case</span>
+    <div class="seg" role="group" aria-labelledby="lab-case"><button type="button" data-case="chain">The chain: Apophis (idea 46)</button><button type="button" data-case="custom">A craft you describe</button></div>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+
+    <fieldset id="fsCustom" class="hide"><legend>Your craft</legend>
+      <div class="ctl"><label for="bodySel">Asteroid (Aster's elements, flown by idea 40)</label><select id="bodySel"></select></div>
+      <div class="grid2">
+        <div class="ctl"><label for="stayIn">Stay ends <small>UTC</small></label><input id="stayIn" type="date" min="2026-01-01" max="2040-12-01"></div>
+        <div class="ctl"><label for="propIn">Propellant <small>kg</small></label><input id="propIn" type="number" min="0" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="ispIn">Isp <small>s</small></label><input id="ispIn" type="number" min="1" max="10000" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="dryIn">Dry mass <small>kg</small></label><input id="dryIn" type="number" min="1" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="boilIn">Boil-off <small>kg/day</small></label><input id="boilIn" type="number" min="0" step="0.001" inputmode="decimal"></div>
+      </div>
+    </fieldset>
+
+    <fieldset><legend>When to leave, how long to fly</legend>
+      <div class="ctl"><div class="ctl-head"><label for="waitIn">Latest departure <small>days after the stay ends</small></label><input id="waitIn" type="number" min="30" max="4000" step="10" inputmode="decimal"></div>
+        <input id="waitRange" type="range" min="60" max="2000" step="10" aria-label="Latest departure, days after the stay ends"></div>
+      <div class="grid2">
+        <div class="ctl"><label for="wait0In">Earliest <small>days after</small></label><input id="wait0In" type="number" min="0" max="3900" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="tofMaxIn">Longest flight <small>days</small></label><input id="tofMaxIn" type="number" min="30" max="2000" step="10" inputmode="decimal"></div>
+        <div class="ctl"><label for="tofMinIn">Shortest flight <small>days</small></label><input id="tofMinIn" type="number" min="5" max="1990" step="5" inputmode="decimal"></div>
+        <div class="ctl"><label for="gridSel">Grid</label><select id="gridSel"><option value="60x45">60 × 45 (fast)</option><option value="90x70">90 × 70</option><option value="140x100">140 × 100 (fine)</option></select></div>
+      </div>
+      <span class="lab" id="lab-revs">Revolutions about the Sun</span>
+      <div class="seg" role="group" aria-labelledby="lab-revs"><button type="button" data-revs="0">Direct</button><button type="button" data-revs="1">Up to 1</button><button type="button" data-revs="2">Up to 2</button></div>
+      <span class="lab" id="lab-obj">Choose the window by</span>
+      <div class="seg" role="group" aria-labelledby="lab-obj"><button type="button" data-obj="material">Most material home</button><button type="button" data-obj="dv">Least Δv</button><button type="button" data-obj="vinf">Slowest arrival</button></div>
+    </fieldset>
+
+    <fieldset><legend>Propellant and payload</legend>
+      <span class="lab" id="lab-hold">Boil-off while waiting and on the way</span>
+      <div class="seg" role="group" aria-labelledby="lab-hold"><button type="button" data-hold="passive">Passive (idea 46's rates)</button><button type="button" data-hold="held">Held by the coolers</button></div>
+      <div class="ctl"><div class="ctl-head"><label for="marginIn">Δv margin <small>% (Aster's 10 %)</small></label><input id="marginIn" type="number" min="0" max="100" step="1" inputmode="decimal"></div>
+        <input id="marginRange" type="range" min="0" max="50" step="1" aria-label="Delta-v margin, percent"></div>
+      <div class="ctl"><label for="tcmIn">First correction <small>m/s; empty = the burn's own 3σ execution error (idea 40's Lucy model)</small></label><input id="tcmIn" type="number" min="0" max="1000" step="0.1" inputmode="decimal" placeholder="execution error"></div>
+      <div class="ctl"><label for="matIn">Material to bring <small>kg; empty = as much as the propellant allows</small></label><input id="matIn" type="number" min="0" step="10" inputmode="decimal" placeholder="as much as possible"></div>
+    </fieldset>
+
+    <fieldset><legend>Arriving at the Earth</legend>
+      <div class="seg" role="group" aria-label="Earth arrival"><button type="button" data-arr="handon">Hand v∞ on to module 48</button><button type="button" data-arr="brake">Brake to the entry limit (NHATS)</button></div>
+      <div class="grid2">
+        <div class="ctl"><label for="limIn">Entry limit <small>km/s</small></label><input id="limIn" type="number" min="11" max="20" step="0.1" inputmode="decimal"></div>
+        <div class="ctl"><label for="altIn">Entry altitude <small>km</small></label><input id="altIn" type="number" min="50" max="200" step="5" inputmode="decimal"></div>
+        <div class="ctl"><label for="aimIn">Aim perigee <small>km altitude</small></label><input id="aimIn" type="number" min="-6000" max="2000" step="5" inputmode="decimal"></div>
+      </div>
+      <div class="checks"><label><input type="checkbox" id="nbodyChk"> Fly it through the planets (idea 40)</label></div>
+    </fieldset>
+    <div class="btnrow"><button type="button" id="bestBtn">Best window again</button><button type="button" id="resetBtn">Reset</button></div>
+    <p class="note" id="runNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-res">
+      <h2 id="h-res">The way home</h2>
+      <div id="rideLine" class="srcline"></div>
+      <div class="tiles" id="tiles"></div>
+      <div id="ledger"></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-pork">
+    <h2 id="h-pork">Every return in the window</h2>
+    <div class="seg small-seg" role="group" aria-label="Colour the porkchop by"><button type="button" data-col="dv">Δv at the asteroid</button><button type="button" data-col="vinf">Arrival v∞</button><button type="button" data-col="mat">Material home</button></div>
+    <canvas id="porkChart" class="chart tall" tabindex="0" role="img" aria-label="Porkchop: departure date across, flight time up, coloured by the chosen quantity. Tap or click a cell to choose it, arrow keys move, Enter refines to the nearby best."></canvas>
+    <ul class="legend" id="porkLegend"></ul>
+    <p class="chart-cap" id="porkCap"></p>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-why">
+    <h2 id="h-why">Waiting, and the road</h2>
+    <div class="chartgrid">
+      <div><canvas id="dateChart" class="chart" role="img" aria-label="By departure date: the least delta-v any flight time needs, against the delta-v the propellant left after boil-off can give."></canvas><ul class="legend" id="dateLegend"></ul><p class="chart-cap" id="dateCap"></p></div>
+      <div><canvas id="orbitChart" class="chart" role="img" aria-label="The return seen from the ecliptic pole: the Earth's orbit, the asteroid's path over the window, and the return arc from departure to arrival."></canvas><ul class="legend" id="orbitLegend"></ul><p class="chart-cap" id="orbitCap"></p></div>
+    </div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Checked against reality</h2>
+    <p class="small">Computed live from the fixtures in this folder: JPL's NHATS round trips (patched conics with JPL's own ephemerides), JPL's close-approach record of Apophis, and OSIRIS-REx's flown return reconstructed by JPL Horizons. The gap is this page minus JPL.</p>
+    <div class="tablewrap"><table class="stack" id="checkTable"><thead><tr><th>Check</th><th>JPL / reality</th><th>This page</th><th>Gap</th></tr></thead><tbody><tr><td colspan="4">Computing…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 46's handoff (or this page's), or open this page with <span class="mono">#h=</span> and a handoff in the link. Export hands module 48 the Earth arrival (date, v∞ vector, declination, perigee state, entry speed), the return, the mass ledger and every refusal so far.</p>
+    <textarea id="importText" rows="3" aria-label="Paste a handoff here"></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import pasted</button>
+      <label class="filebtn">Import a file<input type="file" id="importFile" accept=".json,application/json"></label>
+      <button type="button" id="copyBtn">Copy handoff</button><button type="button" id="dlBtn">Download</button><button type="button" id="linkBtn">Copy link</button>
+    </div>
+    <div class="status" id="hoStatus" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <details><summary>Where the asteroid really is</summary>
+      <p class="small">Aster's catalog gives each asteroid's orbital elements at 2026-05-01. Drawn as a fixed ellipse (two-body, as Aster's porkchop does), Apophis drifts tens of thousands of kilometres from JPL's orbit by 2028 (idea 39 measured it) and millions after its 2029 pass by the Earth. So this page asks idea 40's integrator: the elements are flown through the Sun, the planets, the Moon, the Earth's flattening and relativity, day by day. The table below compares the 2029 pass it predicts with JPL's own record.</p></details>
+    <details><summary>The porkchop</summary>
+      <p class="small">For every departure date and flight time, idea 39's Lambert solver finds the arc from the asteroid to the Earth's centre. The burn at the asteroid is that arc's velocity minus the asteroid's; the Earth sees the arc's velocity minus its own (v∞), and the atmosphere at 125 km sees √(v∞² + 2μ/r). Arcs within 5° of 180° (the plane hangs on small offsets), arcs unbound about the Sun and departures from inside the Earth's sphere of influence are refused, as idea 39 does. When the asteroid itself passes the Earth, the cheapest way home is to ride it: a nudge of a few m/s turns its flyby into an arrival, and the page searches along that line too, then refines (Nelder–Mead in departure and arrival time).</p></details>
+    <details><summary>Flown through the planets</summary>
+      <p class="small">The chosen arc is flown from the asteroid through idea 40's forces. Uncorrected it misses (the Earth's pull bends it, the planets tug it). The page then re-aims the departure burn by Newton's method so the flight passes the Earth at the aim perigee (125 km by default, NHATS's entry altitude), on the same side and at the same time the uncorrected flight would, reading the approach hyperbola's B-plane. That burn, not the patched conic's, is the one the mass ledger pays.</p></details>
+    <details><summary>The mass ledger</summary>
+      <p class="small">Idea 46's propellant waits, boiling at its passive rates (or held at zero by the coolers), until the departure. It burns at idea 46's mixture ratio, so when the hydrogen runs short the oxygen left over rides home as dead mass. The departure Δv carries Aster's 10 % margin and one correction the size of the burn's own 3σ execution error (Lucy's 30 mm/s + 4 %, through idea 40). Tsiolkovsky then says how much material the propellant can push: m = burnable / (1 − e^(−Δv/vₑ)) − dry − propellant. What idea 45 dug caps it. Braking to the entry limit, NHATS's way, is a second burn on arrival, after the cruise's boil-off.</p></details>
+    <details><summary>What it is checked against</summary>
+      <p class="small">JPL's NHATS study computes round trips to near-Earth asteroids with patched conics and JPL's own ephemerides. All of its return legs for the bodies here that NHATS lists are recomputed (NHATS prints whole m/s); the largest gaps are Apophis's legs after its 2029 pass, where Aster's elements and JPL's orbit solution part ways, and the same legs drawn two-body show why the integrator is needed. OSIRIS-REx's actual return from Bennu, reconstructed by JPL, is the check against reality: a patched conic against a flown spacecraft. The numbers are in the table above.</p></details>
+  </section>
+</main>
+<footer><p class="small">Idea 47 of the Aster Idea Bank, an idea-bank prototype. Every number traces to a snapshot in this folder (see README). No network requests.</p></footer>
+
+<script src="snapshots/lambert.js"></script>
+<script src="snapshots/coast.js"></script>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/earth-cheb.js"></script>
+<script src="snapshots/catalog-elements.js"></script>
+<script src="snapshots/aster-bodies-cheb.js"></script>
+<script src="snapshots/outer-planets-cheb.js"></script>
+<script src="snapshots/de440-constants.js"></script>
+<script src="snapshots/nav-sources.js"></script>
+<script src="snapshots/erfa-iau2006.js"></script>
+<script src="snapshots/return-oracles.js"></script>
+<script src="snapshots/chain-outbound.js"></script>
+<script src="snapshots/split-handoff.js"></script>
+<script src="home.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

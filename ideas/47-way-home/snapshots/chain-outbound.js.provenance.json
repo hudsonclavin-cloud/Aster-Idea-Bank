@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/39-lamberts-road/handoff.json",
+  "commit": "be8ae986856ccc4a87f38ff52afe873afe7e942f",
+  "commitDate": "2026-11-01T03:47:58+00:00",
+  "pathLastChanged": "0ade548 2026-10-31T16:36:12+00:00",
+  "committedBlob": "500386ae535c37e39e4b66fddc445d7a557996da",
+  "readBlob": "500386ae535c37e39e4b66fddc445d7a557996da",
+  "sourceSha256": "036fb7a27fa130d3e2651cdb50ecf8fb26fc53eb2509e81b2a54e6e5f9eb63b0",
+  "sourceBytes": 96307,
+  "copiedAt": "2026-11-01T04:11:11.935Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --chain: two values copied unmodified, idea 39's handoff outputs.v_infinity_arrival.value.magnitude_m_s and transfer.arrival_utc, and idea 40's handoff (ideas/40-long-coast/handoff.json, same commit) outputs.arrival_state.value.v_infinity_arrival_magnitude_m_s and utc",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a5449fdf29f1e01d384631623947c52881bb4165364a3ded894537ee3d67ffeb",
+  "writtenBytes": 891
+}

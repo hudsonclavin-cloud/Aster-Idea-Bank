@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/40-long-coast/snapshots/nav-sources.js",
+  "commit": "be8ae986856ccc4a87f38ff52afe873afe7e942f",
+  "commitDate": "2026-11-01T03:47:58+00:00",
+  "pathLastChanged": "35c1cd2 2026-10-31T17:56:27+00:00",
+  "committedBlob": "059b5347fe7f4ea2ce449a415979d57b76280046",
+  "readBlob": "059b5347fe7f4ea2ce449a415979d57b76280046",
+  "sourceSha256": "f362c24a04d4ec504c3266a60998c39119210ab2912569f288f18ecdc561c721",
+  "sourceBytes": 4886,
+  "copiedAt": "2026-11-01T04:07:53.078Z",
+  "mode": "copy",
+  "note": "idea 40's snapshot, unmodified: a dependency of its kernel (coast.js create())",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f362c24a04d4ec504c3266a60998c39119210ab2912569f288f18ecdc561c721",
+  "writtenBytes": 4886
+}

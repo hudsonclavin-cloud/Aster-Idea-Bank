@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/39-lamberts-road/lambert.js",
+  "commit": "be8ae986856ccc4a87f38ff52afe873afe7e942f",
+  "commitDate": "2026-11-01T03:47:58+00:00",
+  "pathLastChanged": "0ade548 2026-10-31T16:36:12+00:00",
+  "committedBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "readBlob": "9cf74da6dfef2faeb783fcb83890b84144677763",
+  "sourceSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "sourceBytes": 67306,
+  "copiedAt": "2026-11-01T04:07:52.552Z",
+  "mode": "copy",
+  "note": "idea 39's Lambert kernel (Izzo), unmodified: the return-leg Lambert solutions and Kepler arcs; also what idea 40's kernel wraps",
+  "readMatchesCommitted": true,
+  "writtenSha256": "74973864543fafc9093cc1e5b9db42ebc5ff9f928fb85459745cff81c2fd82f6",
+  "writtenBytes": 67306
+}
