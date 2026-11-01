@@ -238,8 +238,8 @@
   });
   $('linkBtn').addEventListener('click', function () {
     var h = current(); if (!h) return status(why());
-    var url = location.href.split('#')[0].replace(/49-hot-return\/index\.html$/, '50-long-way-round/index.html') + '#h=' + K.b64urlEncode(JSON.stringify(h)); $('importText').value = url;
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { status('Link for module 50 copied (' + url.length + ' characters; module 50 is not built yet).', true); }, function () { status('The link is in the box above.', true); });
+    var url = location.href.split('#')[0].replace(/49-hot-return\/index\.html$/, '50-the-long-way-round/index.html') + '#h=' + K.b64urlEncode(JSON.stringify(h)); $('importText').value = url;
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { status('Link for module 50 copied (' + url.length + ' characters).', true); }, function () { status('The link is in the box above.', true); });
     else status('The link is in the box above.', true);
   });
   function load(text) {

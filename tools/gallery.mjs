@@ -221,6 +221,9 @@ function page(ideas, repo) {
     h1 { font: 700 clamp(40px, 8vw, 72px)/1 Georgia, "Times New Roman", serif; letter-spacing: -0.02em; margin: 10px 0 12px; }
     .lede { max-width: 60ch; margin: 0 0 14px; color: var(--muted); font-size: 18px; }
     .stats { font: 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace; color: var(--muted); margin: 0; }
+    .notice { margin: 12px 0 0; max-width: 72ch; font-size: 15px; color: var(--muted); }
+    .notice a { color: var(--accent); }
+    .notice code { font: 13px ui-monospace, "SF Mono", Menlo, monospace; color: var(--ink); }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 20px; }
     .slip {
       display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line);
@@ -264,6 +267,7 @@ function page(ideas, repo) {
       <h1>Aster Idea Bank</h1>
       <p class="lede">Feature prototypes, tools and studies made by AI agents for three sibling projects: <b>Aster</b>, a browser asteroid-mission planner with evidence-carrying answers; <b>PartForge</b>, which turns a description into a checked printable or machined part; and <b>Skyhook</b>, a rotating momentum-exchange tether program. Each idea was built and tested by the agent that made it, then attacked by an independent reviewer, and says exactly where in its project it would land.</p>
       <p class="stats">${esc(stats.join(' · '))}</p>
+      <p class="notice">Ideas 31-50 are one mission, <i>The Long Way Round</i>: twenty chained simulations from propellant mixture to re-entry. Start at <a href="ideas/31-mixture/index.html">31 Mixture</a> or see it flown whole in <a href="ideas/50-the-long-way-round/index.html">50</a>. Numbers 20-30 are not missing: they are held on the branch <code>hold/ideas-20-30</code>${repo ? ` (<a href="${repo}/blob/main/queue/RESUME.md">what state each is in</a>)` : ''}. Ideas 11, 12 and 14-19 have not had their independent review yet.</p>
     </header>
     <main class="grid">
 ${ideas.map((i) => card(i, repo)).join('\n')}
