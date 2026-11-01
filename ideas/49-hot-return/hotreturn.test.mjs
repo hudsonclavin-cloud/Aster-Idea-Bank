@@ -43,18 +43,35 @@ test('1. snapshots: sidecars hash to what they recorded; copies are idea 48\'s c
   close(S.osirisrex.observed.touchdown_s, 615.1, 1e-9, 'OSIRIS-REx touchdown from the timestamps');
 });
 
-test('2. radiative heating: reproduces its own paper\'s fit to 2e-4, its data to 6 %, and an independent code to 11 %', () => {
+test('2. radiative heating: all 91 sphere cases of its own paper, an independent code inside its range, and the extrapolation below it', () => {
   const RC = K.radiativeChecks();
-  assert.equal(RC.table3.length, 25);
+  // (review) Table III(a) has 91 sphere cases over three sideways pages; the builder had transcribed 25 of them
+  assert.equal(RC.table3.length, 91);
+  assert.deepEqual(RC.table3.map((r) => r.case), Array.from({ length: 91 }, (_, i) => i + 1));
   for (const r of RC.table3) {
+    // the fit, evaluated here, gives their q_R,C to the transcription's last digit (a wrong V, rho, R_B or q_R,C would not)
     assert.ok(Math.abs(r.gap_fit) < 5e-4, `case ${r.case}: ${r.model} vs the paper's fit ${r.fit}`);
-    assert.ok(Math.abs(r.gap_data) < 0.06, `case ${r.case}: ${r.model} vs their coupled calculation ${r.data}`);
+    // their error column is 100 (q_R,D - q_R,C)/q_R,D: a wrongly transcribed q_R,D would not give it
+    near(100 * (r.data - r.fit) / r.data, r.error_pct, 0.1, `case ${r.case}: the error column`);
   }
+  // the fit against their coupled calculations: within 15 % everywhere (case 45, 11 km/s at 67 km with a 0.3 m nose, is
+  // the worst at -14.5 %) and about 3 % on average, the paper's "average deviation of about 3 percent"
+  const gaps = RC.table3.map((r) => Math.abs(r.gap_data)), worst = Math.max(...gaps), mean = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  assert.ok(worst > 0.14 && worst < 0.15, 'worst ' + worst); assert.equal(RC.table3[gaps.indexOf(worst)].case, 45);
+  assert.ok(mean > 0.025 && mean < 0.035, 'mean ' + mean);
   // Sutton & Hartung (RIFSP, another code): inside the fit's range within 11 %; the mean within 7 %
   const inside = RC.suttonHartung.filter((r) => r.inside);
   assert.equal(inside.length, 12);
   for (const r of inside) assert.ok(Math.abs(r.gap) < 0.11, `SH ${r.v} m/s ${r.rn} m: ${r.gap}`);
   assert.ok(inside.reduce((s, r) => s + Math.abs(r.gap), 0) / inside.length < 0.07);
+  // (review) below the fit's 11 km/s, where the chain's capsule slows in dense air, the extrapolation runs high against
+  // Sutton & Hartung, more so the slower: +10 % at 10 km/s and three times at 9 km/s for a 2.3 m nose
+  const below = RC.suttonHartung.filter((r) => r.v < 11000 && r.rn >= 0.5);
+  assert.equal(below.length, 9);
+  for (const r of below) { assert.equal(r.inside, false); assert.ok(r.gap > 0.05, `SH ${r.v} m/s ${r.rn} m: ${r.gap}`); }
+  const gapAt = (v, rn) => below.find((r) => r.v === v && r.rn === rn).gap;
+  for (const rn of [0.5, 1, 2.3]) assert.ok(gapAt(9000, rn) > gapAt(9500, rn) && gapAt(9500, rn) > gapAt(10000, rn), 'slower is further off at ' + rn + ' m');
+  assert.ok(gapAt(10000, 2.3) > 0.05 && gapAt(10000, 2.3) < 0.15 && gapAt(9000, 2.3) > 2 && gapAt(9000, 2.3) < 2.5, '2.3 m: ' + gapAt(10000, 2.3) + ', ' + gapAt(9000, 2.3));
   // the envelope flag: Stardust's 0.229 m nose is outside, the chain's 2.21 m inside
   assert.equal(K.suttles(12000, 3e-4, 0.2286).inside, false);
   assert.equal(K.suttles(12000, 3e-4, 2.21).inside, true);
@@ -117,6 +134,10 @@ test('4. reality: Stardust, Genesis and OSIRIS-REx against what was measured, ea
   // OSIRIS-REx: slower than what flew, like NASA's own reconstruction
   assert.ok(R.ox_main_dur.model > R.ox_main_dur.ref && R.ox_main_dur.model < R.ox_main_dur.ref2, 'time on the main between the video and NASA\'s reconstruction');
   assert.ok(R.ox_td.model > R.ox_td.ref && R.ox_td.model < R.ox_td.ref2, 'touchdown between the video and NASA\'s reconstruction');
+  // (review) opening the main where the AAS 2024 reconstruction puts it (2,699 m over a 1,299 m site) brings the time on
+  // the main from +31 % to within 10 % of the video: the main canopy agrees with NASA's; the fall before it does not
+  assert.ok(Math.abs(R.ox_main_dur_recon.gap_pct) < 10, 'time on the main from 2,699 m ' + R.ox_main_dur_recon.gap_pct);
+  assert.ok(R.ox_main_dur.gap_pct > 25, 'from the nominal 10,000 ft ' + R.ox_main_dur.gap_pct);
   // a sanity row: the drogue the fit gives lands Stardust 31.03 -> 3.428 km in 331.3 s, by construction (the fit's own check)
   const C = K.srcCanopies(); assert.ok(C.drogue_cds_m2 > 0.3 && C.drogue_cds_m2 < 1.5, 'drogue drag area ' + C.drogue_cds_m2);
 });
@@ -203,7 +224,7 @@ test('7. decisions: radiation off, no parachute, OSIRIS-REx with its drogue, a f
 });
 
 test('8. refusals: bad settings, idea 48 choices that do not end on the ground, other handoffs', () => {
-  const bad = [{ source: 'mars' }, { chutes: 'two' }, { radiative: 'yes' }, { shield_density: 50 }, { shield_density: NaN }, { touchdown_m_s: 0.5 }, { ground_alt_m: 7000 }, { trigger_g: 0.1 },
+  const bad = [{ source: 'mars' }, { chutes: 'two' }, { radiative: 'yes' }, { shield_density: 50 }, { shield_density: NaN }, { touchdown_m_s: 0.5 }, { ground_alt_m: 7000 }, { ground_alt_m: -1 }, { trigger_g: 0.1 },
     { drogue_timer_s: -1 }, { main_baro_Pa: 500 }, { main_timer_s: 0 }, { main_timer_s: Infinity }];
   for (const s of bad) { const R = K.run(s); assert.ok(R.refusal, JSON.stringify(s)); assert.equal(R.refusal.code, 'invalid_input', JSON.stringify(s)); }
   const orb = chain(); orb.outputs.capture.value.choice = 'aerocapture'; orb.outputs.capture.value.destination = 'orbit';
@@ -259,4 +280,55 @@ test('10. the shield\'s verdicts on set heating: the PICA envelope, Stardust\'s 
   ei.v_m_s = ei.v_m_s.map((x) => x * 1.001);
   const vr = K.K.vrelOf(ei.r_m, ei.v_m_s); ei.speed_inertial_m_s = Math.hypot(...ei.v_m_s); ei.speed_relative_m_s = Math.hypot(...vr);
   const imp = K.importCatch(e2); assert.ok(imp.refusal && /does not give the loads it screened/.test(imp.refusal.reason), 'a consistent velocity edit is caught by the re-flight: ' + JSON.stringify(imp.refusal));
+});
+
+test('11. review: where the flown capsules land, parachutes that never open, a switch already past, Genesis\'s canopies, the ground\'s air', () => {
+  // the flown capsules' entry points are idea 48's stand-ins at their landing targets: their touchdown point is refused
+  for (const id of ['stardust', 'osirisrex', 'genesis']) {
+    const R = run(id === 'stardust' ? 'sd' : id === 'osirisrex' ? 'ox' : 'gn', { source: id });
+    assert.equal(R.land.lat, null, id); assert.equal(R.land.lon, null, id);
+    assert.ok(R.refusals.some((r) => r.applies_to === 'landing_site' && /not where the capsule landed/.test(r.reason)), id);
+    assert.ok(R.land.downrange_m > 7e5 && R.land.downrange_m < 1e6, id + ' downrange ' + R.land.downrange_m);
+    const h = K.buildHandoff(R, 'x'); assert.equal(h.outputs.landing.value.latitude_deg, null); assert.ok(!K.parseHandoff(h).refusal, id + ' reads back');
+  }
+  // the chain's landing place: the great circle from idea 48's entry point (ERFA's Earth rotation angle at both epochs)
+  // equals the downrange measured in the frame turning with the Earth (a sign error in either rotation would not)
+  const C0 = run('chain', K.defaults()), e = K.K.geodetic(C0.arrival.x0.r, C0.arrival.tdb), d2r = Math.PI / 180;
+  const hav = Math.sin((C0.land.lat - e.lat) * d2r / 2) ** 2 + Math.cos(e.lat * d2r) * Math.cos(C0.land.lat * d2r) * Math.sin((C0.land.lon - e.lon) * d2r / 2) ** 2;
+  close(2 * K.RE * Math.asin(Math.sqrt(hav)), C0.land.downrange_m, 1e-6, 'great circle = downrange');
+  // a sequence that never opens a parachute is refused with the speed it hits at; no opening-load refusal then
+  for (const s of [{ trigger_g: 20 }, { trigger_g: 0.5 }, { drogue_timer_s: 600 }, { source: 'genesis', chutes: 'no_drogue' }]) {
+    const R = K.run(s);
+    assert.ok(R.land.speed > 50, JSON.stringify(s) + ' ' + R.land.speed);
+    assert.ok(R.refusals.some((r) => r.applies_to === 'parachute_sequence' && r.code === 'out_of_envelope'), JSON.stringify(s));
+    assert.ok(!R.refusals.some((r) => r.applies_to === 'opening_loads'), JSON.stringify(s));
+  }
+  assert.ok(/at or below 1 g/.test(K.run({ trigger_g: 0.5 }).refusals.find((r) => r.applies_to === 'parachute_sequence').reason));
+  const hi = K.run({ ground_alt_m: 6000 });
+  assert.equal(hi.descent.chutes.main, undefined); assert.ok(hi.land.speed > 30);
+  assert.ok(hi.refusals.some((r) => r.applies_to === 'parachute_sequence' && /main never opens/.test(r.reason)));
+  assert.ok(!C0.refusals.some((r) => r.applies_to === 'parachute_sequence'), 'the chain\'s own sequence works');
+  // a pressure switch armed below its setting fires at once (it used to wait for the 350.6 s timer)
+  const CAN = K.srcCanopies(), b = K.run({ main_baro_Pa: 1000 });
+  near(b.descent.chutes.main.t - b.descent.chutes.drogue.t, CAN.fill_drogue_s, 1e-6, 'main right after the drogue fills');
+  assert.equal(b.descent.chutes.main_trigger, 'baroswitch');
+  // Genesis with parachutes: its own canopies are not on file, so sized (not Stardust's and OSIRIS-REx's); its main on
+  // its 254.0 s timer from the drogue (it had no pressure switch)
+  const g = K.run({ source: 'genesis', chutes: 'nominal' }), gm = g.mass.landed_kg, rhoG = deps.catchDeps.isa.isa(S.genesis.ground_alt_m).rho_kg_m3;
+  assert.equal(g.descent.chutes.sized, true);
+  close(g.descent.chutes.main_cds_m2, 2 * gm * 9.80665 / (rhoG * 4.5 * 4.5), 1e-12, 'Genesis main sized');
+  close(g.descent.chutes.drogue_cds_m2, CAN.drogue_cds_m2 * gm / CAN.drogue_mass_kg, 1e-12, 'Genesis drogue sized');
+  near(g.descent.chutes.main.t - g.descent.chutes.drogue.t, 254.0, 1e-6, 'Genesis main timer'); assert.equal(g.descent.chutes.main_trigger, 'timer');
+  assert.ok(g.refusals.some((r) => r.applies_to === 'parachutes' && /Genesis/.test(r.reason)));
+  // a sized main is sized in the ground's air, not sea level's
+  const up = K.run({ ground_alt_m: 1500 }), rho15 = deps.catchDeps.isa.isa(1500).rho_kg_m3;
+  close(up.descent.chutes.main_cds_m2, 2 * up.mass.landed_kg * 9.80665 / (rho15 * 4.5 * 4.5), 1e-12, 'main sized at 1,500 m');
+  near(up.land.speed, 4.5, 0.02, 'touchdown at 1,500 m');
+  // an edited flight-path angle in idea 48's entry interface is caught (the vectors alone would fly the same)
+  const f = chain(); f.outputs.entry_interface.value.fpa_inertial_deg += 0.01; assert.equal(K.importCatch(f).refusal.code, 'invalid_input');
+  // an idea 48 handoff made from a flown capsule carries the same stand-in entry point: its landing place is refused too
+  const L48 = require(path.join(BANK, 'ideas/48-catch/load.cjs'));
+  const h48 = L48.K.buildHandoff(L48.K.run(Object.assign(L48.K.defaults(), { arrival: 'stardust' })), 'x');
+  const imp = K.run({ source: 'imported' }, { h48: h48 });
+  assert.equal(imp.land.lat, null); assert.ok(imp.refusals.some((r) => r.applies_to === 'landing_site' && /Stardust/.test(r.reason)));
 });

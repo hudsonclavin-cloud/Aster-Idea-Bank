@@ -126,11 +126,13 @@
     // Idea 48's shapes (sphere_cone marked here); the flown capsules' heat shields and parachutes.
     var CAPSULES = {
       stardust: { label: 'Stardust (15 Jan 2006)', vehicle: 'stardust', shield: 'pica', ground_alt_m: SD.ground_alt_m, ground_note: 'UTTR: Stardust\'s nominal main deploy at 3.1 km MSL was 1.8 km above ground',
-        trigger_g: SD.trigger_g, drogue_timer_s: SD.drogue_timer_s, main_timer_s: SD.main_timer_s, main_timer_from: 'drogue', baro_Pa: SD.baro_Pa, flown: 'nominal', ei_utc: SD.ei_utc },
+        trigger_g: SD.trigger_g, drogue_timer_s: SD.drogue_timer_s, main_timer_s: SD.main_timer_s, main_timer_from: 'drogue', baro_Pa: SD.baro_Pa, flown: 'nominal', ei_utc: SD.ei_utc, own_canopies: true },
       osirisrex: { label: 'OSIRIS-REx (24 Sep 2023)', vehicle: 'osirisrex', shield: 'pica', ground_alt_m: OX.ground_alt_m, ground_note: 'touchdown at UTTR at a geodetic altitude of 1288 m',
-        trigger_g: SD.trigger_g, drogue_timer_s: OX.drogue_timer_s, main_timer_s: OX.main_timer_s, main_timer_from: 'trigger', baro_Pa: pressureAt(OX.baro_alt_m), flown: 'no_drogue', ei_utc: OX.ei_utc },
+        trigger_g: SD.trigger_g, drogue_timer_s: OX.drogue_timer_s, main_timer_s: OX.main_timer_s, main_timer_from: 'trigger', baro_Pa: pressureAt(OX.baro_alt_m), flown: 'no_drogue', ei_utc: OX.ei_utc, own_canopies: true },
+      // Genesis's main was on a timer, 254.0 s after the drogue (review: it used to open at a pressure switch set to its
+      // nominal 24,400 ft, which Genesis did not have); its own canopies are not on file, so with parachutes it is sized
       genesis: { label: 'Genesis (8 Sep 2004)', vehicle: 'genesis', shield: 'carbon-carbon', ground_alt_m: GN.ground_alt_m, ground_note: 'UTTR: Genesis\'s planned backup touchdown at 4,200 ft MSL',
-        trigger_g: SD.trigger_g, drogue_timer_s: GN.drogue_timer_s, main_timer_s: null, main_timer_from: null, baro_Pa: pressureAt(GN.nominal.main_alt_m), flown: 'none', ei_utc: null }
+        trigger_g: SD.trigger_g, drogue_timer_s: GN.drogue_timer_s, main_timer_s: GN.main_timer_s, main_timer_from: 'drogue', baro_Pa: null, flown: 'none', ei_utc: null, own_canopies: false }
     };
     var SOURCES = ['chain', 'imported', 'stardust', 'osirisrex', 'genesis'];
     var CHUTES = ['nominal', 'no_drogue', 'none'];
@@ -148,6 +150,13 @@
         if (fa <= 0 && fb > 0) return a.t + (b.t - a.t) * (-fa) / (fb - fa);
       }
       return null;
+    }
+    // A pressure switch armed at the first of these samples fires when the pressure reaches its setting, at once if it is
+    // already there (review: a setting already passed when the switch was armed used to wait for the timer instead).
+    function baroTime(samples, P) {
+      if (!num(P) || !samples.length) return null;
+      if (pressureAt(samples[0].h) >= P) return samples[0].t;
+      return eventTime(samples, function (s) { return pressureAt(s.h) - P; });
     }
     function flyUntil(x, veh, o, tStop) { var oo = { bankDeg: 0, dt: DT, vStop: 0, tMax: 20000, sampleEvery: DT, tStop: tStop }; for (var k in o) oo[k] = o[k]; return K.fly(x, veh, oo); }
     // A canopy filling over tFill: the drag area grows linearly from cds0 to cds1 (an assumption: the fill times are
@@ -184,7 +193,8 @@
       if (typeof Sx.radiative !== 'boolean') return bad('"radiative" must be true or false.', 'true counts the radiative heating, false shows the convective-only picture idea 48 screened with.');
       if (!(num(Sx.shield_density) && Sx.shield_density >= 100 && Sx.shield_density <= 2000)) return bad('The heat-shield density must be 100 to 2,000 kg/m³.', 'Stardust\'s PICA was 266 kg/m³, MSL-grade PICA 274.');
       if (!(num(Sx.touchdown_m_s) && Sx.touchdown_m_s >= 1 && Sx.touchdown_m_s <= 30)) return bad('The touchdown speed must be 1 to 30 m/s.', 'OSIRIS-REx\'s 4.5 m/s.');
-      if (Sx.ground_alt_m !== 'auto' && !(num(Sx.ground_alt_m) && Sx.ground_alt_m >= -500 && Sx.ground_alt_m <= 6000)) return bad('The ground altitude must be -500 to 6,000 m (or auto).', 'UTTR is about 1.3 km; the sea is 0.');
+      // 0 m is the floor: idea 48's fly() stops at the spheroid (review: -500 m used to pass here and then always refuse)
+      if (Sx.ground_alt_m !== 'auto' && !(num(Sx.ground_alt_m) && Sx.ground_alt_m >= 0 && Sx.ground_alt_m <= 6000)) return bad('The ground altitude must be 0 to 6,000 m (or auto): the flight (idea 48\'s fly()) stops at the spheroid, so ground below it is never reached.', 'UTTR is about 1.3 km; the sea is 0.');
       if (!(num(Sx.trigger_g) && Sx.trigger_g >= 0.5 && Sx.trigger_g <= 20)) return bad('The G-switch threshold must be 0.5 to 20 g.', 'Stardust\'s and OSIRIS-REx\'s 3 g.');
       if (Sx.drogue_timer_s !== 'auto' && !(num(Sx.drogue_timer_s) && Sx.drogue_timer_s >= 0 && Sx.drogue_timer_s <= 600)) return bad('The drogue timer must be 0 to 600 s (or auto).', 'Stardust\'s 15.04 s.');
       if (Sx.main_baro_Pa !== 'auto' && !(num(Sx.main_baro_Pa) && Sx.main_baro_Pa >= 1000 && Sx.main_baro_Pa <= 101000)) return bad('The main baroswitch pressure must be 1 to 101 kPa (or auto).', 'Stardust\'s 10.11 psi (69.7 kPa, about 3 km).');
@@ -221,7 +231,8 @@
       var P = K.flyPasses(x0, veh, { bankDeg: vv.bank_deg, dt: K.FLY.dt, vStop: K.FLY.vStop }, 6);
       var pg = Math.max.apply(null, P.map(function (p) { return p.peak_g; })), pq = Math.max.apply(null, P.map(function (p) { return p.peak_q || 0; })), hl = P.reduce(function (s, p) { return s + p.heat_J_m2; }, 0);
       if (rel(pg, sc.peak_g) > tol || rel(pq, sc.peak_q_W_m2) > tol || rel(hl, sc.heat_load_J_m2) > tol || P.length !== sc.passes) return bad48('Flying its entry state with idea 48\'s own kernel does not give the loads it screened (' + fmt(pg, 7) + ' g against ' + fmt(sc.peak_g, 7) + ', ' + P.length + ' passes against ' + sc.passes + '): edited, or made with other data.');
-      return { kind: 'catch', icrf: true, h48: h, x0: x0, veh: veh, bank: vv.bank_deg, tdb: num(ei.tdb_s_past_j2000) ? ei.tdb_s_past_j2000 : null, choice: cap.choice, screening: sc, mass: ms,
+      var st48 = h.inputs && h.inputs.settings, flown = st48 && CAPSULES[st48.arrival] ? st48.arrival : null;
+      return { kind: 'catch', icrf: true, h48: h, x0: x0, veh: veh, bank: vv.bank_deg, tdb: num(ei.tdb_s_past_j2000) ? ei.tdb_s_past_j2000 : null, choice: cap.choice, screening: sc, mass: ms, flown: flown,
         carried: (h.refusals || []).map(clone), assumed: (vv.assumed || []).slice() };
     }
     function capsuleArrival(id) {
@@ -290,6 +301,7 @@
       var lastSamples = last.samples, peakT = last.t_peak_g;
       var vehBody = P.mode === 'nominal' ? veh : (arr.kind === 'capsule' ? tumblingVehicle(veh) : veh);
       if (vehBody !== veh) { var fb = flyAll(xLast, vehBody, { bankDeg: arr.bank }); lastSamples = fb.samples; last = fb; }
+      var lastPeakG = Math.max.apply(null, lastSamples.map(function (s) { return s.g || 0; }));
       // 2. the G-switch: deceleration falling back through the threshold after the last pass's peak
       var tTrig = eventTime(lastSamples, function (s) { return P.trigger_g - s.g; }, peakT);
       var out = { plan: P, passes: passes, events: ev, series: series, chutes: null };
@@ -305,6 +317,7 @@
         var land0 = landWith(lastSamples, tOff, xLast, vehBody, 'body');
         if (!land0) return { refusal: refusal('out_of_envelope', 'The flight never reaches the ground altitude.', 'A ground altitude below the flight.', { applies_to: 'landing' }) };
         out.land = land0; out.chutes = { mode: P.mode, note: 'the G-switch threshold is never crossed on the way down' };
+        if (P.mode !== 'none') out.failure = { kind: 'no_trigger', peak_g: lastPeakG };
         ev.push({ event: 'touchdown (no parachute)', t: land0.t });
         return out;
       }
@@ -325,7 +338,7 @@
       var CAN = srcCanopies();
       // the canopies: the SRC's own for the flown capsules; for any other vehicle, sized (same ballistic coefficient under
       // the drogue as Stardust, the main for the touchdown speed asked at the ground)
-      var isSRC = arr.kind === 'capsule';
+      var isSRC = arr.kind === 'capsule' && arr.capsule.own_canopies;
       var rhoG = ISA.isa(Math.max(P.ground, -1000)).rho_kg_m3;
       var dCds = isSRC ? CAN.drogue_cds_m2 : CAN.drogue_cds_m2 * mass / CAN.drogue_mass_kg;
       var mCds = isSRC ? CAN.main_cds_m2 : 2 * mass * G0 / (rhoG * Sx.touchdown_m_s * Sx.touchdown_m_s);
@@ -337,13 +350,15 @@
       var tBody;
       if (P.mode === 'nominal') tBody = P.drogue_timer_s;
       else {
-        var tb = eventTime(fLight.samples, function (s) { return pressureAt(s.h) - P.baro_Pa; });
-        var tt = num(P.main_timer_s) ? P.main_timer_s : null;
+        var tb = baroTime(fLight.samples, P.baro_Pa);
+        // a main timer started by the drogue's timer still starts then, with no drogue to fire (review: it used to run from
+        // the G-switch, 15.04 s early for Stardust)
+        var tt = num(P.main_timer_s) ? P.main_timer_s + (P.main_timer_from === 'drogue' ? P.drogue_timer_s : 0) : null;
         tBody = num(tb) && num(tt) ? Math.min(tb, tt) : (num(tb) ? tb : tt);
         chutes.main_trigger = num(tb) && (!num(tt) || tb <= tt) ? 'baroswitch' : 'timer';
       }
       var tgB = eventTime(fLight.samples, function (s) { return P.ground - s.h; });
-      if (!num(tBody) || (num(tgB) && tgB <= tBody)) { var lb = landWith(fLight.samples, tT, xT, vehLight, 'body'); out.land = lb; ev.push({ event: 'ground before the parachute', t: lb.t }); return out; }
+      if (!num(tBody) || (num(tgB) && tgB <= tBody)) { var lb = landWith(fLight.samples, tT, xT, vehLight, 'body'); out.land = lb; out.failure = { kind: 'ground_first', what: P.mode === 'nominal' ? 'drogue' : 'main' }; ev.push({ event: 'ground before the parachute', t: lb.t }); return out; }
       var fBody = flyUntil(xT, vehLight, { bankDeg: arr.bank }, tBody);
       addSeries(fBody.samples, tT, 'body');
       var x = { r: fBody.r, v: fBody.v }, t = tT + fBody.t, cdsBody = K.cdOf(vehBody, fBody.final.M) * veh.area_m2;
@@ -355,12 +370,12 @@
         addSeries(fd.samples, t, 'drogue filling'); chutes.drogue.open_peak_g = fd.peak_g; t += fd.t; x = { r: fd.r, v: fd.v };
         var vd = { mass_kg: mass, area_m2: 1, cd: dCds, cl: 0, rn_m: 0 };
         var fdAll = flyAll(x, vd, {});
-        var tb2 = eventTime(fdAll.samples, function (s) { return pressureAt(s.h) - P.baro_Pa; });
+        var tb2 = baroTime(fdAll.samples, P.baro_Pa);
         var tt2 = num(P.main_timer_s) ? (P.main_timer_from === 'trigger' ? (out.trigger + P.main_timer_s) - t : (chutes.drogue.t + P.main_timer_s) - t) : null;
         var tm = num(tb2) && num(tt2) ? Math.min(tb2, tt2) : (num(tb2) ? tb2 : tt2);
         chutes.main_trigger = num(tb2) && (!num(tt2) || tb2 <= tt2) ? 'baroswitch' : 'timer';
         var tgd = eventTime(fdAll.samples, function (s) { return P.ground - s.h; });
-        if (!num(tm) || (num(tgd) && tgd < tm)) { var ld = landWith(fdAll.samples, t, x, vd, 'drogue'); out.land = ld; ev.push({ event: 'touchdown under the drogue', t: ld.t }); return out; }
+        if (!num(tm) || (num(tgd) && tgd < tm)) { var ld = landWith(fdAll.samples, t, x, vd, 'drogue'); out.land = ld; out.failure = { kind: 'no_main' }; ev.push({ event: 'touchdown under the drogue', t: ld.t }); return out; }
         var fd2 = flyUntil(x, vd, {}, tm); addSeries(fd2.samples, t, 'drogue'); t += fd2.t; x = { r: fd2.r, v: fd2.v }; st0 = fd2.final; cdsBody = dCds;
       }
       chutes.main = { t: t, h: st0.h, V: st0.V, M: st0.M, q_Pa: 0.5 * K.atm(st0.h).rho * st0.V * st0.V };
@@ -448,14 +463,30 @@
       var rFix = [cr * land.r[0] - sr * land.r[1], sr * land.r[0] + cr * land.r[1], land.r[2]];   // the landing point in the entry interface's Earth-fixed frame
       var lon = arr.icrf ? ll.lon : ((Math.atan2(rFix[1], rFix[0]) / DEG % 360) + 540) % 360 - 180;
       var r0 = arr.x0.r, cosA = dot(r0, rFix) / (norm(r0) * norm(rFix)), downrange = RE * Math.acos(Math.max(-1, Math.min(1, cosA)));
+      // (review) the flown capsules' entry points are idea 48's stand-ins: it starts each one at its landing target's
+      // latitude and longitude (the papers on file give no entry point), so the place this flight reaches is about 870 km
+      // downrange of where the capsule really landed. Their latitude and longitude are refused, not shown; so is an
+      // ICRF state with no epoch (no Earth rotation angle to place its longitude).
+      var flownAs = arr.kind === 'capsule' ? arr.id : arr.flown, placed = !flownAs && !(arr.icrf && !num(tdbL));
+      var latOut = placed ? ll.lat : null, lonOut = placed ? lon : null;
       var mass = arr.veh.mass_kg, landed = mass - SH.ablated_kg;
       // own refusals
       if (Sx.radiative && H.Q_rad > 0 && H.Q_rad_extrapolated > 0.5 * H.Q_rad) refs.push(refusal('out_of_envelope', 'Most of the radiative heat load (' + fmt(100 * H.Q_rad_extrapolated / H.Q_rad, 3) + ' %) comes from conditions outside the Suttles fit\'s range (11-16 km/s, 53.75-68.4 km, nose radius 0.30-4.50 m' + (arr.veh.rn_m < RNG.rn_min_m ? '; this nose is ' + fmt(arr.veh.rn_m, 3) + ' m' : '') + '): it is an extrapolation of an equilibrium fit.', 'A radiation calculation for this nose radius and trajectory (nonequilibrium matters for small capsules: Stardust\'s CFD put radiation under 10 % of the heating at its peak).', { applies_to: 'radiative_heating' }));
       if (!Sx.radiative) refs.push(refusal('insufficient_data', 'Radiative heating is switched off: the heating is idea 48\'s convective screen only.', 'Switch it on.', { applies_to: 'radiative_heating' }));
       refs.push(refusal('insufficient_data', 'No winds and no day-of atmosphere: the descent under the parachutes drifts with the wind (Stardust\'s 50 m/s northward wind moved its landing), and OSIRIS-REx\'s whole descent ran faster than every model (its own reconstruction included).', 'A forecast atmosphere and winds for the landing day (GEOS, as OSIRIS-REx\'s team recommends).', { applies_to: 'atmosphere' }));
-      if (arr.kind === 'catch') refs.push(refusal('insufficient_data', 'No landing site is chosen: the touchdown point is wherever this entry state leads (' + fmt(ll.lat, 4) + '°, ' + fmt(lon, 5) + '°), and the ground is taken at ' + fmt(D.plan.ground, 4) + ' m' + (Sx.ground_alt_m === 'auto' ? ' (sea level)' : '') + '. A recovery needs a range under the footprint.', 'Re-target idea 47\'s arrival (its time and aim) so the footprint falls on a recovery range such as UTTR, and set the ground altitude here.', { applies_to: 'landing_site' }));
-      if (arr.kind === 'catch' && D.chutes && D.chutes.sized) refs.push(refusal('insufficient_data', 'The parachutes are sized here, not designed: the drag areas scale the SRC\'s canopies (same ballistic coefficient under the drogue as Stardust\'s, the main for ' + Sx.touchdown_m_s + ' m/s at the ground) at the SRC canopies\' drag coefficients; ' + fmt(D.chutes.main_equiv_src_canopies, 3) + ' OSIRIS-REx mains\' worth of drag area. Canopy loads, cluster interference, mass and packing are not modelled.', 'A parachute design for this mass (a cluster like Apollo\'s), with its own drag and opening-load data.', { applies_to: 'parachutes' }));
-      if (D.chutes && D.chutes.mode !== 'none') refs.push(refusal('insufficient_data', 'Opening loads assume the canopy\'s drag area grows linearly over OSIRIS-REx\'s measured filling times (' + fmt(srcCanopies().fill_drogue_s, 3) + ' s drogue, ' + fmt(srcCanopies().fill_main_s, 3) + ' s main); no canopy opening-load data are on file.', 'The canopy\'s drop-test opening-load factor.', { applies_to: 'opening_loads' }));
+      if (flownAs) refs.push(refusal('insufficient_data', 'Where it lands: idea 48 starts ' + CAPSULES[flownAs].label.replace(/ \(.*/, '') + '\'s entry at its landing target\'s latitude and longitude, heading along the landing ellipse, because the papers on file give no entry point; so this flight\'s touchdown, ' + fmt(downrange / 1000, 3) + ' km downrange of that point, is not where the capsule landed (at the Utah Test and Training Range). Its latitude and longitude are not given; the time down, the speeds and the distance flown are.', 'The capsule\'s reconstructed entry latitude, longitude and heading (its navigation state at the entry interface).', { applies_to: 'landing_site' }));
+      else if (arr.kind === 'catch') refs.push(refusal('insufficient_data', 'No landing site is chosen: the touchdown point is wherever this entry state leads (' + (placed ? fmt(ll.lat, 4) + '°, ' + fmt(lon, 5) + '°' : 'latitude ' + fmt(ll.lat, 4) + '°; no epoch, so no longitude') + '), and the ground is taken at ' + fmt(D.plan.ground, 4) + ' m' + (Sx.ground_alt_m === 'auto' ? ' (sea level)' : '') + '. A recovery needs a range under the footprint.', 'Re-target idea 47\'s arrival (its time and aim) so the footprint falls on a recovery range such as UTTR, and set the ground altitude here.', { applies_to: 'landing_site' }));
+      if (D.chutes && D.chutes.sized) refs.push(refusal('insufficient_data', (arr.kind === 'capsule' ? CAPSULES[arr.id].label.replace(/ \(.*/, '') + '\'s own drogue and main are not on file (it opened neither), so these ' : 'The parachutes are sized here, not designed: the ') + 'drag areas scale the SRC\'s canopies (same ballistic coefficient under the drogue as Stardust\'s, the main for ' + Sx.touchdown_m_s + ' m/s at the ground) at the SRC canopies\' drag coefficients; ' + fmt(D.chutes.main_equiv_src_canopies, 3) + ' OSIRIS-REx mains\' worth of drag area. Canopy loads, cluster interference, mass and packing are not modelled.', arr.kind === 'capsule' ? 'Its canopies\' drag areas.' : 'A parachute design for this mass (a cluster like Apollo\'s), with its own drag and opening-load data.', { applies_to: 'parachutes' }));
+      // (review) a sequence that never opens a parachute used to land at 40-90 m/s with nothing said
+      var FL = D.failure;
+      if (FL) {
+        var bAlt = num(D.plan.baro_Pa) ? altOfPressure(D.plan.baro_Pa) : null;
+        var fwhy = FL.kind === 'no_trigger' ? 'The G-switch never fires: after the last pass\'s peak of ' + fmt(FL.peak_g, 3) + ' g the sensed deceleration never falls back through ' + fmt(D.plan.trigger_g, 3) + ' g' + (D.plan.trigger_g >= FL.peak_g ? ' (the threshold is above the peak)' : D.plan.trigger_g <= 1 ? ' (in a steady fall the sensed deceleration settles at 1 g, so a threshold at or below 1 g is never crossed)' : '') + ', so no parachute opens'
+          : FL.kind === 'ground_first' ? 'The ground comes first: the ' + (FL.what === 'drogue' ? 'drogue timer (' + fmt(D.plan.drogue_timer_s, 4) + ' s after the G-switch)' : 'main\'s pressure switch' + (num(bAlt) ? ' (' + fmt(bAlt / 1000, 3) + ' km)' : '') + ' and timer') + ' would fire after the capsule reaches the ground, so no parachute opens'
+          : 'The main never opens: its pressure switch' + (num(bAlt) ? ' (' + fmt(bAlt / 1000, 3) + ' km)' : '') + ' does not fire above the ground (' + fmt(D.plan.ground, 4) + ' m) and its timer runs out after the touchdown, so the capsule lands under the drogue';
+        refs.push(refusal('out_of_envelope', fwhy + ', and it reaches the ground at ' + fmt(land.V, 3) + ' m/s.', FL.kind === 'no_trigger' ? 'A G-switch threshold above 1 g and below the peak deceleration (Stardust\'s and OSIRIS-REx\'s 3 g).' : FL.kind === 'ground_first' ? 'A shorter drogue timer, a higher main pressure-switch altitude, or a lower ground.' : 'A main pressure-switch altitude above the ground, or a shorter main timer.', { applies_to: 'parachute_sequence' }));
+      }
+      if (D.chutes && (D.chutes.drogue || D.chutes.main)) refs.push(refusal('insufficient_data', 'Opening loads assume the canopy\'s drag area grows linearly over OSIRIS-REx\'s measured filling times (' + fmt(srcCanopies().fill_drogue_s, 3) + ' s drogue, ' + fmt(srcCanopies().fill_main_s, 3) + ' s main); no canopy opening-load data are on file.', 'The canopy\'s drop-test opening-load factor.', { applies_to: 'opening_loads' }));
       refs = refs.concat(SH.refusals);
       assumptions.push('Every flight is idea 48\'s fly() (3-DOF point mass, 1976 atmosphere to 86 km above pck00010\'s spheroid, Aster\'s GM, the air turning with the Earth), at its 0.1 s step; canopy filling at 0.01 s.');
       assumptions.push('Convective heating: Sutton & Graves (idea 48). Radiative heating: Suttles, Sullivan & Margolis, NASA TN D-7622 (equilibrium, inviscid, radiatively coupled), extrapolated outside 11-16 km/s, 53.75-68.4 km and 0.30-4.50 m with the fraction reported.');
@@ -463,7 +494,7 @@
       assumptions.push('Wall temperature: radiative equilibrium with the cold-wall heating (an upper bound: no conduction, blowing or ablation energy), PICA\'s emissivity as FIAT models it.');
       assumptions.push('Mass lost: the stagnation-point mass loss times the shield\'s wetted area times ' + fmt(PROFILE, 4) + ' (Stardust\'s measured apex-to-edge recession, linear in radius); pyrolysis gas is not counted.');
       if (arr.kind === 'capsule') assumptions.push('Below Mach ' + GN.tumble_mach + ' without a drogue the capsule tumbles with Genesis\'s reconstructed C_D ' + GN.tumble_cd + '; above it, idea 48\'s C_A table (held at its Mach 7.15 value below).');
-      return { S: Sx, arrival: arr, descent: D, heat: H, shield: SH, land: { t: land.t, utc: num(tdbL) ? utcOf(tdbL) : null, tdb: tdbL, lat: ll.lat, lon: lon, ground_alt_m: D.plan.ground, speed: land.V, vz: land.vz, downrange_m: downrange },
+      return { S: Sx, arrival: arr, descent: D, heat: H, shield: SH, land: { t: land.t, utc: num(tdbL) ? utcOf(tdbL) : null, tdb: tdbL, lat: latOut, lon: lonOut, ground_alt_m: D.plan.ground, speed: land.V, vz: land.vz, downrange_m: downrange },
         mass: { entry_kg: mass, ablated_kg: SH.ablated_kg, ablated_upper_kg: SH.ablated_upper_kg, landed_kg: landed, material_kg: arr.mass.material_kg != null ? arr.mass.material_kg : null, shield_kg: SH.shield_mass_kg },
         refusals: refs, carried: arr.carried, assumptions: assumptions.concat(arr.assumed || []) };
     }
@@ -476,7 +507,7 @@
       var inputs = { settings: clone(R.S), catch_handoff: A.kind === 'catch' ? (A.chain ? clone(CHAIN_DIGEST) : clone(A.h48)) : null };
       var outputs = {
         landing: { value: { utc: R.land.utc, tdb_s_past_j2000: R.land.tdb, t_from_entry_s: R.land.t, latitude_deg: R.land.lat, longitude_deg: R.land.lon, ground_alt_m: R.land.ground_alt_m,
-          touchdown_speed_m_s: R.land.speed, vertical_speed_m_s: -R.land.vz, downrange_m: R.land.downrange_m, frame: 'geocentric latitude; longitude through ERFA\'s Earth rotation angle where the arrival has an epoch, else through the pck00010 rate from the entry state; speed relative to the air' }, units: 'm, m/s, deg, s', confidence: 'derived', source: KERNEL + ' descend(): idea 48\'s fly() through every pass, the parachute sequence and to the ground' },
+          touchdown_speed_m_s: R.land.speed, vertical_speed_m_s: -R.land.vz, downrange_m: R.land.downrange_m, frame: 'geocentric latitude; longitude through ERFA\'s Earth rotation angle where the arrival has an epoch; latitude and longitude null (refused) for the flown capsules, whose entry points are idea 48\'s stand-ins, and for a state with no epoch; downrange from the entry point; speed relative to the air' }, units: 'm, m/s, deg, s', confidence: 'derived', source: KERNEL + ' descend(): idea 48\'s fly() through every pass, the parachute sequence and to the ground' },
         mass: { value: { entry_kg: R.mass.entry_kg, ablated_kg: R.mass.ablated_kg, ablated_upper_kg: R.mass.ablated_upper_kg, landed_kg: R.mass.landed_kg, material_kg: R.mass.material_kg, heat_shield_kg: R.mass.shield_kg, pyrolysis_gas_kg: null }, units: 'kg', confidence: 'derived', source: KERNEL + ' shield(): stagnation mass loss x wetted area x Stardust\'s measured recession profile; heat-shield mass only where Stardust\'s design covers the entry' },
         loads: { value: { peak_g_entry: Math.max.apply(null, D.passes.map(function (p) { return p.peak_g; })), peak_dynamic_pressure_Pa: pk.pd, peak_stagnation_pressure_Pa: pk.ps, peak_q_conv_W_m2: pk.qc, peak_q_rad_W_m2: pk.qr, peak_q_total_W_m2: pk.qt, t_peak_q_total_s: pk.t_qt,
           heat_load_conv_J_m2: H.Q_conv, heat_load_rad_J_m2: H.Q_rad, heat_load_rad_extrapolated_J_m2: H.Q_rad_extrapolated, heat_load_total_J_m2: H.Q_total, peak_wall_T_K: pk.Tw, drogue_open_peak_g: ch.drogue ? ch.drogue.open_peak_g : null, main_open_peak_g: ch.main ? ch.main.open_peak_g : null, touchdown_speed_m_s: R.land.speed }, units: 'g, Pa, W/m^2, J/m^2, K, s, m/s', confidence: 'derived', source: KERNEL + ' heating(): Sutton & Graves (idea 48) + Suttles et al. (TN D-7622) along the flight' },
@@ -558,6 +589,12 @@
       rows.push({ id: 'ox_main_t', group: 'Parachutes', label: 'OSIRIS-REx (no drogue): main fully open', ref: tMainObs, refLabel: 'video; NASA\'s own reconstruction: ' + OX.recon_main_t_s + ' s', model: tMain, units: 's after entry', gap_abs: tMain - tMainObs, ref2: OX.recon_main_t_s });
       rows.push({ id: 'ox_main_dur', group: 'Parachutes', label: 'OSIRIS-REx: time on the main to touchdown', ref: tTdObs - tMainObs, refLabel: 'video; NASA\'s reconstruction: ' + fmt(OX.recon_touchdown_t_s - OX.recon_main_t_s, 4) + ' s', model: ox.land.t - tMain, units: 's', gap_pct: pct(ox.land.t - tMain, tTdObs - tMainObs), ref2: OX.recon_touchdown_t_s - OX.recon_main_t_s });
       rows.push({ id: 'ox_td', group: 'Parachutes', label: 'OSIRIS-REx: touchdown', ref: tTdObs, refLabel: 'video; NASA\'s reconstruction: ' + OX.recon_touchdown_t_s + ' s', model: ox.land.t, units: 's after entry', gap_abs: ox.land.t - tTdObs, ref2: OX.recon_touchdown_t_s });
+      // (review) the main opening where the AAS 2024 reconstruction puts it: 2,699 m MSL over a 1,299 m site, worked out
+      // from the observed time under the main with NASA's own canopy model (its pressure switch was expected to fire at
+      // 2,650-2,862 m that day). Not an independent measurement: a check of this page's main canopy against NASA's.
+      var oxr = run({ source: 'osirisrex', main_baro_Pa: pressureAt(OX.recon_main_alt_m), ground_alt_m: OX.recon_ground_alt_m }); RN.osirisrex_recon = oxr;
+      var tMainR = oxr.descent.chutes.main.t + srcCanopies().fill_main_s;
+      rows.push({ id: 'ox_main_dur_recon', group: 'Parachutes', label: 'OSIRIS-REx: time on the main, opening at the reconstructed 2,699 m', ref: tTdObs - tMainObs, refLabel: 'video; AAS 2024 finds that altitude (-59/+64 m, over a 1,299 m site) from this time with NASA\'s canopy model', model: oxr.land.t - tMainR, units: 's', gap_pct: pct(oxr.land.t - tMainR, tTdObs - tMainObs) });
       // Genesis: no parachute; the fall from the predicted drogue time to impact with its reconstructed tumbling C_D
       var gn = run({ source: 'genesis' }); RN.genesis = gn;
       var gT = gn.land.t - GN.drogue_pred_t_s, gH = at(gn, GN.drogue_pred_t_s);
@@ -567,9 +604,10 @@
       rows.push({ id: 'gn_trigger', ref_dp: 0, group: 'Parachutes', label: 'Genesis: 3 g trigger point (nominal plan)', ref: GN.nominal.trigger_t_s, refLabel: 'pre-flight timeline (whole seconds)', model: gTrig, units: 's after entry', gap_abs: gTrig - GN.nominal.trigger_t_s });
       return { rows: rows, runs: RN };
     }
-    // The radiative fit against its own paper and against an independent code
+    // The radiative fit against its own paper (all 91 sphere cases of Table III(a)) and against an independent code
+    // (Sutton & Hartung's 60 km table, inside the fit's range and, below 11 km/s and at 0.23 m, outside it)
     function radiativeChecks() {
-      var t3 = SUT.table3.rows.map(function (r) { var q = suttles(r.v_m_s, r.rho_kg_m3, r.rn_m).q; return { case: r.case, model: q, fit: r.q_fit_W_m2, data: r.q_data_W_m2, gap_fit: q / r.q_fit_W_m2 - 1, gap_data: q / r.q_data_W_m2 - 1 }; });
+      var t3 = SUT.table3.rows.map(function (r) { var q = suttles(r.v_m_s, r.rho_kg_m3, r.rn_m).q; return { case: r.case, v: r.v_m_s, rn: r.rn_m, model: q, fit: r.q_fit_W_m2, data: r.q_data_W_m2, error_pct: r.error_pct, gap_fit: q / r.q_fit_W_m2 - 1, gap_data: q / r.q_data_W_m2 - 1 }; });
       var sh = S.sutton_hartung.t60.rows.map(function (r) { var q = suttles(r.v_m_s, S.sutton_hartung.rho60_kg_m3, r.rn_m); return { v: r.v_m_s, rn: r.rn_m, model: q.q, ref: r.q_W_m2, inside: q.inside, gap: q.q / r.q_W_m2 - 1 }; });
       return { table3: t3, suttonHartung: sh };
     }

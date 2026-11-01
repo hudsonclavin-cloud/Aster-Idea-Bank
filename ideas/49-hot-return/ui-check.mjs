@@ -108,18 +108,38 @@ const RL = K.reality();
   ok(/5\.82/.test(T['Shield thickness'].v), 'Stardust thickness 5.82 cm');
   ok(close(num(T['Touchdown'].v), RS.land.speed, 0.005), 'Stardust touchdown');
   ok(close(num(T['Recession'].v), RS.shield.recession_stag_m * 1000, 0.002), 'Stardust recession');
+  // (review) where a flown capsule's flight ends is refused: its entry point is idea 48's stand-in at UTTR
+  ok(/refused/.test(T['Lands at'].v) && T['Lands at'].c.trim() === 'refused', 'Stardust: landing place refused, not shown: ' + T['Lands at'].v);
+  ok(/not where the capsule landed/.test(await page.textContent('#refusals')), 'Stardust: the landing-site refusal says why');
   // Genesis: no parachute, carbon-carbon refused
   await act(page, () => page.click('[data-src="genesis"]'));
   T = await tiles(page);
   ok(num(T['Touchdown'].v) > 50, 'Genesis hits hard: ' + T['Touchdown'].v);
   ok(/shield_material/.test(await page.textContent('#refusals')), 'Genesis carbon-carbon refusal');
+  // (review) Genesis with parachutes: sized, not Stardust's and OSIRIS-REx's canopies, and said so
+  await act(page, () => page.click('[data-chute="nominal"]'));
+  T = await tiles(page);
+  const RGn = K.run({ source: 'genesis', chutes: 'nominal' });
+  ok(close(num(T['Main drag area'].v), RGn.descent.chutes.main_cds_m2, 1e-3) && T['Main drag area'].c.trim() === 'assumed', 'Genesis with parachutes: a sized main ' + T['Main drag area'].v);
+  ok(/Genesis's own drogue and main are not on file/.test(await page.textContent('#refusals')), 'Genesis: its own canopies are not on file');
   // OSIRIS-REx with its drogue
   await act(page, () => page.click('[data-src="osirisrex"]'));
   await act(page, () => page.click('[data-chute="nominal"]'));
   T = await tiles(page);
   ok(!!T['Drogue opens'], 'OSIRIS-REx with a drogue shows it');
-  // the download reads back in Node
+  // (review) a G-switch that never fires: the parachute sequence is refused with the speed it hits at
   await act(page, () => page.click('[data-src="chain"]'));
+  await setNum(page, 'gIn', 20);
+  T = await tiles(page);
+  ok(num(T['Touchdown'].v) > 50 && /bad/.test(T['Touchdown'].cls), 'G-switch at 20 g: hits hard ' + T['Touchdown'].v);
+  ok(/parachute_sequence/.test(await page.textContent('#refusals')) && /never fires/.test(await page.textContent('#refusals')), 'G-switch at 20 g: refused as such');
+  await setNum(page, 'gIn', 3);
+  // (review) ground below the spheroid is refused at the input
+  await setNum(page, 'gndIn', -5);
+  T = await tiles(page);
+  ok(!!T['Refused'] && /spheroid/.test(T['Refused'].s), 'ground -5 m refused: ' + (T['Refused'] ? T['Refused'].s.slice(0, 60) : 'no'));
+  await setNum(page, 'gndIn', '');
+  // the download reads back in Node
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#dlBtn')]);
   const got = fs.readFileSync(await dl.path(), 'utf8');
   ok(!K.parseHandoff(got).refusal, 'the downloaded handoff reads back in Node');

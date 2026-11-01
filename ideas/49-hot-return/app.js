@@ -19,7 +19,7 @@
     chain: 'Idea 48\'s committed handoff: the chain\'s Apophis material, 9,565 kg in the Apollo-derived shape, a skip entry at -6.50° (two passes, an hour apart).',
     imported: 'Your imported idea 48 handoff.',
     stardust: 'Stardust, 15 January 2006: 45.8 kg at 12.9 km/s, PICA heat shield, drogue then main, UTTR (NASA reports via idea 48).',
-    osirisrex: 'OSIRIS-REx, 24 September 2023: 49.8 kg at 12.38 km/s, Stardust\'s design; as flown the drogue never opened and the main came out at the pressure switch.',
+    osirisrex: 'OSIRIS-REx, 24 September 2023: 49.8 kg at 12.38 km/s, Stardust\'s design; as flown the drogue did not open on its timer (its signals were swapped), so the capsule fell without it until the pressure switch fired the mortar and the drogue pulled the main straight out.',
     genesis: 'Genesis, 8 September 2004: 205.6 kg at 11.04 km/s, a carbon-carbon heat shield; its G-switch was installed upside down and no parachute opened.'
   };
 
@@ -37,7 +37,7 @@
     $('gIn').value = S.trigger_g;
     $('drIn').value = S.drogue_timer_s === 'auto' ? '' : S.drogue_timer_s; $('drIn').placeholder = P ? f(P.drogue_timer_s) + ' auto' : 'auto';
     $('gndIn').value = S.ground_alt_m === 'auto' ? '' : S.ground_alt_m; $('gndIn').placeholder = P ? f(P.ground, 0) + ' auto' : 'auto';
-    var hMain = S.main_baro_Pa === 'auto' ? (P ? K.altOfPressure(P.baro_Pa) : null) : K.altOfPressure(S.main_baro_Pa);
+    var hMain = S.main_baro_Pa === 'auto' ? (P && num(P.baro_Pa) ? K.altOfPressure(P.baro_Pa) : null) : (num(S.main_baro_Pa) ? K.altOfPressure(S.main_baro_Pa) : null);
     $('mainIn').value = S.main_baro_Pa === 'auto' ? '' : +(hMain / 1000).toFixed(2); $('mainIn').placeholder = num(hMain) ? f(hMain / 1000, 2) + ' auto' : 'auto';
     if (num(hMain)) $('mainRange').value = Math.max(0.5, Math.min(12, hMain / 1000));
   }
@@ -88,7 +88,9 @@
     if (ch.main) T.push(tile('Main opens', f(ch.main.open_peak_g, 1), 'g', 'assumed', 'at ' + f(ch.main.h / 1000, 2) + ' km, ' + f(ch.main.V) + ' m/s (' + esc(ch.main_trigger) + ')', ch.main.open_peak_g > 20 ? 'warn' : ''));
     if (ch.drogue) T.push(tile('Drogue opens', f(ch.drogue.open_peak_g, 1), 'g', 'assumed', 'Mach ' + f(ch.drogue.M, 2) + ' at ' + f(ch.drogue.h / 1000, 1) + ' km'));
     if (ch.main_cds_m2) T.push(tile('Main drag area', f(ch.main_cds_m2), 'm²', ch.sized ? 'assumed' : 'derived', ch.sized ? f(ch.main_equiv_src_canopies, 0) + ' OSIRIS-REx mains, or one of ' + f(ch.main_equiv_diameter_m, 0) + ' m' : 'the SRC\'s 7.3 m main, from flight'));
-    T.push(tile('Lands at', f(L.lat, 2) + '°, ' + f(L.lon, 2) + '°', '', 'derived', f(L.downrange_m / 1000, 0) + ' km from the entry point, ground ' + f(L.ground_alt_m, 0) + ' m', 'date'));
+    // (review) the flown capsules' entry points are idea 48's stand-ins, so where their flight ends is refused, not shown
+    T.push(num(L.lat) && num(L.lon) ? tile('Lands at', f(L.lat, 2) + '°, ' + f(L.lon, 2) + '°', '', 'derived', f(L.downrange_m / 1000, 0) + ' km from the entry point, ground ' + f(L.ground_alt_m, 0) + ' m', 'date')
+      : tile('Lands at', 'refused', '', 'refused', f(L.downrange_m / 1000, 0) + ' km from the entry point' + (num(L.lat) ? ', latitude ' + f(L.lat, 2) + '°' : '') + '; ground ' + f(L.ground_alt_m, 0) + ' m', 'refused'));
     $('tiles').innerHTML = T.join('');
     // heritage bars
     var hr = SH.heritage, bars = [['Peak heating', hr.peak_q_ratio, f(pk.qt / 1e4) + ' / 1,200 W/cm²'], ['Heat load', hr.heat_load_ratio, f(H.Q_total / 1e7, 1) + ' / 36.5 kJ/cm²'], ['Pressure', hr.pressure_ratio, f(pk.ps / K.P_ATM, 2) + ' / 0.5 atm']];
@@ -212,7 +214,7 @@
     RL.rows.forEach(function (r) {
       if (r.group !== grp) { grp = r.group; rows.push('<tr><th colspan="4">' + esc(grp) + '</th></tr>'); }
       var dp = r.units === 'kg/m³' ? 3 : (Math.abs(r.ref) < 10 ? 2 : Math.abs(r.ref) < 1000 ? 1 : 0);
-      var fmtv = function (v, isRef) { return r.units === 'kg/m³' ? v.toExponential(2) : f(v, isRef && r.ref_dp !== undefined ? r.ref_dp : dp); };
+      var fmtv = function (v, isRef) { return r.units === 'kg/m³' ? v.toExponential(2).replace('-', '\u2011') : f(v, isRef && r.ref_dp !== undefined ? r.ref_dp : dp); };
       var gap = num(r.gap_pct) ? (r.gap_pct >= 0 ? '+' : '') + f(r.gap_pct, 1) + ' %' : (r.gap_abs >= 0 ? '+' : '') + f(r.gap_abs, 2) + (r.units ? ' ' + r.units.replace(' after entry', '') : '');
       rows.push('<tr data-id="' + esc(r.id) + '"><td data-k="Check">' + esc(r.label) + '<span class="sub">' + esc(r.refLabel) + '</span></td><td data-k="Measured" class="n">' + (r.bound === 'max' ? '&lt; ' : '') + fmtv(r.ref, true) + ' ' + esc(r.units) + '</td><td data-k="This page" class="n">' + fmtv(r.model) + ' ' + esc(r.units) + '</td><td data-k="Gap" class="n">' + gap + '</td></tr>');
     });

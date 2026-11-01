@@ -6,8 +6,8 @@
   "sourceSha256": "abbea519c9b1b5ffa95d317e7130a1d7bdd38648f461c5cebd39d42328d76d90",
   "sourceSha256Rule": "sha256 of the newline-joined per-document sha256 values in documents[] (in that order), the NIST page excluded (its bytes change per request)",
   "license": "US Government work (NASA technical reports on NTRS; NIST CODATA values; public domain in the US). The AIAA/AAS/NATO-STO papers on NTRS are NASA-authored and carry no US copyright.",
-  "note": "derived by build-data.mjs: every number sits beside its quote, each quote found verbatim in pdftotext output of its document (raw or -layout), each number found inside its quote; read from page images (and so marked): Covington's two arc-jet recession averages (figure legend), Suttles's Table III(a) rows (sideways table), the Sutton-Hartung 60 km values (rows also found in the OCR text layer)",
-  "writtenSha256": "2740a4b8fe76ccb19622d3061af13eb786e84e9833d89480fe1fa47e4c57dc30",
-  "writtenBytes": 34948,
+  "note": "derived by build-data.mjs: every number sits beside its quote, each quote found verbatim in pdftotext output of its document (raw or -layout), each number found inside its quote; read from page images (and so marked): Covington's two arc-jet recession averages (figure legend), Suttles's Table III(a), all 91 rows (sideways table), the Sutton-Hartung 60 km values (rows also found in the OCR text layer)",
+  "writtenSha256": "e47944bd527662c89e50f620956a132c33d5bba22e9ed95496634ee8b6e55383",
+  "writtenBytes": 45734,
   "mode": "derived"
 }

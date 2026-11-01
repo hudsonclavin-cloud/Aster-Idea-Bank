@@ -91,6 +91,8 @@ const Q = [
   ['genesis.nominal.main_t_s', 380, 'genesis-src-overview', 'Main Chute Deploy 06:20 7.4 24,400 ft MSL', null, null],
   ['genesis.nominal.main_alt_m', 24400 * FT, 'genesis-src-overview', 'Main Chute Deploy 06:20 7.4 24,400 ft MSL', null, null],
   ['genesis.ground_alt_m', 4200 * FT, 'genesis-src-overview', 'Touchdown (Backup) 26:22 1.3 4.5 mps, 4200 ft MSL', '4200', FT],
+  // (review) Genesis's main was on a timer from the drogue, not a pressure switch
+  ['genesis.main_timer_s', 254.0, 'genesis-edl-ops', 'After 254.0 seconds (approximately at 7.5 km), the main parachute is deployed.', '254.0', 1],
   // ---- OSIRIS-REx: the parachutes, the switches, the anomaly, the ground
   ['osirisrex.drogue_d_m', 0.8, 'orex-edl', 'with a 0.8 m diameter Disk-Gap-Band (DGB) for the drogue, and a 7.3 m diameter triconic canopy for the main.', '0.8', 1],
   ['osirisrex.main_d_m', 7.3, 'orex-edl', 'with a 0.8 m diameter Disk-Gap-Band (DGB) for the drogue, and a 7.3 m diameter triconic canopy for the main.', '7.3', 1],
@@ -102,6 +104,16 @@ const Q = [
   ['osirisrex.recon_main_t_s', 391.69, 'orex-edl-performance', 'Main Parachute Deploy 381.09 391.69 398.89 332.228 -59.466', '391.69', 1],
   ['osirisrex.recon_touchdown_t_s', 788.42, 'orex-edl-performance', 'Touchdown 714.79 788.42 875.94 615.1 -173.32', '788.42', 1],
   ['osirisrex.obs_touchdown_t_s', 615.1, 'orex-edl-performance', 'Touchdown 714.79 788.42 875.94 615.1 -173.32', '615.1', 1],
+  // (review) where the main actually opened: reconstructed from the observed time under the main (AAS 2024), and the
+  // pressure switch's expected firing range from its pre-launch tests
+  ['osirisrex.recon_main_alt_m', 2699, 'orex-edl', 'resulting in a chute deploy altitude of 2699 m MSL considering the 1299 m touchdown site altitude', '2699', 1],
+  ['osirisrex.recon_ground_alt_m', 1299, 'orex-edl', 'resulting in a chute deploy altitude of 2699 m MSL considering the 1299 m touchdown site altitude', '1299', 1],
+  ['osirisrex.recon_main_alt_minus_m', 59, 'orex-edl', 'result in an uncertainty of -59/+64 m', '59', 1],
+  ['osirisrex.recon_main_alt_plus_m', 64, 'orex-edl', 'result in an uncertainty of -59/+64 m', '64', 1],
+  ['osirisrex.transducer_lo_Pa', 10.57 * PSI, 'orex-edl', 'would be expected to fire at a pressure range of 10.57 to 10.84 psi and a midpoint of 10.70 psi', '10.57', PSI],
+  ['osirisrex.transducer_hi_Pa', 10.84 * PSI, 'orex-edl', 'would be expected to fire at a pressure range of 10.57 to 10.84 psi and a midpoint of 10.70 psi', '10.84', PSI],
+  ['osirisrex.transducer_alt_lo_m', 2650, 'orex-edl', 'these pressures correspond to MSL altitudes of 2650 to 2862 m, with a midpoint of 2755 m', '2650', 1],
+  ['osirisrex.transducer_alt_hi_m', 2862, 'orex-edl', 'these pressures correspond to MSL altitudes of 2650 to 2862 m, with a midpoint of 2755 m', '2862', 1],
   // ---- heating: radiation
   ['suttles.A1', -69.099, 'suttles-radfits', 'Aj = -69.099', '-69.099', 1],
   ['suttles.A2', 1.320, 'suttles-radfits', 'A2 = 1.320', '1.320', 1],
@@ -196,16 +208,37 @@ const OREX_TIMES = [
 // text layer allows, and the README says which.
 // Covington 2005, Fig. 5 (10.16 cm models): "Measured Average for 580 W/cm2 = 0.018 cm/sec", "... 400 W/cm2 = 0.0115 cm/sec".
 const ARCJET_RECESSION = { r580_m_s: 0.018e-2, r400_m_s: 0.0115e-2, note: 'Covington 2005 Fig. 5 legend text, read from the page image (the figure has no text layer): "Measured Average for 580 W/cm2 = 0.018 cm/sec", "Measured Average for 400 W/cm2 = 0.0115 cm/sec"' };
-// Suttles et al. 1974 Table III(a), spherical bodies: [case, V km/s, alt km, rho g/cm3, R_B cm, q_R,D W/cm2 (their coupled
-// calculation), q_R,C W/cm2 (their curve fit)], read from the page image (page 22, printed sideways).
+// Suttles et al. 1974 Table III(a), spherical bodies, all 91 rows: [case, V km/s, alt km, rho g/cm3, R_B cm, q_R,D W/cm2
+// (their coupled calculation), q_R,C W/cm2 (their curve fit), their error column %], read from the page images (PDF pages
+// 24-26, printed pages 22-24, sideways; the text layer is unreadable there). The builder transcribed cases 1-16 and 21-29;
+// the review added 17-20 and 30-91 and the error column. Checks of the transcription: the kernel's fit must give every
+// q_R,C to 5e-4 (catches a wrong V, rho, R_B or q_R,C), and 100 (q_R,D - q_R,C)/q_R,D must give the error column to 0.1
+// (catches a wrong q_R,D).
 const SUTTLES_T3 = [
-  [1, 11, 58, 3.9072e-7, 30, 306.0, 296.5], [2, 11, 58, 3.9072e-7, 150, 544.0, 532.2], [3, 11, 58, 3.9072e-7, 300, 661.0, 684.7], [4, 11, 58, 3.9072e-7, 450, 752.0, 793.5],
-  [5, 13, 58, 3.9072e-7, 30, 1607.0, 1531.5], [6, 13, 58, 3.9072e-7, 150, 2263.0, 2336.9], [7, 13, 58, 3.9072e-7, 300, 2699.0, 2803.4], [8, 13, 58, 3.9072e-7, 450, 3080.0, 3118.4],
-  [9, 14, 58, 3.9072e-7, 30, 2578.0, 2586.9], [10, 14, 58, 3.9072e-7, 150, 3537.0, 3735.5], [11, 14, 58, 3.9072e-7, 300, 4289.0, 4375.8], [12, 14, 58, 3.9072e-7, 450, 4816.0, 4800.2],
-  [13, 15, 58, 3.9072e-7, 30, 3709.0, 3875.3], [14, 15, 58, 3.9072e-7, 150, 5124.0, 5387.7], [15, 15, 58, 3.9072e-7, 300, 6108.0, 6209.1], [16, 15, 58, 3.9072e-7, 450, 6917.0, 6746.6],
-  [21, 11, 61, 2.7018e-7, 30, 194.0, 191.5], [22, 11, 61, 2.7018e-7, 150, 365.0, 343.7], [23, 11, 61, 2.7018e-7, 300, 447.0, 442.2], [24, 11, 61, 2.7018e-7, 450, 509.0, 512.4],
-  [25, 12, 61, 2.7018e-7, 30, 520.0, 493.6], [26, 12, 61, 2.7018e-7, 150, 843.0, 809.9], [27, 12, 61, 2.7018e-7, 300, 958.0, 1002.4], [28, 12, 61, 2.7018e-7, 450, 1087.0, 1135.6],
-  [29, 13, 61, 2.7018e-7, 30, 1027.0, 997.9],
+  [1, 11, 58, 3.9072e-7, 30, 306.0, 296.5, 3.107], [2, 11, 58, 3.9072e-7, 150, 544.0, 532.2, 2.166], [3, 11, 58, 3.9072e-7, 300, 661.0, 684.7, -3.589], [4, 11, 58, 3.9072e-7, 450, 752.0, 793.5, -5.513],
+  [5, 13, 58, 3.9072e-7, 30, 1607.0, 1531.5, 4.701], [6, 13, 58, 3.9072e-7, 150, 2263.0, 2336.9, -3.267], [7, 13, 58, 3.9072e-7, 300, 2699.0, 2803.4, -3.870], [8, 13, 58, 3.9072e-7, 450, 3080.0, 3118.4, -1.247],
+  [9, 14, 58, 3.9072e-7, 30, 2578.0, 2586.9, -0.347], [10, 14, 58, 3.9072e-7, 150, 3537.0, 3735.5, -5.611], [11, 14, 58, 3.9072e-7, 300, 4289.0, 4375.8, -2.025], [12, 14, 58, 3.9072e-7, 450, 4816.0, 4800.2, 0.328],
+  [13, 15, 58, 3.9072e-7, 30, 3709.0, 3875.3, -4.484], [14, 15, 58, 3.9072e-7, 150, 5124.0, 5387.7, -5.146], [15, 15, 58, 3.9072e-7, 300, 6108.0, 6209.1, -1.656], [16, 15, 58, 3.9072e-7, 450, 6917.0, 6746.6, 2.464],
+  [17, 16, 58, 3.9072e-7, 30, 5462.0, 5387.4, 1.365], [18, 16, 58, 3.9072e-7, 150, 7039.0, 7337.3, -4.238], [19, 16, 58, 3.9072e-7, 300, 8176.0, 8381.4, -2.512], [20, 16, 58, 3.9072e-7, 450, 9382.0, 9059.7, 3.435],
+  [21, 11, 61, 2.7018e-7, 30, 194.0, 191.5, 1.307], [22, 11, 61, 2.7018e-7, 150, 365.0, 343.7, 5.839], [23, 11, 61, 2.7018e-7, 300, 447.0, 442.2, 1.081], [24, 11, 61, 2.7018e-7, 450, 509.0, 512.4, -0.665],
+  [25, 12, 61, 2.7018e-7, 30, 520.0, 493.6, 5.076], [26, 12, 61, 2.7018e-7, 150, 843.0, 809.9, 3.927], [27, 12, 61, 2.7018e-7, 300, 958.0, 1002.4, -4.635], [28, 12, 61, 2.7018e-7, 450, 1087.0, 1135.6, -4.470],
+  [29, 13, 61, 2.7018e-7, 30, 1027.0, 997.9, 2.832], [30, 13, 61, 2.7018e-7, 150, 1545.0, 1522.8, 1.438], [31, 13, 61, 2.7018e-7, 300, 1786.0, 1826.8, -2.283], [32, 13, 61, 2.7018e-7, 450, 1951.0, 2032.0, -4.152],
+  [33, 14, 61, 2.7018e-7, 30, 1737.0, 1693.3, 2.515], [34, 14, 61, 2.7018e-7, 150, 2353.0, 2445.1, -3.914], [35, 14, 61, 2.7018e-7, 300, 2839.0, 2864.3, -0.890], [36, 14, 61, 2.7018e-7, 450, 3243.0, 3142.0, 3.113],
+  [37, 15, 61, 2.7018e-7, 30, 2656.0, 2548.1, 4.062], [38, 15, 61, 2.7018e-7, 150, 3471.0, 3542.5, -2.061], [39, 15, 61, 2.7018e-7, 300, 4154.0, 4082.7, 1.718], [40, 15, 61, 2.7018e-7, 450, 4690.0, 4436.0, 5.416],
+  [41, 16, 61, 2.7018e-7, 30, 3778.0, 3558.4, 5.814], [42, 16, 61, 2.7018e-7, 150, 4771.0, 4846.3, -1.578], [43, 16, 61, 2.7018e-7, 300, 5362.0, 5535.9, -3.243], [44, 16, 61, 2.7018e-7, 450, 6174.0, 5983.9, 3.079],
+  [45, 11, 67, 1.2959e-7, 30, 70.0, 80.1, -14.480], [46, 11, 67, 1.2959e-7, 150, 149.0, 143.8, 3.458], [47, 11, 67, 1.2959e-7, 300, 190.0, 185.1, 2.597], [48, 11, 67, 1.2959e-7, 450, 215.0, 214.5, 0.253],
+  [49, 12, 67, 1.2959e-7, 30, 194.0, 208.5, -7.453], [50, 12, 67, 1.2959e-7, 150, 363.0, 342.0, 5.776], [51, 12, 67, 1.2959e-7, 300, 442.0, 423.3, 4.223], [52, 12, 67, 1.2959e-7, 450, 490.0, 479.6, 2.127],
+  [53, 13, 67, 1.2959e-7, 30, 396.0, 425.2, -7.385], [54, 13, 67, 1.2959e-7, 150, 674.0, 648.9, 3.724], [55, 13, 67, 1.2959e-7, 300, 796.0, 778.4, 2.206], [56, 13, 67, 1.2959e-7, 450, 860.0, 865.9, -0.686],
+  [57, 14, 67, 1.2959e-7, 30, 688.0, 728.1, -5.826], [58, 14, 67, 1.2959e-7, 150, 1079.0, 1051.3, 2.564], [59, 14, 67, 1.2959e-7, 300, 1218.0, 1231.6, -1.114], [60, 14, 67, 1.2959e-7, 450, 1347.0, 1351.0, -0.297],
+  [61, 15, 67, 1.2959e-7, 30, 1064.0, 1105.5, -3.902], [62, 15, 67, 1.2959e-7, 150, 1576.0, 1537.0, 2.477], [63, 15, 67, 1.2959e-7, 300, 1750.0, 1771.3, -1.217], [64, 15, 67, 1.2959e-7, 450, 1913.0, 1924.6, -0.606],
+  [65, 16, 67, 1.2959e-7, 30, 1531.0, 1557.8, -1.748], [66, 16, 67, 1.2959e-7, 150, 2150.0, 2121.6, 1.322], [67, 16, 67, 1.2959e-7, 300, 2360.0, 2423.5, -2.689], [68, 16, 67, 1.2959e-7, 450, 2450.0, 2619.6, -6.922],
+  [69, 13, 55, 5.6080e-7, 30, 2388.0, 2329.8, 2.438], [70, 13, 55, 5.6080e-7, 150, 3411.0, 3555.1, -4.226], [71, 13, 55, 5.6080e-7, 300, 4156.0, 4264.9, -2.619], [72, 13, 55, 5.6080e-7, 450, 4752.0, 4744.0, 0.169],
+  [73, 15, 55, 5.6080e-7, 30, 5851.0, 5843.6, 0.127], [74, 15, 55, 5.6080e-7, 150, 7632.0, 8124.1, -6.448], [75, 15, 55, 5.6080e-7, 300, 9381.0, 9362.8, 0.194], [76, 15, 55, 5.6080e-7, 450, 10877.0, 10173.1, 6.471],
+  [77, 16, 55, 5.6080e-7, 30, 8247.0, 8087.9, 1.930], [78, 16, 55, 5.6080e-7, 150, 10294.0, 11015.2, -7.006], [79, 16, 55, 5.6080e-7, 300, 12360.0, 12582.6, -1.801], [80, 16, 55, 5.6080e-7, 450, 14314.0, 13600.9, 4.982],
+  [81, 15.025, 68.3, 1.0780e-7, 342.70, 1542.0, 1488.8, 3.449], [82, 14.897, 66.3, 1.4270e-7, 342.70, 2036.0, 1962.9, 3.589], [83, 14.737, 64.7, 1.7580e-7, 342.70, 2348.0, 2358.9, -0.465],
+  [84, 14.549, 63.4, 2.0170e-7, 342.70, 2616.0, 2586.4, 1.133], [85, 14.346, 62.9, 2.1600e-7, 342.70, 2618.0, 2601.8, 0.617], [86, 14.161, 62.8, 2.1680e-7, 342.70, 2435.0, 2439.7, -0.193],
+  [87, 13.560, 62.8, 2.1680e-7, 342.70, 1892.0, 1910.4, -0.974], [88, 13.650, 63.5, 2.0259e-7, 60.96, 1210.0, 1215.8, -0.479], [89, 13.169, 59.3, 3.3412e-7, 60.96, 1732.0, 1691.5, 2.336],
+  [90, 12.845, 57.4, 4.2147e-7, 60.96, 1883.0, 1839.6, 2.304], [91, 12.009, 53.7, 6.5255e-7, 60.96, 1771.0, 1739.5, 1.781],
 ];
 // Sutton & Hartung 1990 Table 6 (60 km, rho 3.0592E-4 kg/m3): [V km/s, R_n m, Q_r MW/m2, the text-layer literal of that
 // row (OCR, garbled where noted)], each value checked against the page image.
@@ -214,6 +247,13 @@ const SH60 = [
   [12, 0.23, 4.996, '0.23 4.996 1.053'], [12, 0.5, 6.872, '0.50 6.872 2.250'], [12, 1.0, 8.765, '1.00 8.765 4.430'], [12, 2.3, 11.30, '2.30 1.13013+01 9.913'],
   [14, 0.5, 20.65, '0.50 2.065E+01 2.000'], [14, 1.0, 24.72, '1.00 2.472E+01 3,960'], [14, 2.3, 29.69, '2.30 2,969E+01 8.694'],
   [16, 0.5, 42.58, '0.50 4.258E+01 1.870'], [16, 1.0, 48.54, '1.00 4.854E+01 3.570'], [16, 2.3, 55.10, '2.30 5.510E+01 7.774'],
+  // (review) outside the Suttles fit: below its 11 km/s, where the chain's capsule slows in dense air, and its 0.23 m
+  // rows at 14 and 16 km/s (Stardust's nose size). "1.006" is the text layer's reading of the image's 1.046 (the shock
+  // standoff, not used).
+  [9, 0.23, 1.518e-2, '0.23 1.518E-02 1.006'], [9, 0.5, 2.926e-2, '0.50 2.926E-02 2.270'], [9, 1.0, 5.156e-2, '1.00 5.156E-02 4.540'], [9, 2.3, 9.884e-2, '2.30 9.884E-02 1.042E+01'],
+  [9.5, 0.23, 9.802e-2, '0.23 9.802E-02 1.099'], [9.5, 0.5, 0.1618, '0.50 1.618E-01 2.385'], [9.5, 1.0, 0.2470, '1.00 2.470E-01 4.770'], [9.5, 2.3, 0.4021, '2.30 4.021E-01 1.092E+01'],
+  [10, 0.23, 0.4020, '0.23 4.020E-01 1.120'], [10, 0.5, 0.6277, '0.50 6.277E-01 2.425'], [10, 1.0, 0.9077, '1.00 9.077E-01 4.830'], [10, 2.3, 1.360, '2.30 1.360 1.102E+01'],
+  [14, 0.23, 16.07, '0.23 1.607E+01 9.706E-01'], [16, 0.23, 34.78, '0.23 3.478E+01 9.039E-01'],
 ];
 
 function setPath(o, key, v) { const p = key.split('.'); let x = o; for (let i = 0; i < p.length - 1; i++) x = x[p[i]] = x[p[i]] || {}; x[p[p.length - 1]] = v; }
@@ -264,11 +304,12 @@ function buildSources(dir) {
   out.pica.arcjet.recession_580_m_s = ARCJET_RECESSION.r580_m_s;
   out.pica.arcjet.recession_400_m_s = ARCJET_RECESSION.r400_m_s;
   out.pica.arcjet.note = ARCJET_RECESSION.note;
-  out.suttles.table3 = { rows: SUTTLES_T3.map((r) => ({ case: r[0], v_m_s: r[1] * 1000, alt_m: r[2] * 1000, rho_kg_m3: r[3] * 1000, rn_m: r[4] / 100, q_data_W_m2: r[5] * 1e4, q_fit_W_m2: r[6] * 1e4 })),
-    note: 'Table III(a) (spherical bodies), page 22 printed sideways: read from the page image; the text layer is unreadable there. q_data is their radiatively coupled calculation, q_fit their curve fit' };
+  if (SUTTLES_T3.length !== 91 || SUTTLES_T3.some((r, i) => r[0] !== i + 1)) throw new Error('Table III(a) has cases 1 to 91');
+  out.suttles.table3 = { rows: SUTTLES_T3.map((r) => ({ case: r[0], v_m_s: r[1] * 1000, alt_m: r[2] * 1000, rho_kg_m3: r[3] * 1000, rn_m: r[4] / 100, q_data_W_m2: r[5] * 1e4, q_fit_W_m2: r[6] * 1e4, error_pct: r[7] })),
+    note: 'Table III(a) (spherical bodies), all 91 cases, PDF pages 24-26 (printed 22-24) sideways: read from the page images; the text layer is unreadable there. q_data is their radiatively coupled calculation, q_fit their curve fit, error_pct their 100 (q_data - q_fit)/q_data' };
   for (const [v, rn, q, row] of SH60) if (!has('sutton-hartung-radtables', row)) throw new Error('Sutton-Hartung row not in the text layer: ' + row);
   out.sutton_hartung.t60 = { rows: SH60.map(([v, rn, q]) => ({ v_m_s: v * 1000, rn_m: rn, q_W_m2: q * 1e6 })),
-    note: 'Table 6 (60 km), each value read from the page image and its row found in the text layer (OCR: "1.13013+01" is 1.130E+01, "3,960" and "2,969E+01" carry commas for points)' };
+    note: 'Table 6 (60 km), each value read from the page image and its row found in the text layer (OCR: "1.13013+01" is 1.130E+01, "3,960" and "2,969E+01" carry commas for points); the 9-10 km/s rows and the 0.23 m rows at 14 and 16 km/s are outside the Suttles fit\'s range and test its extrapolation' };
   // derived: the UTTR ground under Stardust's nominal main deploy (3.1 km MSL, 1.8 km above ground)
   out.stardust.ground_alt_m = out.stardust.nominal_main_alt_m - out.stardust.nominal_main_agl_m;
   out.units = { psi_Pa: PSI, ft_m: FT, rule: 'psi from the exact avoirdupois pound (0.45359237 kg), standard gravity (9.80665 m/s2) and inch (0.0254 m); the international foot (0.3048 m)' };
@@ -279,12 +320,17 @@ function buildSources(dir) {
 
 function writeSources(dir) {
   const S = buildSources(dir);
+  // table rows one per line (review: the full Table III(a) would otherwise add 15 KB of indentation)
+  const rowsStore = [];
+  const S2 = JSON.parse(JSON.stringify(S, (k, v) => (k === 'rows' && Array.isArray(v) ? v.map((r) => { rowsStore.push(JSON.stringify(r)); return '@@ROW' + (rowsStore.length - 1) + '@@'; }) : v)));
+  const json = JSON.stringify(S2, null, 1).replace(/"@@ROW(\d+)@@"/g, (m, i) => rowsStore[+i]);
+  if (JSON.stringify(JSON.parse(json)) !== JSON.stringify(S)) throw new Error('compact rows changed the data');
   const body = `/* Outside sources idea 49 (Hot Return) takes numbers from: NASA technical reports (NTRS) and NIST's CODATA page.
  * GENERATED by ideas/49-hot-return/build-data.mjs from the files oracle/fetch-sources.sh downloads; do not edit. Every
  * number sits beside the quote it was read from, and the build found each quote verbatim in its document; the few read
  * from page images say so. SI units unless the key says otherwise. Classic script (window.HotReturnSources) and require(). */
 (function (root) {
-  var D = ${JSON.stringify(S, null, 1)};
+  var D = ${json};
   if (typeof module === 'object' && module.exports) module.exports = D;
   else root.HotReturnSources = D;
 })(typeof self !== 'undefined' ? self : this);
@@ -300,7 +346,7 @@ function writeSources(dir) {
     sourceSha256: sha(per.join('\n')),
     sourceSha256Rule: 'sha256 of the newline-joined per-document sha256 values in documents[] (in that order), the NIST page excluded (its bytes change per request)',
     license: 'US Government work (NASA technical reports on NTRS; NIST CODATA values; public domain in the US). The AIAA/AAS/NATO-STO papers on NTRS are NASA-authored and carry no US copyright.',
-    note: 'derived by build-data.mjs: every number sits beside its quote, each quote found verbatim in pdftotext output of its document (raw or -layout), each number found inside its quote; read from page images (and so marked): Covington\'s two arc-jet recession averages (figure legend), Suttles\'s Table III(a) rows (sideways table), the Sutton-Hartung 60 km values (rows also found in the OCR text layer)',
+    note: 'derived by build-data.mjs: every number sits beside its quote, each quote found verbatim in pdftotext output of its document (raw or -layout), each number found inside its quote; read from page images (and so marked): Covington\'s two arc-jet recession averages (figure legend), Suttles\'s Table III(a), all 91 rows (sideways table), the Sutton-Hartung 60 km values (rows also found in the OCR text layer)',
     writtenSha256: sha(fs.readFileSync(p)),
     writtenBytes: fs.statSync(p).size,
     mode: 'derived',

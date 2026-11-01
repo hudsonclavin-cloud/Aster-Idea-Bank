@@ -14,7 +14,7 @@ Independent: the equations of the descent (Cartesian in the frame turning with t
 written out, where the kernel flies inertial Cartesian with the air turning), the integrator (scipy DOP853 at rtol 1e-10
 with terminal events, where the kernel takes fixed 0.1 s RK4 steps and interpolates events), the atmosphere (the
 `ambiance` package below 81 km and the 1976 standard's 71-86 km layer written here, where the kernel calls PartForge's
-isa() through idea 48), the canopy filling (integrated as one continuous ramp, where the kernel flies 0.05 s pieces of
+isa() through idea 48), the canopy filling (integrated as one continuous ramp, where the kernel flies 0.01 s pieces of
 constant drag area), the heating (re-evaluated from the oracle's own density and temperature and integrated with
 Simpson's rule per pass, where the kernel takes trapezoids at 0.1 s), and the wall temperature (scipy brentq).
 """

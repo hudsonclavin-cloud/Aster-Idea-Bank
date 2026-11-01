@@ -36,7 +36,7 @@
     "touchdown_speed_m_s": 4.49603708,
     "vertical_speed_m_s": 4.49603215,
     "downrange_m": 10875677.1,
-    "frame": "geocentric latitude; longitude through ERFA's Earth rotation angle where the arrival has an epoch, else through the pck00010 rate from the entry state; speed relative to the air"
+    "frame": "geocentric latitude; longitude through ERFA's Earth rotation angle where the arrival has an epoch; latitude and longitude null (refused) for the flown capsules, whose entry points are idea 48's stand-ins, and for a state with no epoch; downrange from the entry point; speed relative to the air"
    },
    "units": "m, m/s, deg, s",
    "confidence": "derived",
