@@ -62,7 +62,7 @@ test('2 reality: OSIRIS-REx\'s reconstructed descent, leg by leg, under the shap
   near(-c.vn_m_s, SRC.contact.v_contact_m_s.v, 0.001, 'contact speed vs NASA 10 cm/s');
   assert.ok(c.vh_m_s * 1000 < SRC.delivery.vel_req_mm_s.v, 'horizontal under the 20 mm/s requirement'); near(c.vh_m_s * 1000, 6.08, 0.05);
   assert.equal(c.earthReceiveUtc.slice(0, 16), SRC.contact.confirm_utc.v.slice(0, 16), 'Earth receives the contact at 22:08 UTC (6:08 pm EDT)');
-  near(c.heightAboveSite_m, 4.23, 0.01, 'bus above the aim point'); near(c.heightAboveSite_m - SRC.tagsam.arm_m.v, 0.83, 0.01, 'the 25 m shape puts the ground 0.83 m low');
+  near(c.heightAboveSite_m, 4.23, 0.01, 'bus above the aim point'); near(c.heightAboveSite_m - SRC.tagsam.arm_m.v, 0.83, 0.01, '0.83 m more than the arm: the 25 m plates, or the reference point\'s unpublished offset from the head');
   near(c.segmentJump_m, 1.919, 0.001);
   near(RB.reality.heights.cp_m, 127.56, 0.05, 'flown Checkpoint height (published 125 m)'); near(RB.reality.heights.mp_m, 58.24, 0.05, 'flown Matchpoint height (published 50-55 m)');
   // the flown burns, measured from the reconstruction
@@ -97,6 +97,11 @@ test('3 the planner on OSIRIS-REx\'s timeline: hits its targets, and its burns a
   const a150 = K.aimAt(ctx, R150.plan.tcp, 150); assert.ok(Math.hypot(...R150.plan.states.cpIn.x.map((x, i) => x - a150[i])) < 2e-3, 'and reaches it');
   // the 40 cm/s back-away leaves Bennu (published: > 0.5 m/s ensures escape in the worst case)
   assert.ok(p.bab.escapes); near(p.bab.escape_m_s, 0.204, 0.002);
+  // and the escape test is energy against the potential, both sides of it: a 17 cm/s push (inertial ~18 cm/s with the turning
+  // ground) falls back, a 25 cm/s one leaves; sqrt(2U) is the escape speed, so v^2 > U alone would call the first one gone (review)
+  const lo = K.run(bennu, { bab_m_s: 0.17 }).plan.bab, hi = K.run(bennu, { bab_m_s: 0.25 }).plan.bab;
+  assert.ok(lo.inertial_m_s < lo.escape_m_s && !lo.escapes, 'a 17 cm/s back-away falls back ' + lo.inertial_m_s);
+  assert.ok(hi.inertial_m_s > hi.escape_m_s && hi.escapes, 'a 25 cm/s back-away leaves');
 });
 
 test('4 dispersions: linear covariance against OSIRIS-REx\'s published Monte Carlo, and against our own Monte Carlo', () => {
@@ -141,6 +146,8 @@ test('5 contact: the regolith inferred from NASA\'s 48.8 cm in ~6 s at 10 cm/s, 
   // round trip: each pressure on the mass it was inferred for gives back 48.8 cm at 6 s, still moving (NASA: "still plunging")
   g.p_Pa.forEach((p, i) => { const q = K.penetration(0.1, g.mass_kg[i], g.area_m2, p, g.gN, 6); near(q.d_tau, 0.488, 1e-12); assert.ok(q.v_tau > 0.06); near(q.stop_m, 0.8036, 0.001); });
   near(g.area_m2, Math.PI * 0.16 * 0.16, 1e-15, 'the 32 cm base plate');
+  // the Bennu case's own defaults back away at NASA's ~6 s for this contact, so its tile shows NASA's 48.8 cm (review: it used the 5 s design value)
+  assert.equal(RB.S.contact_s, SRC.contact.contact_s.v); RB.contact.cases.forEach((q) => near(q.d_tau, SRC.contact.penetration_m.v, 1e-5));   // the planner hits 10 cm/s to ~1e-6
   // the chain's 487 kg craft in the same regolith, backing away 5 s after contact
   const C = RC.contact.cases;
   assert.equal(C.length, 2); near(C[0].m_kg, 487.103024, 1e-6);
@@ -180,7 +187,8 @@ test('8 the chain: idea 43\'s handoff in, refusals carried, the propellant short
   const K42 = require(path.join(BANK, 'ideas/42-closing-in/load.cjs')).K, h42 = sample43().inputs.closing_handoff, ss = h42.outputs.standoff_state.value;
   const ctx42 = { mu: 0, radius: chainSrc.B.Req, astAt: () => ({ r: ss.asteroid_heliocentric.r_m }), am: h42.inputs.settings.am_m2_kg, cr: 1, shadow: true, parts: true };
   const srp = K.srpChain(chainSrc), u = chainSrc.sunDir, side = [u[1], -u[0], 0].map((x) => x / Math.hypot(u[0], u[1]));
-  for (const x of [u.map((q) => -300 * q), u.map((q) => 300 * q), u.map((q, i) => 300 * q + 400 * side[i]), side.map((q) => 250 * q), ss.r_m]) {
+  const Rb = chainSrc.B.Req;   // and just outside the shadow's edge behind the body (review: a cylinder of twice the radius passed the first five)
+  for (const x of [u.map((q) => -300 * q), u.map((q) => 300 * q), u.map((q, i) => 300 * q + 400 * side[i]), side.map((q) => 250 * q), ss.r_m, u.map((q, i) => 300 * q + 1.3 * Rb * side[i]), u.map((q, i) => 300 * q + 0.8 * Rb * side[i])]) {
     const mine = srp(0, x), theirs = K42.accel(0, x, ctx42).srp;
     for (let j = 0; j < 3; j++) near(mine[j], theirs[j], 2e-6 * Math.hypot(...theirs) + 1e-30, 'sunlight vs idea 42 at ' + x.map((q) => q.toFixed(0)));
   }
@@ -191,6 +199,14 @@ test('8 the chain: idea 43\'s handoff in, refusals carried, the propellant short
   assert.deepEqual(codes, ['propellant', 'hazards', 'regolith', 'sample', 'anchors']);
   assert.equal(RC.carried.length, 14); assert.ok(RC.carried.every((r) => r.from));
   near(RC.propellant.needed_kg, 0.1596, 1e-4); near(RC.propellant.available_kg, 0.103024, 1e-9);
+  // landing to stay pays no back-away: 92 g, inside the 103 g carried, so no propellant refusal (review: this was untested)
+  const RS = K.run(chainSrc, { mode: 'stay' });
+  near(RS.propellant.dv_m_s, RC.propellant.dv_m_s - RC.S.bab_m_s, 1e-12); near(RS.propellant.needed_kg, 0.09211, 1e-5);
+  assert.ok(!RS.own.some((r) => r.applies_to === 'propellant'));
+  const ssS = K.buildHandoff(RS, 'x').outputs.surface_state.value, ssT = K.buildHandoff(RC, 'x').outputs.surface_state.value;
+  near(ssS.propellant_left_kg, 0.103024 - RS.propellant.needed_kg, 1e-8); assert.equal(ssS.propellant_short_kg, null);
+  // the touch-and-go is short: the handoff carries the shortfall and no propellant left, never a negative mass (review: it handed on -0.0566 kg)
+  assert.equal(ssT.propellant_left_kg, null); near(ssT.propellant_short_kg, RC.propellant.needed_kg - 0.103024, 1e-8);
   const P = RC.plan.burns.map((b) => b.dv_m_s * 1000); near(P[0], 212.0, 0.2); near(P[1], 248.0, 0.3); near(P[2], 85.6, 0.2);
   near(RC.dispersion.pos3_m[0], 12.67, 0.03); near(RC.dispersion.pSafe, 0.9096, 0.001);
   assert.ok(RC.plan.bab.escapes); near(RC.plan.bab.escape_m_s, 0.1827, 0.001);

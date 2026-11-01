@@ -407,7 +407,7 @@
         var U = L.field(P, B.Grho, mv(att.C, xI)).U;
         if (0.5 * dot(vI, vI) > U) { escaped = true; hops.push({ t0: t, escape: true, speed_m_s: norm(vOut) }); break; }
         var g = Math.max(1e-9, ctx.site.s43.accel_mag_m_s2), Tg = Math.max(60, 4 * Math.abs(e * vn) / g), dtS = Math.max(1, Tg / 50);   // Tg: twice the flat-ground hop time
-        var Bt = bodyAt(B, t), prev = null, hitT = null, maxH = 0, path = [];
+        var Bt = bodyAt(B, t), prev = null, hitT = null, maxH = 0, path = [[t - tc, 0]];   // each hop's track starts on the ground
         var f = L.fly(Bt, 'poly', t, xI, vI, 6 * Tg, { samples: Math.ceil(6 * Tg / dtS), extra: ctx.extra, rtol: 1e-10, stop: function (tt, x, v, Cf) {
           var C = Cf || attAt(B, tt).C, xx = mv(C, x), hh = norm(xx) - norm(xb); maxH = Math.max(maxH, hh); if (path.length < 300) path.push([tt - tc, hh]);
           if (norm(x) < P.rMax && L.inside(P, xx)) { hitT = tt; return true; }
@@ -485,7 +485,7 @@
     function defaults(kind) {
       var P = SRC.profile, bennu = kind === 'bennu';
       return { gm: 'measured', mode: 'tag', depToCp_h: bennu ? +((burnMid('CP') - burnMid('ODM')) / HOUR).toFixed(6) : 24, h_cp: P.h_cp_m.v, cpToMp_min: bennu ? +((burnMid('MP') - burnMid('CP')) / 60).toFixed(6) : P.cp_to_mp_min.v,
-        mpToTag_min: bennu ? +((REC.contact.t - burnMid('MP')) / 60).toFixed(6) : P.mp_to_tag_min_2014.v, v_td: P.v_td_m_s.v, arm_m: SRC.tagsam.arm_m.v, bab_m_s: P.bab_m_s.v, contact_s: P.bab_after_contact_s.v, errors: 'late', errScale: 1, safeRadius_m: P.safe_radius_m.v,
+        mpToTag_min: bennu ? +((REC.contact.t - burnMid('MP')) / 60).toFixed(6) : P.mp_to_tag_min_2014.v, v_td: P.v_td_m_s.v, arm_m: SRC.tagsam.arm_m.v, bab_m_s: P.bab_m_s.v, contact_s: bennu ? SRC.contact.contact_s.v : P.bab_after_contact_s.v, errors: 'late', errScale: 1, safeRadius_m: P.safe_radius_m.v,
         mass_kg: null, surface: 'regolith', e: 0.5, reaction_N: 1, mobility: 'low', particles: 'unresolved', rockTilt_deg: 0, sun: true };
     }
     function validSettings(S, kind) {
@@ -495,7 +495,7 @@
       r('depToCp_h', 0.5, 72); r('h_cp', 20, 2000, ' m'); r('cpToMp_min', 2, 120); r('mpToTag_min', 2, 120); r('v_td', 0.02, 0.5, ' m/s'); r('arm_m', 0, 10, ' m'); r('bab_m_s', 0, 2, ' m/s');
       r('contact_s', 0.5, 30, ' s'); r('errScale', 0, 10); r('safeRadius_m', 0.5, 100, ' m'); r('e', 0, 0.95); r('reaction_N', 0, 1000, ' N'); r('rockTilt_deg', 0, 45, ' deg');
       if (num(S.h_cp) && num(S.arm_m) && !(S.h_cp > S.arm_m + 10)) e.push('the Checkpoint must be more than 10 m above the arm');
-      if (S.mass_kg !== null && !(num(S.mass_kg) && S.mass_kg >= 1 && S.mass_kg <= 100000)) e.push('mass_kg must be null or 1 to 100000 kg');
+      if (S.mass_kg !== null && !(num(S.mass_kg) && S.mass_kg >= 1 && S.mass_kg <= 100000)) e.push('mass_kg must be left empty (the mass handed on) or 1 to 100000 kg');
       if (['late', 'prelaunch'].indexOf(S.errors) < 0) e.push('errors must be late or prelaunch');
       if (['regolith', 'rigid'].indexOf(S.surface) < 0) e.push('surface must be regolith or rigid');
       if (['low', 'high'].indexOf(S.mobility) < 0) e.push('mobility must be low or high');
@@ -583,7 +583,10 @@
           gravity_m_s2: r9(s43.gravity_mag_m_s2), accel_m_s2: r9(s43.accel_mag_m_s2), slope_deg: r9(s43.slope_deg), escape_up_m_s: r9(s43.escape_up_m_s),
           spacecraft_mass_kg: num(R.mass_kg) ? r9(R.mass_kg) : null, weight_N: R.hold ? r9(R.hold.weight_N) : null, hold_normal_N: R.hold ? r9(R.hold.normal_N) : null, along_slope_N: R.hold ? r9(R.hold.along_slope_N) : null,
           friction_needed_to_stay: r9(Math.tan(s43.slope_deg * DEG)), isp_s: src.craft.isp_s ? r9(src.craft.isp_s) : null,
-          hold_propellant_kg_per_N_hour: src.craft.isp_s ? r9(HOUR / (src.craft.isp_s * G0)) : null, propellant_left_kg: R.propellant ? r9(R.propellant.available_kg - R.propellant.needed_kg) : null, stay: stayVal },
+          hold_propellant_kg_per_N_hour: src.craft.isp_s ? r9(HOUR / (src.craft.isp_s * G0)) : null,
+          // none is left when the descent needs more than the craft carries (the propellant refusal says so): the shortfall travels, never a negative mass
+          propellant_left_kg: R.propellant && R.propellant.needed_kg <= R.propellant.available_kg ? r9(R.propellant.available_kg - R.propellant.needed_kg) : null,
+          propellant_short_kg: R.propellant && R.propellant.needed_kg > R.propellant.available_kg ? r9(R.propellant.needed_kg - R.propellant.available_kg) : null, stay: stayVal },
           'm, m/s^2, deg, N, kg', 'derived', KERNEL + ' holdDown(): idea 43\'s site acceleration and slope; Isp from idea 42'),
         propellant: qv(R.propellant ? { dv_m_s: r9(R.propellant.dv_m_s), needed_kg: r9(R.propellant.needed_kg), available_kg: r9(R.propellant.available_kg), isp_s: r9(R.propellant.isp_s) } : null, 'kg, m/s, s', 'derived', R.propellant ? 'rocket equation, idea 42\'s Isp and mass at the stand-off' : 'no Isp or mass for this spacecraft'),
         sample: qv({ sampler: 'TAGSAM-class (32 cm head, 21 cm opening)', scenario: R.sample.key, rock_tilt_deg: S.rockTilt_deg, tilt_efficiency: r9(R.sample.efficiency), mass_kg: R.sample.mass_kg === null ? null : r9(R.sample.mass_kg),

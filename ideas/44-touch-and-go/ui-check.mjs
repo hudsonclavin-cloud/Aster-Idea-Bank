@@ -47,8 +47,8 @@ const RC = K.run(K.importLumpy(sample43()), {});
   const { context, page, errors } = await open(DESK);
   const T = await tiles(page);
   ok(Math.abs(num(T['Total Δv with back-away'].v) - RC.plan.total_dv_m_s * 100) < 0.051, 'total dv tile ' + T['Total Δv with back-away'].v);
-  ok(T['Contact ellipse (3σ)'].v.startsWith(RC.dispersion.pos3_m[0].toFixed(2)), 'ellipse tile ' + T['Contact ellipse (3σ)'].v);
-  ok(T['Contact ellipse (3σ)'].c === 'derived', 'ellipse confidence');
+  ok(T['Contact ellipse (3σ semi-axes)'].v.startsWith(RC.dispersion.pos3_m[0].toFixed(2)), 'ellipse tile ' + T['Contact ellipse (3σ semi-axes)'].v);
+  ok(T['Contact ellipse (3σ semi-axes)'].c === 'derived', 'ellipse confidence');
   ok(Math.abs(num(T['Propellant for this'].v) - RC.propellant.needed_kg * 1000) < 0.6, 'propellant tile');
   ok(T['Sinks before backing away'].c === 'assumed', 'sinking is labelled assumed');
   ok(T['Back-away'].v === 'leaves', 'back-away leaves');
@@ -111,9 +111,14 @@ const RC = K.run(K.importLumpy(sample43()), {});
   await page.click('[data-case="bennu"]'); await waitRun(page, before);
   const RB = K.run(K.bennuCase(), {}), T = await tiles(page);
   ok(Math.abs(num(T['Total Δv with back-away'].v) - RB.plan.total_dv_m_s * 100) < 0.051, 'Bennu total dv');
-  ok(T['Contact ellipse (3σ)'].v.startsWith(RB.dispersion.pos3_m[0].toFixed(2)), 'Bennu ellipse ' + T['Contact ellipse (3σ)'].v);
+  ok(T['Contact ellipse (3σ semi-axes)'].v.startsWith(RB.dispersion.pos3_m[0].toFixed(2)), 'Bennu ellipse ' + T['Contact ellipse (3σ semi-axes)'].v);
   ok(T['Sample (TAGSAM, predicted)'] && Math.abs(num(T['Sample (TAGSAM, predicted)'].v) - RB.sample.mass_kg * 1000) < 0.6, 'Bennu sample tile');
   ok(T['Propellant for this'].v === 'refused', 'no propellant number for OSIRIS-REx');
+  // review: Bennu backs away at NASA's ~6 s, so its tile shows the 48.8 cm the resistance was fitted to, as one number
+  ok(T['Sinks before backing away'].v.replace(/\s/g, '') === '49cm', 'Bennu sinks 49 cm, one number: ' + T['Sinks before backing away'].v);
+  // review: the sample row names both of Walsh et al.'s estimates for the spot touched, neither as a pre-contact prediction
+  const smpRow = await page.$$eval('#checkTable tbody tr', (rs) => (rs.find((r) => r.textContent.startsWith('Sample')) || {}).textContent || '');
+  ok(/no tilt/.test(smpRow) && /mapped rock tilt/.test(smpRow) && !/pre-contact/.test(smpRow), 'sample reality row: ' + smpRow.slice(0, 120));
   const flown = await page.$$eval('#burnTable tbody tr td:nth-child(4)', (t) => t.map((x) => x.textContent));
   ok(flown[0].startsWith('80.07'), 'flown departure burn ' + flown[0]);
   ok((await page.$eval('#descLegend', (e) => e.textContent)).includes('reconstructed'), 'reconstruction drawn on the descent chart');
