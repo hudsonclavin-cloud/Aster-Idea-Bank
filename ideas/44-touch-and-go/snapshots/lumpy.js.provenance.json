@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/lumpy.js",
+  "commit": "0e011d0792cb91b4c7399300256eaa5cbe391fef",
+  "commitDate": "2026-10-31T23:16:17+00:00",
+  "pathLastChanged": "1707e24 2026-10-31T23:16:07+00:00",
+  "committedBlob": "59aafafe641c2b0370f45e35ff95a423a8596c48",
+  "readBlob": "59aafafe641c2b0370f45e35ff95a423a8596c48",
+  "sourceSha256": "1a1390fd28ff897f0a2300502035ca7a4daf53425f1c90c05c8a627a4f6394a9",
+  "sourceBytes": 75547,
+  "copiedAt": "2026-10-31T23:34:00.513Z",
+  "mode": "copy",
+  "note": "idea 43's committed file, unmodified: this module flies descent and contact under idea 43's polyhedron kernel (fieldRaw, flight, attitude) and re-runs idea 43's own parseHandoff on the imported handoff",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1a1390fd28ff897f0a2300502035ca7a4daf53425f1c90c05c8a627a4f6394a9",
+  "writtenBytes": 75547
+}

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touch and Go: descent and contact</title>
+<meta name="description" content="Fly a spacecraft down to a site on a real asteroid shape and touch it the way OSIRIS-REx touched Bennu: the burns, where it lands and how precisely, how deep it sinks, whether a lander bounces off, what holding it down costs and what a sampler collects, tested against OSIRIS-REx's own descent.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Touch and Go</h1>
+  <p class="lede">Idea 43 gave the asteroid its shape and picked a site. This page flies the spacecraft down to it and touches it, the way OSIRIS-REx touched Bennu on 20 October 2020: a departure burn, a Checkpoint burn 125 m up, a Matchpoint burn that matches the turning ground, a fall at 10 cm/s, a few seconds on the surface, and a back-away burn. Every leg flies under idea 43's exact gravity with the body turning. OSIRIS-REx's own reconstructed descent is the test.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 14 of 20. Previous: <a href="../43-lumpy/index.html">43 Lumpy</a>, the asteroid's gravity. Next: 45 Dig, mining (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">The touchdown</h2>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+    <span class="lab" id="lab-case">Case</span>
+    <div class="seg" role="group" aria-labelledby="lab-case"><button type="button" data-case="chain">The chain: Apophis (idea 43)</button><button type="button" data-case="bennu">OSIRIS-REx at Bennu, 2020</button></div>
+    <span class="lab" id="lab-mode">After contact</span>
+    <div class="seg" role="group" aria-labelledby="lab-mode"><button type="button" data-mode="tag">Touch and go (back away)</button><button type="button" data-mode="stay">Stay (land)</button></div>
+
+    <fieldset><legend>The descent</legend>
+      <div class="ctl"><div class="ctl-head"><label for="depIn">Departure to Checkpoint <small>h</small></label><input id="depIn" type="number" min="0.5" max="72" step="0.5" inputmode="decimal"></div>
+        <input id="depRange" type="range" min="1" max="72" step="0.5" aria-label="Hours from departure to Checkpoint"></div>
+      <div class="ctl"><div class="ctl-head"><label for="hcpIn">Checkpoint height <small>m</small></label><input id="hcpIn" type="number" min="20" max="2000" step="5" inputmode="decimal"></div>
+        <input id="hcpRange" type="range" min="30" max="500" step="5" aria-label="Checkpoint height above the site, metres"></div>
+      <div class="grid2">
+        <div class="ctl"><label for="cpmpIn">Checkpoint to Matchpoint <small>min</small></label><input id="cpmpIn" type="number" min="2" max="120" step="0.5" inputmode="decimal"></div>
+        <div class="ctl"><label for="mptgIn">Matchpoint to contact <small>min</small></label><input id="mptgIn" type="number" min="2" max="120" step="0.5" inputmode="decimal"></div>
+      </div>
+      <div class="ctl"><div class="ctl-head"><label for="vtdIn">Contact speed <small>cm/s</small></label><input id="vtdIn" type="number" min="2" max="50" step="0.5" inputmode="decimal"></div>
+        <input id="vtdRange" type="range" min="2" max="40" step="0.5" aria-label="Contact speed along the site normal, centimetres per second"></div>
+      <div class="grid2">
+        <div class="ctl"><label for="armIn">Arm (sampler) length <small>m</small></label><input id="armIn" type="number" min="0" max="10" step="0.1" inputmode="decimal"></div>
+        <div class="ctl" id="babRow"><label for="babIn">Back-away <small>cm/s</small></label><input id="babIn" type="number" min="0" max="200" step="1" inputmode="decimal"></div>
+      </div>
+      <div class="ctl"><label for="ctsIn">Time on the surface before backing away <small>s</small></label><input id="ctsIn" type="number" min="0.5" max="30" step="0.5" inputmode="decimal"></div>
+      <div class="checks"><label><input type="checkbox" id="sunChk"> Sunlight on (idea 42)</label><label id="gmLab"><input type="checkbox" id="gmChk"> Bennu GM from radio tracking</label></div>
+    </fieldset>
+
+    <fieldset><legend>Errors</legend>
+      <span class="lab" id="lab-err">Navigation and burn errors</span>
+      <div class="seg" role="group" aria-labelledby="lab-err"><button type="button" data-err="late">OSIRIS-REx in flight (2020)</button><button type="button" data-err="prelaunch">Pre-launch</button></div>
+      <div class="grid2">
+        <div class="ctl"><label for="escIn">Scale all errors by <small>×</small></label><input id="escIn" type="number" min="0" max="10" step="0.1" inputmode="decimal"></div>
+        <div class="ctl"><label for="safeIn">Safe radius <small>m</small></label><input id="safeIn" type="number" min="0.5" max="100" step="0.5" inputmode="decimal"></div>
+      </div>
+    </fieldset>
+
+    <fieldset><legend>Contact and holding down</legend>
+      <div class="ctl"><label for="massIn">Spacecraft mass at contact <small>kg (blank: as handed on)</small></label><input id="massIn" type="number" min="1" max="100000" step="1" inputmode="decimal" placeholder="as handed on"></div>
+      <span class="lab" id="lab-surf">Ground (when staying)</span>
+      <div class="seg" role="group" aria-labelledby="lab-surf"><button type="button" data-surf="regolith">Loose regolith (Bennu)</button><button type="button" data-surf="rigid">Rigid rock (bounces)</button></div>
+      <div class="ctl" id="eRow"><div class="ctl-head"><label for="eIn">Restitution <small>rebound / impact speed</small></label><input id="eIn" type="number" min="0" max="0.95" step="0.05" inputmode="decimal"></div>
+        <input id="eRange" type="range" min="0" max="0.95" step="0.05" aria-label="Coefficient of restitution"></div>
+      <div class="ctl"><div class="ctl-head"><label for="rxIn">Push from the work <small>N</small></label><input id="rxIn" type="number" min="0" max="1000" step="0.01" inputmode="decimal"></div>
+        <input id="rxRange" type="range" min="0" max="5" step="0.01" aria-label="Reaction force from sampling or digging, newtons"></div>
+    </fieldset>
+
+    <fieldset><legend>The sampler (TAGSAM-class)</legend>
+      <div class="grid2">
+        <div class="ctl"><label for="mobSel">Particle mobility</label><select id="mobSel"><option value="low">Low (best fit)</option><option value="high">High</option></select></div>
+        <div class="ctl"><label for="parSel">Smallest particles</label><select id="parSel"><option value="unresolved">Below the pixel (3.8 mm)</option><option value="resolved">Mapped (7.65 mm)</option></select></div>
+      </div>
+      <div class="ctl"><div class="ctl-head"><label for="tiltIn">Head tilted by a rock <small>deg</small></label><input id="tiltIn" type="number" min="0" max="45" step="0.5" inputmode="decimal"></div>
+        <input id="tiltRange" type="range" min="0" max="20" step="0.5" aria-label="Tilt of the sampler head by a rock, degrees"></div>
+    </fieldset>
+    <div class="btnrow"><button type="button" id="resetBtn">Reset to the case's defaults</button></div>
+    <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+    <p class="note" id="runNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-res">
+      <h2 id="h-res">The result</h2>
+      <div id="resLine" class="small"></div>
+      <div class="tiles" id="tiles"></div>
+      <div class="tablewrap"><table class="burns stack" id="burnTable"><thead><tr><th>Burn</th><th>When (UTC)</th><th>Δv</th><th>Flown by OSIRIS-REx</th></tr></thead><tbody></tbody></table></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-charts">
+    <h2 id="h-charts">The descent and where it lands</h2>
+    <div class="chartgrid">
+      <div><canvas id="descChart" class="chart" role="img" aria-label="Height above the site against time to contact, both on log scales, for the planned descent, with the Checkpoint and Matchpoint marked; for Bennu, OSIRIS-REx's reconstructed descent as dots."></canvas><ul class="legend" id="descLegend"></ul><p class="chart-cap" id="descCap"></p></div>
+      <div><canvas id="ellChart" class="chart" role="img" aria-label="Top view of the site plane: the 3-sigma contact ellipse, the safe radius circle, and for Bennu where OSIRIS-REx actually touched relative to this page's aim point."></canvas><ul class="legend" id="ellLegend"></ul><p class="chart-cap" id="ellCap"></p></div>
+    </div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-contact">
+    <h2 id="h-contact">Contact, bouncing and holding down</h2>
+    <div class="chartgrid">
+      <div><canvas id="penChart" class="chart" role="img" aria-label="Depth the sampler head sinks into the regolith against time after contact, for the range of resistance inferred from OSIRIS-REx, with the back-away time marked."></canvas><ul class="legend" id="penLegend"></ul><p class="chart-cap" id="penCap"></p></div>
+      <div><canvas id="hopChart" class="chart" role="img" aria-label="After contact: for touch and go, height after the back-away; for a lander on rigid ground, the height of each hop against time."></canvas><ul class="legend" id="hopLegend"></ul><p class="chart-cap" id="hopCap"></p></div>
+      <div><canvas id="holdChart" class="chart" role="img" aria-label="Propellant per hour to hold the spacecraft down against a push from its own work, against the push in newtons, with its weight marked."></canvas><p class="chart-cap" id="holdCap"></p></div>
+      <div><canvas id="smpChart" class="chart" role="img" aria-label="Sample mass: the published TAGSAM predictions for Nightingale against the 121.6 g returned, and this page's scenario."></canvas><p class="chart-cap" id="smpCap"></p></div>
+    </div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Checked against reality</h2>
+    <p class="small">OSIRIS-REx at Bennu on 20 October 2020, against JPL Horizons' reconstruction of its descent and the mission's published figures. Computed live from the Bennu case; the chain case shows the same table.</p>
+    <div class="tablewrap"><table class="stack" id="checkTable"><thead><tr><th>Check</th><th>Reality (source)</th><th>This page</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 43's handoff (or this page's), or open this page with <span class="mono">#h=</span> and a handoff in the link. Export hands module 45 the surface state: where the spacecraft is, its weight there, what holding it down costs, and every refusal so far.</p>
+    <textarea id="importText" rows="3" aria-label="Paste a handoff here"></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import pasted</button>
+      <label class="filebtn">Import a file<input type="file" id="importFile" accept=".json,application/json"></label>
+      <button type="button" id="copyBtn">Copy handoff</button><button type="button" id="dlBtn">Download</button><button type="button" id="linkBtn">Copy link</button>
+    </div>
+    <div class="status" id="hoStatus" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <details><summary>The descent</summary>
+      <p class="small">Three impulsive burns, after OSIRIS-REx (Berry et al. 2020, AAS 20-088): a departure burn aims at the Checkpoint, a point above the site along its normal; at the Checkpoint a burn, and ten minutes later a Matchpoint burn, are solved together (Newton's method through the exact flights) so that the spacecraft's reference point arrives the arm's length above the site, moving straight down at the contact speed with no sideways slide over the turning ground. The Matchpoint's height comes out of that, it is not set. Every leg flies under idea 43's constant-density polyhedron (Werner and Scheeres 1997) with the body turning (Bennu's pole and prime meridian; Apophis tumbling by Euler's equations) and idea 42's sunlight. A leg that passes through the shape is refused.</p></details>
+    <details><summary>Where it lands</summary>
+      <p class="small">From Checkpoint on, OSIRIS-REx's onboard navigation knew its state to 1 m and 1 mm/s (3 sigma), and its burns carried the execution errors of Berry et al. 2021, Table 2. Those errors are carried to the contact by state transition matrices taken by finite differences of the exact flights, then onto the site plane: a 3-sigma ellipse, the contact speeds' spread, and the chance of landing inside the safe radius. The tests check the linear result against a Monte Carlo of the full flights.</p></details>
+    <details><summary>Contact</summary>
+      <p class="small">NASA reported that the sampler head met Bennu at 10 cm/s, sank 48.8 cm in about 6 s, and was still sinking when the back-away fired. A constant deceleration a fits that: 0.1 × 6 − a × 36 / 2 = 0.488, so a = 0.0062 m/s². On the 32 cm head and a spacecraft of 880 to 2,110 kg (its dry and launch masses; its mass at contact is not in these sources), that is 69 to 165 Pa of resistance. The page carries that range to other spacecraft and other bodies, labelled as an analog. The arm's spring, the gas jet and tipping are not modelled.</p></details>
+    <details><summary>Bouncing and holding down</summary>
+      <p class="small">A lander that stays on rigid ground rebounds with the restitution you set, flies ballistically under the shape as it turns, and lands again until it settles or escapes. Holding down is statics: weight is mass times the acceleration a grain feels at the site (idea 43); a push beyond it lifts the spacecraft unless thrusters push back, at force / (Isp g0) of propellant.</p></details>
+    <details><summary>The sample</summary>
+      <p class="small">OSIRIS-REx's sampleability algorithm (Walsh et al. 2022) predicted what TAGSAM would collect from the particle sizes at the site, and cut it for tilt by an exponential that halves at 3.7°. The page uses its published Nightingale predictions and tilt function; the zero-tilt numbers are the published ones divided by the 0.434 rock-tilt efficiency. 121.6 g came home. For a body with no particle map the mass is refused, and the Nightingale analog is labelled as such.</p></details>
+    <details><summary>What it does not do</summary>
+      <p class="small">No hazard map (the 25 m plates are coarser than the 8 m safe radius); no onboard guidance updates after Checkpoint; no gravity, sunlight or attitude errors in the dispersions; burns are impulsive; contact is one-dimensional with a constant resistance; anchors that rely on soil strength are refused; nothing about the gas jet, contact pads or the sample's leakage.</p></details>
+  </section>
+</main>
+<footer><p class="small">Idea 44 of the Aster Idea Bank, an idea-bank prototype. Kernel <span class="mono">touch.js</span>; idea 43's kernel and data in <span class="mono">snapshots/</span>; sources and their checks in the README.</p></footer>
+
+<script src="snapshots/integrator.js"></script>
+<script src="snapshots/aster-constants.js"></script>
+<script src="snapshots/approach-sources.js"></script>
+<script src="snapshots/shapes.js"></script>
+<script src="snapshots/attitude.js"></script>
+<script src="snapshots/geophysics.js"></script>
+<script src="snapshots/orbit-b.js"></script>
+<script src="snapshots/orbit-b-sunlight.js"></script>
+<script src="snapshots/lumpy.js"></script>
+<script src="snapshots/lumpy-handoff.js"></script>
+<script src="snapshots/tag-recon.js"></script>
+<script src="snapshots/tag-sources.js"></script>
+<script src="touch.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

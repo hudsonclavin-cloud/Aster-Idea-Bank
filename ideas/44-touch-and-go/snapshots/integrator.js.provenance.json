@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/integrator.js",
+  "commit": "0e011d0792cb91b4c7399300256eaa5cbe391fef",
+  "commitDate": "2026-10-31T23:16:17+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "df79246d9f3178e55907127ffe07e3c097b912ee",
+  "readBlob": "df79246d9f3178e55907127ffe07e3c097b912ee",
+  "sourceSha256": "9ebf7e2d3413d1f5c1669b447c6b2cfafcc7e78f9a55936fe462c89e02efd1aa",
+  "sourceBytes": 3685,
+  "copiedAt": "2026-10-31T23:34:00.852Z",
+  "mode": "copy",
+  "note": "idea 43's committed file, unmodified: this module flies descent and contact under idea 43's polyhedron kernel (fieldRaw, flight, attitude) and re-runs idea 43's own parseHandoff on the imported handoff",
+  "readMatchesCommitted": true,
+  "writtenSha256": "9ebf7e2d3413d1f5c1669b447c6b2cfafcc7e78f9a55936fe462c89e02efd1aa",
+  "writtenBytes": 3685
+}

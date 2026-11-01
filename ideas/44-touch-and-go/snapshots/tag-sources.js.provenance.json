@@ -1,0 +1,23 @@
+{
+  "repo": "NASA Technical Reports Server (ntrs.nasa.gov), nasa.gov, science.nasa.gov, JPL Horizons",
+  "path": "NTRS 20210025295, 20200000774, 20140017837, 20220006342, 20220000264; nasa.gov pages of 2020-10-21, 2021-04-15, 2022-07-07; science.nasa.gov blog 2024-02-15; Horizons -64 header",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "sourceSha256": {
+    "berry2021-tag-performance.pdf": "682c4d1226cea12024ea446a9119790e42756dadb4bd59fec967cebd964ec4ac",
+    "berry2020-revisiting-tag.pdf": "dd694615dbcf5ae0d66709a25e7c9f345880b9de9e987ef0d400ac13e1baf62e",
+    "may2014-tag-mission-design.pdf": "bc924540401baf319a79609ad30688421151ea92972ebb1599dcf067fb0cfcc8",
+    "walsh2022-sampleability.pdf": "cc93a75215a6bf34de7910c2f0190b3d35cd99551d533d29400f3f7291c28da9",
+    "post-tag-trajectory.pdf": "5a96dd82df8665911e07461d4bbe443ce55de56817f63210d0580938f1851559",
+    "nasa-2020-10-21-tag.html": "3c2a2b247dabf2cf3621f86dc1e41304f82bc2d758f2c625091cf75a5222f9ac",
+    "nasa-2021-04-15-mark.html": "66b8ba69e8c3111763ad5a23eafd398eeb543a3ce13b35303ea64f3ddfaddb1d",
+    "nasa-2022-07-07-ballpit.html": "81529a1f63a9f01328bf1def18c2b6e79e0c2d49191662509fe2d7557f4181b4",
+    "nasa-2024-02-15-mass.html": "46accbd2f8f1f92ee5bd477fadcdf0970eae1b1852df21f81ce189ca5ad413ad",
+    "horizons-orex-tag-10s.txt": "376c4015df0ec37b114b36306470099d1c8a511008b9e0d9b54e9cffd6df4363"
+  },
+  "license": "NASA reports and pages are US government works; Walsh et al. 2022 (Space Sci. Rev.) is CC BY 4.0; facts quoted with citation",
+  "mode": "transcribed",
+  "note": "hand-transcribed figures; build-data.mjs checked all 64 quotes appear in their documents (pdftotext -layout for PDFs, tags stripped for HTML, whitespace normalised)",
+  "writtenSha256": "e75188c11a19ef0e3bc4610d2d5a66ae605c0a812d18e214b92f56d6a7e9d713",
+  "writtenBytes": 11939
+}

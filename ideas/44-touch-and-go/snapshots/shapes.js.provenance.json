@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/shapes.js",
+  "commit": "0e011d0792cb91b4c7399300256eaa5cbe391fef",
+  "commitDate": "2026-10-31T23:16:17+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "69ee2e4b006dca13f16ff778a0016df95fc978c4",
+  "readBlob": "69ee2e4b006dca13f16ff778a0016df95fc978c4",
+  "sourceSha256": "6952988738b6f87240e2b0d92bfc657f3c1906e81327404151155c14517b5882",
+  "sourceBytes": 115264,
+  "copiedAt": "2026-10-31T23:34:00.602Z",
+  "mode": "copy",
+  "note": "idea 43's committed file, unmodified: this module flies descent and contact under idea 43's polyhedron kernel (fieldRaw, flight, attitude) and re-runs idea 43's own parseHandoff on the imported handoff",
+  "readMatchesCommitted": true,
+  "writtenSha256": "6952988738b6f87240e2b0d92bfc657f3c1906e81327404151155c14517b5882",
+  "writtenBytes": 115264
+}

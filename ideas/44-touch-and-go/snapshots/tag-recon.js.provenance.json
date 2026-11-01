@@ -1,0 +1,17 @@
+{
+  "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "path": "COMMAND=-64 CENTER=@2101955 VECTORS ICRF TDB 2020-10-20 17:00-22:00 (10 s) and 21:51:00-04 (0.5 s); COMMAND=2101955 CENTER=@10; OBSERVER -64 from 500@399 quantity 21",
+  "commit": "retrieved 2026-10-31",
+  "retrieved": "2026-10-31",
+  "sourceSha256": {
+    "horizons-orex-tag-10s.txt": "376c4015df0ec37b114b36306470099d1c8a511008b9e0d9b54e9cffd6df4363",
+    "horizons-orex-tag-contact-0.5s.txt": "e16aa7434eaea61a2c46c33af9e9f4dcf27f9486b3f6f2947c89201f892febf7",
+    "horizons-bennu-helio-tag.txt": "9d5e6b51788bd097ba2481bfa8c50c0c2b276ea7a833814f9f052a309745bc96",
+    "horizons-orex-geo-tag.txt": "f161d9d5112a919e558a1e6e62740cbdd6e261c4670148e75d177b35534debda"
+  },
+  "license": "JPL Horizons ephemerides (NASA/JPL, public)",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: 88 rows of the descent (every 600 s on the 4-h leg, every 20 s after Checkpoint, rows bracketing each burn, the last descent-segment row), km to m; sun = idea 42 closing.js accel() at each row (ideas/42-closing-in at the bank's HEAD); light time row 21:50 UTC",
+  "writtenSha256": "18aaa7c4f92a9b2f93101c2beb18dc1103432e664ff262f6935b19156f778aee",
+  "writtenBytes": 13574
+}

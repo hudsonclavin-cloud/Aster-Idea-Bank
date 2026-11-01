@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/orbit-b-sunlight.js",
+  "commit": "0e011d0792cb91b4c7399300256eaa5cbe391fef",
+  "commitDate": "2026-10-31T23:16:17+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "8917366b7b7e3ca986eea64623179f8a8d8a0e79",
+  "readBlob": "8917366b7b7e3ca986eea64623179f8a8d8a0e79",
+  "sourceSha256": "f2fc49b0c4a1e903816fb1649043936b8c1b18405362ede70cf088a32cecd6a4",
+  "sourceBytes": 3354,
+  "copiedAt": "2026-10-31T23:34:01.135Z",
+  "mode": "copy",
+  "note": "idea 43's committed file, unmodified: this module flies descent and contact under idea 43's polyhedron kernel (fieldRaw, flight, attitude) and re-runs idea 43's own parseHandoff on the imported handoff",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f2fc49b0c4a1e903816fb1649043936b8c1b18405362ede70cf088a32cecd6a4",
+  "writtenBytes": 3354
+}

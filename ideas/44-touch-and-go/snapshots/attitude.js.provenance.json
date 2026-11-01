@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/attitude.js",
+  "commit": "0e011d0792cb91b4c7399300256eaa5cbe391fef",
+  "commitDate": "2026-10-31T23:16:17+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "581895ae9366f7c6eda008600f7eeca366c2e5de",
+  "readBlob": "581895ae9366f7c6eda008600f7eeca366c2e5de",
+  "sourceSha256": "d5c889ef6dbb7984379c307bea93ba5be01124b9fe61c49f9763df3771e2e448",
+  "sourceBytes": 12089,
+  "copiedAt": "2026-10-31T23:34:00.686Z",
+  "mode": "copy",
+  "note": "idea 43's committed file, unmodified: this module flies descent and contact under idea 43's polyhedron kernel (fieldRaw, flight, attitude) and re-runs idea 43's own parseHandoff on the imported handoff",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d5c889ef6dbb7984379c307bea93ba5be01124b9fe61c49f9763df3771e2e448",
+  "writtenBytes": 12089
+}

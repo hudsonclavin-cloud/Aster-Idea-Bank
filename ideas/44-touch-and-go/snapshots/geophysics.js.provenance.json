@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/snapshots/geophysics.js",
+  "commit": "0e011d0792cb91b4c7399300256eaa5cbe391fef",
+  "commitDate": "2026-10-31T23:16:17+00:00",
+  "pathLastChanged": "3aa5774 2026-10-31T22:43:59+00:00",
+  "committedBlob": "0bd0c18aecdcc947ead0d238b41c8d910dc09797",
+  "readBlob": "0bd0c18aecdcc947ead0d238b41c8d910dc09797",
+  "sourceSha256": "d9dc71f211fe8a17f428fae2bdd3bd934db521cf30a189d20601dca9ec8dea3c",
+  "sourceBytes": 4330,
+  "copiedAt": "2026-10-31T23:34:00.772Z",
+  "mode": "copy",
+  "note": "idea 43's committed file, unmodified: this module flies descent and contact under idea 43's polyhedron kernel (fieldRaw, flight, attitude) and re-runs idea 43's own parseHandoff on the imported handoff",
+  "readMatchesCommitted": true,
+  "writtenSha256": "d9dc71f211fe8a17f428fae2bdd3bd934db521cf30a189d20601dca9ec8dea3c",
+  "writtenBytes": 4330
+}

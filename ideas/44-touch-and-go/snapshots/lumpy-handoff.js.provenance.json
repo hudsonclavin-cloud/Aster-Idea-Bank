@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/43-lumpy/handoff.json",
+  "commit": "0e011d0792cb91b4c7399300256eaa5cbe391fef",
+  "commitDate": "2026-10-31T23:16:17+00:00",
+  "pathLastChanged": "1707e24 2026-10-31T23:16:07+00:00",
+  "committedBlob": "7b218a12c705e79e33cc52ed5c4667effff0dff9",
+  "readBlob": "7b218a12c705e79e33cc52ed5c4667effff0dff9",
+  "sourceSha256": "c98fe35f95bced5a247d7b14d141c610832256f281c3a72d59e9e3987c32cca7",
+  "sourceBytes": 60854,
+  "copiedAt": "2026-10-31T23:38:23.443Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: idea 43's committed handoff.json wrapped unmodified as a classic script (window.TouchLumpySample) so the page opens on the chain's case with no network",
+  "readMatchesCommitted": true,
+  "writtenSha256": "768f7e839c416544400aa06edfd04db7efc0824708a85a188d64d18ea96f1309",
+  "writtenBytes": 61244
+}
