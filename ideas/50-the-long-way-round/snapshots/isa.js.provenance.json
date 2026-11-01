@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/49-hot-return/snapshots/isa.js",
+  "commit": "ff2e59b8be9e88f8af895b1935099edf2da9cd5c",
+  "commitDate": "2026-11-01T09:04:25+00:00",
+  "pathLastChanged": "9b4a002 2026-11-01T08:30:15+00:00",
+  "committedBlob": "944fd5b005b01407aaeb7639a55899f0446a6085",
+  "readBlob": "944fd5b005b01407aaeb7639a55899f0446a6085",
+  "sourceSha256": "50dd915e3f3f1e65674ccd80887f23d58e70e716ed80dca0c72e8a37749c605e",
+  "sourceBytes": 3637,
+  "copiedAt": "2026-11-01T09:28:11.170Z",
+  "mode": "copy",
+  "note": "PartForge's 1976 atmosphere isa() as ideas 48 and 49 carry it, byte-identical: the air density at the ground for the main parachute in the what-if",
+  "readMatchesCommitted": true,
+  "writtenSha256": "50dd915e3f3f1e65674ccd80887f23d58e70e716ed80dca0c72e8a37749c605e",
+  "writtenBytes": 3637
+}

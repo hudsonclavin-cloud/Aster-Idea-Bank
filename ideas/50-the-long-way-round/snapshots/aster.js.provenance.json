@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/porkchop/launch-vehicles.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "c60595b 2026-10-14T15:09:03-04:00",
+  "committedBlob": "9e13ca60626fd3feb0d813bf56aaf71b481b2b4f",
+  "readBlob": "9e13ca60626fd3feb0d813bf56aaf71b481b2b4f",
+  "sourceSha256": "4cb2e7fb6a92a4eb4eb0258efe81daa24d38086e41d0848881b6665b6ad64ee2",
+  "sourceBytes": 12005,
+  "copiedAt": "2026-11-01T09:28:34.090Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --aster: parsed (not retyped) from snapshots/aster-delta-v.ts.txt (EARTH_MU_KM3_PER_S2, LEO_PARKING_RADIUS_KM), aster-launch-vehicles.ts.txt (G0_MPS2, ELVPERF_SOURCE/AS_OF, the eight vehicles and their 38 anchors, the count checked against the golden test), aster-bodies.ts.txt (earth radiusM) and the golden test (nine payloadAtC3 pins)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "18d1a623e71ed600866e11d3a0501fa6d4d8c179af3e1f7f597e167a2ac2bc08",
+  "writtenBytes": 2774
+}

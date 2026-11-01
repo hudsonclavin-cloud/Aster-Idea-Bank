@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/v2-golden/launch-vehicles.golden.test.mjs",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "c60595b 2026-10-14T15:09:03-04:00",
+  "committedBlob": "974ef4a3cf6800f47bd2b002b36e43460be32e0f",
+  "readBlob": "974ef4a3cf6800f47bd2b002b36e43460be32e0f",
+  "sourceSha256": "e6ad3b0085bcc0f2b56b1ed5a1cf75c083cec955457590c740d29bd8bb6aef43",
+  "sourceBytes": 4512,
+  "copiedAt": "2026-11-01T09:28:33.997Z",
+  "mode": "copy",
+  "note": "Aster's golden pins on payloadAtC3 (nine exact values) that this folder's transcription must reproduce",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e6ad3b0085bcc0f2b56b1ed5a1cf75c083cec955457590c740d29bd8bb6aef43",
+  "writtenBytes": 4512
+}

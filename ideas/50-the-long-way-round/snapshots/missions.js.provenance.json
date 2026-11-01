@@ -1,0 +1,9 @@
+{
+ "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+ "path": "ideas/31-mixture … ideas/49-hot-return (committed kernels, loaders and sample recipes)",
+ "commit": "ff2e59b8be9e88f8af895b1935099edf2da9cd5c",
+ "mode": "derived",
+ "sourceSha256": "a39384948238f5873489601e91e6dd01629c1bd3e2d3717dd681759a6d6acceb",
+ "files": 228,
+ "note": "derived by run-chain.mjs --build: 35 missions run whole (rocket x propellant x asteroid, see SCENARIOS) plus the 19 committed sample handoffs read as they are; each link reduced by mission.js recordOf(); the kernels' git blob ids are in the file's pins and mission.test.mjs checks them against the folders"
+}

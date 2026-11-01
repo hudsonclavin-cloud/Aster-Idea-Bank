@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Long Way Round: the whole mission</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>The Long Way Round</h1>
+  <p class="lede">Pick a rocket, a propellant and an asteroid, and read the mission ideas 31 to 49 fly: launch, ascent, the window, the departure burn, the transfer, the cruise, the arrival, the touch-and-go, mining, refuelling, the way home, the catch and re-entry, with every number traced to the module that made it, every seam where one link does not start where the last one ended, and every refusal carried to the end.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 20 of 20. Previous: <a href="../49-hot-return/index.html">49 Hot Return</a>, the capsule to the ground. Each module's page is linked from the table of links below.</p>
+</header>
+
+<main>
+<section class="card" id="pick" aria-labelledby="pickH">
+  <h2 id="pickH">The mission</h2>
+  <div class="pickers">
+    <label>Rocket
+      <select id="rocket"></select>
+    </label>
+    <label>Propellant <span class="hint" id="propHint"></span>
+      <select id="propellant"></select>
+    </label>
+    <label>Asteroid
+      <select id="asteroid"></select>
+    </label>
+  </div>
+  <p class="note" id="rocketNote"></p>
+  <p class="note small">Every choice here is a mission <code>run-chain.mjs</code> flew whole on the committed kernels of ideas 31 to 49 (it took about 20 s each in Node); the page reads the result. A combination that was not flown is refused, with the command that flies it.</p>
+</section>
+
+<section id="verdict" class="verdict" aria-live="polite"></section>
+
+<section class="tiles" id="tiles" aria-label="Headline numbers"></section>
+
+<section class="card" aria-labelledby="massH">
+  <h2 id="massH">Mass, from the pad to the ground</h2>
+  <p class="note small">Each link's mass at its own event, log scale. Dashed: the what-if below, where it differs. Tap or hover a point to read it.</p>
+  <div class="chart" id="massChart" role="img" aria-label="Mass at each event of the mission"></div>
+  <p class="readout" id="massRead"></p>
+</section>
+
+<section class="card" aria-labelledby="dvH">
+  <h2 id="dvH">Delta-v, burn by burn</h2>
+  <p class="note small">Coloured by who pays: the rocket, the spacecraft on its outbound tanks, the return craft on propellant made at the asteroid. Hatched: needed but not flown, because the link says the propellant was not there.</p>
+  <div class="chart" id="dvChart" role="img" aria-label="Delta-v budget"></div>
+  <p class="readout" id="dvRead"></p>
+</section>
+
+<section class="card" aria-labelledby="timeH">
+  <h2 id="timeH">Timeline</h2>
+  <div class="chart" id="timeChart" role="img" aria-label="Mission timeline"></div>
+  <ol class="events" id="events"></ol>
+</section>
+
+<section class="card" aria-labelledby="whatH">
+  <h2 id="whatH">Close it yourself</h2>
+  <p class="note">The chain's own mass budgets, re-run on the spacecraft you choose with every other link held: idea 42's tank sizing, idea 47's return ledger (its functions, copied verbatim), idea 49's main parachute (2 m g₀ / ρ v² at the ground). The launcher is the rocket flown above (idea 38's capability, a lower bound) or one of Aster's eight NASA LSP curves at this mission's C3.</p>
+  <div class="controls">
+    <label>Spacecraft dry mass <output id="dryOut"></output>
+      <input type="range" id="dry" min="100" max="5000" step="1">
+      <input type="number" id="dryNum" min="10" max="50000" step="1" aria-label="Spacecraft dry mass, kg">
+    </label>
+    <label>Touchdown speed <output id="tdOut"></output>
+      <input type="range" id="td" min="2" max="15" step="0.1">
+    </label>
+    <label>Launcher
+      <select id="launcher"></select>
+    </label>
+    <label class="check"><input type="checkbox" id="plant"> Launch the propellant plant's coolers from the Earth (idea 46's 105.6 kg)</label>
+    <label class="check"><input type="checkbox" id="tag"> Size the tanks for the touch-and-go too</label>
+    <button type="button" id="resetWhat">Back to the chain's</button>
+  </div>
+  <div class="tiles inner" id="whatTiles"></div>
+  <div id="whatRefusals"></div>
+  <h3>Which launcher</h3>
+  <p class="note small">Payload against C3: Aster's NASA LSP curves (interpolated only between anchors), the rocket flown here (its capability at this C3), the mission's C3 and the spacecraft's launch mass from the what-if.</p>
+  <div class="chart" id="lvChart" role="img" aria-label="Launch vehicle payload against C3"></div>
+  <p class="readout" id="lvRead"></p>
+</section>
+
+<section class="card" aria-labelledby="seamH">
+  <h2 id="seamH">Seams</h2>
+  <p class="note small">Where a link starts from something other than what the link before it ended with. <b>Breaks</b>: the mission does not close there. <b>Gap</b>: something real is missing or unbooked. <b>Note</b>: a deliberate re-start, said so.</p>
+  <div class="tablewrap"><table id="seams"></table></div>
+</section>
+
+<section class="card" aria-labelledby="refH">
+  <h2 id="refH">Every refusal, carried to the end</h2>
+  <div class="controls row">
+    <label class="check"><input type="checkbox" id="blockingOnly"> Blocking only</label>
+    <label>Phase <select id="phase"><option value="">all</option><option value="launch">launch (31-38)</option><option value="cruise">cruise (39-41)</option><option value="asteroid">at the asteroid (42-46)</option><option value="return">return (47-49)</option></select></label>
+  </div>
+  <p class="note small" id="refCount"></p>
+  <div id="refusals"></div>
+</section>
+
+<section class="card" aria-labelledby="matH">
+  <h2 id="matH">Every mission flown</h2>
+  <p class="note small">Each cell is one whole run. Tap one to open it.</p>
+  <div class="tablewrap"><table id="matrix" class="matrix"></table></div>
+</section>
+
+<section class="card" aria-labelledby="realH">
+  <h2 id="realH">Against reality: JPL NHATS round trips</h2>
+  <p class="note" id="nhatsLead"></p>
+  <label class="check"><input type="checkbox" id="nhatsAll"> Show the rows outside idea 39's envelope too</label>
+  <div class="tablewrap"><table id="nhats"></table></div>
+</section>
+
+<section class="card" aria-labelledby="linkH">
+  <h2 id="linkH">The links</h2>
+  <p class="note small" id="linkNote"></p>
+  <div class="tablewrap"><table id="links"></table></div>
+</section>
+
+<section class="card" aria-labelledby="ioH">
+  <h2 id="ioH">Import and export</h2>
+  <p class="note small">Import any handoff of ideas 31 to 50 (paste, a file, or a <code>#h=</code> link): the page walks it down its inputs, finds every link it carries (a link carried as a digest is looked up among the committed samples) and builds the mission from them. Export this mission as idea 50's handoff.</p>
+  <textarea id="importText" rows="4" aria-label="Paste a handoff here" placeholder="Paste a Long Way Round handoff (JSON)"></textarea>
+  <div class="controls row">
+    <button type="button" id="importBtn">Import pasted</button>
+    <label class="file">Load a file <input type="file" id="importFile" accept=".json,application/json"></label>
+    <button type="button" id="exportCopy">Copy export</button>
+    <button type="button" id="exportDownload">Download export</button>
+    <a id="exportLink" href="#">Link to this mission</a>
+  </div>
+  <p class="note" id="ioMsg" role="status"></p>
+</section>
+
+<section class="card how" aria-labelledby="howH">
+  <h2 id="howH">How this works</h2>
+  <p><b>Flown, not modelled.</b> <code>run-chain.mjs</code> runs ideas 31 to 49 in order in Node, each through its own loader and the recipe its own build script uses to make its sample (<code>sample()</code> for 32 to 40; the import, run and handoff calls for 41 to 49), each fed the handoff the previous one just made. It reproduces all 19 committed samples' outputs exactly when given the chain's own choices. The rocket's payload can be closed on the spacecraft: idea 42 sizes the spacecraft for the arrival this very departure produces, the rocket is flown again with that payload, and the loop repeats until the two agree to 0.01 kg. For any asteroid but Apophis, idea 39 is solved first (least delta-v for a sample return over its default window) and its asymptote handed to idea 37.</p>
+  <p><b>What this page computes.</b> The events in time order with the mass each link reports, the delta-v budget and who pays it, the seams (where a link restarts from its own assumption rather than the last link's result, measured), the refusals each link raised and which ones fail to travel on (identities compared link by link; the four a module documents as answered are not losses), and a verdict: the mission <i>closes</i> only if it lands and nothing breaks. The what-if re-runs three budgets the chain already has (idea 42's tanks, idea 47's ledger, idea 49's main parachute) and reads Aster's launch-vehicle curves.</p>
+  <p><b>Against reality.</b> NHATS (JPL) publishes round trips with every term of their delta-v. The chain's two legs flown on NHATS's own dates (idea 39 out, idea 47 back) and summed as NHATS sums them give its total within the gap shown above. Its Earth-departure term uses Aster's <code>injectionDvFromC3</code> at 400 km, the parking orbit NHATS states.</p>
+  <p><b>Limits.</b> The page does not run the 19 kernels (they are about 1.3 MB of code and 2 MB of data, in their own folders); it reads what the runner computed and the handoffs you bring. It does not re-check an imported link's physics: each module's own page does that, and the table of links opens them.</p>
+</section>
+</main>
+
+<footer><p class="small">Idea 50 of the Aster Idea Bank, by Waybill. Classic scripts, no network; every number on this page comes from a file in <code>snapshots/</code> or a computation in <code>mission.js</code>.</p></footer>
+
+<div id="tip" class="tip" role="tooltip" hidden></div>
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/aster.js"></script>
+<script src="snapshots/home-ledger.js"></script>
+<script src="snapshots/nhats.js"></script>
+<script src="snapshots/nhats-chain.js"></script>
+<script src="snapshots/missions.js"></script>
+<script src="mission.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

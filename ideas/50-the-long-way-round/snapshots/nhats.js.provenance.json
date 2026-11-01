@@ -1,0 +1,13 @@
+{
+ "repo": "https://ssd-api.jpl.nasa.gov/nhats.api",
+ "path": "nhats.api?des=<des>&dv=<dv>&dur=<dur>&stay=<stay>&launch=<launch> for the 43 queries in rows[*].query; https://cneos.jpl.nasa.gov/nhats/caveats.html; https://ssd-api.jpl.nasa.gov/doc/nhats.html",
+ "commit": "retrieved 2026-11-01",
+ "retrieved": "2026-11-01",
+ "sourceSha256": "ad4418a13e2320cccd11dcf79c46c7de1b48b57ad2ba8dcc3fe4ead371fe241f",
+ "sha256Rule": "sha256 of the newline-joined per-file sha256 values of the 43 NHATS responses, files in name order",
+ "caveatsSha256": "b239b92f497f384cedb8adb1d82bc9e3567b7eb9e2d5d77430892a34bb4db137",
+ "docSha256": "d07a346e84338c545e285f8032bc849d1bc1d182bce6913e39bd71be543fd6e1",
+ "writtenSha256": "7464f57a3572f42a0c97e6af66a40e9370f99b660a45d4a130cd3ead69e4f150",
+ "license": "NASA/JPL (CNEOS, SSD API) public data; US Government work, no copyright asserted in the United States",
+ "note": "derived by build-data.mjs --nhats from the directory oracle/fetch-sources.sh writes: min_dv_traj and min_dur_traj of each response, once per tid (61 trajectories), and seven quoted sentences found verbatim (after tags are stripped)"
+}

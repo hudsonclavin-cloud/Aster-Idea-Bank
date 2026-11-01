@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/47-way-home/home.js",
+  "commit": "ff2e59b8be9e88f8af895b1935099edf2da9cd5c",
+  "commitDate": "2026-11-01T09:04:25+00:00",
+  "pathLastChanged": "0213954 2026-11-01T05:32:03+00:00",
+  "committedBlob": "2de439d8fe956e20253c421bc4df6271c8437743",
+  "readBlob": "2de439d8fe956e20253c421bc4df6271c8437743",
+  "sourceSha256": "299846cf842cd1e3fda4dac5927850cf75ac5b527d7aee411d81738dbf89cc00",
+  "sourceBytes": 72564,
+  "copiedAt": "2026-11-01T09:28:11.312Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --reuse: lines 185-218 of idea 47's home.js (burnable, burn, tcmOf, burnsOf, ledger, materialMax, capacity) copied verbatim inside a wrapper that supplies DAY = 86400 and num(); mission.test.mjs checks the block is a byte-for-byte substring of home.js",
+  "readMatchesCommitted": true,
+  "writtenSha256": "16a7fd76894b7822c8b70ef652e2634f7e60e0b252ebc7267f54d6a197fb75d0",
+  "writtenBytes": 4006
+}

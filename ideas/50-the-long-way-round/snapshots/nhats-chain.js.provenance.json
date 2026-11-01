@@ -1,0 +1,8 @@
+{
+ "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+ "path": "ideas/39-lamberts-road/lambert.js (cell, encounters) and ideas/47-way-home/home.js (nhatsChecks), on snapshots/nhats.js",
+ "commit": "ff2e59b8be9e88f8af895b1935099edf2da9cd5c",
+ "mode": "derived",
+ "sourceSha256": "5146d2390b24d7e74b2d31d5d3aa71fc01551df32ffea1019c08680241d7f49a",
+ "note": "derived by run-chain.mjs --nhats: for each of the 61 NHATS trajectories, idea 39's cell() at the launch date 0 h TDB for the outbound time (C3 and arrival v-infinity) and its encounters() rule, and idea 47's nhatsChecks() leg for the same trajectory id (departure burn and Earth-arrival v-infinity); the sums are mission.js roundTrip()'s, made where they are read"
+}
