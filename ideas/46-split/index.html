@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Split: water into propellant</title>
+<meta name="description" content="Turn the water mined at the asteroid into return propellant: split it with the spacecraft's solar arrays, liquefy or compress the hydrogen and oxygen or keep the water for a steam thruster, lose some to boil-off, and choose the mixture ratio worth burning.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Split</h1>
+  <p class="lede">Idea 45 left a mining plant on the asteroid making water every day. This page turns that water into propellant for the trip home: it splits it in an electrolyser run by the spacecraft's solar arrays, liquefies or compresses the hydrogen and oxygen (or keeps the water to boil in a steam thruster), loses some to boil-off, and asks which mixture ratio is worth burning, going back to idea 31's chamber and idea 32's nozzle to price it.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 16 of 20. Previous: <a href="../45-dig/index.html">45 Dig</a>, mining water. Next: 47 Homeward, the return (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">The plant</h2>
+    <span class="lab" id="lab-case">Case</span>
+    <div class="seg" role="group" aria-labelledby="lab-case"><button type="button" data-case="chain">The chain: Apophis (idea 45)</button><button type="button" data-case="bennu">Bennu (idea 45's OSIRIS-REx case)</button></div>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+
+    <span class="lab" id="lab-route">What to make</span>
+    <div class="seg" role="group" aria-labelledby="lab-route"><button type="button" data-route="cryo">Split and liquefy (LOX/LH₂)</button><button type="button" data-route="gas">Split and compress (gas)</button><button type="button" data-route="steam">Keep the water (steam)</button></div>
+
+    <fieldset id="fsCell"><legend>The electrolyser</legend>
+      <div class="ctl"><label for="cellSel">Cell (DOE PEM targets)</label><select id="cellSel"></select></div>
+      <div class="ctl hide" id="vRow"><div class="ctl-head"><label for="vIn">Cell voltage at 1 bar <small>V</small></label><input id="vIn" type="number" min="1.2" max="3" step="0.01" inputmode="decimal"></div>
+        <input id="vRange" type="range" min="1.3" max="2.5" step="0.01" aria-label="Cell voltage, volts"></div>
+      <div class="grid2">
+        <div class="ctl"><label for="etaIn">Faraday efficiency</label><input id="etaIn" type="number" min="0.5" max="1" step="0.001" inputmode="decimal"></div>
+        <div class="ctl"><label for="tcIn">Cell temperature <small>K</small></label><input id="tcIn" type="number" min="280" max="360" step="1" inputmode="decimal"></div>
+      </div>
+    </fieldset>
+
+    <fieldset id="fsPower"><legend>Power from the arrays</legend>
+      <div class="btnrow presets"><button type="button" data-arr="near">NEAR Shoemaker (1.8 kW)</button><button type="button" data-arr="psyche">Psyche (21 kW)</button></div>
+      <div class="ctl"><div class="ctl-head"><label for="pIn">Array power at 1 au <small>W</small></label><input id="pIn" type="number" min="1" max="10000000" step="100" inputmode="decimal"></div>
+        <input id="pRange" type="range" min="2.7" max="5" step="0.01" aria-label="Array power at 1 au, log scale"></div>
+    </fieldset>
+
+    <fieldset id="fsCryo"><legend>Liquefying and keeping it cold</legend>
+      <div class="ctl"><div class="ctl-head"><label for="twbIn">Insulation's warm side <small>K</small></label><input id="twbIn" type="number" min="164" max="305" step="1" inputmode="decimal"></div>
+        <input id="twbRange" type="range" min="164" max="305" step="1" aria-label="Insulation warm-boundary temperature, kelvin"></div>
+      <span class="lab" id="lab-zbo">Coolers hold the boil-off while the Sun is up</span>
+      <div class="seg" role="group" aria-labelledby="lab-zbo"><button type="button" data-zbo="on">Yes (zero boil-off by day)</button><button type="button" data-zbo="off">No (passive)</button></div>
+      <div class="ctl"><label for="fcIn">90 K stage, fraction of Carnot <small>none measured; default is the 20 K unit's</small></label><input id="fcIn" type="number" min="0.01" max="1" step="0.005" inputmode="decimal"></div>
+    </fieldset>
+
+    <fieldset id="fsGas" class="hide"><legend>Compressed gas</legend>
+      <div class="ctl"><div class="ctl-head"><label for="psIn">Storage pressure <small>MPa</small></label><input id="psIn" type="number" min="1" max="70" step="1" inputmode="decimal"></div>
+        <input id="psRange" type="range" min="1" max="70" step="1" aria-label="Storage pressure, megapascals"></div>
+    </fieldset>
+
+    <fieldset id="fsSteam" class="hide"><legend>Steam thruster</legend>
+      <div class="ctl"><div class="ctl-head"><label for="thIn">Heater temperature <small>K</small></label><input id="thIn" type="number" min="500" max="3500" step="10" inputmode="decimal"></div>
+        <input id="thRange" type="range" min="600" max="3000" step="10" aria-label="Steam heater temperature, kelvin"></div>
+      <div class="grid2">
+        <div class="ctl"><label for="spcIn">Chamber <small>bar</small></label><input id="spcIn" type="number" min="0.5" max="300" step="0.5" inputmode="decimal"></div>
+        <div class="ctl"><label for="sepsIn">Area ratio</label><input id="sepsIn" type="number" min="1.5" max="400" step="1" inputmode="decimal"></div>
+      </div>
+    </fieldset>
+
+    <fieldset id="fsMat"><legend>Tank material (PartForge's flight metals)</legend>
+      <div class="ctl"><label for="matSel">Metal</label><select id="matSel"></select></div>
+    </fieldset>
+
+    <fieldset id="fsEngine"><legend>The engine and the mixture ratio</legend>
+      <span class="lab" id="lab-of">Mixture ratio (O/F)</span>
+      <div class="seg" role="group" aria-labelledby="lab-of"><button type="button" data-of="optimal">Most Δv</button><button type="button" data-of="stoich">All the oxygen</button><button type="button" data-of="fixed">Set</button></div>
+      <div class="ctl" id="ofRow"><div class="ctl-head"><label for="ofIn">O/F <small>2 to the water's 7.94</small></label><input id="ofIn" type="number" min="2" max="7.9366" step="0.05" inputmode="decimal"></div>
+        <input id="ofRange" type="range" min="2" max="7.9366" step="0.01" aria-label="Mixture ratio, oxidizer to fuel by mass"></div>
+      <div class="grid2">
+        <div class="ctl"><label for="pcIn">Chamber <small>bar</small></label><input id="pcIn" type="number" min="1" max="300" step="1" inputmode="decimal"></div>
+        <div class="ctl"><label for="epsIn">Area ratio</label><input id="epsIn" type="number" min="1.5" max="400" step="1" inputmode="decimal"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>The craft going home</legend>
+      <div class="ctl"><label for="dryIn">Dry mass before tanks and coolers <small>kg</small></label><input id="dryIn" type="number" min="1" max="1000000" step="1" inputmode="decimal"></div>
+    </fieldset>
+    <div class="btnrow"><button type="button" id="resetBtn">Reset to the case's defaults</button></div>
+    <p class="note" id="runNote" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-res">
+      <h2 id="h-res">The propellant</h2>
+      <div id="resLine" class="small"></div>
+      <div class="tiles" id="tiles"></div>
+      <div id="energy"></div>
+      <div class="refusals" id="refusals" aria-live="polite"></div>
+      <details id="carried"><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+    <section class="card" aria-labelledby="h-routes">
+      <h2 id="h-routes">The three routes, same water, same arrays</h2>
+      <p class="small">Each route run with the settings above. Δv is Tsiolkovsky on the dry mass plus the tanks and coolers carried home, for comparison only; module 47 computes the return itself.</p>
+      <div class="tablewrap"><table class="stack routes" id="routeTable"><thead><tr><th>Route</th><th class="n">Propellant</th><th class="n">Isp</th><th class="n">Dry home</th><th class="n">Δv</th><th>What limits it</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-time">
+    <h2 id="h-time">Day by day</h2>
+    <div class="chartgrid">
+      <div><canvas id="stockChart" class="chart" role="img" aria-label="Water mined, water split, propellant in the tanks and boil-off, accumulated over the stay."></canvas><ul class="legend" id="stockLegend"></ul><p class="chart-cap" id="stockCap"></p></div>
+      <div><canvas id="powerChart" class="chart" role="img" aria-label="Power the arrays give while the Sun is up, and the power the plant uses, each day of the stay."></canvas><ul class="legend" id="powerLegend"></ul><p class="chart-cap" id="powerCap"></p></div>
+    </div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-why">
+    <h2 id="h-why">The mixture, the cell and the tanks</h2>
+    <div class="chartgrid">
+      <div><canvas id="ofChart" class="chart" tabindex="0" role="img" aria-label="Delivered specific impulse and the Delta-v it buys against mixture ratio, from 2 to the water's own 7.94; tap or drag to set the mixture ratio, arrow keys work too."></canvas><ul class="legend" id="ofLegend"></ul><p class="chart-cap" id="ofCap"></p></div>
+      <div><canvas id="voltChart" class="chart" role="img" aria-label="Reversible and thermoneutral voltages of water splitting against cell temperature, from idea 31's data, with NIST-JANAF's values as dots and the chosen cell voltage marked."></canvas><ul class="legend" id="voltLegend"></ul><p class="chart-cap" id="voltCap"></p></div>
+      <div><canvas id="tankChart" class="chart" role="img" aria-label="Kilograms of tank per kilogram of gas against storage pressure, for hydrogen and oxygen, in the chosen metal."></canvas><ul class="legend" id="tankLegend"></ul><p class="chart-cap" id="tankCap"></p></div>
+      <div><canvas id="steamChart" class="chart" role="img" aria-label="Steam thruster specific impulse against heater temperature at the chosen chamber pressure and area ratio, with the hydrogen-oxygen routes' Isp for comparison."></canvas><ul class="legend" id="steamLegend"></ul><p class="chart-cap" id="steamCap"></p></div>
+    </div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-check">
+    <h2 id="h-check">Checked against reality</h2>
+    <p class="small">What the model rests on, compared with independent figures: NIST-JANAF's thermochemistry, DOE's electrolyser targets, the ISS oxygen generator, two flown solar arrays, a flown engine, and the 1958 NBS hydrogen paper. Computed live; the gap is (this page − reality) / reality.</p>
+    <div class="tablewrap"><table class="stack" id="checkTable"><thead><tr><th>Check</th><th>Reality</th><th>This page</th><th>Gap</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-handoff">
+    <h2 id="h-handoff">Handoff</h2>
+    <p class="small">Import idea 45's handoff (or this page's), or open this page with <span class="mono">#h=</span> and a handoff in the link. Export hands module 47 the propellant (mass, mixture ratio, Isp), the dry mass carried home, the stay's ledger and every refusal so far.</p>
+    <textarea id="importText" rows="3" aria-label="Paste a handoff here"></textarea>
+    <div class="handoff-actions">
+      <button type="button" id="importBtn">Import pasted</button>
+      <label class="filebtn">Import a file<input type="file" id="importFile" accept=".json,application/json"></label>
+      <button type="button" id="copyBtn">Copy handoff</button><button type="button" id="dlBtn">Download</button><button type="button" id="linkBtn">Copy link</button>
+    </div>
+    <div class="status" id="hoStatus" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card wide" id="how" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <details><summary>Splitting the water</summary>
+      <p class="small">A proton-exchange-membrane cell splits liquid water: H₂O → H₂ + ½O₂, two electrons per molecule. Faraday's law sets the charge (Faraday's constant is Avogadro's number times the elementary charge, both exact in the SI), the cell voltage sets the energy: 2FV per mole of water, divided by the Faraday efficiency (current lost to gas crossing the membrane). The voltage cannot be below the reversible voltage, ΔG/2F, about 1.23 V; above the thermoneutral voltage, ΔH/2F, about 1.48 V, the excess leaves as heat. Both come from idea 31's NASA Glenn data and agree with NIST-JANAF to better than 0.05 mV. The presets are DOE's PEM stack figures (1.9 V today, 1.8 and 1.6 V as targets); the Faraday efficiency defaults to what the ISS oxygen generator's published current and output imply, 98.3 %. Storing gas at pressure, the cell itself does the compressing and pays only the Nernst voltage.</p></details>
+    <details><summary>Power</summary>
+      <p class="small">The arrays give their power at 1 au times (1 au / r)², with r from idea 45's distance each day, and only while the Sun is up at the site (idea 45's lit hours). There are no batteries. Checked against NEAR Shoemaker and Psyche beyond 1 au, the 1/r² law reads 3.5 to 17 % low; inside 1 au, where the chain sits, hotter cells make it likely optimistic.</p></details>
+    <details><summary>Liquefying, and boil-off</summary>
+      <p class="small">Gas leaves the cell and is cooled at 1 atm to liquid: NIST's tables give the heat. Hydrogen is also converted from its room-temperature mix (three parts ortho) to para, releasing 527 kJ/kg (NBS 1958) that must be removed at 20 K, or the liquid boils itself away. A 90 K stage takes the gas down to 90 K and liquefies the oxygen; NASA and Creare's 20 K reverse turbo-Brayton cooler does the rest, on its measured turndown curve (631 W just to run, 1642 W for 16.5 W of lift), as many units as needed, 106 kg each. No 90 K unit's efficiency is on file, so it is costed at the 20 K unit's fraction of Carnot. The tanks are spheres sized for everything idea 45 could make and wrapped in MHTB's 45-layer insulation (0.085 to 0.22 W/m² measured between 164 and 305 K); the heat that leaks in boils liquid away, in the dark always, and by day too unless the coolers hold it.</p></details>
+    <details><summary>Compressed gas, and steam</summary>
+      <p class="small">Gas is stored at room temperature at the chosen pressure (NIST's densities: hydrogen is less dense than an ideal gas, so higher pressure costs more tank per kilogram). Tanks are thin-walled spheres of one of PartForge's flight metals, sized to burst at 1.4 times the pressure (NASA-STD-5001B's metallic ultimate factor, as PartForge carries it). Steam needs no splitting: the water is kept liquid and heated to the heater temperature as it is burned; idea 31 equilibrates the steam and idea 32 expands it. Where the equilibrium expansion would condense, or idea 32 cannot reach the area ratio, the frozen expansion is used and said so.</p></details>
+    <details><summary>The mixture ratio worth burning</summary>
+      <p class="small">Water carries oxygen and hydrogen at 7.94 to 1 by mass. Engines like the RL10 run near 5 for the best Isp; burning at 5 leaves a third of the oxygen behind. The page burns all the hydrogen and as much oxygen as the ratio asks (venting the rest before it is liquefied), runs idea 31's equilibrium chamber and idea 32's nozzle at each ratio, scales by the RL10A-3-3's measured 444 s over its ideal (NASA SP-8120), and finds the ratio that buys the most Δv for the dry mass. With any real craft that is the water's own 7.94: the Isp lost (about 5 %) is worth less than the extra mass of oxygen, until the propellant outweighs the craft about 90 to 1.</p></details>
+  </section>
+</main>
+<footer><p class="small">Idea 46 of the Aster Idea Bank, an idea-bank prototype. Every number traces to a snapshot in this folder (see README). No network requests.</p></footer>
+
+<script src="snapshots/mixture.js"></script>
+<script src="snapshots/thermo-excerpt.js"></script>
+<script src="snapshots/propellant-densities.js"></script>
+<script src="snapshots/mixture-presets.js"></script>
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/nozzle-charts.js"></script>
+<script src="snapshots/nozzle-rules.js"></script>
+<script src="snapshots/sp8120-table1.js"></script>
+<script src="snapshots/bell.js"></script>
+<script src="snapshots/split-sources.js"></script>
+<script src="snapshots/partforge-materials.js"></script>
+<script src="snapshots/partforge-factor.js"></script>
+<script src="snapshots/dig-handoff.js"></script>
+<script src="snapshots/dig-bennu-handoff.js"></script>
+<script src="split.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

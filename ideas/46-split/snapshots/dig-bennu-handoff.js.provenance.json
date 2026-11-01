@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/45-dig/dig.js (run via ideas/45-dig/load.cjs on ideas/45-dig/snapshots/touch-bennu-handoff.js)",
+  "commit": "4d417f2ed3ee829bb3f09775f6d5d1b033848702",
+  "committedBlob": "88df581ba8809b4d33f528999ed5599efd14163b",
+  "sourceSha256": "30b560d0bdac76d8b8557dcded58a0d7ca1b8ae5eef974415a626909257960e1",
+  "sourceBytes": 52384,
+  "mode": "derived",
+  "note": "derived by build-data.mjs --handoffs: idea 45's kernel, parseHandoff(idea 44's Bennu handoff) then run(src, {}) (its defaults) and buildHandoff(R, '2026-11-01T12:00:00Z'), checked with idea 45's own parseHandoff (it reads it back); then inputs.touch_handoff replaced by its digest (split.js pruneUpstream)",
+  "writtenSha256": "046a867c3ebc3294b2eb8fdd6a418e2d8afd49ca252445396802443512546ba2",
+  "writtenBytes": 16988
+}

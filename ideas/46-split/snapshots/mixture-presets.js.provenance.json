@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/presets.js",
+  "commit": "4d417f2ed3ee829bb3f09775f6d5d1b033848702",
+  "commitDate": "2026-11-01T02:25:57+00:00",
+  "pathLastChanged": "158fe6b 2026-10-31T04:14:11+00:00",
+  "committedBlob": "a2a6dc146b82e39ed5817327ec2f7488cc1fcc63",
+  "readBlob": "a2a6dc146b82e39ed5817327ec2f7488cc1fcc63",
+  "sourceSha256": "e5c580d7e92f48a4abb9bb6f7597741998468d4bbc6b0bc141acd84baf31ecc1",
+  "sourceBytes": 3889,
+  "copiedAt": "2026-11-01T02:44:00.225Z",
+  "mode": "copy",
+  "note": "idea 31's propellant presets, unmodified: idea 32's engineCase() looks up the RL10A-3-3's propellant here",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e5c580d7e92f48a4abb9bb6f7597741998468d4bbc6b0bc141acd84baf31ecc1",
+  "writtenBytes": 3889
+}

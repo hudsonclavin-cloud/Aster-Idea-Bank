@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "index.html",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "0974a62 2026-10-25T23:57:27+00:00",
+  "committedBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "readBlob": "07e5a8ac05031b24388efcf87ce9d5a00599e183",
+  "sourceSha256": "a1561e3cadc7c9d81b32eb66cfb033021f9071f4e79348f710521d1bca468b09",
+  "sourceBytes": 1240104,
+  "copiedAt": "2026-11-01T02:46:42.529Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --partforge: the FLIGHT_MATERIALS object literal at index.html line 935, metals only (kind \"metal\"), fields den, sy, su, src, verify, note copied unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f347ff010d71771039062f61445a778d49881fd3f490162451150f20159f5d51",
+  "writtenBytes": 3720
+}

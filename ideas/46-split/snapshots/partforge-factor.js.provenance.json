@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/design_factors_nasa.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fa6d6b8 2026-09-23T21:25:43+00:00",
+  "committedBlob": "1daba47396e0bd8ff8efbb4d4c17c49b0eaefcd3",
+  "readBlob": "1daba47396e0bd8ff8efbb4d4c17c49b0eaefcd3",
+  "sourceSha256": "1d693e06a85a6ca59ce7733fd1ceea149b98c7a6cfc7fab944d0132ad3fa79b2",
+  "sourceBytes": 17757,
+  "copiedAt": "2026-11-01T02:46:43.230Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --partforge: rows fos_metallic_prototype and proof_test_factor_tanks_srm and the license_note, unmodified",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1fd22415d342d2c975e7485e275954f0baf23f2d11a799727d2979550818409f",
+  "writtenBytes": 3629
+}

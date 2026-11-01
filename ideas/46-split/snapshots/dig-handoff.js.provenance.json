@@ -1,0 +1,12 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/45-dig/handoff.json",
+  "commit": "4d417f2ed3ee829bb3f09775f6d5d1b033848702",
+  "committedBlob": "0ee5053db933506d98ab83b5839b1e5315915553",
+  "sourceSha256": "d8a72a03e64dbcfebfc778f8675119cf22ce6c5353891b3972f0bcc6fc77bdbc",
+  "sourceBytes": 97257,
+  "mode": "derived",
+  "note": "derived by build-data.mjs --handoffs: idea 45's committed handoff.json wrapped as a classic script (window.SplitDigSample) so the page opens on the chain's case with no network; inputs.touch_handoff (idea 44's whole handoff, 75 KB, not read here) replaced by {pruned, from, produced, bytes, sha256 of its JSON.stringify}",
+  "writtenSha256": "c249f836dbf67461f9f4046a36ddc3319918561a0a23cd220fab9ea5d4b1e458",
+  "writtenBytes": 23128
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/31-mixture/mixture.js",
+  "commit": "4d417f2ed3ee829bb3f09775f6d5d1b033848702",
+  "commitDate": "2026-11-01T02:25:57+00:00",
+  "pathLastChanged": "158fe6b 2026-10-31T04:14:11+00:00",
+  "committedBlob": "8c47c6922e165feb60ad757e4cee2b0dc78a2ae9",
+  "readBlob": "8c47c6922e165feb60ad757e4cee2b0dc78a2ae9",
+  "sourceSha256": "ad860e62106d472e839b9ba300614d8b1d49370ade33e33ec728384739d95f8d",
+  "sourceBytes": 40753,
+  "copiedAt": "2026-11-01T02:43:59.972Z",
+  "mode": "copy",
+  "note": "idea 31's equilibrium kernel, unmodified: electrolysis thermodynamics (thermoAt), chamber states for the burnable mixture ratio (rocket), steam",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ad860e62106d472e839b9ba300614d8b1d49370ade33e33ec728384739d95f8d",
+  "writtenBytes": 40753
+}
