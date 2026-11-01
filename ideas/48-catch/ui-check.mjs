@@ -79,6 +79,19 @@ const R5 = K.run(Object.assign(K.defaults(), { gLimit: 5 }), null);
   ok(rows.length === X.rows.length, 'reality rows ' + rows.length);
   ok(close(num(rows[0][2]), X.rows[0].model, 0.006) && /-0\.34 %/.test(rows[0][3]), 'Stardust row: ' + rows[0].join(' / '));
   ok(rows[0][1].startsWith('32.89'), 'NASA\'s figure at its own precision: ' + rows[0][1]);
+  ok(rows[2][1].startsWith('27.0 '), 'Genesis\'s 27.0 g kept at its precision (review): ' + rows[2][1]);
+  // review: the skip row shows its own corridor at bank 90, not the aerocapture corridor
+  const skipRow = await page.textContent('#optTable tr.opt[data-opt="skip"] td[data-k="Corridor"]');
+  ok(/skips from/.test(skipRow) && skipRow.includes(RC.options.skip.corridor.width_deg.toFixed(2)), 'skip row: its own corridor ' + skipRow);
+  // review: under auto (the skip handed on) a tap on the corridor chart sets the direct entry's angle and the chart shows it
+  const pix = () => page.$eval('#gChart', (c) => c.toDataURL());
+  const before = await pix();
+  const gb = await page.$eval('#gChart', (c) => { c.scrollIntoView({ block: 'center' }); const r = c.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height }; });
+  await act(page, () => page.mouse.click(gb.x + 46 + (gb.w - 58) * (8 / 14), gb.y + gb.h / 2));   // -10 deg
+  await sweepDone(page); await page.waitForTimeout(300);
+  ok(close(await page.evaluate(() => window.CatchPage.state.S.fpaDeg), -10, 0.06) && (await pix()) !== before, 'auto: a tap moves the direct entry\'s marker on the chart');
+  ok(/direct entry's angle/.test(await page.textContent('#gCap')), 'caption says what a tap sets');
+  await setNum(page, 'fpaIn', '');
   ok(!rows.some((r) => /NaN|undefined/.test(r.join(''))), 'no NaN in the reality table');
   // choose direct
   await act(page, () => page.click('[data-choice="direct"]'));
@@ -121,6 +134,8 @@ const R5 = K.run(Object.assign(K.defaults(), { gLimit: 5 }), null);
   await act(page, () => page.mouse.click(vb.x + 52 + (vb.w - 64) * (3.613 / 8), vb.y + vb.h / 2));
   const cu = await page.evaluate(() => window.CatchPage.state.S);
   ok(cu.arrival === 'custom' && close(cu.custom.vinf_m_s, 3613, 25), 'v-infinity chart tap makes your arrival: ' + cu.custom.vinf_m_s);
+  await setNum(page, 'vinfIn', 0);
+  ok(/invalid_input/.test(await page.textContent('#refusals')) && /parabola/.test(await page.textContent('#refusals')) && (await page.$$('.tile')).length === 0, 'v-infinity 0 refused, no tiles (review: it used to fly a state at the Earth\'s centre)');
   await setNum(page, 'vinfIn', 3.6127); await setNum(page, 'massIn', 4000);
   V = await verdicts(page); ok(/energy only/.test(V.skyhook), 'at v-infinity* and 4 t the Skyhook is energy-matched (plane and phase refused): ' + V.skyhook);
   // handoff: download reads back in Node

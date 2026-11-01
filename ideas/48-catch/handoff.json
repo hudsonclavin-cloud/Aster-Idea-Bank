@@ -61,7 +61,7 @@
       "peak_g": 8.55969233,
       "peak_q_W_m2": 3296884.22,
       "heat_load_J_m2": 428738555,
-      "corridor_width_deg": 2.99227529,
+      "corridor_width_deg": 2.62720656,
       "refusal_codes": []
      },
      {
@@ -146,6 +146,7 @@
     "utc": "2029-04-13T20:16:43.387Z",
     "tdb_s_past_j2000": 924077873,
     "altitude_m": 125000,
+    "altitude_spheroid_m": 125088.389,
     "r_m": [
      6161104.27,
      -2039032.84,
@@ -164,7 +165,7 @@
     "heading_relative_deg": 49.8840951,
     "latitude_deg": -3.67687483,
     "longitude_deg": -164.416894,
-    "frame": "geocentric ICRF/J2000 axes; TDB; latitude geocentric; longitude through ERFA's Earth rotation angle (UT1 = UTC), precession and nutation ignored"
+    "frame": "geocentric ICRF/J2000 axes; TDB; latitude geocentric; longitude through ERFA's Earth rotation angle (UT1 = UTC), precession and nutation ignored; altitude_m above the 6,378,136.6 m sphere, altitude_spheroid_m above pck00010's spheroid"
    },
    "units": "m, m/s, deg, s",
    "confidence": "derived",
@@ -197,11 +198,15 @@
     "peak_q_W_m2": 3296884.22,
     "heat_load_J_m2": 428738555,
     "corridor": {
-     "shallow_deg": -5.87536576,
-     "steep_deg": -8.86764104,
-     "width_deg": 2.99227529,
-     "mid_deg": -6.50229438,
-     "bank_mid_deg": 90
+     "shallow_deg": -6.13507548,
+     "steep_deg": -8.76228203,
+     "width_deg": 2.62720656,
+     "bank_deg": 90,
+     "multi_pass_steep_deg": -6.51964125,
+     "multi_pass_width_deg": 0.384565772,
+     "max_passes": 6,
+     "limited_by": "limits",
+     "basis": "entry angles that land within the limits in at most 6 passes at constant bank 90 with no burn, every exit orbit inside the Moon's distance; two or more passes from multi_pass_steep_deg to shallow_deg"
     },
     "passes": 2,
     "atmosphere": "US 1976 (PartForge isa) to 86 km, none above",
@@ -239,9 +244,13 @@
     "perigee_alt47_m": 123664.232,
     "tcm_days": 14,
     "off_plane_rad": 3.7156167e-11,
+    "gamma47_deg": -0.906534867,
+    "flyby47": true,
+    "works_as_aimed": false,
     "dB_m": 87712.6927,
     "dv": 0.0797651802,
-    "propellant_needed": 0.183799136
+    "propellant_needed": 0.183799136,
+    "needed": true
    },
    "units": "m, m/s, kg, days",
    "confidence": "derived",
@@ -503,7 +512,7 @@
   },
   {
    "code": "out_of_envelope",
-   "reason": "Idea 47 aims at a 123.7 km perigee, a flyby: entering at -6.502° needs a perigee at 56.44 km (B 87.71 km nearer). A correction 14 days out costs about 79.8 mm/s, 184 g of propellant; 0 kg arrives.",
+   "reason": "Idea 47 aims at a 123.7 km perigee, above the air (it ends at 86 km here): a flyby. Entering at -6.502° needs a perigee at 56.44 km (B 87.71 km nearer). A correction 14 days out costs about 79.8 mm/s, 184 g of propellant; 0 kg arrives.",
    "what_would_help": "Set module 47's aim perigee to 56.44 km, so the departure burn aims at the entry (no correction at the Earth).",
    "applies_to": "retarget",
    "from": "48-catch"
@@ -546,7 +555,7 @@
  ],
  "assumptions": [
   "Time TDB inside (UTC = TDB - 69.184 s); geocentric ICRF/J2000 axes; the atmosphere rotates about the ICRF z axis at the pck00010 rate.",
-  "Earth: a sphere of 6,378,136.6 m with Aster's GM 398,600.4418 km^3/s^2; point-mass gravity (no J2) during the minutes of a pass.",
+  "Earth: point-mass gravity with Aster's GM 398,600.4418 km^3/s^2 (no J2 during the minutes of a pass); the air's altitude is measured along the radius above pck00010's spheroid (6,378,136.6 m equatorial, 6,356,751.9 m polar). entry_interface.altitude_m is the radius minus 6,378,136.6 m (the interface is a radius, as idea 47 and NHATS define it); altitude_spheroid_m is above the spheroid.",
   "Atmosphere: the 1976 US Standard (PartForge isa) to its table top at 86 km, no density above, no winds.",
   "Vehicle: a point mass with the chosen shape's C_D (or C_A against Mach) and C_L at constant bank; deceleration = |aerodynamic acceleration| / 9.80665.",
   "Heating: Sutton & Graves (NASA TR R-376) air coefficient K = 0.1113 with Newtonian stagnation pressure rho V^2 and stagnation enthalpy V^2/2 (cold wall): q = 1.748e-4 sqrt(rho/Rn) V^3, convective only.",

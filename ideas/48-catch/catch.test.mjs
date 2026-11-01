@@ -127,9 +127,16 @@ test('the independent oracle (Vinh\'s equations, scipy DOP853, ambiance; three-b
     near(f.t_peak_q, o.t_peak_q, 0.05, `${id} time of peak q`);
   }
   near(R.rows.find((r) => r.id === 'stardust_drogue').model * 1000, O.stardust.at_137_9.alt, 1, 'Stardust at 137.9 s');
-  // the chain's corridor edges: the oracle's own bisection for the target apoapsis
-  for (const id of ['chain_aero_down', 'chain_aero_up', 'chain_aero_mid']) near(O[id].gamma_kernel_deg, O[id].gamma_oracle_deg, 1e-4, `${id} entry angle`);
-  const d = R0.options.direct; relNear(d.loads.peak_g, O.chain_direct.peak_g, 5e-4, 'chain direct entry peak g');
+  // the chain's corridor edges: this run's against the oracle's own bisection for the target apoapsis (review: this used to
+  // compare two numbers inside the fixture, so a kernel change could not fail it)
+  const ac = R0.options.aerocapture.corridor;
+  near(ac.shallow_deg, O.chain_aero_down.gamma_oracle_deg, 1e-4, 'aerocapture lift-down edge against the oracle');   // 1.7e-5 deg
+  near(ac.steep_deg, O.chain_aero_up.gamma_oracle_deg, 1e-4, 'aerocapture lift-up edge against the oracle');         // 2.2e-6 deg
+  near(ac.mid_deg, O.chain_aero_mid.gamma_oracle_deg, 1e-4, 'aerocapture bank-90 angle against the oracle');         // 3.3e-7 deg
+  // the chain's direct entry at bank 90 (lift sideways): 1.0e-6 (review: the README had 2.0e-4, "cause unknown", which
+  // was the gap to a hand-typed 39.46 g, not to the oracle)
+  const d = R0.options.direct; relNear(d.loads.peak_g, O.chain_direct.peak_g, 1e-5, 'chain direct entry peak g');
+  relNear(d.loads.peak_q_W_m2, O.chain_direct.peak_q_W_m2, 2e-4, 'chain direct entry peak heating');
   // the kernel's cases.json is the run it was made from
   near(CASES.cases.find((c) => c.id === 'chain_aero_mid').gamma_deg, R0.options.aerocapture.corridor.mid_deg, 1e-9, 'cases.json is current');
   // lunar flyby: patched conics against three bodies
@@ -152,7 +159,7 @@ test('the chain: idea 47\'s arrival, every option, the choice and the state hand
   near(o.direct.corridor.steep_deg, -11.566, 0.002, 'direct: steep edge (lift up, 40 g)');
   assert.equal(o.direct.corridor.limited_by, 'deceleration');
   near(o.direct.gamma, (o.direct.corridor.shallow_deg + o.direct.corridor.steep_deg) / 2, 1e-12, 'mid-corridor');
-  near(o.direct.loads.peak_g, 39.46, 0.02, 'direct: peak g at bank 90'); assert.equal(o.direct.feasible, true);
+  near(o.direct.loads.peak_g, 39.471, 0.002, 'direct: peak g at bank 90'); assert.equal(o.direct.feasible, true);
   // aerocapture
   near(o.aerocapture.corridor.width_deg, 2.992, 0.003, 'aerocapture corridor width');
   near(o.aerocapture.dv_raw, 125.18, 0.1, 'perigee raise'); near(o.aerocapture.dv, o.aerocapture.dv_raw * 1.1, 1e-9, 'with the margin');
@@ -160,6 +167,9 @@ test('the chain: idea 47\'s arrival, every option, the choice and the state hand
   assert.equal(o.aerocapture.feasible, false);
   // skip entry
   assert.equal(o.skip.loads.n_passes, 2); near(o.skip.loads.peak_g, 8.56, 0.02, 'skip: worst pass'); assert.equal(o.skip.feasible, true);
+  // the skip's own corridor at bank 90 (review): lands within 40 g from -8.76 deg to -6.14 deg, skips from -6.52 deg
+  near(o.skip.corridor.steep_deg, -8.7623, 0.002, 'skip: steep edge (40 g at bank 90)'); near(o.skip.corridor.shallow_deg, -6.1351, 0.002, 'skip: shallow edge');
+  near(o.skip.corridor.multi_pass_steep_deg, -6.5196, 0.002, 'skip: two passes from here'); assert.equal(o.skip.corridor.limited_by, 'limits');
   assert.ok(o.skip.second_entry_speed < 8000 && o.skip.second_entry_speed > 7000, 'the second pass enters from a low orbit');
   // propulsive
   near(o.propulsive.dv_raw, Math.sqrt(A.vinf ** 2 + 2 * K.MU / (K.RE + 407000)) - Math.sqrt(K.MU / (K.RE + 407000)), 1e-9, 'propulsive by hand');
@@ -244,7 +254,7 @@ test('decisions: limits, targets, the Skyhook at v-infinity*, a slow arrival the
 test('refusals: bad settings', () => {
   const bads = [{ arrival: 'mars' }, { choice: 'teleport' }, { vehicle: 'shuttle' }, { vehicleMass: -5 }, { fpaDeg: 3 }, { fpaDeg: -45 }, { bankDeg: 200 }, { gLimit: 0 }, { qLimit_W_cm2: -1 },
     { targetAlt_m: 100000 }, { lgaAlt_m: -1 }, { moonDist: 'far' }, { tolerance_m_s: -1 }, { tcmDays: 0 }, { margin: 3 }, { gLimit: NaN }, { fpaDeg: NaN },
-    { arrival: 'custom', custom: { vinf_m_s: -1, mass_kg: 1, propellant_kg: 0, isp_s: 300 } }, { arrival: 'custom', custom: { vinf_m_s: 3000, mass_kg: 10, propellant_kg: 10, isp_s: 300 } },
+    { arrival: 'custom', custom: { vinf_m_s: -1, mass_kg: 1, propellant_kg: 0, isp_s: 300 } }, { arrival: 'custom', custom: { vinf_m_s: 0, mass_kg: 1000, propellant_kg: 0, isp_s: 300 } }, { arrival: 'custom', custom: { vinf_m_s: 3000, mass_kg: 10, propellant_kg: 10, isp_s: 300 } },
     { arrival: 'custom', custom: { vinf_m_s: 3000, mass_kg: 10, propellant_kg: 1, isp_s: NaN } }];
   for (const b of bads) { const r = K.run(Object.assign(K.defaults(), b), null); assert.ok(r.refusal && r.refusal.code === 'invalid_input', 'refused: ' + JSON.stringify(b)); }
 });
@@ -257,6 +267,8 @@ test('the handoff: the sample, its read-back, edits refused', () => {
   assert.deepEqual(H.inputs.way_home_handoff, deps.chain.digest, 'the chain carried as its digest');
   assert.equal(H.refusals.filter((r) => r.from === '48-catch').length + 36, H.refusals.length, '36 carried + own');
   assert.equal(H.outputs.capture.value.choice, 'skip');
+  assert.ok(H.outputs.entry_interface.value.altitude_spheroid_m > 125000 && H.outputs.entry_interface.value.altitude_spheroid_m < 125200, 'the interface above the spheroid, beside the radius altitude');
+  assert.ok(!H.assumptions.some((a) => /a sphere of/.test(a)) && H.assumptions.some((a) => /spheroid/.test(a)), 'the handoff says the air is measured above the spheroid');
   assert.ok(H.outputs.capture.value.answers.includes('47-way-home:out_of_envelope/entry_speed'));
   const back = K.parseHandoff(JSON.stringify(H)); assert.ok(!back.refusal, 'reads back: ' + (back.refusal && back.refusal.reason));
   const enc = K.b64urlEncode(JSON.stringify(H)); assert.ok(!K.parseHandoff(K.b64urlDecode(enc)).refusal, 'through a #h= link');
@@ -267,4 +279,47 @@ test('the handoff: the sample, its read-back, edits refused', () => {
   // idea 47's handoff imports through the same door
   const p47 = K.parseHandoff(chain()); assert.equal(p47.from, '47-way-home');
   assert.ok(K.parseHandoff({ handoff: 'long-way-round', from: '45-dig', version: 1 }).refusal, 'another module refused');
+});
+
+test('review: the skip corridor flown directly, idea 47 aims that work or do not, the integrator\'s envelope, edge inputs', () => {
+  const b = K.builderOf(R0.arrival), veh = R0.vehicle, o = R0.options;
+  const pass = (g) => { const P = K.flyPasses(b(g), veh, { bankDeg: 90, dt: 0.1, vStop: 1500 }, 6); return { n: P.length, g: Math.max(...P.map((p) => p.peak_g)), end: P[P.length - 1].end }; };
+  // the skip's edges, flown here without the kernel's corridor search
+  const c = o.skip.corridor;
+  assert.ok(pass(c.steep_deg + 0.01).g < 40 && pass(c.steep_deg - 0.01).g > 40, 'steep edge: 40 g at bank 90');
+  assert.ok(pass(c.multi_pass_steep_deg + 0.01).n >= 2 && pass(c.multi_pass_steep_deg - 0.01).n === 1, 'two passes shallower than multi_pass_steep_deg, one steeper');
+  assert.ok(pass(o.aerocapture.corridor.steep_deg).g > 40, 'the aerocapture corridor\'s steep edge flown at bank 90 is over 40 g (why the skip row may not show that corridor)');
+  // idea 47 re-aimed onto the hyperbola this page asks for: imported, flown as aimed, nothing refused
+  const reaim = (gamma) => {
+    const h = chain(), A = h.outputs.earth_arrival.value, a = K.importWayHome(chain());
+    const x = K.hyperbolaEntry(a.vinfVec, a.hHat, gamma, a.rEI), el = K.elements(x.r, x.v), c2 = K.coastTo(x.r, x.v, el.rp * (1 + 1e-12), true);
+    A.perigee_state_geocentric.r_m = c2.r; A.perigee_state_geocentric.v_m_s = c2.v; A.perigee_altitude_m = Math.hypot(...c2.r) - K.RE;
+    return h;
+  };
+  const h56 = reaim(R0.options.skip.gamma), R56 = K.run(K.defaults(), { h47: h56 });
+  assert.ok(!R56.refusal && !R56.arrival.chain, 'a re-aimed idea 47 is imported, not the chain');
+  near(R56.retarget.gamma47_deg, R0.options.skip.gamma, 1e-6, 'the entry angle idea 47\'s aim gives');
+  assert.equal(R56.retarget.needed, false); assert.ok(!R56.refusals.some((r) => r.applies_to === 'retarget'), 'no correction refused');
+  assert.equal(R56.options.skip.gamma_source, 'idea 47\'s aim');
+  assert.ok(K.buildHandoff(R56).outputs.capture.value.answers.includes('47-way-home:out_of_envelope/entry_speed'), 'answers idea 47\'s entry-speed refusal for any idea 47 arrival');
+  const h70 = reaim(-5.6), R70 = K.run(K.defaults(), { h47: h70 }), ref70 = R70.refusals.find((r) => r.applies_to === 'retarget');
+  assert.ok(ref70 && /does not work as flown here/.test(ref70.reason) && !/flyby/.test(ref70.reason), 'an aim that enters outside the skip corridor is refused, and not called a flyby');
+  assert.ok(/a flyby/.test(R0.refusals.find((r) => r.applies_to === 'retarget').reason), 'the chain\'s 123.7 km aim is a flyby');
+  // idea 47 with no material home (its 'brake' export hands on material_kg null): accepted, the dry craft arrives
+  const hb = chain(); hb.outputs.mass.value.material_kg = null; hb.outputs.mass.value.mass_arrival_kg = hb.outputs.mass.value.dry_kg;
+  const ab = K.importWayHome(hb); assert.ok(!ab.refusal && ab.mass_kg === hb.outputs.mass.value.dry_kg && ab.assumed.length === 1, 'no material: accepted');
+  // nothing feasible: nothing answered
+  const crew = K.run(Object.assign(K.defaults(), { gLimit: 5 }), null);
+  assert.deepEqual(K.buildHandoff(crew).outputs.capture.value.answers, [], 'at 5 g nothing answers idea 47');
+  // the fixed step's envelope: below 1 kg/m^2 refused; at 1 kg/m^2 a ten times smaller step moves peak g by under 0.2 %
+  const light = K.run(Object.assign(K.defaults(), { vehicleMass: 10 }), null);
+  assert.ok(light.refusal && light.refusal.code === 'out_of_envelope' && /ballistic coefficient/.test(light.refusal.reason), 'beta 0.5 kg/m^2 refused');
+  const v1 = K.vehicle('apollo', 19.5); assert.ok(K.betaOf(v1) >= 1 && K.betaOf(v1) < 1.01);
+  for (const [g, bank] of [[-6.5, 0], [-12, 0], [-25, 0], [-25, 180]]) {
+    const f1 = K.fly(b(g), v1, { bankDeg: bank, dt: 0.1, vStop: 1500 }), f2 = K.fly(b(g), v1, { bankDeg: bank, dt: 0.01, vStop: 1500 });
+    relNear(f1.peak_g, f2.peak_g, 2e-3, `beta 1 at ${g} deg, bank ${bank}: step-converged`);
+  }
+  // the steep search bound is not a heating limit
+  const big = K.run(Object.assign(K.defaults(), { gLimit: 500, qLimit_W_cm2: 1e5 }), null);
+  assert.equal(big.options.direct.corridor.limited_by, 'search_bound');
 });

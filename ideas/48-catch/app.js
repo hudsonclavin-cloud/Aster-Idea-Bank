@@ -102,7 +102,7 @@
     keys.forEach(function (k) {
       var o = R.options[k], L = o.loads || {}, need = num(o.propellant_needed) ? f(o.propellant_needed) + ' kg' : '—';
       var peak = num(L.peak_g) ? f(L.peak_g, 1) + ' g · ' + f(L.peak_q_W_m2 / 1e4) + ' W/cm²' : (k === 'lunar' && num(o.vinf_after) ? 'v∞ after ' + f(o.vinf_after / 1000, 2) + ' km/s' : k === 'skyhook' && o.tiers ? 'trim ' + f(Math.abs(o.tiers.slice().sort(function (a, b) { return Math.abs(a.trim_m_s) - Math.abs(b.trim_m_s); })[0].trim_m_s)) + ' m/s' : '—');
-      var corr = o.corridor && num(o.corridor.width_deg) ? f(o.corridor.width_deg, 2) + '°' + (num(o.corridor.steep_deg) ? '<span class="sub">' + f(o.corridor.steep_deg, 2) + '° to ' + f(o.corridor.shallow_deg, 2) + '°</span>' : '') : (k === 'lunar' ? 'captures v∞ < ' + f(o.threshold_vinf / 1000, 2) + ' km/s' : k === 'skip' && num(o.gamma) ? 'aerocapture\'s mid-angle' : '—');
+      var corr = o.corridor && num(o.corridor.width_deg) ? f(o.corridor.width_deg, 2) + '°' + (num(o.corridor.steep_deg) ? '<span class="sub">' + f(o.corridor.steep_deg, 2) + '° to ' + f(o.corridor.shallow_deg, 2) + '°' + (k === 'skip' ? (num(o.corridor.multi_pass_steep_deg) ? ' at bank 90; skips from ' + f(o.corridor.multi_pass_steep_deg, 2) + '°' : ' at bank 90') : '') + '</span>' : '') : (k === 'lunar' ? 'captures v∞ < ' + f(o.threshold_vinf / 1000, 2) + ' km/s' : '—');
       rows.push('<tr class="opt' + (R.choice === k ? ' hl' : '') + '" tabindex="0" data-opt="' + k + '"><td data-k="Option"><b>' + esc(LABELS[k]) + '</b><span class="sub">to ' + esc(o.destination) + (R.choice === k ? ' · handed on' : '') + '</span></td><td data-k="Verdict">' + verdict(o) + '</td><td data-k="Δv" class="n">' + (num(o.dv) ? f(o.dv) + ' m/s' : '—') + '</td><td data-k="Propellant" class="n">' + need + (num(o.propellant_needed) ? '<span class="sub">' + f(R.arrival.propellant_kg || 0, 1) + ' kg aboard</span>' : '') + '</td><td data-k="Peak" class="n">' + peak + '</td><td data-k="Corridor" class="n">' + corr + '</td></tr>');
       if (o.refusals && o.refusals.length) rows.push('<tr class="optref hide" data-for="' + k + '"><td colspan="6">' + o.refusals.map(refHtml).join('') + '</td></tr>');
     });
@@ -111,7 +111,7 @@
       var tog = function () { var x = tb.querySelector('tr.optref[data-for="' + tr.dataset.opt + '"]'); if (x) x.classList.toggle('hide'); };
       tr.addEventListener('click', tog); tr.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tog(); } });
     });
-    $('optNote').textContent = 'Tap a row for its refusals. Peak = deceleration and stagnation-point convective heating. Corridor = the range of entry angles (deg at 125 km) that work. ' + (R.chosenBy ? 'Choice: ' + R.chosenBy + '.' : '');
+    $('optNote').textContent = 'Tap a row for its refusals. Peak = deceleration and stagnation-point convective heating. Corridor = the range of entry angles (deg at 125 km) that work: for direct entry and aerocapture between full lift up and full lift down (a guided vehicle rolls between them); for the skip at constant bank 90 with no burn (landing within the limits in up to 6 passes; steeper than its "skips from" angle it lands in one). ' + (R.chosenBy ? 'Choice: ' + R.chosenBy + '.' : '');
   }
   function tile(k, v, u, c, sub, cls) { return '<div class="tile' + (cls ? ' ' + cls : '') + '"><div class="k">' + esc(k) + '</div><div class="v">' + v + (u ? '<span class="u">' + esc(u) + '</span>' : '') + '</div>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '<span class="c">' + esc(c) + '</span></div>'; }
   function renderHanded(R) {
@@ -125,9 +125,9 @@
     if (C && C.loads) {
       T.push(tile('Peak deceleration', f(C.loads.peak_g, 1), 'g', 'derived', 'limit ' + f(R.S.gLimit) + ' g', C.loads.peak_g > R.S.gLimit ? 'bad' : ''));
       T.push(tile('Peak heating', f(C.loads.peak_q_W_m2 / 1e4), 'W/cm²', 'derived', 'convective only · limit ' + f(R.S.qLimit_W_cm2), C.loads.peak_q_W_m2 > R.limits.q ? 'bad' : ''));
-      T.push(tile('Heat load', f(C.loads.heat_J_m2 / 1e7, 1), 'kJ/cm²', 'derived', C.loads.n_passes ? C.loads.n_passes + ' passes, ' + f(C.loads.t_total_s / 60) + ' min' : 'one pass'));
+      T.push(tile('Heat load', f(C.loads.heat_J_m2 / 1e7, 1), 'kJ/cm²', 'derived', C.loads.n_passes > 1 ? C.loads.n_passes + ' passes, ' + f(C.loads.t_total_s / 60) + ' min' : 'one pass'));
     }
-    if (R.retarget) T.push(tile('Aim perigee', f(R.retarget.perigee_alt_m / 1000, 1), 'km', 'derived', 'idea 47 aims at ' + (num(R.retarget.perigee_alt47_m) ? f(R.retarget.perigee_alt47_m / 1000, 1) + ' km' : '—')));
+    if (R.retarget) T.push(tile('Aim perigee', f(R.retarget.perigee_alt_m / 1000, 1), 'km', 'derived', num(R.retarget.perigee_alt47_m) ? 'idea 47 aims at ' + f(R.retarget.perigee_alt47_m / 1000, 1) + ' km' + (R.retarget.needed === false ? ': that works, flown as aimed' : R.retarget.flyby47 ? ' (a flyby)' : '') : 'your arrival: no aim on file'));
     if (C && C.orbit) T.push(tile('Orbit', f(C.orbit.peri_alt_m / 1000) + ' × ' + f(C.orbit.apo_alt_m / 1000), 'km', 'derived', 'after the capture'));
     if (R.choice === 'skyhook' && C.release) T.push(tile('Released at', f(C.release.entry_speed_inertial_m_s / 1000, 2), 'km/s', 'derived', 'from the lower tip, ' + f(C.release.entry_fpa_deg, 1) + '° at 125 km'));
     T.push(tile('Mass in the air', f(R.vehicle.mass_kg), 'kg', 'assumed', 'no heat shield counted'));
@@ -180,13 +180,18 @@
     function strip(a, b, col, y, label) { if (!num(a) || !num(b)) return; g.fillStyle = col; g.fillRect(ax.X(a), y, ax.X(b) - ax.X(a), 9); g.fillStyle = css('--ink-2'); g.font = '10px system-ui'; g.textAlign = 'left'; g.fillText(label, Math.min(ax.X(b) + 4, o.w - P.r - 60), y + 8); }
     if (d.corridor && d.corridor.width_deg > 0) strip(d.corridor.shallow_deg, d.corridor.steep_deg, css('--s3'), o.h - P.b - 11, 'direct');
     if (ac.corridor) strip(ac.corridor.shallow_deg, ac.corridor.steep_deg, css('--s1'), P.t + 2, 'aerocapture');
+    var sk = R.options.skip;
+    if (sk.corridor) strip(sk.corridor.shallow_deg, sk.corridor.steep_deg, css('--s2'), P.t + 15, 'skip, bank 90');
     BANKS.forEach(function (bk) { line(g, state.sweep[bk].map(function (p) { return p.peak > 0.5 ? [ax.X(p.g), ax.Y(Math.min(999, p.peak))] : null; }), C[bk], 2); });
     g.strokeStyle = css('--crit'); g.setLineDash([5, 4]); g.beginPath(); g.moveTo(P.l, ax.Y(R.S.gLimit)); g.lineTo(o.w - P.r, ax.Y(R.S.gLimit)); g.stroke(); g.setLineDash([]);
     g.fillStyle = css('--crit'); g.font = '11px system-ui'; g.textAlign = 'left'; g.fillText(f(R.S.gLimit) + ' g limit', P.l + 4, ax.Y(R.S.gLimit) - 4);
     var C2 = R.choice ? R.options[R.choice] : d, gs = num(C2.gamma) ? C2.gamma : d.gamma;
-    if (num(gs)) { g.strokeStyle = css('--ink'); g.lineWidth = 1.5; g.beginPath(); g.moveTo(ax.X(gs), P.t); g.lineTo(ax.X(gs), o.h - P.b); g.stroke(); g.fillStyle = css('--ink'); g.textAlign = gs < (G0 + G1) / 2 ? 'right' : 'left'; g.fillText(f(gs, 2) + '°', ax.X(gs) + (gs < (G0 + G1) / 2 ? -4 : 4), P.t + 26); }
-    legend('gLegend', [{ c: C[0], t: 'lift up (bank 0)' }, { c: C[90], t: 'lift sideways (90)' }, { c: C[180], t: 'lift down (180)' }, { c: css('--s3'), t: 'direct-entry corridor (strip along the floor)', band: true }, { c: css('--s1'), t: 'aerocapture corridor (strip along the top)', band: true }]);
-    $('gCap').textContent = (d.corridor && d.corridor.width_deg > 0 ? 'Direct entry works from ' + f(d.corridor.steep_deg, 2) + '° to ' + f(d.corridor.shallow_deg, 2) + '° (' + f(d.corridor.width_deg, 2) + '° wide, against ±0.08° delivery). ' : 'No direct-entry corridor at these limits. ') + (ac.corridor ? 'Aerocapture to ' + f(R.S.targetAlt_m / 1000) + ' km: ' + f(ac.corridor.steep_deg, 2) + '° to ' + f(ac.corridor.shallow_deg, 2) + '°. ' : '') + 'Tap to choose an angle; ←/→ move it on the focused chart. Curves at 0.2 s steps.';
+    if (num(gs)) { g.strokeStyle = css('--ink'); g.lineWidth = 1.5; g.beginPath(); g.moveTo(ax.X(gs), P.t); g.lineTo(ax.X(gs), o.h - P.b); g.stroke(); g.fillStyle = css('--ink'); g.textAlign = gs < (G0 + G1) / 2 ? 'right' : 'left'; g.fillText(f(gs, 2) + '°', ax.X(gs) + (gs < (G0 + G1) / 2 ? -4 : 4), P.t + 38); }
+    // the direct entry's angle (what a tap or the arrow keys set), drawn too when another option is handed on (review: a
+    // tap used to change nothing on the chart while the skip was chosen)
+    if (R.choice !== 'direct' && num(d.gamma) && d.gamma <= G0 && d.gamma >= G1) { var xd = ax.X(d.gamma); g.strokeStyle = css('--s3'); g.lineWidth = 1.5; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(xd, P.t); g.lineTo(xd, o.h - P.b); g.stroke(); g.setLineDash([]); g.fillStyle = css('--ink-2'); g.textAlign = d.gamma < (G0 + G1) / 2 ? 'right' : 'left'; g.fillText('direct ' + f(d.gamma, 2) + '°', xd + (d.gamma < (G0 + G1) / 2 ? -4 : 4), o.h - P.b - 18); }
+    legend('gLegend', [{ c: C[0], t: 'lift up (bank 0)' }, { c: C[90], t: 'lift sideways (90)' }, { c: C[180], t: 'lift down (180)' }, { c: css('--s3'), t: 'direct-entry corridor (strip along the floor)', band: true }, { c: css('--s1'), t: 'aerocapture corridor (strip along the top)', band: true }, { c: css('--s2'), t: 'skip at bank 90, no burn (strip under it)', band: true }, { c: css('--s3'), t: 'the direct entry\'s angle (a tap sets it)', dash: true }]);
+    $('gCap').textContent = (d.corridor && d.corridor.width_deg > 0 ? 'Direct entry works from ' + f(d.corridor.steep_deg, 2) + '° to ' + f(d.corridor.shallow_deg, 2) + '° (' + f(d.corridor.width_deg, 2) + '° wide, against ±0.08° delivery). ' : 'No direct-entry corridor at these limits. ') + (ac.corridor ? 'Aerocapture to ' + f(R.S.targetAlt_m / 1000) + ' km: ' + f(ac.corridor.steep_deg, 2) + '° to ' + f(ac.corridor.shallow_deg, 2) + '°. ' : '') + (sk.corridor ? 'The skip at bank 90 with no burn lands within the limits from ' + f(sk.corridor.steep_deg, 2) + '° to ' + f(sk.corridor.shallow_deg, 2) + '°' + (num(sk.corridor.multi_pass_steep_deg) ? ', in two or more passes from ' + f(sk.corridor.multi_pass_steep_deg, 2) + '°' : '') + '. ' : '') + 'Tap to set the direct entry\'s angle (dashed when another option is handed on); ←/→ move it on the focused chart. Curves at 0.2 s steps.';
     // where it leaves: apoapsis after the pass
     var P2 = { l: 70, r: 12, t: 12, b: 34 }, o2 = canvasFor('apoChart', 0.6), ax2 = axes(o2, G0, G1, 100, 1e6, P2, 'entry angle at 125 km (deg)', 'apoapsis (km)', true), g2 = o2.g;
     BANKS.forEach(function (bk) { line(g2, state.sweep[bk].map(function (p) { return num(p.apo) && p.apo > 100e3 ? [ax2.X(p.g), ax2.Y(Math.min(1e6, p.apo / 1000))] : null; }), C[bk], 2);
@@ -224,7 +229,7 @@
     line(g2, split('g', ax2.Y), css('--s3'), 2); line(g2, split('q', Yq), css('--crit'), 2, [6, 3]); gapMark(g2, ax2, o2.h);
     g2.fillStyle = css('--ink-2'); g2.textAlign = 'left'; g2.font = '11px system-ui'; niceTicks(0, qmax, 4).forEach(function (v) { g2.fillText(f(v), o2.w - P.r + 4, Yq(v) + 4); });
     legend('loadLegend', [{ c: css('--s3'), t: 'deceleration (g, left)' }, { c: css('--crit'), t: 'stagnation-point heating (W/cm², right)', dash: true }]);
-    $('passCap').textContent = LABELS[R.choice] + ' at ' + f(C.gamma, 2) + '°' + (C.id === 'skip' ? ': ' + flights.length + ' passes, the second entering at ' + f(C.second_entry_speed / 1000, 2) + ' km/s' : '') + '. Stops below 1.5 km/s relative (the parachutes are module 49\'s).';
+    $('passCap').textContent = LABELS[R.choice] + ' at ' + f(C.gamma, 2) + '°' + (C.id === 'skip' ? (flights.length > 1 ? ': ' + flights.length + ' passes, the second entering at ' + f(C.second_entry_speed / 1000, 2) + ' km/s' : ': one pass (steeper than the skip\'s "skips from" angle it lands at once)') : '') + '. Stops below 1.5 km/s relative (the parachutes are module 49\'s).';
   }
   function drawVinf(R) {
     var o = canvasFor('vinfChart', 0.42), P = { l: 52, r: 12, t: 12, b: 34 }, V1 = 8, ax = axes(o, 0, V1, 0, 6000, P, 'arrival v∞ (km/s)', 'Δv to stop (m/s)'), g = o.g;
@@ -253,7 +258,7 @@
     var cur = num(state.S.fpaDeg) ? state.S.fpaDeg : (state.R && state.R.options ? state.R.options.direct.gamma : -8);
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); var g = Math.round((cur + (e.key === 'ArrowLeft' ? 0.05 : -0.05)) * 20) / 20; setS('fpaDeg', Math.max(-30, Math.min(-0.1, g))); }
   });
-  chartTap('vinfChart', function (p) { var P = { l: 52, r: 12 }, v = (p.x - P.l) / (p.w - P.l - P.r) * 8; if (v >= 0 && v <= 8) { var cu = state.S.custom || K.customDefaults(); cu.vinf_m_s = Math.round(v * 100) * 10; state.S.custom = cu; state.S.arrival = 'custom'; state.S.fpaDeg = null; sync(); schedule(10); } });
+  chartTap('vinfChart', function (p) { var P = { l: 52, r: 12 }, v = (p.x - P.l) / (p.w - P.l - P.r) * 8; if (v >= 0 && v <= 8) { var cu = state.S.custom || K.customDefaults(); cu.vinf_m_s = Math.max(10, Math.round(v * 100) * 10); state.S.custom = cu; state.S.arrival = 'custom'; state.S.fpaDeg = null; sync(); schedule(10); } });
 
   // ------------------------------------------------------------------ checks against reality
   function renderChecks() {
@@ -261,7 +266,7 @@
     X.rows.forEach(function (r) {
       var gap = num(r.gap_pct) ? (r.gap_pct >= 0 ? '+' : '') + f(r.gap_pct, 2) + ' %' : (r.gap_abs >= 0 ? '+' : '') + f(r.gap_abs, 3) + ' ' + r.units;
       var why = r.refLabel + (r.heading_range ? '; heading not on file: posigrade headings 30° to 150° give ' + f(r.heading_range[0], 1) + ' to ' + f(r.heading_range[1], 1) + ' g' : '') + (num(r.mach) ? '; Mach here ' + f(r.mach, 2) + ', radar ' + f(r.mach_ref, 2) + ' (one hypersonic drag table held below Mach 7)' : '');
-      rows.push('<tr><td data-k="Check">' + esc(r.label) + '<span class="why">' + esc(why) + '</span></td><td data-k="NASA" class="n">' + esc(String(r.ref)) + ' ' + esc(r.units) + '</td><td data-k="This page" class="n">' + f(r.model, r.units === 'km' ? 3 : 2) + ' ' + esc(r.units) + '</td><td data-k="Gap" class="n gap-ok">' + gap + '</td></tr>');
+      rows.push('<tr><td data-k="Check">' + esc(r.label) + '<span class="why">' + esc(why) + '</span></td><td data-k="NASA" class="n">' + esc(num(r.ref_dp) ? r.ref.toFixed(r.ref_dp) : String(r.ref)) + ' ' + esc(r.units) + '</td><td data-k="This page" class="n">' + f(r.model, r.units === 'km' ? 3 : 2) + ' ' + esc(r.units) + '</td><td data-k="Gap" class="n gap-ok">' + gap + '</td></tr>');
     });
     $('checkTable').querySelector('tbody').innerHTML = rows.join('');
     state.checks = true;

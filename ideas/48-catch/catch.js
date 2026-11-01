@@ -13,8 +13,9 @@
  *
  * Reused unmodified (snapshots/): PartForge's 1976 atmosphere isa() and Aster's Earth (via ideas 02 and 35), DE440's
  * GMs (via ideas 40 and 47), ERFA's Earth rotation angle (via ideas 37 and 47), idea 01's Skyhook tip-match kernel with
- * Rev A's canon, idea 47's handoff. New here: the entry flight mechanics (a lifting point mass over a rotating round
- * Earth; idea 35's integrator is coupled to engines and staging and not exported), Sutton & Graves's stagnation-point
+ * Rev A's canon, idea 47's handoff. New here: the entry flight mechanics (a lifting point mass under point-mass gravity,
+ * through air that turns with the Earth, its altitude measured along the radius above pck00010's spheroid; idea 35's
+ * integrator is coupled to engines and staging and not exported), Sutton & Graves's stagnation-point
  * heating, the entry and aerocapture corridors, the arrival hyperbola re-aimed to an entry angle, the propulsive and
  * lunar-flyby captures, and the comparison.
  */
@@ -102,6 +103,7 @@
         source: 'TransHab/Ellipsled aerocapture study (NTRS 20000102372): 6500 kg, 4.42 m, 15.34 m^2, C_L 0.466, C_D 1.269 (constant, as the study flew it)', assumed: ['stagnation-point radius = half the diameter, the convention of the Apollo heating analysis (NASA TN D-6843: "radius, 6.417 feet (one-half the maximum diameter)"), before its spherical-segment adjustment, which is not on file'] }
     };
     var VEH_ORDER = ['apollo', 'stardust', 'osirisrex', 'genesis'];
+    var BETA_MIN = 1;   // kg/m^2: the fixed-step flight's validity bound, found by step halving (a numerical limit, not a physical constant)
     function vehicle(id, massKg) {
       var v = VEHICLES[id]; if (!v) return null;
       var o = clone(v); if (num(massKg)) o.mass_kg = massKg;
@@ -310,7 +312,7 @@
       genesis: { id: 'genesis', label: 'Genesis (8 Sep 2004)', vehicle: 'genesis', speed: GN.v_inertial_m_s, speedFrame: 'inertial', fpa: GN.fpa_final_deg, alt: SD.r_ei_m - RE, lat: GN.lat_deg, lon: GN.lon_deg, heading: GN.heading_deg,
         assumed: ['Entry radius 6503.14 km as Stardust and OSIRIS-REx (the Genesis paper gives none)', 'The entry point\'s latitude is the landing target\'s and its heading the landing ellipse\'s azimuth'] },
       osirisrex: { id: 'osirisrex', label: 'OSIRIS-REx (24 Sep 2023)', vehicle: 'osirisrex', speed: OX.v_relative_m_s, speedFrame: 'relative-speed', fpa: OX.fpa_deg, alt: OX.r_ei_m - RE, lat: SD.lat_deg, lon: SD.lon_deg, heading: 90,
-        assumed: ['Heading due east ("a direct posigrade trajectory") at the Utah range\'s latitude: the papers on file give neither (a 60-120 deg sweep moves peak deceleration by the amount shown in the reality table)'] }
+        assumed: ['Heading due east ("a direct posigrade trajectory") at the Utah range\'s latitude: the papers on file give neither (a 30-150 deg sweep moves peak deceleration by the amount shown in the reality table)'] }
     };
     function arrivalFromFlight(id, fpaOverride) {
       var F = FLIGHTS[id];
@@ -344,7 +346,10 @@
       if (rel(Math.sqrt(2 * en), A.v_infinity_m_s) > 1e-6) return bad('Its perigee state\'s energy does not give its v-infinity: it was edited.');
       if (Math.abs(norm(ps.r_m) - RE - A.perigee_altitude_m) > 1) return bad('Its perigee altitude is not its perigee state\'s.');
       var pa = M.propellant_arrival_kg || {}, pArr = (num(pa.fuel) ? pa.fuel : 0) + (num(pa.oxidizer) ? pa.oxidizer : 0);
-      if (!num(M.mass_arrival_kg) || !num(M.dry_kg) || !num(M.material_kg) || rel(M.mass_arrival_kg, M.dry_kg + M.material_kg + pArr) > 1e-6) return bad('Its arrival mass is not dry + material + propellant: it was edited.');
+      // idea 47 hands on material_kg null when nothing can be carried home (its propellant refusal): the dry craft still
+      // arrives and is caught like any other arrival (review: a genuine 'brake' export was refused as "edited")
+      var mat = M.material_kg === null ? 0 : M.material_kg;
+      if (!num(M.mass_arrival_kg) || !num(M.dry_kg) || !num(mat) || mat < 0 || rel(M.mass_arrival_kg, M.dry_kg + mat + pArr) > 1e-6) return bad('Its arrival mass is not dry + material + propellant: it was edited.');
       if (!num(P.isp_s) || !num(P.ve_m_s) || rel(P.isp_s * G0, P.ve_m_s) > 1e-6) return bad('Its exhaust speed is not Isp × g0.');
       var tp = A.tdb_s_past_j2000;
       if (!num(tp) || Math.abs(tdbOf(A.utc) - tp) > 0.01) return bad('Its arrival time in TDB and UTC disagree.');
@@ -353,9 +358,9 @@
       return {
         kind: 'hyperbola', id: isChain ? 'chain' : 'imported', label: isChain ? 'The chain (idea 47: Apophis\'s material)' : 'Imported from idea 47', h47: h, chain: isChain,
         vinfVec: scale(unit(vv), vinfH), vinf: vinfH, c3: vinfH * vinfH, hHat: hHat, tp: tp, perigeeAlt47: A.perigee_altitude_m, B47: bOfPerigee(vinfH, norm(ps.r_m)),
-        decl: A.declination_deg, ra: A.right_ascension_deg, mass_kg: M.mass_arrival_kg, dry_kg: M.dry_kg, material_kg: M.material_kg, propellant_kg: pArr, ve_m_s: P.ve_m_s, isp_s: P.isp_s,
+        decl: A.declination_deg, ra: A.right_ascension_deg, perigeeR47: ps.r_m.slice(), mass_kg: M.mass_arrival_kg, dry_kg: M.dry_kg, material_kg: M.material_kg, propellant_kg: pArr, ve_m_s: P.ve_m_s, isp_s: P.isp_s,
         rEI: RE + A.entry_altitude_m, entryLimit: A.entry_limit_m_s, carried: (h.refusals || []).map(function (r) { var c = clone(r); if (!c.from) c.from = '47-way-home'; return c; }),
-        assumed: []
+        assumed: M.material_kg === null ? ['Idea 47 carries no material home (material_kg null, its propellant refusal): the dry craft arrives alone'] : []
       };
     }
     // A stand-alone arrival: the chain's geometry (asymptote direction, plane, time) with your v-infinity, mass and propellant.
@@ -363,7 +368,7 @@
       var a = clone(base); a.kind = 'hyperbola'; a.id = 'custom'; a.label = 'Your arrival (the chain\'s direction and time)'; a.chain = false;
       a.vinfVec = scale(unit(base.vinfVec), cu.vinf_m_s); a.vinf = cu.vinf_m_s; a.c3 = cu.vinf_m_s * cu.vinf_m_s;
       a.mass_kg = cu.mass_kg; a.propellant_kg = cu.propellant_kg; a.isp_s = cu.isp_s; a.ve_m_s = cu.isp_s * G0; a.dry_kg = null; a.material_kg = null;
-      a.B47 = null; a.perigeeAlt47 = null; a.carried = []; a.h47 = null;
+      a.B47 = null; a.perigeeAlt47 = null; a.perigeeR47 = null; a.carried = []; a.h47 = null;
       a.assumed = ['The asymptote direction, the arrival plane and the perigee time are the chain\'s (idea 47); only the speed, mass and propellant are yours'];
       return a;
     }
@@ -403,7 +408,8 @@
       var gUS = okAt(steep) ? steep : bisect(okAt, gEdge, steep, 26);
       var fU = flyAt(build, veh, gUS, bank);
       res.steep = gUS; res.width = gOS - gUS; res.steep_flight = summary(fU);
-      res.limited_by = fU.end === 'ground' ? 'ground' : (Math.abs(fU.peak_g - lim.g) / lim.g < 1e-3 ? 'deceleration' : 'heating');
+      // at the search's own steep end nothing limits it inside the range searched (review: this was labelled 'heating')
+      res.limited_by = gUS === steep ? 'search_bound' : fU.end === 'ground' ? 'ground' : (Math.abs(fU.peak_g - lim.g) / lim.g < 1e-3 ? 'deceleration' : 'heating');
       return res;
     }
     function summary(f) {
@@ -418,6 +424,28 @@
       var f = flyAt(build, veh, g, bank);
       if (f.end !== 'exit') { g -= 1e-6; f = flyAt(build, veh, g + 2e-6, bank); }
       return { gamma: g, flight: f };
+    }
+    // Skip entry, no burn, at a constant bank (added in review: the skip row used to show the aerocapture corridor, which
+    // a constant-bank skip does not have; at bank 90 that corridor's steep edge is a one-pass entry over 40 g). A skip
+    // works at an entry angle when the passes land within the limits in at most SKIP_MAX passes and no exit orbit reaches
+    // the Moon's distance (beyond it this two-body coast does not hold). Steeper than multi_pass_steep_deg it lands in one
+    // pass: a direct entry at that bank, which is still a landing with no burn.
+    var SKIP_MAX = 6;
+    function skipAt(build, veh, g, bank, lim) {
+      var P = flyPasses(build(g), veh, { bankDeg: bank, dt: FLY.dt, vStop: FLY.vStop }, SKIP_MAX), last = P[P.length - 1];
+      var far = P.some(function (p) { return p.exit && p.exit.bound && p.exit.apo_alt + RE > MOON.a_m; });
+      var pg = Math.max.apply(null, P.map(function (p) { return p.peak_g; })), pq = Math.max.apply(null, P.map(function (p) { return p.peak_q || 0; }));
+      return { ok: captured(last) && last.end !== 'ground' && !far && pg <= lim.g && pq <= lim.q, n: P.length, far: far, passes: P, peak_g: pg, peak_q: pq };
+    }
+    function corridorSkip(build, veh, lim, g0, bank) {
+      var at = function (g) { return skipAt(build, veh, g, bank, lim); };
+      var s0 = at(g0); if (!s0.ok) return null;
+      var lo = -25, hi = -0.25;
+      var steep = at(lo).ok ? lo : bisect(function (g) { return at(g).ok; }, g0, lo, 20);
+      var shallow = at(hi).ok ? hi : bisect(function (g) { return at(g).ok; }, g0, hi, 20);
+      var multi = s0.n < 2 ? null : at(steep).n >= 2 ? steep : bisect(function (g) { return at(g).n >= 2; }, g0, steep, 20);
+      return { shallow_deg: shallow, steep_deg: steep, width_deg: shallow - steep, bank_deg: bank, multi_pass_steep_deg: multi, multi_pass_width_deg: multi === null ? 0 : shallow - multi, max_passes: SKIP_MAX,
+        limited_by: steep === lo ? 'search_bound' : 'limits', basis: 'entry angles that land within the limits in at most ' + SKIP_MAX + ' passes at constant bank ' + bank + ' with no burn, every exit orbit inside the Moon\'s distance; two or more passes from multi_pass_steep_deg to shallow_deg' };
     }
     function corridorAero(build, veh, apoTarget) {
       if (!(veh.cl > 0)) return { refusal: refusal('out_of_envelope', 'A ballistic capsule (no lift) has a single entry angle that leaves at the target apoapsis, so no corridor: any navigation error misses it.', 'A lifting vehicle (L/D > 0), such as the Apollo-derived capsule.', { applies_to: 'aerocapture' }) };
@@ -499,7 +527,9 @@
       if (!(num(Sx.margin) && Sx.margin >= 0 && Sx.margin <= 2)) return bad2('The delta-v margin must be 0 to 200 %.', 'Aster\'s 10 %.');
       if (Sx.arrival === 'custom') {
         var c = Sx.custom || customDefaults();
-        if (!(num(c.vinf_m_s) && c.vinf_m_s >= 0 && c.vinf_m_s <= 72000)) return bad2('Your v-infinity must be 0 to 72 km/s.', 'Asteroid returns arrive at a few km/s (the chain: 5.86).');
+        // 0 is a parabola: no asymptote direction to keep and no B-plane to re-aim (review: 0 used to fly a state at the
+        // Earth's centre and report a "feasible" direct entry at 0 g)
+        if (!(num(c.vinf_m_s) && c.vinf_m_s > 0 && c.vinf_m_s <= 72000)) return bad2('Your v-infinity must be above 0 and at most 72 km/s: at exactly 0 the arrival is a parabola, with no asymptote to keep and no B-plane to re-aim.', 'A small positive v∞ for a near-parabolic arrival (0.01 km/s), or the chain\'s 5.86.');
         if (!(num(c.mass_kg) && c.mass_kg > 0)) return bad2('Your arrival mass must be above 0.', 'A mass in kg.');
         if (!(num(c.propellant_kg) && c.propellant_kg >= 0 && c.propellant_kg < c.mass_kg)) return bad2('Your propellant must be 0 or more and less than the mass.', 'A mass in kg.');
         if (!(num(c.isp_s) && c.isp_s > 0 && c.isp_s <= 10000)) return bad2('Your Isp must be above 0 s.', 'Idea 46\'s 423 s, or your engine\'s.');
@@ -521,10 +551,26 @@
       }
       var vehId = Sx.vehicle === 'auto' ? (arr.kind === 'local' ? arr.flight.vehicle : 'apollo') : Sx.vehicle;
       var mass = Sx.vehicleMass === 'preset' ? VEHICLES[vehId].mass_kg : Sx.vehicleMass === 'arrival' ? (arr.kind === 'local' ? VEHICLES[arr.flight.vehicle].mass_kg : arr.mass_kg) : Sx.vehicleMass;
-      var veh = vehicle(vehId, mass);
+      var veh = vehicle(vehId, mass), beta = betaOf(veh);
+      // the fixed 0.1 s step's envelope (added in review): below about 1 kg/m^2 the vehicle sheds its speed inside one step
+      // at the top of the air and the flight is wrong (in the Apollo shape at 0.5 kg/m^2 a 0.1 s step gives 0 g where a
+      // 0.01 s step gives 123 g); from 1 kg/m^2 up a ten times smaller step moves peak deceleration by under 0.2 % (tests)
+      if (!(beta >= BETA_MIN)) return { refusal: refusal('out_of_envelope', 'The ballistic coefficient m/(C_D A) is ' + fmt(beta, 3) + ' kg/m²: below ' + BETA_MIN + ' kg/m² the vehicle loses its speed within one 0.1 s step at the top of the air, which this fixed-step flight cannot follow.', 'A heavier entry mass or a smaller shape (a ballistic coefficient of ' + BETA_MIN + ' kg/m² or more).', { applies_to: 'vehicle' }) };
       var build = builderOf(arr), lim = { g: Sx.gLimit, q: Sx.qLimit_W_cm2 * 1e4 };
       var propAvail = arr.kind === 'local' ? 0 : arr.propellant_kg, ve = arr.kind === 'local' ? null : arr.ve_m_s;
       var opts = {};
+      // the skip entry flown at angle g (bank 90, no burn): its passes, loads, verdict and refusals
+      function skipFill(sk, g, source) {
+        var s = skipAt(build, veh, g, 90, lim), passes = s.passes, last = passes[passes.length - 1];
+        sk.gamma = g; sk.gamma_source = source; sk.passes = passes.map(summary); sk.passFlights = passes; sk.flight = passes[0]; sk.entry = build(g); sk.dv = 0; sk.propellant_needed = 0;
+        sk.loads = { peak_g: s.peak_g, peak_q_W_m2: s.peak_q, heat_J_m2: passes.reduce(function (a, p) { return a + p.heat_J_m2; }, 0), n_passes: passes.length, t_total_s: last.t_start + last.t };
+        sk.second_entry_speed = passes.length > 1 ? passes[1].samples[0].V : null;
+        sk.feasible = s.ok;
+        sk.refusals = sk.refusals.filter(function (r) { return r.applies_to !== 'skip'; });
+        if (s.far) sk.refusals.push(refusal('out_of_envelope', 'A pass leaves on an orbit that reaches beyond the Moon\'s distance, where this two-body coast between passes no longer holds.', 'A steeper entry.', { applies_to: 'skip' }));
+        else if (!captured(last)) sk.refusals.push(refusal('out_of_envelope', 'After ' + passes.length + ' passes the vehicle still leaves the atmosphere.', 'A steeper entry or more passes.', { applies_to: 'skip' }));
+        else if (!s.ok) sk.refusals.push(refusal('out_of_envelope', 'The passes reach ' + fmt(sk.loads.peak_g, 3) + ' g and ' + fmt(sk.loads.peak_q_W_m2 / 1e4, 3) + ' W/cm².', 'Higher limits or a slower arrival.', { applies_to: 'skip' }));
+      }
 
       // 1. direct entry
       var cd = corridorDirect(build, veh, lim), d = { id: 'direct', label: 'Direct entry', destination: 'ground', refusals: [] };
@@ -560,14 +606,11 @@
         if (worstG > lim.g || worstQ > lim.q) ac.refusals.push(refusal('out_of_envelope', 'The steep (lift-up) edge of the corridor reaches ' + fmt(ca.up.flight.peak_g, 3) + ' g and ' + fmt(ca.up.flight.peak_q / 1e4, 3) + ' W/cm², over the limits.', 'A higher apoapsis target, or a slower arrival.', { applies_to: 'aerocapture' }));
         if (!ve) ac.refusals.push(refusal('insufficient_data', 'A flown capsule carries no engine: the perigee-raise burn (' + fmt(ac.dv, 3) + ' m/s) cannot be paid.', 'A propulsion system on the entry vehicle.', { applies_to: 'aerocapture' }));
         else if (ac.propellant_needed > propAvail) ac.refusals.push(refusal('out_of_envelope', 'Raising the perigee out of the atmosphere at apoapsis needs ' + fmt(ac.dv, 3) + ' m/s (with the ' + fmt(Sx.margin * 100, 3) + ' % margin): ' + fmt(ac.propellant_needed, 3) + ' kg of propellant at ' + fmt(ve, 4) + ' m/s; ' + fmt(propAvail, 3) + ' kg arrives.', 'Carry that propellant home (module 47 with a capture reserve), or skip entry instead (the next pass lands).', { applies_to: 'aerocapture' }));
-        // skip entry: the same pass, no burn; the next perigee pass lands
-        var passes = flyPasses(ac.entry, veh, { bankDeg: 90, dt: FLY.dt, vStop: FLY.vStop }, 6), last = passes[passes.length - 1];
-        sk.gamma = ca.mid.gamma; sk.corridor = clone(ac.corridor); sk.passes = passes.map(summary); sk.passFlights = passes; sk.flight = passes[0]; sk.entry = ac.entry; sk.dv = 0; sk.propellant_needed = 0;
-        sk.loads = { peak_g: Math.max.apply(null, passes.map(function (p) { return p.peak_g; })), peak_q_W_m2: Math.max.apply(null, passes.map(function (p) { return p.peak_q || 0; })), heat_J_m2: passes.reduce(function (s, p) { return s + p.heat_J_m2; }, 0), n_passes: passes.length, t_total_s: last.t_start + last.t };
-        sk.second_entry_speed = passes.length > 1 ? passes[1].samples[0].V : null;
-        sk.feasible = captured(last) && last.end !== 'ground' && sk.loads.peak_g <= lim.g && sk.loads.peak_q_W_m2 <= lim.q;
-        if (!captured(last)) sk.refusals.push(refusal('out_of_envelope', 'After ' + passes.length + ' passes the vehicle still leaves the atmosphere.', 'A steeper entry or more passes.', { applies_to: 'skip' }));
-        else if (!sk.feasible) sk.refusals.push(refusal('out_of_envelope', 'The passes reach ' + fmt(sk.loads.peak_g, 3) + ' g and ' + fmt(sk.loads.peak_q_W_m2 / 1e4, 3) + ' W/cm².', 'Higher limits or a slower arrival.', { applies_to: 'skip' }));
+        // skip entry: the same nominal pass at bank 90, no burn; the next perigee pass lands
+        skipFill(sk, ca.mid.gamma, 'aerocapture\'s mid-corridor angle');
+        var skc = sk.feasible ? corridorSkip(build, veh, lim, sk.gamma, 90) : null;
+        sk.corridor = skc;
+        if (skc && skc.width_deg < 2 * SD.req_fpa_err_deg) sk.refusals.push(refusal('out_of_envelope', 'The skip entry lands within the limits only from ' + fmt(skc.steep_deg, 4) + '° to ' + fmt(skc.shallow_deg, 4) + '° (' + fmt(skc.width_deg, 3) + '°), narrower than ±' + SD.req_fpa_err_deg + '°, the delivery accuracy Stardust, Genesis and OSIRIS-REx were held to.', 'Better navigation, or a guided skip (bank modulation).', { applies_to: 'skip' }));
       }
       opts.aerocapture = ac; opts.skip = sk;
 
@@ -636,23 +679,48 @@
       } else { chosen = Sx.choice; chosenBy = 'yours'; }
       if (!chosen) refusals.push(refusal('out_of_envelope', 'No option is feasible for this arrival with these limits.', 'Raise a limit, change the vehicle, or slow the arrival in module 47.', { applies_to: 'capture' }));
 
-      // retarget from idea 47's aim (hyperbolic arrivals): the perigee the entry angle needs, and the correction
-      var C = chosen ? opts[chosen] : null, retarget = null;
+      // idea 47's own aim (hyperbolic arrivals from idea 47): the entry angle it gives at the interface, and whether the
+      // chosen option works there as this page flies it. Review: any mismatch used to be refused as "a flyby", so an idea 47
+      // re-aimed as this page asks (56.4 km) was still refused; now an aim that works is flown as aimed, no correction.
+      var C = chosen ? opts[chosen] : null, retarget = null, g47 = null, flyby47 = null, works47 = false;
+      function worksAt(id, g) {
+        if (id === 'skip') return skipAt(build, veh, g, 90, lim).ok;
+        if (id === 'direct') { var f = fly(build(g), veh, { bankDeg: Sx.bankDeg, dt: FLY.dt, vStop: FLY.vStop }); return captured(f) && f.end !== 'ground' && f.peak_g <= lim.g && (!num(f.peak_q) || f.peak_q <= lim.q); }
+        if (id === 'aerocapture') { var c = opts.aerocapture.corridor; return !!c && g <= c.shallow_deg && g >= c.steep_deg; }
+        return false;
+      }
+      if (C && C.entry && arr.kind === 'hyperbola' && num(arr.B47)) {
+        var vEI47 = Math.sqrt(arr.vinf * arr.vinf + 2 * MU / arr.rEI), cg47 = arr.B47 * arr.vinf / (arr.rEI * vEI47);
+        g47 = cg47 < 1 ? -Math.acos(cg47) / DEG : null;
+        flyby47 = !(altOf(arr.perigeeR47) < ATM_TOP);
+        works47 = !flyby47 && num(g47) && g47 >= -25 && worksAt(chosen, g47);
+        if (works47 && C.feasible && (chosen === 'skip' || (chosen === 'direct' && !num(Sx.fpaDeg)))) {
+          // flown as idea 47 aimed it: with no correction, this is the entry that happens
+          if (chosen === 'skip') skipFill(C, g47, 'idea 47\'s aim');
+          else { var x47 = build(g47), f47 = fly(x47, veh, { bankDeg: Sx.bankDeg, dt: FLY.dt, vStop: FLY.vStop }); C.gamma = g47; C.gamma_source = 'idea 47\'s aim'; C.entry = x47; C.flight = f47; C.loads = summary(f47); }
+        }
+      }
       if (C && C.entry && arr.kind === 'hyperbola') {
         var H = build(C.gamma);
         retarget = { gamma_deg: C.gamma, perigee_alt_m: H.perigee_alt, B_m: H.B, B47_m: arr.B47, perigee_alt47_m: arr.perigeeAlt47, tcm_days: Sx.tcmDays, off_plane_rad: H.offPlane };
         if (num(arr.B47)) {
+          retarget.gamma47_deg = g47; retarget.flyby47 = flyby47; retarget.works_as_aimed = works47;
           retarget.dB_m = Math.abs(H.B - arr.B47); retarget.dv = retarget.dB_m / (Sx.tcmDays * DAY) * (1 + Sx.margin);
           retarget.propellant_needed = propellantFor(veh.mass_kg, retarget.dv, arr.ve_m_s);
-          if (retarget.propellant_needed > propAvail) refusals.push(refusal('out_of_envelope', 'Idea 47 aims at a ' + fmt(arr.perigeeAlt47 / 1000, 4) + ' km perigee, a flyby: entering at ' + fmt(C.gamma, 4) + '° needs a perigee at ' + fmt(H.perigee_alt / 1000, 4) + ' km (B ' + fmt(retarget.dB_m / 1000, 4) + ' km nearer). A correction ' + Sx.tcmDays + ' days out costs about ' + fmt(retarget.dv * 1000, 3) + ' mm/s, ' + fmt(retarget.propellant_needed * 1000, 3) + ' g of propellant; ' + fmt(propAvail, 3) + ' kg arrives.', 'Set module 47\'s aim perigee to ' + fmt(H.perigee_alt / 1000, 4) + ' km, so the departure burn aims at the entry (no correction at the Earth).', { applies_to: 'retarget' }));
+          // a guided aerocapture absorbs an aim inside its corridor; a constant-bank entry is flown at the aim itself
+          retarget.needed = chosen === 'aerocapture' ? !works47 : !(works47 && Math.abs(C.gamma - g47) < 1e-9);
+          var why47 = flyby47 ? 'Idea 47 aims at a ' + fmt(arr.perigeeAlt47 / 1000, 4) + ' km perigee, above the air (it ends at 86 km here): a flyby.'
+            : !works47 ? 'Idea 47\'s aim (perigee ' + fmt(arr.perigeeAlt47 / 1000, 4) + ' km) enters at ' + fmt(g47, 4) + '°, where the ' + C.label.toLowerCase() + ' does not work as flown here.'
+            : 'Idea 47\'s aim (perigee ' + fmt(arr.perigeeAlt47 / 1000, 4) + ' km) enters at ' + fmt(g47, 4) + '°, which works; your angle differs.';
+          if (retarget.needed && retarget.propellant_needed > propAvail) refusals.push(refusal('out_of_envelope', why47 + ' Entering at ' + fmt(C.gamma, 4) + '° needs a perigee at ' + fmt(H.perigee_alt / 1000, 4) + ' km (B ' + fmt(retarget.dB_m / 1000, 4) + ' km ' + (H.B < arr.B47 ? 'nearer' : 'farther') + '). A correction ' + Sx.tcmDays + ' days out costs about ' + fmt(retarget.dv * 1000, 3) + ' mm/s, ' + fmt(retarget.propellant_needed * 1000, 3) + ' g of propellant; ' + fmt(propAvail, 3) + ' kg arrives.', 'Set module 47\'s aim perigee to ' + fmt(H.perigee_alt / 1000, 4) + ' km, so the departure burn aims at the entry (no correction at the Earth).', { applies_to: 'retarget' }));
         }
       }
       var ei = null;
       if (C && C.entry) {
         var x0 = C.entry, rel0 = vrelOf(x0.r, x0.v), ai = angles(x0.r, x0.v), ar = angles(x0.r, rel0), tdb = num(x0.tdb) ? x0.tdb : null, ll = geodetic(x0.r, tdb);
-        ei = { utc: tdb !== null ? utcOf(tdb) : null, tdb_s_past_j2000: tdb, altitude_m: norm(x0.r) - RE, r_m: rv(x0.r), v_m_s: rv(x0.v), speed_inertial_m_s: norm(x0.v), speed_relative_m_s: norm(rel0),
+        ei = { utc: tdb !== null ? utcOf(tdb) : null, tdb_s_past_j2000: tdb, altitude_m: norm(x0.r) - RE, altitude_spheroid_m: altOf(x0.r), r_m: rv(x0.r), v_m_s: rv(x0.v), speed_inertial_m_s: norm(x0.v), speed_relative_m_s: norm(rel0),
           fpa_inertial_deg: ai.fpa, fpa_relative_deg: ar.fpa, heading_inertial_deg: ai.heading, heading_relative_deg: ar.heading, latitude_deg: ll.lat, longitude_deg: tdb !== null ? ll.lon : null,
-          frame: 'geocentric ICRF/J2000 axes; TDB; latitude geocentric; longitude through ERFA\'s Earth rotation angle (UT1 = UTC), precession and nutation ignored' };
+          frame: 'geocentric ICRF/J2000 axes; TDB; latitude geocentric; longitude through ERFA\'s Earth rotation angle (UT1 = UTC), precession and nutation ignored; altitude_m above the 6,378,136.6 m sphere, altitude_spheroid_m above pck00010\'s spheroid' };
       }
       if (chosen === 'skyhook' && C.release) ei = { tether_release: C.release, frame: 'two-body in idea 01\'s Earth (R_E ' + C.release.earth_radius_convention_m / 1000 + ' km)' };
 
@@ -686,7 +754,9 @@
       var mDel = C ? veh.mass_kg - (C.propellant_needed || 0) : null;
       var outputs = {
         capture: { value: { choice: R.choice, chosen_by: R.chosenBy, destination: C ? C.destination : null, options: ['direct', 'skip', 'aerocapture', 'propulsive', 'lunar', 'skyhook'].map(function (k) { return optRow(R.options[k]); }),
-          answers: A.chain ? ['47-way-home:out_of_envelope/entry_speed'] : [] }, units: 'm/s, kg, deg, W/m^2, J/m^2', confidence: 'derived', source: KERNEL + ' run(): every option evaluated; corridors by bisection on the entry angle through the 3-DOF flight' },
+          // the earlier refusals this choice answers: idea 47's entry-speed refusal, whenever it arrives with one and a
+          // feasible option is chosen (review: it used to be listed for the bundled chain only, and even when nothing was)
+          answers: C && C.feasible ? (R.carried || []).filter(function (r) { return r.applies_to === 'entry_speed'; }).map(function (r) { return (r.from || '47-way-home') + ':' + r.code + '/' + r.applies_to; }) : [] }, units: 'm/s, kg, deg, W/m^2, J/m^2', confidence: 'derived', source: KERNEL + ' run(): every option evaluated; corridors by bisection on the entry angle through the 3-DOF flight' },
         entry_interface: { value: R.entry ? clone(R.entry) : null, units: 'm, m/s, deg, s', confidence: 'derived', source: KERNEL + ' hyperbolaEntry()/stateFromLocal(): the state at the entry interface of the chosen option' },
         vehicle: { value: { id: veh.id, label: veh.label, mass_kg: r9(veh.mass_kg), area_m2: r9(veh.area_m2), diameter_m: r9(veh.diameter_m), nose_radius_m: r9(veh.rn_m), cd: clone(veh.cd), cl: veh.cl, bank_deg: C && (C.id === 'aerocapture' || C.id === 'skip') ? 90 : R.S.bankDeg,
           ballistic_coefficient_kg_m2: r9(betaOf(veh)), source: veh.source, assumed: veh.assumed.slice() }, units: 'kg, m^2, m', confidence: veh.assumed.length ? 'assumed' : 'measured', source: 'snapshots/entry-sources.js' },
@@ -701,7 +771,7 @@
       return { handoff: 'long-way-round', version: 1, from: '48-catch', produced: produced || new Date().toISOString(), inputs: inputs, outputs: JSON.parse(JSON.stringify(outputs, function (k, v) { return typeof v === 'number' ? r9(v) : v; })), refusals: refs,
         assumptions: [
           'Time TDB inside (UTC = TDB - 69.184 s); geocentric ICRF/J2000 axes; the atmosphere rotates about the ICRF z axis at the pck00010 rate.',
-          'Earth: a sphere of 6,378,136.6 m with Aster\'s GM 398,600.4418 km^3/s^2; point-mass gravity (no J2) during the minutes of a pass.',
+          'Earth: point-mass gravity with Aster\'s GM 398,600.4418 km^3/s^2 (no J2 during the minutes of a pass); the air\'s altitude is measured along the radius above pck00010\'s spheroid (6,378,136.6 m equatorial, 6,356,751.9 m polar). entry_interface.altitude_m is the radius minus 6,378,136.6 m (the interface is a radius, as idea 47 and NHATS define it); altitude_spheroid_m is above the spheroid.',
           'Atmosphere: the 1976 US Standard (PartForge isa) to its table top at 86 km, no density above, no winds.',
           'Vehicle: a point mass with the chosen shape\'s C_D (or C_A against Mach) and C_L at constant bank; deceleration = |aerodynamic acceleration| / 9.80665.',
           'Heating: Sutton & Graves (NASA TR R-376) air coefficient K = 0.1113 with Newtonian stagnation pressure rho V^2 and stagnation enthalpy V^2/2 (cold wall): q = 1.748e-4 sqrt(rho/Rn) V^3, convective only.',
@@ -750,16 +820,16 @@
     function reality() {
       var rows = [];
       var sd = flownPeak('stardust');
-      rows.push({ id: 'stardust_g', label: 'Stardust, peak deceleration', ref: SD.peak_g_bet, refLabel: 'BET (radar-fitted)', model: sd.flight.peak_g, units: 'g', gap_pct: 100 * (sd.flight.peak_g / SD.peak_g_bet - 1) });
+      rows.push({ ref_dp: 2, id: 'stardust_g', label: 'Stardust, peak deceleration', ref: SD.peak_g_bet, refLabel: 'BET (radar-fitted)', model: sd.flight.peak_g, units: 'g', gap_pct: 100 * (sd.flight.peak_g / SD.peak_g_bet - 1) });
       // fly() counts time from its starting state, here the entry interface, so tStop is the time since entry
       var fT = fly(sd.arrival.x0, sd.vehicle, { bankDeg: 0, dt: FLY.dt, vStop: 0, tStop: SD.drogue_t_s, tMax: 400 });
-      rows.push({ id: 'stardust_drogue', label: 'Stardust, altitude 137.9 s after entry', ref: SD.drogue_alt_m / 1000, refLabel: 'radar at drogue deploy', model: fT.final.h / 1000, units: 'km', gap_abs: fT.final.h / 1000 - SD.drogue_alt_m / 1000, mach: fT.final.M, mach_ref: SD.drogue_mach });
+      rows.push({ ref_dp: 2, id: 'stardust_drogue', label: 'Stardust, altitude 137.9 s after entry', ref: SD.drogue_alt_m / 1000, refLabel: 'radar at drogue deploy', model: fT.final.h / 1000, units: 'km', gap_abs: fT.final.h / 1000 - SD.drogue_alt_m / 1000, mach: fT.final.M, mach_ref: SD.drogue_mach });
       var gn = flownPeak('genesis');
-      rows.push({ id: 'genesis_g', label: 'Genesis, peak deceleration', ref: GN.peak_g_bet, refLabel: 'BET (radar-fitted)', model: gn.flight.peak_g, units: 'g', gap_pct: 100 * (gn.flight.peak_g / GN.peak_g_bet - 1) });
+      rows.push({ ref_dp: 1, id: 'genesis_g', label: 'Genesis, peak deceleration', ref: GN.peak_g_bet, refLabel: 'BET (radar-fitted)', model: gn.flight.peak_g, units: 'g', gap_pct: 100 * (gn.flight.peak_g / GN.peak_g_bet - 1) });
       var ox = flownPeak('osirisrex');
-      rows.push({ id: 'orex_g', label: 'OSIRIS-REx, peak deceleration', ref: OX.pred_peak_g, refLabel: 'pre-flight prediction (POST2)', model: ox.flight.peak_g, units: 'g', gap_pct: 100 * (ox.flight.peak_g / OX.pred_peak_g - 1) });
-      rows.push({ id: 'orex_q', label: 'OSIRIS-REx, peak heating (convective here)', ref: OX.pred_peak_q_W_cm2, refLabel: 'pre-flight prediction', model: ox.flight.peak_q / 1e4, units: 'W/cm²', gap_pct: 100 * (ox.flight.peak_q / 1e4 / OX.pred_peak_q_W_cm2 - 1) });
-      rows.push({ id: 'orex_tq', label: 'OSIRIS-REx, time of peak heating after entry', ref: OX.peak_heating_obs_s, refLabel: 'infrared video', model: ox.flight.t_peak_q, units: 's', gap_abs: ox.flight.t_peak_q - OX.peak_heating_obs_s });
+      rows.push({ ref_dp: 0, id: 'orex_g', label: 'OSIRIS-REx, peak deceleration', ref: OX.pred_peak_g, refLabel: 'pre-flight prediction (POST2)', model: ox.flight.peak_g, units: 'g', gap_pct: 100 * (ox.flight.peak_g / OX.pred_peak_g - 1) });
+      rows.push({ ref_dp: 0, id: 'orex_q', label: 'OSIRIS-REx, peak heating (convective here)', ref: OX.pred_peak_q_W_cm2, refLabel: 'pre-flight prediction', model: ox.flight.peak_q / 1e4, units: 'W/cm²', gap_pct: 100 * (ox.flight.peak_q / 1e4 / OX.pred_peak_q_W_cm2 - 1) });
+      rows.push({ ref_dp: 3, id: 'orex_tq', label: 'OSIRIS-REx, time of peak heating after entry', ref: OX.peak_heating_obs_s, refLabel: 'infrared video', model: ox.flight.t_peak_q, units: 's', gap_abs: ox.flight.t_peak_q - OX.peak_heating_obs_s });
       // heading sensitivity for OSIRIS-REx (no heading on file)
       var hs = [30, 60, 90, 120, 150].map(function (hd) { var F = FLIGHTS.osirisrex, x = stateFromLocal({ lat: F.lat, lon: F.lon, alt: F.alt, speed: F.speed, speedFrame: F.speedFrame, fpa: F.fpa, heading: hd }); return fly(x, vehicle('osirisrex'), { dt: FLY.dt, vStop: 300 }).peak_g; });
       rows[3].heading_range = [Math.min.apply(null, hs), Math.max.apply(null, hs)];
