@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/48-catch/snapshots/de440-constants.js",
+  "commit": "374128b39d65b9081a821cd66ad011aa00d44645",
+  "commitDate": "2026-11-01T07:39:05+00:00",
+  "pathLastChanged": "da54fce 2026-11-01T06:58:06+00:00",
+  "committedBlob": "3a9115fec959bea4274ddbe21727cda54306daed",
+  "readBlob": "3a9115fec959bea4274ddbe21727cda54306daed",
+  "sourceSha256": "9b153c196ca651a5e16bae9c5be54076c642750af08902c3a0d24787fb4cb6fe",
+  "sourceBytes": 1265,
+  "copiedAt": "2026-11-01T07:54:41.914Z",
+  "mode": "copy",
+  "note": "DE440 GMs via ideas 40, 47, 48 (catch.js requires it at create)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "9b153c196ca651a5e16bae9c5be54076c642750af08902c3a0d24787fb4cb6fe",
+  "writtenBytes": 1265
+}

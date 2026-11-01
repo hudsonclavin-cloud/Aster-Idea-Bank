@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/48-catch/snapshots/earth-radii.js",
+  "commit": "374128b39d65b9081a821cd66ad011aa00d44645",
+  "commitDate": "2026-11-01T07:39:05+00:00",
+  "pathLastChanged": "da54fce 2026-11-01T06:58:06+00:00",
+  "committedBlob": "e4a47fe1b60f65a4e8df60ee30853a5fc74d2ed1",
+  "readBlob": "e4a47fe1b60f65a4e8df60ee30853a5fc74d2ed1",
+  "sourceSha256": "64c73b337867d3b4022bdc4a622b938ee26682d1c962841d01c0e76effcfed96",
+  "sourceBytes": 638,
+  "copiedAt": "2026-11-01T07:54:42.060Z",
+  "mode": "copy",
+  "note": "pck00010 BODY399_RADII via ideas 35 and 48 (the spheroid the air is measured from)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "64c73b337867d3b4022bdc4a622b938ee26682d1c962841d01c0e76effcfed96",
+  "writtenBytes": 638
+}

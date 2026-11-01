@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/48-catch/handoff.json",
+  "commit": "374128b39d65b9081a821cd66ad011aa00d44645",
+  "commitDate": "2026-11-01T07:39:05+00:00",
+  "pathLastChanged": "2dc0290 2026-11-01T07:37:47+00:00",
+  "committedBlob": "a27ee59b5ef6b97744c5d33d30e901c7b7dccf17",
+  "readBlob": "a27ee59b5ef6b97744c5d33d30e901c7b7dccf17",
+  "sourceSha256": "36ceb192ced4f847939240c244305c352dde92da1b2cda131cbe193fe708a50c",
+  "sourceBytes": 27401,
+  "copiedAt": "2026-11-01T08:02:35.969Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --chain: idea 48's committed handoff.json, parsed and written back as a classic script (window.HotReturnCatch) with the sha256 of its JSON.stringify form, content unmodified (the build checks JSON equality), so the page opens on the chain with no network",
+  "readMatchesCommitted": true,
+  "writtenSha256": "84832973040935f49755e2f342438fdd5b02de03fba94c207eebb6a41d1c009e",
+  "writtenBytes": 25242
+}

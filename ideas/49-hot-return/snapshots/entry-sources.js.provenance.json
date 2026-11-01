@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/48-catch/snapshots/entry-sources.js",
+  "commit": "374128b39d65b9081a821cd66ad011aa00d44645",
+  "commitDate": "2026-11-01T07:39:05+00:00",
+  "pathLastChanged": "da54fce 2026-11-01T06:58:06+00:00",
+  "committedBlob": "4f5b1dc24d27d2d78d06b1345d848d4ab87d276e",
+  "readBlob": "4f5b1dc24d27d2d78d06b1345d848d4ab87d276e",
+  "sourceSha256": "2c47f7ed43047dd435fc7d26fe963f2213c5a89a58b16ac5a1d7263ab31e5304",
+  "sourceBytes": 17014,
+  "copiedAt": "2026-11-01T07:54:42.150Z",
+  "mode": "copy",
+  "note": "idea 48's NASA quotes (Stardust, Genesis, OSIRIS-REx entry states and shapes, Sutton & Graves) that catch.js reads",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2c47f7ed43047dd435fc7d26fe963f2213c5a89a58b16ac5a1d7263ab31e5304",
+  "writtenBytes": 17014
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Aster-Idea-Bank",
+  "path": "ideas/48-catch/catch.js",
+  "commit": "374128b39d65b9081a821cd66ad011aa00d44645",
+  "commitDate": "2026-11-01T07:39:05+00:00",
+  "pathLastChanged": "2dc0290 2026-11-01T07:37:47+00:00",
+  "committedBlob": "d5c255dd8548b611bcc4d713f9f0a2116e5c7f21",
+  "readBlob": "d5c255dd8548b611bcc4d713f9f0a2116e5c7f21",
+  "sourceSha256": "11105878a155e1b760d5faa8f68a80331277d5be58988e23688c3a6dfaf1aec0",
+  "sourceBytes": 85738,
+  "copiedAt": "2026-11-01T07:54:41.456Z",
+  "mode": "copy",
+  "note": "idea 48's kernel, unmodified: fly(), flyPasses(), deriv(), atm(), vehicle(), arrivalFromFlight(), stateFromLocal(), geodetic(), angles() reused for every flight on this page",
+  "readMatchesCommitted": true,
+  "writtenSha256": "11105878a155e1b760d5faa8f68a80331277d5be58988e23688c3a6dfaf1aec0",
+  "writtenBytes": 85738
+}

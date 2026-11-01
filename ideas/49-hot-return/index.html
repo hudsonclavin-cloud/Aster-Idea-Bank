@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hot Return: the capsule's way down</title>
+<meta name="description" content="The sample capsule's re-entry flown to the ground: convective and radiative heating, the PICA heat shield's recession and whether a flown shield covers it, the parachute sequence and the touchdown, checked against Stardust, Genesis and OSIRIS-REx.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Hot Return</h1>
+  <p class="lede">Idea 48 chose how the asteroid's material stops at the Earth and handed on the state at the top of the air. This page flies it the rest of the way: every pass through the atmosphere, the heat the air puts into the shield (by the boundary layer and by the glowing shock in front of it), how much of the shield burns away and whether a shield that has flown covers this entry, then the parachutes, opened by a G-switch, timers and a pressure switch as the real capsules did, down to the touchdown. What lands is handed to module 50.</p>
+  <p class="series">The Long Way Round (launch to asteroid and back), module 19 of 20. Previous: <a href="../48-catch/index.html">48 Catch</a>, the ways to stop. Next: 50 The Long Way Round, the whole mission (not built yet).</p>
+</header>
+
+<main>
+  <section id="inputs" class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">What comes down</h2>
+    <span class="lab" id="lab-src">Entry</span>
+    <div class="seg" role="group" aria-labelledby="lab-src">
+      <button type="button" data-src="chain">The chain (idea 48)</button><button type="button" data-src="imported" id="srcImported" disabled>Your import</button>
+      <button type="button" data-src="stardust">Stardust 2006</button><button type="button" data-src="osirisrex">OSIRIS-REx 2023</button><button type="button" data-src="genesis">Genesis 2004</button>
+    </div>
+    <div id="srcLine" class="srcline" role="status" aria-live="polite"></div>
+
+    <fieldset><legend>Heating and the shield</legend>
+      <label class="toggle"><input type="checkbox" id="radIn" checked> Count radiative heating <small>(Suttles et al.)</small></label>
+      <div class="ctl"><div class="ctl-head"><label for="rhoIn">PICA density <small>kg/m³</small></label><input id="rhoIn" type="number" min="100" max="2000" step="1" inputmode="decimal"></div>
+        <input id="rhoRange" type="range" min="200" max="350" step="1" aria-label="Heat-shield density, kg per cubic metre"></div>
+      <p class="note">Stardust's PICA was 266 kg/m³, MSL-grade PICA 274. The recession scales as 1/density; the char mass burned does not.</p>
+    </fieldset>
+
+    <fieldset><legend>Parachutes and the ground</legend>
+      <span class="lab" id="lab-chute">Sequence</span>
+      <div class="seg small-seg" role="group" aria-labelledby="lab-chute">
+        <button type="button" data-chute="auto">As flown</button><button type="button" data-chute="nominal">Drogue, then main</button><button type="button" data-chute="no_drogue">No drogue</button><button type="button" data-chute="none">None</button>
+      </div>
+      <div class="ctl"><div class="ctl-head"><label for="tdIn">Touchdown <small>m/s (sizes a new main)</small></label><input id="tdIn" type="number" min="1" max="30" step="0.1" inputmode="decimal"></div>
+        <input id="tdRange" type="range" min="2" max="15" step="0.1" aria-label="Touchdown speed for sizing the main parachute, m/s"></div>
+      <div class="ctl"><div class="ctl-head"><label for="mainIn">Main opens at <small>km (baroswitch; empty = the capsule's)</small></label><input id="mainIn" type="number" min="0" max="25" step="0.1" inputmode="decimal" placeholder="auto"></div>
+        <input id="mainRange" type="range" min="0.5" max="12" step="0.1" aria-label="Main parachute baroswitch altitude in the standard atmosphere, km"></div>
+      <div class="grid2">
+        <div class="ctl"><label for="gIn">G-switch <small>g</small></label><input id="gIn" type="number" min="0.5" max="20" step="0.5" inputmode="decimal"></div>
+        <div class="ctl"><label for="drIn">Drogue timer <small>s</small></label><input id="drIn" type="number" min="0" max="600" step="0.1" inputmode="decimal" placeholder="auto"></div>
+        <div class="ctl"><label for="gndIn">Ground <small>m</small></label><input id="gndIn" type="number" min="-500" max="6000" step="1" inputmode="decimal" placeholder="auto"></div>
+      </div>
+    </fieldset>
+    <div class="btnrow"><button type="button" id="resetBtn">Reset to the capsule's own</button></div>
+    <p class="busy" id="busy" aria-live="polite"></p>
+  </section>
+
+  <div class="col">
+    <section class="card" aria-labelledby="h-out">
+      <h2 id="h-out">What lands, and what it went through</h2>
+      <div id="tiles" class="tiles"></div>
+      <h3>The heat shield against Stardust's</h3>
+      <div id="heritage" class="heritage"></div>
+      <p class="note" id="heritageNote"></p>
+      <h3>Refusals</h3>
+      <div id="refusals" class="refusals"></div>
+      <details><summary id="carriedSum">Refusals carried from earlier modules</summary><div id="carriedList"></div></details>
+    </section>
+
+    <section class="card" aria-labelledby="h-heat">
+      <h2 id="h-heat">Heating at the stagnation point</h2>
+      <canvas id="heatChart" class="chart" role="img" aria-label="Convective, radiative and total heating against time in the air"></canvas>
+      <ul class="legend" id="heatLegend"></ul>
+      <p class="readout" id="heatRead">Tap or hover the chart to read a moment.</p>
+      <p class="chart-cap" id="heatCap"></p>
+    </section>
+
+    <section class="card" aria-labelledby="h-down">
+      <h2 id="h-down">The way down</h2>
+      <canvas id="downChart" class="chart" role="img" aria-label="Altitude and speed against time from the entry interface, with the parachute events"></canvas>
+      <ul class="legend" id="downLegend"></ul>
+      <p class="readout" id="downRead">Tap or hover the chart to read a moment.</p>
+      <ul class="evlist" id="events"></ul>
+    </section>
+
+    <section class="card" aria-labelledby="h-shield">
+      <h2 id="h-shield">The shield burning away</h2>
+      <canvas id="shieldChart" class="chart" role="img" aria-label="Cumulative recession and wall temperature against time"></canvas>
+      <ul class="legend" id="shieldLegend"></ul>
+      <p class="chart-cap" id="shieldCap"></p>
+    </section>
+  </div>
+
+  <section class="card wide" aria-labelledby="h-real">
+    <h2 id="h-real">Checked against what flew</h2>
+    <p class="note">Each row is computed live by this page's kernel and set beside a number from a NASA report on Stardust, Genesis or OSIRIS-REx (quotes in <code>snapshots/reentry-sources.js</code>). The gap is the model's, not the flight's.</p>
+    <div class="tablewrap"><table id="realTable"><thead><tr><th>Check</th><th>Measured / published</th><th>This page</th><th>Gap</th></tr></thead><tbody><tr><td colspan="4">Computing…</td></tr></tbody></table></div>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-ho">
+    <h2 id="h-ho">Handoff</h2>
+    <p class="note">Import idea 48's handoff (or this page's) by pasting it or a <code>#h=</code> link; export this run for module 50. A handoff read back is re-run from its inputs and must match.</p>
+    <textarea id="importText" rows="4" aria-label="Handoff JSON or link" placeholder="Paste a handoff or a link"></textarea>
+    <div class="handoff-actions btnrow">
+      <button type="button" id="importBtn">Import</button>
+      <label class="filebtn">Open a file<input type="file" id="importFile" accept="application/json,.json"></label>
+      <button type="button" id="copyBtn">Copy handoff</button><button type="button" id="dlBtn">Download</button><button type="button" id="linkBtn">Link for module 50</button>
+    </div>
+    <p id="hoStatus" class="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="card wide" aria-labelledby="h-how">
+    <h2 id="h-how">How this works</h2>
+    <p><b>The flight.</b> Every flight on this page is idea 48's own <code>fly()</code>, snapshotted unmodified: a point mass under the Earth's gravity, drag and lift at a constant bank, through the 1976 standard atmosphere (PartForge's <code>isa()</code>) to 86 km above pck00010's flattened Earth, the air turning with the Earth, 0.1 s steps. A skip entry is flown pass by pass with the coast between. Idea 48's handoff is checked by flying its entry state again and matching the loads it screened to one part in a million.</p>
+    <p><b>Heating.</b> Convective: Sutton &amp; Graves (idea 48's). Radiative, the glowing shock layer, which idea 48 left out: the curve fit of Suttles, Sullivan &amp; Margolis (NASA TN D-7622, 1974) to radiatively coupled equilibrium calculations, fitted for 11 to 16 km/s, 53.75 to 68.4 km and nose radii 0.30 to 4.50 m. Outside those ranges it is extrapolated and the page says how much of the radiative heat came from there. It reproduces the paper's own fit to 2e-4 and Sutton &amp; Hartung's independent tables (NASA TM-102652) to within 11 %.</p>
+    <p><b>The shield.</b> PICA, Stardust's and OSIRIS-REx's ablator. Its char burns away at the rate oxygen reaches it: mass loss = B′ q<sub>conv</sub>/h<sub>0</sub>, with B′ = 0.235 taken from Stardust's own arc-jet qualification tests (0.0115 cm/s at 400 W/cm², 0.018 cm/s at 580 W/cm², 29.5 MJ/kg), counted while the wall is at 1600 K or more. The wall temperature is radiative equilibrium with PICA's emissivity, an upper bound. Whether a thickness can be named: only if the entry is no harsher than Stardust's design (1,200 W/cm², 36.5 kJ/cm², 0.5 atm), which OSIRIS-REx flew "with build-to-print thicknesses"; beyond it the page refuses, because PICA's in-depth property model is export-controlled.</p>
+    <p><b>Parachutes.</b> A G-switch fires when the deceleration falls back through 3 g; a timer opens the drogue; a pressure switch (or a second timer, whichever comes first) opens the main. No canopy drag coefficient is published for these capsules, so the drag areas come from flight: the drogue's from Stardust's 331.3 s between drogue and main seen on radar, the main's from OSIRIS-REx's predicted 4.5 m/s touchdown. Canopies fill over OSIRIS-REx's filmed times (0.38 s, 1.14 s), the area growing linearly (assumed). For any other vehicle the canopies are sized: the drogue at Stardust's ballistic coefficient, the main for the touchdown speed you set. Without a drogue the capsule tumbles below Mach 0.85 with Genesis's reconstructed drag coefficient 0.63.</p>
+    <p><b>Checked by</b> an independent integrator (Earth-fixed frame, scipy DOP853, the <code>ambiance</code> atmosphere, Simpson's rule) and the flights in the table above. All numbers are SI inside; times are seconds after the entry interface.</p>
+  </section>
+</main>
+
+<footer><p class="small">Idea 49 of the Aster Idea Bank, an idea-bank prototype. Not reviewed by Aster's multi-agent math audit, Skyhook's Rule 1 canon review or any NASA process. Sources: NASA Technical Reports Server and NIST, quoted in <code>snapshots/reentry-sources.js</code>.</p></footer>
+
+<script src="snapshots/isa.js"></script>
+<script src="snapshots/earth.js"></script>
+<script src="snapshots/de440-constants.js"></script>
+<script src="snapshots/erfa-iau2006.js"></script>
+<script src="snapshots/earth-radii.js"></script>
+<script src="snapshots/entry-sources.js"></script>
+<script src="snapshots/catch.js"></script>
+<script src="snapshots/reentry-sources.js"></script>
+<script src="snapshots/catch-handoff.js"></script>
+<script src="hotreturn.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

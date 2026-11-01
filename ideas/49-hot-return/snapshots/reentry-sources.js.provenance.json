@@ -1,0 +1,13 @@
+{
+  "repo": "https://ntrs.nasa.gov (NASA Technical Reports Server, 17 documents) ; https://physics.nist.gov/cgi-bin/cuu/Value?sigma",
+  "path": "stardust-edl-ops: https://ntrs.nasa.gov/citations/20090004445 ; stardust-reconstruction: https://ntrs.nasa.gov/citations/20080008567 ; genesis-edl-ops: https://ntrs.nasa.gov/citations/20080020376 ; genesis-reconstruction: https://ntrs.nasa.gov/citations/20080019649 ; genesis-src-overview: https://ntrs.nasa.gov/citations/20070014646 ; orex-edl: https://ntrs.nasa.gov/citations/20240000629 ; orex-edl-performance: https://ntrs.nasa.gov/citations/20240014280 ; apollo-aerothermo: https://ntrs.nasa.gov/citations/19720018273 ; suttles-radfits: https://ntrs.nasa.gov/citations/19740021216 ; sutton-hartung-radtables: https://ntrs.nasa.gov/citations/19900014359 ; src-aerothermo-issues: https://ntrs.nasa.gov/citations/20140004052 ; stardust-slit: https://ntrs.nasa.gov/citations/20100021412 ; stardust-pica-perf: https://ntrs.nasa.gov/citations/20070014634 ; stardust-xray-ct: https://ntrs.nasa.gov/citations/20100027549 ; pica-postflight: https://ntrs.nasa.gov/citations/20140005558 ; pica-envelope: https://ntrs.nasa.gov/citations/20160000305 ; pica-model-validation: https://ntrs.nasa.gov/citations/20110012891 ; nist-sigma: https://physics.nist.gov/cgi-bin/cuu/Value?sigma",
+  "commit": "retrieved 2026-11-01",
+  "retrieved": "2026-11-01",
+  "sourceSha256": "abbea519c9b1b5ffa95d317e7130a1d7bdd38648f461c5cebd39d42328d76d90",
+  "sourceSha256Rule": "sha256 of the newline-joined per-document sha256 values in documents[] (in that order), the NIST page excluded (its bytes change per request)",
+  "license": "US Government work (NASA technical reports on NTRS; NIST CODATA values; public domain in the US). The AIAA/AAS/NATO-STO papers on NTRS are NASA-authored and carry no US copyright.",
+  "note": "derived by build-data.mjs: every number sits beside its quote, each quote found verbatim in pdftotext output of its document (raw or -layout), each number found inside its quote; read from page images (and so marked): Covington's two arc-jet recession averages (figure legend), Suttles's Table III(a) rows (sideways table), the Sutton-Hartung 60 km values (rows also found in the OCR text layer)",
+  "writtenSha256": "2740a4b8fe76ccb19622d3061af13eb786e84e9833d89480fe1fa47e4c57dc30",
+  "writtenBytes": 34948,
+  "mode": "derived"
+}
