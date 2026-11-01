@@ -31,7 +31,7 @@
   function syncControls() {
     var S = state.S;
     NUM.forEach(function (q) { var v = +(S[q[2]] * q[3]).toPrecision(6); $(q[0]).value = v; if (q[1]) $(q[1]).value = v; });
-    $('anaSel').value = S.analog; $('runSel').value = S.run; $('drumSel').value = S.drum;
+    $('anaSel').value = S.analog; $('runSel').value = S.run; $('drumSel').value = S.drum; $('muIn').value = S.mu === null || S.mu === undefined ? '' : S.mu;
     var R = state.R, analog = S.analog === 'auto' ? (R && !R.refusal ? R.feed.analog : K.analogOfClass((K.classOf(state.caseKey === 'bennu' ? '101955' : '99942') || {}).value)) : S.analog;
     $('runRow').classList.toggle('hide', analog !== 'cm'); $('sRow').classList.toggle('hide', analog !== 'ordinary');
     document.querySelectorAll('[data-case]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.case === state.caseKey)); });
@@ -46,6 +46,9 @@
     a.addEventListener('change', function () { set(a.value); schedule(40); });
     if (b) b.addEventListener('input', function () { a.value = b.value; set(b.value); schedule(250); });
   });
+  // the feet's friction coefficient: blank = not set (the feet are not judged), otherwise a what-if
+  (function () { var m = $('muIn'); function setMu() { var v = m.value.trim(); if (v === '') state.S.mu = null; else if (isFinite(+v)) state.S.mu = +v; else return false; return true; }
+    m.addEventListener('input', function () { if (setMu()) schedule(600); }); m.addEventListener('change', function () { if (setMu()) schedule(40); }); })();
   $('anaSel').addEventListener('change', function () { state.S.analog = $('anaSel').value; syncControls(); schedule(20); });
   $('runSel').addEventListener('change', function () { state.S.run = $('runSel').value; schedule(20); });
   $('drumSel').addEventListener('change', function () { state.S.drum = $('drumSel').value; schedule(20); });
@@ -95,8 +98,10 @@
     var lit = tl.reduce(function (a, d) { return a + d.lit_h; }, 0) / (24 * tl.length), rmin = Math.min.apply(null, tl.map(function (d) { return d.r_au; })), rmax = Math.max.apply(null, tl.map(function (d) { return d.r_au; }));
     T.push(tile('Sun above the site', fx(lit * 100, 0), '% of the time', 'derived', fx(rmin, 3) + '–' + fx(rmax, 3) + ' au from the Sun; ' + fx(K.S1AU / rmax / rmax, 0) + '–' + fx(K.S1AU / rmin / rmin, 0) + ' W/m²'));
     T.push(tile('Sunlight kept in the oven', fx(R.receiver.eta_rec_epoch * 100, 0), '%', 'derived', 'of what the mirror delivers at ' + fx(fs.Tpk - 273.15, 0) + ' °C; it needs a concentration of at least ' + f(R.receiver.minConc_epoch, 3), R.receiver.eta_rec_epoch <= 0 ? 'bad' : ''));
-    T.push(tile('Digging pushes', f(dg.pushUsed_N * 1000, 3), 'mN', 'assumed', 'against ' + f(dg.weightNormal_N * 1000, 3) + ' mN of weight on the ground; deepest cut that stays: ' + f(dg.depthMax_m * 1000, 3) + ' mm' + (dg.depthCapped ? ' (the cut is held there)' : ''), dg.liftsOff && !dg.thrustOk ? 'warn' : 'ok'));
-    T.push(tile('Holding down by thrust', dg.thrustOk ? f(R.holdKgPerDay, 3) : (S.hold === 'thrust' ? 'refused' : 'not used'), dg.thrustOk ? 'kg/day' : '', dg.thrustOk ? 'derived' : '', dg.thrustOk ? f(dg.holdThrust_N * 1000, 3) + ' mN while digging, at idea 44\'s ' + f(st.holdKgPerNHour, 3) + ' kg per N-hour' : (S.hold === 'thrust' ? (st.holdKgPerNHour ? 'no propellant left (idea 44)' : 'no specific impulse handed on') : 'the weight holds it'), S.hold === 'thrust' && !dg.thrustOk ? 'refused' : ''));
+    var fric = 'the feet need friction ' + fx(dg.friction_needed, 2) + ' against ' + f(dg.weightNormal_N * 1000, 3) + ' mN of weight on the ground (' + fx(dg.friction_slope, 2) + ' for the ' + fx(st.slope_deg, 0) + '° slope alone)';
+    T.push(tile('Digging pushes sideways', f(dg.sideUsed_N * 1000, 3), 'mN', 'assumed', fric + (dg.mu === null ? '; no friction is measured here, so not judged' : '; at the ' + dg.mu + ' set here the deepest cut is ' + f(dg.depthMax_m * 1000, 3) + ' mm' + (dg.depthCapped ? ' (the cut is held there)' : '')), dg.thrustOk ? 'ok' : dg.slides ? 'bad' : dg.mu === null ? 'warn' : 'ok'));
+    var holdWhy = !st.holdKgPerNHour ? 'no specific impulse handed on (idea 44)' : !(R.src.site.propellantLeft_kg > 0) ? 'no propellant left (idea 44)' : R.own.some(function (r) { return r.applies_to === 'hold'; }) ? 'the propellant would not last the stay' : 'not needed: the feet hold it';
+    T.push(tile('Holding the cut by thrust', dg.thrustOk ? f(R.holdKgPerDay, 3) : (S.hold === 'thrust' ? (/not needed/.test(holdWhy) ? 'not needed' : 'refused') : 'not used'), dg.thrustOk ? 'kg/day' : '', dg.thrustOk ? 'derived' : '', dg.thrustOk ? f(dg.holdThrust_N * 1000, 3) + ' mN sideways while digging, at idea 44\'s ' + f(st.holdKgPerNHour, 3) + ' kg per N-hour: ' + f(R.holdStay_kg, 3) + ' kg over the stay' : (S.hold === 'thrust' ? holdWhy : 'the feet hold the sideways push'), S.hold === 'thrust' && !dg.thrustOk && !/not needed/.test(holdWhy) ? 'refused' : ''));
     var og = tl.reduce(function (a, d) { return a + d.otherGas_kg; }, 0) / tl.length;
     T.push(tile('Other gases with it', fs.analog === 'cm' ? f(og, 3) : '–', fs.analog === 'cm' ? 'kg/day' : '', fs.analog === 'cm' ? 'measured' : '', fs.analog === 'cm' ? 'CO₂ ' + fx(fs.others.co2 * 100, 2) + ', SO₂ ' + fx(fs.others.so2 * 100, 2) + ', organics ' + fx(fs.others.organics * 100, 2) + ' wt% of the rock (run ' + fs.run.id + ')' : 'none counted for an S-type'));
     T.push(tile('Water in the rock', fs.w >= 0.001 ? fx(fs.w * 100, 2) : fx(fs.w * 1e6, 0), fs.w >= 0.001 ? 'wt%' : 'ppm', fs.analog === 'cm' ? 'measured' : 'assumed', fs.analog === 'cm' ? 'Murchison chips: ' + fx(fs.range750[0] * 100, 1) + '–' + fx(fs.range750[1] * 100, 1) + ' wt% by 750 °C' : 'Itokawa: ' + SRC.itokawa.bulk_ppm.join('–') + ' ppm, all of it counted'));
@@ -155,7 +160,7 @@
     F.line(days, m(heat), css('--s2'), [6, 4], 1.5); F.line(days, m(oven), css('--s3'), [2, 3], 1.5); F.line(days, m(dig), css('--ink-2'), [8, 3, 2, 3], 1.5);
     F.line(days, m(made), css('--s1'), null, 2.5);
     legend('dayLegend', [['water made', css('--s1')], ['what the day\'s heat allows', css('--s2'), 'dash'], ['what the oven can cycle', css('--s3'), 'dash'], ['what the drums can dig', css('--ink-2'), 'dash']]);
-    $('dayCap').textContent = 'Each day the least of the three (a capacity far above the others runs off the top). ' + (R.src.kind === 'apophis' ? 'Apophis tumbles: its days at this site run from ' + fx(Math.min.apply(null, tl.map(function (d) { return d.lit_h; })), 1) + ' to ' + fx(Math.max.apply(null, tl.map(function (d) { return d.lit_h; })), 1) + ' hours of sunlight, and the distance from the Sun changes with the season.' : 'Bennu turns every 4.3 h; the sunlight changes with its distance from the Sun (' + fx(tl[0].r_au, 2) + ' to ' + fx(tl[tl.length - 1].r_au, 2) + ' au over the stay) and the season at the site.') + (R.feed.bound === 'upper' ? ' An upper bound: all of Itokawa\'s water counted.' : '');
+    $('dayCap').textContent = 'Each day the least of the three (a capacity far above the others runs off the top). ' + (R.src.kind === 'apophis' ? 'Apophis tumbles: its days at this site run from ' + fx(Math.min.apply(null, tl.map(function (d) { return d.lit_h; })), 1) + ' to ' + fx(Math.max.apply(null, tl.map(function (d) { return d.lit_h; })), 1) + ' hours of sunlight, and the distance from the Sun changes with the season.' : 'Bennu turns every ' + fx(R.period_h, 2) + ' h (bennu_v17.tpc); the sunlight changes with its distance from the Sun (' + fx(tl[0].r_au, 2) + ' to ' + fx(tl[tl.length - 1].r_au, 2) + ' au over the stay) and the season at the site.') + (R.feed.bound === 'upper' ? ' An upper bound: all of Itokawa\'s water counted.' : '');
   }
   function drawSun() {
     var R = state.R, el = R.sun.el3_deg, dt = R.sun.dtSub / 3600, xs = el.map(function (_, i) { return (i + 0.5) * dt; });
@@ -163,7 +168,8 @@
     F.hmark(R.S.horizon_deg, css('--ink-2'), R.S.horizon_deg ? 'horizon mask' : 'horizon');
     F.line(xs, el, css('--s2'));
     legend('sunLegend', [['the Sun\'s elevation at the site (idea 43\'s spin, Horizons)', css('--s2')]]);
-    $('sunCap').textContent = R.src.kind === 'apophis' ? 'Apophis tumbles (periods of about 30 and 264 h, Pravec et al. 2014, via idea 43): no two days at the site are alike.' : 'Bennu at Nightingale (55.9°N): sunrise every 4.3 h; the tests hold this curve to JPL Horizons\' own within 0.03°.';
+    var llA = K.latLon(R.src.site.aim || R.src.site.normal);
+    $('sunCap').textContent = R.src.kind === 'apophis' ? 'Apophis tumbles (idea 43: Euler\'s equations with Pravec et al. 2014\'s inertia ratios, from NAIF\'s CK samples; at contact it turns once in ' + fx(R.period_h, 1) + ' h about an axis that wanders): no two days at the site are alike. The ground is idea 44\'s plate ' + R.src.site.face + '.' : 'Bennu at Nightingale (' + fx(llA[0], 1) + '°N): a turn every ' + fx(R.period_h, 2) + ' h. The ground here is idea 44\'s plate ' + R.src.site.face + ', tilted ' + fx(R.plateTilt_deg, 1) + '° from the radial direction there, so its sunrise is not Nightingale\'s geodetic one; the tests hold the Sun\'s direction to JPL Horizons\' own (elevation above Nightingale\'s geodetic vertical) within 0.03°.';
   }
   function drawYield() {
     var R = state.R, runs = SRC.murchison.runs, P = SRC.bennuOrbit, toW = function (h) { return h / K.H_PER_H2O; };   // wt% of H -> wt% of water
@@ -200,17 +206,20 @@
     $('recCap').textContent = 'At ' + fx(Tpk - 273.15, 0) + ' °C and ' + fx(R.timeline[0].r_au, 2) + ' au (' + fx(Sx, 0) + ' W/m²), the oven\'s opening radiates σT⁴ = ' + f(K.SIGMA * Math.pow(Tpk, 4) / 1000, 3) + ' kW/m². Below a concentration of ' + f(R.receiver.minConc_epoch, 3) + ' nothing is left to heat the rock.';
   }
   function drawPush() {
-    var R = state.R, dg = R.dig, S = R.S, xmax = Math.max(dg.depthMax_m * 2, S.depth_m * 1.5) * 1000, xs = [], hi = [], lo = [];
-    var lowDig = K.dig(Object.assign({}, S, { resistance: 'low' }), { resistance_Pa: R.src.site.resistance_Pa, weightNormal_N: dg.weightNormal_N, alongSlope_N: 0, holdKgPerNHour: null, propellantLeft_kg: null });
-    var highDig = K.dig(Object.assign({}, S, { resistance: 'high' }), { resistance_Pa: R.src.site.resistance_Pa, weightNormal_N: dg.weightNormal_N, alongSlope_N: 0, holdKgPerNHour: null, propellantLeft_kg: null });
-    for (var i = 0; i <= 40; i++) { var d = xmax * i / 40; xs.push(d); hi.push(highDig.perDepth_N_m * d); lo.push(lowDig.perDepth_N_m * d); }   // N/m x mm = mN
-    var ymax = Math.max(dg.weightNormal_N * 1000 * 1.6, highDig.perDepth_N_m * xmax);
-    var F = frame($('pushChart'), { x: [0, xmax], y: [0, ymax], xlab: 'cut depth (mm)', ylab: 'push on the spacecraft (mN)' });
+    var R = state.R, dg = R.dig, S = R.S, xs = [], hi = [], lo = [];
+    var site = { resistance_Pa: R.src.site.resistance_Pa, weightNormal_N: dg.weightNormal_N, alongSlope_N: dg.alongSlope_N, holdKgPerNHour: null, propellantLeft_kg: null };
+    var lowDig = K.dig(Object.assign({}, S, { resistance: 'low' }), site), highDig = K.dig(Object.assign({}, S, { resistance: 'high' }), site);
+    var xmax = Math.max(S.depth_m * 1.5, dg.depthMax_m ? dg.depthMax_m * 1.5 : 0, 0.02) * 1000;
+    var fr = function (D, dmm) { return (dg.alongSlope_N + D.perDepth_N_m * dmm / 1000) / dg.weightNormal_N; };   // friction the feet need at a depth (mm)
+    for (var i = 0; i <= 40; i++) { var d = xmax * i / 40; xs.push(d); hi.push(fr(highDig, d)); lo.push(fr(lowDig, d)); }
+    var ymax = Math.max(1.2, fr(highDig, xmax) * 1.05, dg.mu ? dg.mu * 1.2 : 0);
+    var F = frame($('pushChart'), { x: [0, xmax], y: [0, ymax], xlab: 'cut depth (mm)', ylab: 'friction the feet need' });
     F.line(xs, hi, css('--s2')); F.line(xs, lo, css('--s1'), [6, 4]);
-    F.hmark(dg.weightNormal_N * 1000, css('--crit'), 'weight on the ground: lifts off above', [2, 0]);
+    F.hmark(dg.friction_slope, css('--ink-2'), null); F.label(xmax, dg.friction_slope, 'the slope alone (idea 44)', css('--ink-2'), 'right', 0.5);
+    if (dg.mu !== null) F.hmark(dg.mu, css('--crit'), 'friction set here (a what-if): slips above', [2, 0]);
     F.vmark(S.depth_m * 1000, css('--ink-2'), 'set', 1); if (dg.depthCapped) F.vmark(dg.depthUsed_m * 1000, css('--s3'), 'held to', 2);
     legend('pushLegend', [['high resistance (' + fx(R.src.site.resistance_Pa[1], 0) + ' Pa)', css('--s2')], ['low (' + fx(R.src.site.resistance_Pa[0], 0) + ' Pa)', css('--s1'), 'dash']]);
-    $('pushCap').textContent = S.pairs + ' pair(s) of ' + dg.drum.name + 's, imbalance ' + S.imbalance + ', cut at ' + fx(S.cut_m_s * 1000, 1) + ' mm/s: ' + f(dg.mdotUsed_kg_s * 3600, 3) + ' kg of regolith an hour. Friction the feet need on the ' + fx(R.src.site.slope_deg, 0) + '° slope while digging: ' + fx(dg.friction_needed, 2) + ' (not known for this regolith).';
+    $('pushCap').textContent = S.pairs + ' pair(s) of ' + dg.drum.name + 's, imbalance ' + S.imbalance + ', cut at ' + fx(S.cut_m_s * 1000, 1) + ' mm/s: ' + f(dg.mdotUsed_kg_s * 3600, 3) + ' kg of regolith an hour, pushing ' + f(dg.sideUsed_N * 1000, 3) + ' mN sideways (' + f(dg.cutPerDepth_N_m * dg.depthUsed_m * 1000, 3) + ' from the cutting imbalance, ' + f(dg.momPerDepth_N_m * dg.depthUsed_m * 1000, 3) + ' from bringing the regolith to the craft\'s speed). Digging downhill, the worst case. No friction is measured for this regolith' + (dg.mu === null ? ': set one under Digging to see the deepest cut it allows.' : '; ' + dg.mu + ' is a what-if.');
   }
   function checksTable() {
     var R = state.R, rows = K.reality(R);

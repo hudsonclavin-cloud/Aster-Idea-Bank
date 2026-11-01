@@ -9,8 +9,9 @@
  *     (chrysotile) breaking down to forsterite, enstatite and steam, the rest of the rock heated as forsterite;
  *   - what the Sun delivers there: the body's distance from JPL Horizons, the site's day and night from idea 43's spin
  *     (Bennu's IAU rotation; Apophis tumbling from NAIF's CK), a concentrator whose cavity loses sigma T^4 / C;
- *   - whether digging pushes the spacecraft off: counter-rotating bucket drums (NASA's IPEx/RASSOR), the regolith's
- *     resistance from idea 44's fit to OSIRIS-REx's contact, the momentum of the dug material, against the weight;
+ *   - what digging asks of the feet: counter-rotating bucket drums (NASA's IPEx/RASSOR) push sideways by their
+ *     imbalance (the regolith's resistance from idea 44's fit to OSIRIS-REx's contact) and by bringing the dug regolith
+ *     to the craft's speed; the feet need that much friction against the weight (judged only against a coefficient set);
  *   - and day by day over the stay, which of heat, oven and digging limits the water made.
  * The Bennu case (OSIRIS-REx at Nightingale) is the reality test for the sunlight: JPL Horizons' own Sun elevation at
  * the site is the oracle (tests); the water yields are compared with Bennu's hydrogen measured from orbit and with
@@ -23,7 +24,7 @@
  * What it reuses, unmodified (snapshots/): idea 43's kernel for the spin (lumpy.js attitudeAt, with its spin data and
  * idea 40's integrator), idea 44's two handoffs (the chain at Apophis; its own Bennu case), idea 40's solar luminosity,
  * idea 42's OSIRIS-REx figures, Aster's constants. Methods written here: the Hess-cycle energy, the cavity receiver,
- * the daily ledger, the drum force balance, the import checks.
+ * the daily ledger, the drum force balance and friction, the import checks.
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
@@ -197,27 +198,41 @@
 
     // ---------------------------------------------------------------------------------------------- digging
     /**
-     * Counter-rotating bucket drums (IPEx): each pair digs in opposite directions, so the horizontal cutting forces cancel
-     * but for the imbalance fraction; the dug material is thrown into the drums at their tip speed (8.5 x the cut speed in
-     * IPEx's tests), and that momentum pushes back. Cutting resistance: idea 44's pressure on the cut face (width x depth).
-     * Push = pairs x imbalance x p w d + mdot x v_tip, with mdot = 2 pairs rho w d v. The largest depth that does not lift
-     * the spacecraft solves push = weight normal to the ground.
+     * Counter-rotating bucket drums (IPEx). IPEx measured the excavation force as horizontal, along the cut ("the force in
+     * the X direction is the primary force of excavation"; the vertical force was the weight of the regolith captured,
+     * at 1 g). Each pair digs in opposite directions, so its horizontal cutting forces cancel but for the imbalance
+     * fraction of one drum's p w d (p: idea 44's resistance as the pressure on the cut face). The regolith the buckets
+     * fling to their tip speed is caught inside the drums, so that momentum stays aboard (internal): what the craft feels
+     * is only the dug regolith brought from rest to its own speed, mdot v, the same direction for every drum.
+     * Sideways force H = pairs imbalance p w d + mdot v, mdot = 2 pairs rho w d v. A sideways force does not lift the
+     * craft; the feet hold it by friction, with the slope's own along-ground weight: friction needed = (W_t + H) / W_n
+     * (worst case, digging downhill). No friction coefficient is measured for this regolith, so the kernel only judges
+     * the feet against a coefficient the user sets (mu, a what-if; null = not judged). Thrust (hold = 'thrust') takes
+     * what the feet are not trusted with: all of H when mu is null, the excess over mu W_n when it is set.
+     * site.thrustBudgetShort (set by run() when the stay's thrust would outlast idea 44's propellant) refuses thrust.
      */
     function dig(S, site) {
       var D = SRC.ipex.drums[S.drum]; if (!D) return { refusal: refusal('invalid_input', 'No drum ' + S.drum + '.', 'small, medium or large.', { applies_to: 'settings' }) };
-      var p = site.resistance_Pa[S.resistance === 'low' ? 0 : 1], vTip = SRC.ipex.tipToCutSpeed * S.cut_m_s, rho = S.rho_kg_m3;
-      var perDepth = S.pairs * D.width_m * (S.imbalance * p + 2 * rho * S.cut_m_s * vTip);   // N per metre of depth
-      var push = perDepth * S.depth_m, mdot = 2 * S.pairs * rho * D.width_m * S.depth_m * S.cut_m_s;
-      var Wn = site.weightNormal_N, dMax = Wn / perDepth;
-      var hold = push > Wn ? push - Wn : 0, holdRate = site.holdKgPerNHour;
-      var thrustOk = S.hold === 'thrust' && hold > 0 && num(holdRate) && site.propellantLeft_kg !== 0;
-      var depthUsed = push > Wn && !thrustOk ? dMax : S.depth_m;
-      var mdotUsed = 2 * S.pairs * rho * D.width_m * depthUsed * S.cut_m_s, pushUsed = perDepth * depthUsed;
-      var hTot = S.pairs * S.imbalance * p * depthUsed * D.width_m;   // the horizontal part (the imbalance), N
-      return { drum: D, p_Pa: p, vTip_m_s: vTip, rho: rho, perDepth_N_m: perDepth, push_N: push, mdot_kg_s: mdot, weightNormal_N: Wn, liftsOff: push > Wn, depthMax_m: dMax,
-        depthUsed_m: depthUsed, mdotUsed_kg_s: mdotUsed, pushUsed_N: pushUsed, holdThrust_N: thrustOk ? hold : 0, holdKgPerHour: thrustOk ? hold * holdRate : 0,
-        friction_needed: Wn > 0 ? (site.alongSlope_N + hTot) / Wn : null, thrustWanted: S.hold === 'thrust', thrustOk: thrustOk, depthCapped: depthUsed < S.depth_m,
-        scoopFraction: S.depth_m / D.scoop_h_m };
+      var p = site.resistance_Pa[S.resistance === 'low' ? 0 : 1], v = S.cut_m_s, rho = S.rho_kg_m3, mu = num(S.mu) ? S.mu : null;
+      var cutPerDepth = S.pairs * S.imbalance * p * D.width_m;            // N per metre of depth: the cutting imbalance
+      var momPerDepth = 2 * S.pairs * rho * D.width_m * v * v;           // N per metre of depth: mdot v
+      var perDepth = cutPerDepth + momPerDepth;
+      var Wn = site.weightNormal_N, Wt = site.alongSlope_N;
+      var side = perDepth * S.depth_m, mdot = 2 * S.pairs * rho * D.width_m * S.depth_m * v;
+      var dMax = mu === null ? null : Math.max(0, (mu * Wn - Wt) / perDepth);   // the deepest cut the feet hold at mu
+      var slides = mu !== null && Wt + side > mu * Wn;
+      var need = mu === null ? side : Math.max(0, Wt + side - mu * Wn), holdRate = site.holdKgPerNHour;
+      var thrustWanted = S.hold === 'thrust';
+      var thrustAvail = thrustWanted && num(holdRate) && num(site.propellantLeft_kg) && site.propellantLeft_kg > 0 && !site.thrustBudgetShort;
+      var thrustOk = thrustAvail && need > 0;
+      var depthUsed = slides && !thrustOk ? dMax : S.depth_m;
+      var mdotUsed = 2 * S.pairs * rho * D.width_m * depthUsed * v, sideUsed = perDepth * depthUsed;
+      var feet = thrustOk ? (mu === null ? Wt : Math.min(Wt + sideUsed, mu * Wn)) : Wt + sideUsed;   // what the feet hold along the ground
+      return { drum: D, p_Pa: p, vTip_m_s: SRC.ipex.tipToCutSpeed * v, rho: rho, mu: mu, perDepth_N_m: perDepth, cutPerDepth_N_m: cutPerDepth, momPerDepth_N_m: momPerDepth,
+        side_N: side, mdot_kg_s: mdot, weightNormal_N: Wn, alongSlope_N: Wt, slides: slides, depthMax_m: dMax,
+        depthUsed_m: depthUsed, mdotUsed_kg_s: mdotUsed, sideUsed_N: sideUsed, holdThrust_N: thrustOk ? need : 0, holdKgPerHour: thrustOk ? need * holdRate : 0,
+        friction_slope: Wn > 0 ? Wt / Wn : null, friction_needed: Wn > 0 ? (Wt + side) / Wn : null, friction_feet: Wn > 0 ? feet / Wn : null,
+        thrustWanted: thrustWanted, thrustOk: thrustOk, depthCapped: depthUsed < S.depth_m, scoopFraction: S.depth_m / D.scoop_h_m };
     }
 
     // ---------------------------------------------------------------------------------------------- import (idea 44)
@@ -261,7 +276,7 @@
       var st = src.site;
       return { analog: 'auto', run: 'D', peakS_C: 750, rateS_C_min: 10, T0_K: T_REF, recovery: 0,
         aperture_m2: AP.spacecraft.orex.solarArray_m2, eta_opt: 0.85, conc: 300, eps: 1, horizon_deg: 0, stay_days: 90,
-        oven_kg: 25, drum: 'small', pairs: 1, depth_m: SRC.ipex.cutDepth_m, cut_m_s: SRC.ipex.cutSpeeds_m_s[0], imbalance: 0.1, resistance: 'high', hold: 'weight',
+        oven_kg: 25, drum: 'small', pairs: 1, depth_m: SRC.ipex.cutDepth_m, cut_m_s: SRC.ipex.cutSpeeds_m_s[0], imbalance: 0.1, resistance: 'high', hold: 'weight', mu: null,
         rho_kg_m3: st.rho43 || st.rhoSbdb, mass_kg: st.mass_kg !== null ? st.mass_kg : AP.spacecraft.orex.dry_kg };
     }
     function validSettings(S) {
@@ -275,6 +290,7 @@
       if (['small', 'medium', 'large'].indexOf(S.drum) < 0) e.push('drum must be small, medium or large');
       if (['low', 'high'].indexOf(S.resistance) < 0) e.push('resistance must be low or high');
       if (['weight', 'thrust'].indexOf(S.hold) < 0) e.push('hold must be weight or thrust');
+      if (S.mu !== null && S.mu !== undefined) r('mu', 0.01, 3, ' (or null: the feet are not judged)');
       return e;
     }
 
@@ -288,7 +304,7 @@
       var en = energy(fs.w, S.T0_K, fs.Tpk, S.recovery); if (en.refusal) return { refusal: en.refusal, S: S };
       // the site's weight: idea 44's numbers when the mass is idea 44's, otherwise the same arithmetic on the mass set here
       var mass = S.mass_kg, weight = mass * st.accel, Wn = weight * Math.cos(st.slope_deg * DEG), Wt = weight * Math.sin(st.slope_deg * DEG);
-      var siteD = { resistance_Pa: st.resistance_Pa, weightNormal_N: Wn, alongSlope_N: Wt, holdKgPerNHour: st.holdKgPerNHour, propellantLeft_kg: st.propellantLeft_kg === null && st.propellantShort_kg > 0 ? 0 : st.propellantLeft_kg };
+      var siteD = { resistance_Pa: st.resistance_Pa, weightNormal_N: Wn, alongSlope_N: Wt, holdKgPerNHour: st.holdKgPerNHour, propellantLeft_kg: st.propellantLeft_kg === null && st.propellantShort_kg > 0 ? 0 : st.propellantLeft_kg, thrustBudgetShort: false };
       var dg = dig(S, siteD); if (dg.refusal) return { refusal: dg.refusal, S: S };
       // the stay: from the contact, as long as asked, the ephemeris and the spin allow
       var span = ephSpan(src.kind), daysAsked = S.stay_days, daysEph = Math.floor((span[1] - st.epoch) / DAY);
@@ -299,6 +315,15 @@
       if (sun.days.length < daysAsked) {
         var why = sun.stopped ? sun.stopped.refusal.reason : 'this folder\'s Horizons table for ' + src.kind + ' ends ' + utcOf(span[1]).slice(0, 10) + '.';
         own.push(refusal('out_of_envelope', 'The stay is cut to ' + sun.days.length + ' of the ' + daysAsked + ' days asked: ' + why, sun.stopped ? (sun.stopped.refusal.what_would_help || 'An earlier epoch.') : 'A longer ephemeris.', { applies_to: 'stay' }));
+      }
+      // holding the cut by thrust: only while idea 44's propellant lasts the whole stay (the drums dig while the Sun is up)
+      var litStay_s = sun.days.reduce(function (a, d) { return a + d.lit_s; }, 0), holdStay = null;
+      if (dg.thrustOk) {
+        holdStay = dg.holdKgPerHour * litStay_s / HOUR;
+        if (holdStay > siteD.propellantLeft_kg) {
+          own.push(refusal('out_of_envelope', 'Holding the cut by thrust takes ' + (1000 * dg.holdThrust_N).toFixed(1) + ' mN for the stay\'s ' + (litStay_s / HOUR).toFixed(0) + ' hours of digging: ' + holdStay.toPrecision(3) + ' kg of propellant at idea 44\'s ' + st.holdKgPerNHour.toPrecision(4) + ' kg per N-hour, and idea 44 hands on ' + siteD.propellantLeft_kg.toPrecision(3) + ' kg. Thrust is not used.', 'More propellant left after landing, a shorter stay, or a shallower, slower or better-balanced cut.', { applies_to: 'hold' }));
+          siteD.thrustBudgetShort = true; dg = dig(S, siteD);
+        }
       }
       // the daily ledger
       var P = { eta_opt: S.eta_opt, conc: S.conc, eps: S.eps }, tBatch = (fs.Tpk - S.T0_K) / fs.rate_K_s;
@@ -320,9 +345,12 @@
       if (fs.analog === 'ordinary') own.push(refusal('insufficient_data', 'For an S-type the water is the ' + SRC.itokawa.bulk_ppm[0] + '–' + SRC.itokawa.bulk_ppm[1] + ' ppm Itokawa\'s returned grains carry in their pyroxene and olivine (Jin and Bose 2019), all of it counted: how much an oven at ' + (fs.Tpk - 273.15).toFixed(0) + ' °C releases from nominally anhydrous minerals is not measured in these sources, so every water number here is an upper bound.', 'A heating experiment on an ordinary chondrite (LL) or on Itokawa grains, with the water measured against temperature and time.', { applies_to: 'release' }));
       else own.push(refusal('insufficient_data', 'The water released is Murchison\'s (a CM2 meteorite, ' + SRC.murchison.runs.length + ' chips heated by Suttle et al. 2024), not this asteroid\'s: chips of the same meteorite gave ' + (100 * fs.range750[0]).toFixed(1) + '–' + (100 * fs.range750[1]).toFixed(1) + ' wt% by 750 °C. Bennu\'s returned sample is CI-like (Glavin et al. 2025); its release curve is not in this folder.', 'A heating experiment on the returned Bennu (or Ryugu) sample, or on the target\'s own regolith.', { applies_to: 'feedstock' }));
       if (fs.hypothetical) own.push(refusal('out_of_envelope', 'The analog is set by hand against the body\'s spectral class (' + fs.spec.value + ', ' + fs.spec.ref + '): this is a what-if, not this asteroid.', 'Leave the analog on auto.', { applies_to: 'analog' }));
-      own.push(refusal('insufficient_data', 'Digging resistance is idea 44\'s fit to OSIRIS-REx\'s 10 cm/s contact at Bennu (' + st.resistance_Pa.map(function (x) { return x.toFixed(0); }).join('–') + ' Pa), used as the pressure on a drum\'s cut face; nothing has been excavated in milligravity, and the drums\' own forces were measured only in lunar simulant at 1 g (IPEx).', 'An excavation test in the target\'s regolith, or in a simulant on a reduced-gravity flight.', { applies_to: 'excavation' }));
+      own.push(refusal('insufficient_data', 'Digging resistance is idea 44\'s fit to OSIRIS-REx\'s 10 cm/s contact at Bennu (' + st.resistance_Pa.map(function (x) { return x.toFixed(0); }).join('–') + ' Pa), used as the pressure on a drum\'s cut face; nothing has been excavated in milligravity, and the drums\' own forces were measured only in lunar simulant at 1 g (IPEx), where the vertical force was the weight of the regolith caught: whether a cut lifts a lander that weighs millinewtons is not measured, and not modelled here.', 'An excavation test in the target\'s regolith, or in a simulant on a reduced-gravity flight, with the vertical force measured.', { applies_to: 'excavation' }));
       own.push(refusal('insufficient_data', 'The horizon is the site plate\'s own plane: shadows from boulders and the rest of the body are not cast (idea 43\'s shapes have 25 m plates). Set a horizon mask to be conservative.', 'A terrain model at metre scale and a ray-traced horizon.', { applies_to: 'terrain' }));
-      if (dg.liftsOff && !dg.thrustOk) own.push(refusal('out_of_envelope', 'Digging ' + (1000 * S.depth_m).toFixed(1) + ' mm deep pushes ' + (1000 * dg.push_N).toFixed(1) + ' mN against a weight of ' + (1000 * Wn).toFixed(1) + ' mN normal to the ground: it would lift off. The cut is held to ' + (1000 * dg.depthMax_m).toFixed(2) + ' mm.' + (dg.thrustWanted ? ' Thrusters cannot help: ' + (num(st.holdKgPerNHour) ? 'the spacecraft has no propellant left (idea 44).' : 'no specific impulse is handed on (idea 44).') : ''), 'Lower imbalance, a shallower or slower cut, more mass on the ground, or anchors (refused in idea 44).', { applies_to: 'push' }));
+      var whyNoThrust = !dg.thrustWanted || dg.thrustOk ? '' : !num(st.holdKgPerNHour) ? ' Thrusters cannot help: no specific impulse is handed on (idea 44).' : !(siteD.propellantLeft_kg > 0) ? ' Thrusters cannot help: the spacecraft has no propellant left (idea 44).' : siteD.thrustBudgetShort ? ' Thrusters cannot help for the whole stay (refusal hold).' : '';
+      var fmm = function (x) { return (1000 * x).toFixed(1) + ' mN'; };
+      if (!dg.thrustOk && dg.mu === null) own.push(refusal('insufficient_data', 'Digging ' + (1000 * S.depth_m).toFixed(1) + ' mm deep pushes the spacecraft ' + fmm(dg.side_N) + ' sideways (the drums\' cutting imbalance and the dug regolith brought to its speed); with the slope\'s own ' + fmm(Wt) + ' along the ground the feet need a friction coefficient of ' + dg.friction_needed.toFixed(2) + ' against ' + fmm(Wn) + ' of weight on the ground (' + dg.friction_slope.toFixed(2) + ' for the slope alone). No friction is measured for this regolith, so whether the feet slip is not judged.' + whyNoThrust, 'A friction coefficient for the feet on this regolith (set one here as a what-if), or propellant to cancel the sideways push with thrust.', { applies_to: 'traction' }));
+      if (!dg.thrustOk && dg.slides) own.push(refusal('out_of_envelope', (dg.depthMax_m === 0 ? 'At the friction coefficient set here (' + dg.mu + ', a what-if) the spacecraft slides on this slope before it digs (the slope alone needs ' + dg.friction_slope.toFixed(2) + '): no digging.' : 'Digging ' + (1000 * S.depth_m).toFixed(1) + ' mm deep pushes ' + fmm(dg.side_N) + ' sideways; with the slope the feet need a friction coefficient of ' + dg.friction_needed.toFixed(2) + ', above the ' + dg.mu + ' set here (a what-if): the cut is held to ' + (1000 * dg.depthMax_m).toFixed(2) + ' mm.') + whyNoThrust, 'A shallower, slower or better-balanced cut, more mass on the ground, thrust with propellant, or anchors (refused in idea 44).', { applies_to: 'traction' }));
       if (rec.eta_rec_epoch <= 0) own.push(refusal('out_of_envelope', 'At concentration ' + S.conc + ' the oven\'s opening radiates more at ' + (fs.Tpk - 273.15).toFixed(0) + ' °C than the mirror brings: no heat goes in. It needs at least ' + rec.minConc_epoch.toFixed(0) + '.', 'A higher concentration or a cooler oven.', { applies_to: 'receiver' }));
       if (en.extrapolated_K > 0) assumptions.push('Robie and Hemingway\'s enstatite equation ends at 1000 K; the oven\'s ' + fs.Tpk.toFixed(0) + ' K is ' + en.extrapolated_K.toFixed(0) + ' K beyond it (extrapolated).');
       assumptions.unshift(
@@ -330,9 +358,10 @@
         'Sunlight: ' + S1AU.toFixed(1) + ' W/m^2 at 1 au (idea 40\'s solar luminosity over 4 pi au^2), scaled by (1 au / r)^2; a Sun-tracking concentrator works while the Sun is more than ' + S.horizon_deg + ' deg above the site plane; the oven is shut in the dark (no heat lost at night, none kept).',
         'Heat: Hess\'s law over Robie and Hemingway (1995): the water as chrysotile breaking down to forsterite + enstatite + steam, the rest of the rock as forsterite; the steam leaves at the oven temperature; ' + (S.recovery > 0 ? (100 * S.recovery).toFixed(0) + '% of the spent rock\'s heat preheats the next batch' : 'no heat recovered') + '; CO2, SO2 and organics leave too (their heats of reaction left out).',
         'Oven: batches of ' + S.oven_kg + ' kg heated at the run\'s rate (' + (fs.rate_K_s * 60).toFixed(0) + ' K/min), ' + (tBatch / 60).toFixed(0) + ' min each, only while lit; cavity emissivity ' + S.eps + ', concentration ' + S.conc + ', optical efficiency ' + S.eta_opt + ' (design choices, not data).',
-        'Digging: ' + S.pairs + ' pair(s) of ' + dg.drum.name + 's, counter-rotating (imbalance ' + S.imbalance + ', assumed), ' + (1000 * dg.depthUsed_m).toFixed(2) + ' mm deep at ' + (1000 * S.cut_m_s).toFixed(0) + ' mm/s, tip ' + SRC.ipex.tipToCutSpeed + 'x the cut speed (IPEx), only while lit; regolith ' + S.rho_kg_m3.toFixed(0) + ' kg/m^3 (' + (S.rho_kg_m3 === st.rho43 ? 'idea 43\'s bulk density' : S.rho_kg_m3 === st.rhoSbdb ? 'the body\'s bulk density, SBDB' : 'set here') + ').');
+        'Digging: ' + S.pairs + ' pair(s) of ' + dg.drum.name + 's, counter-rotating (imbalance ' + S.imbalance + ', assumed), ' + (1000 * dg.depthUsed_m).toFixed(2) + ' mm deep at ' + (1000 * S.cut_m_s).toFixed(0) + ' mm/s, only while lit; the sideways force is the cutting imbalance plus the dug regolith brought to the craft\'s speed (the buckets\' fling to their tip speed is caught inside the drums); feet friction ' + (dg.mu === null ? 'not judged (none measured)' : dg.mu + ' (a what-if)') + '; regolith ' + S.rho_kg_m3.toFixed(0) + ' kg/m^3 (' + (S.rho_kg_m3 === st.rho43 ? 'idea 43\'s bulk density' : S.rho_kg_m3 === st.rhoSbdb ? 'the body\'s bulk density, SBDB' : 'set here') + ').');
       return { src: src, S: S, feed: fs, energy: en, dig: dg, sun: sun, timeline: timeline, receiver: rec, tBatch_s: tBatch, mass_kg: mass, weight_N: weight, weightNormal_N: Wn, alongSlope_N: Wt,
-        water: { mean: tot / timeline.length, min: Math.min.apply(null, W), max: Math.max.apply(null, W), total: tot, days: timeline.length, limits: lim }, holdKgPerDay: holdDay,
+        water: { mean: tot / timeline.length, min: Math.min.apply(null, W), max: Math.max.apply(null, W), total: tot, days: timeline.length, limits: lim }, holdKgPerDay: holdDay, holdStay_kg: dg.thrustOk ? holdStay : null,
+        period_h: L43.attitudeAt(src.kind, st.epoch).period_h, plateTilt_deg: st.aim ? Math.acos(Math.max(-1, Math.min(1, dot(unit(st.normal), unit(st.aim))))) / DEG : null,
         carried: src.carried, own: own, assumptions: assumptions };
     }
 
@@ -360,7 +389,7 @@
         // the same fraction by sampling one turn at 20 s with the kernel (no interpolation)
         var up = 0, N = Math.round(period / 20);
         for (var i = 0; i < N; i++) { var e = sunElevation('bennu', st.epoch + (i + 0.5) * period / N, st.normal); if (e.el_deg > 0) up++; }
-        rows.push({ what: 'Daylight at the site over one Bennu turn: sampled with idea 43\'s spin against the closed form arccos(-tan(lat) tan(dec)) / pi', model: 100 * up / N, real: 100 * frac, units: '% of a turn', source: 'spherical trigonometry (a principal-axis spin, the Sun fixed over one 4.3 h turn)' });
+        rows.push({ what: 'Daylight at the site over one Bennu turn: sampled with idea 43\'s spin against the closed form arccos(-tan(lat) tan(dec)) / pi', model: 100 * up / N, real: 100 * frac, units: '% of a turn', source: 'spherical trigonometry (a principal-axis spin, the Sun fixed over one ' + rot.period_h.toFixed(2) + ' h turn of bennu_v17.tpc)' });
         rows[rows.length - 1].gap_pct = frac > 0 ? 100 * (up / N - frac) / frac : null;
       }
       return rows;
@@ -386,9 +415,10 @@
           'm^2, W/m^2', 'derived', KERNEL + ' receiverFlux(): mirror less the cavity\'s eps sigma T^4 / C'),
         sunlight: qv({ days: tl.length, horizon_deg: S.horizon_deg, lit_fraction: r9(tl.reduce(function (a, d) { return a + d.lit_h; }, 0) / (24 * tl.length)), r_au_range: [r9(Math.min.apply(null, tl.map(function (d) { return d.r_au; }))), r9(Math.max.apply(null, tl.map(function (d) { return d.r_au; })))],
           sampling: { sub_s: R.sun.dtSub, kernel_s: R.sun.kStep } }, 'days, deg, au, s', 'derived', KERNEL + ' sunlight(): JPL Horizons distance and direction, idea 43\'s spin'),
-        dig: qv({ drum: S.drum, pairs: S.pairs, width_m: r9(dg.drum.width_m), depth_set_m: S.depth_m, depth_used_m: r9(dg.depthUsed_m), depth_max_m: r9(dg.depthMax_m), cut_m_s: S.cut_m_s, tip_m_s: r9(dg.vTip_m_s), rho_kg_m3: r9(dg.rho), resistance_Pa: r9(dg.p_Pa),
-          push_set_N: r9(dg.push_N), push_used_N: r9(dg.pushUsed_N), weight_normal_N: r9(dg.weightNormal_N), lifts_off_as_set: dg.liftsOff, rate_kg_s: r9(dg.mdotUsed_kg_s), friction_needed: r9(dg.friction_needed), hold: S.hold, hold_thrust_N: r9(dg.holdThrust_N), hold_propellant_kg_per_day: r9(R.holdKgPerDay) },
-          'm, m/s, kg/m^3, Pa, N, kg/s, kg/day', 'assumed', KERNEL + ' dig(): IPEx drums, idea 44\'s regolith resistance'),
+        dig: qv({ drum: S.drum, pairs: S.pairs, width_m: r9(dg.drum.width_m), depth_set_m: S.depth_m, depth_used_m: r9(dg.depthUsed_m), depth_max_m: dg.depthMax_m === null ? null : r9(dg.depthMax_m), cut_m_s: S.cut_m_s, rho_kg_m3: r9(dg.rho), resistance_Pa: r9(dg.p_Pa),
+          sideways_set_N: r9(dg.side_N), sideways_used_N: r9(dg.sideUsed_N), weight_normal_N: r9(dg.weightNormal_N), along_slope_N: r9(dg.alongSlope_N), friction_needed_slope: r9(dg.friction_slope), friction_needed: r9(dg.friction_needed), friction_coefficient: dg.mu, slides_as_set: dg.slides,
+          rate_kg_s: r9(dg.mdotUsed_kg_s), hold: S.hold, hold_thrust_N: r9(dg.holdThrust_N), hold_propellant_kg_per_day: r9(R.holdKgPerDay), hold_propellant_stay_kg: R.holdStay_kg === null ? null : r9(R.holdStay_kg) },
+          'm, m/s, kg/m^3, Pa, N, kg/s, kg/day, kg', 'assumed', KERNEL + ' dig(): IPEx drums (horizontal excavation force, counter-rotating), idea 44\'s regolith resistance, friction needed (not judged unless a coefficient is set)'),
         timeline: qv({ day: tl.map(function (d) { return d.day; }), utc0: tl.map(function (d) { return d.utc0; }), r_au: tl.map(function (d) { return r6(d.r_au); }), lit_h: tl.map(function (d) { return r6(d.lit_h); }),
           heat_J: tl.map(function (d) { return r6(d.heat_J); }), regolith_kg: tl.map(function (d) { return r6(d.regolith_kg); }), water_kg: tl.map(function (d) { return r6(d.water_kg); }), limit: tl.map(function (d) { return d.limit; }) },
           'days, au, h, J, kg', conf, KERNEL + ' run(): the daily ledger, min(heat, oven, digging)'),

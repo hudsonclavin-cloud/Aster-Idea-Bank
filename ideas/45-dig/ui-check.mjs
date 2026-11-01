@@ -55,10 +55,11 @@ const RC = K.run(srcC, {});
   ok(Math.abs(num(water(T).v) - RC.water.mean * 1000) < 0.6 && /g$/.test(water(T).v), 'water tile ' + water(T).v + ' vs ' + RC.water.mean * 1000 + ' g');
   ok(water(T).c === 'assumed', 'S-type water is labelled assumed');
   ok(Math.abs(num(T['Heat per kg of water'].v) / (RC.energy.perKgWater_J / 1e6) - 1) < 0.005, 'heat per kg water (3 figures) ' + T['Heat per kg of water'].v);
-  ok(Math.abs(num(T['Digging pushes'].v) - RC.dig.pushUsed_N * 1000) < 0.06, 'push tile ' + T['Digging pushes'].v);
+  ok(Math.abs(num(T['Digging pushes sideways'].v) - RC.dig.sideUsed_N * 1000) < 0.06, 'sideways push tile ' + T['Digging pushes sideways'].v);
+  ok(T['Digging pushes sideways'].s.includes(RC.dig.friction_needed.toFixed(2)) && /not judged/.test(T['Digging pushes sideways'].s), 'friction needed shown, not judged: ' + T['Digging pushes sideways'].s);
   ok(num(T['Water in the rock'].v) === 510, 'Itokawa 510 ppm');
   const R = await refusals(page);
-  ok(R.length === 3 && R.some((x) => x.includes('release')) && R.some((x) => x.includes('excavation')) && R.some((x) => x.includes('terrain')), 'own refusals ' + R.join(' | '));
+  ok(R.length === 4 && R.some((x) => x.includes('release')) && R.some((x) => x.includes('excavation')) && R.some((x) => x.includes('terrain')) && R.some((x) => x.includes('insufficient data · traction')), 'own refusals ' + R.join(' | '));
   ok((await page.$eval('#carriedSum', (e) => e.textContent)).startsWith('19 '), '19 carried');
   for (const id of ['dayChart', 'sunChart', 'yieldChart', 'energyChart', 'recChart', 'pushChart']) ok(await drawn(page, id) > 2000, id + ' drawn');
   let rows = await page.$$eval('#checkTable tbody tr', (r) => r.map((x) => x.textContent));
@@ -73,9 +74,15 @@ const RC = K.run(srcC, {});
   await setNum(page, 'apIn', 17);
   T = await tiles(page);
   ok(Math.abs(num(water(T).v) - k2 * 1000) < 1.1 && Math.abs(k2 / k1 - 2) < 1e-9, 'mirror doubled: ' + water(T).v);
-  // a cut too deep: the page holds it back and says why
+  // a friction coefficient set as a what-if, then a cut too deep for it: the page holds it back and says why
+  await setNum(page, 'muIn', 0.5);
   await setNum(page, 'depIn', 20);
-  ok((await refusals(page)).some((x) => x.includes('push')), 'a 20 mm cut is refused as lifting off');
+  const RM = K.run(srcC, { oven_kg: 1000, aperture_m2: 17, mu: 0.5, depth_m: 0.02 });
+  ok((await refusals(page)).some((x) => x.includes('out of envelope · traction')), 'a 20 mm cut at friction 0.5 is held back');
+  T = await tiles(page);
+  ok(/held there/.test(T['Digging pushes sideways'].s) && Math.abs(num(T['Digging pushes sideways'].v) - RM.dig.sideUsed_N * 1000) < 0.06, 'held-back push ' + T['Digging pushes sideways'].v + ' vs ' + RM.dig.sideUsed_N * 1000);
+  { const b1 = await seq(page); await page.fill('#muIn', ''); await page.press('#muIn', 'Tab'); await waitRun(page, b1); }
+  ok((await refusals(page)).some((x) => x.includes('insufficient data · traction')), 'a blank friction is not judged again');
   // too little concentration: no heat goes into the oven
   await setNum(page, 'cIn', 20);
   T = await tiles(page);

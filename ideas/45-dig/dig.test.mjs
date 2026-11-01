@@ -110,6 +110,10 @@ test('4. heat: Hess\'s law, hand-worked numbers and the limits', () => {
   const e0 = K.energy(w, 298.15, 1023.15, 0), e1 = K.energy(w, 298.15, 1023.15, 1);
   close(e0.perKgRegolith_J - e1.perKgRegolith_J, -e1.parts_J_per_kg.recovered, 1e-6);
   assert.ok(e1.perKgRegolith_J > 0 && e1.perKgRegolith_J < e0.perKgRegolith_J);
+  // warmer rock to start costs less, by exactly the reactants' heat from 298.15 K (chrysotile and forsterite)
+  const w2 = 0.05, f2 = w2 / K.XW, warm = K.energy(w2, 380, 1023.15, 0), cold = K.energy(w2, 298.15, 1023.15, 0);
+  close(cold.perKgRegolith_J - warm.perKgRegolith_J, (f2 / 0.277112) * K.dhRH(sp.chrysotile.cp, 380) + ((1 - f2) / 0.140693) * K.dhRH(sp.forsterite.cp, 380), 1e-6);
+  assert.ok(K.dhRH(sp.forsterite.cp, 380) > 9000, 'forsterite from 298 to 380 K takes over 9 kJ/mol');
   // more water than serpentine holds is refused
   assert.equal(K.energy(0.14, 298.15, 1023.15, 0).refusal.code, 'out_of_envelope');
   // the run-D numbers the page shows for Bennu
@@ -131,34 +135,63 @@ test('5. the concentrator: the cavity radiates sigma T^4 / C, and below the brea
   assert.ok(r.own.some((x) => x.applies_to === 'receiver'));
   assert.equal(r.water.mean, 0);
   close(Rb.receiver.eta_rec_epoch, 0.671422, 1e-6);
+  // a grey cavity (emissivity 0.5) loses half as much, in the formula and in the daily ledger
+  close(K.receiverFlux(S, T, Object.assign({}, P, { eps: 0.5 })), 0.85 * 1000 - 0.5 * sigma * T ** 4 / 300, 1e-9);
+  const grey = K.run(bennu.src, { eps: 0.5, stay_days: 2 }), d0 = grey.timeline[0], s0 = grey.sun.days[0];
+  close(d0.heat_J, 8.5 * (0.85 * s0.insolation_J_m2 - 0.5 * sigma * T ** 4 / 300 * s0.lit_s), 1e-3);
+  close(grey.receiver.minConc_epoch, Rb.receiver.minConc_epoch / 2, 1e-9);
   close(Rc.receiver.minConc_epoch, 38.2434, 1e-4);
 });
 
-test('6. digging: the push, the depth that lifts the spacecraft off, and holding down', () => {
-  const D = SRC.ipex.drums.small, st = chain.src.site, S = Rc.S;
-  // by hand: imbalance x p w d + mdot v_tip, mdot = 2 rho w d v, v_tip = 8.5 v
+test('6. digging: the sideways push, the friction the feet need, and holding the cut', () => {
+  const D = SRC.ipex.drums.small, st = chain.src.site, ss = chain.src.surface;
+  // by hand: imbalance x p w d (one drum's cut, uncancelled) + mdot v (the dug regolith brought to the craft's speed),
+  // mdot = 2 rho w d v; the buckets' fling to their tip speed is caught inside the drums and is not a force on the craft
   const p = st.resistance_Pa[1], w = D.width_m, d = 0.010, v = 0.010, rho = st.rho43;
-  const push = 0.1 * p * w * d + (2 * rho * w * d * v) * (8.5 * v);
-  close(Rc.dig.push_N, push, 1e-12);
-  close(Rc.dig.push_N, 0.0396550608, 1e-10);
-  close(Rc.dig.weightNormal_N / chain.src.surface.hold_normal_N, 1, 1e-8, 'idea 44\'s weight normal to the ground (printed to 9 figures)');
-  close(Rc.dig.depthMax_m * Rc.dig.perDepth_N_m, Rc.dig.weightNormal_N, 1e-12);
-  assert.equal(Rc.dig.liftsOff, false);
-  // perfectly balanced drums push only by the momentum of what they dig
-  const b = K.dig(Object.assign({}, S, { imbalance: 0 }), { resistance_Pa: st.resistance_Pa, weightNormal_N: 1, alongSlope_N: 0, holdKgPerNHour: null, propellantLeft_kg: null });
-  close(b.push_N, b.mdot_kg_s * b.vTip_m_s, 1e-15);
-  // deeper than the limit: cut back to it, and the chain's spacecraft has no propellant to hold itself down
-  const deep = K.run(chain.src, { depth_m: 0.02, hold: 'thrust' });
-  assert.ok(deep.dig.liftsOff && deep.dig.depthCapped);
-  close(deep.dig.depthUsed_m, Rc.dig.depthMax_m, 1e-15);
-  const pr = deep.own.filter((x) => x.applies_to === 'push')[0];
-  assert.ok(pr && /no propellant left/.test(pr.reason));
-  // a spacecraft with propellant: holding down costs idea 44's kg per newton-hour
+  const side = 0.1 * p * w * d + (2 * rho * w * d * v) * v;
+  close(Rc.dig.side_N, side, 1e-12);
+  close(Rc.dig.side_N, 0.0336129936, 1e-10);
+  close(Rc.dig.weightNormal_N / ss.hold_normal_N, 1, 1e-8, 'idea 44\'s weight normal to the ground (printed to 9 figures)');
+  close(Rc.dig.alongSlope_N / ss.along_slope_N, 1, 1e-8, 'idea 44\'s weight along the slope');
+  // the friction the feet need: the slope alone is idea 44's tan(slope); digging adds H (worst case, downhill)
+  close(Rc.dig.friction_slope, ss.friction_needed_to_stay, 1e-8);
+  close(Rc.dig.friction_needed, (ss.along_slope_N + side) / ss.hold_normal_N, 1e-8);
+  // no friction coefficient is measured: not judged (refused as insufficient data), nothing capped, no lift-off claimed
+  assert.equal(Rc.dig.mu, null); assert.equal(Rc.dig.depthCapped, false); assert.equal(Rc.dig.depthMax_m, null);
+  assert.equal(Rc.own.filter((x) => x.applies_to === 'traction')[0].code, 'insufficient_data');
+  // two pairs: twice the push and twice the digging
+  const two = K.run(chain.src, { pairs: 2 });
+  close(two.dig.side_N, 2 * side, 1e-12); close(two.dig.mdotUsed_kg_s, 2 * Rc.dig.mdotUsed_kg_s, 1e-15);
+  // perfectly balanced drums push only by bringing the regolith up to the craft's speed
+  const b = K.run(chain.src, { imbalance: 0 });
+  close(b.dig.side_N, b.dig.mdot_kg_s * v, 1e-15);
+  // a friction coefficient set as a what-if: the deepest cut solves W_t + H = mu W_n, and a deeper cut is held there
+  const m = K.run(chain.src, { mu: 0.5, depth_m: 0.02 });
+  close(m.dig.alongSlope_N + m.dig.perDepth_N_m * m.dig.depthMax_m, 0.5 * m.dig.weightNormal_N, 1e-15);
+  close(m.dig.depthMax_m, (0.5 * ss.hold_normal_N - ss.along_slope_N) / (0.1 * p * w + 2 * rho * w * v * v), 1e-9, 'deepest cut at mu 0.5 from idea 44\'s printed weights');
+  close(m.dig.depthMax_m * 1000, 5.1117, 1e-4, 'mm');
+  assert.ok(m.dig.slides && m.dig.depthCapped); assert.equal(m.dig.depthUsed_m, m.dig.depthMax_m);
+  assert.equal(m.own.filter((x) => x.applies_to === 'traction')[0].code, 'out_of_envelope');
+  assert.ok(m.water.mean > 0 && m.water.limits.oven === 90, 'the held-back cut still outdigs the oven');
+  // below the slope's own friction it slides before it digs: nothing dug, no water
+  const slip = K.run(chain.src, { mu: 0.1 });
+  assert.equal(slip.dig.depthUsed_m, 0); assert.equal(slip.water.mean, 0); assert.equal(slip.water.limits.dig, 90);
+  // thrust: the chain's spacecraft has no propellant left
+  const nothing = K.run(chain.src, { hold: 'thrust' });
+  assert.ok(!nothing.dig.thrustOk && /no propellant left/.test(nothing.own.filter((x) => x.applies_to === 'traction')[0].reason));
+  // a spacecraft with 5 kg left: thrust cancels the push at idea 44's kg per N-hour, but only if it lasts the stay
   const src2 = JSON.parse(JSON.stringify(chain.src)); src2.site.propellantLeft_kg = 5; src2.site.propellantShort_kg = null;
-  const held = K.run(src2, { depth_m: 0.02, hold: 'thrust' });
-  assert.ok(held.dig.thrustOk && !held.dig.depthCapped);
-  close(held.dig.holdKgPerHour, (held.dig.push_N - held.dig.weightNormal_N) * st.holdKgPerNHour, 1e-15);
-  assert.ok(held.holdKgPerDay > 0);
+  const short = K.run(src2, { hold: 'thrust' });
+  assert.ok(!short.dig.thrustOk && short.own.some((x) => x.applies_to === 'hold'), '90 days of thrust would burn more than 5 kg');
+  const held = K.run(src2, { hold: 'thrust', stay_days: 2 });
+  assert.ok(held.dig.thrustOk && !held.own.some((x) => x.applies_to === 'hold' || x.applies_to === 'traction'));
+  close(held.dig.holdKgPerHour, side * st.holdKgPerNHour, 1e-15);
+  close(held.holdStay_kg, held.dig.holdKgPerHour * held.timeline.reduce((a, x) => a + x.lit_h, 0), 1e-12);
+  assert.ok(held.holdStay_kg < 5);
+  close(held.dig.friction_feet, held.dig.friction_slope, 1e-12, 'with thrust the feet hold only the slope');
+  // with a coefficient set, thrust takes only what the feet cannot hold
+  const ex = K.run(src2, { hold: 'thrust', stay_days: 2, mu: 0.5, depth_m: 0.02 });
+  close(ex.dig.holdThrust_N, ss.along_slope_N + 2 * side - 0.5 * ss.hold_normal_N, 1e-10); assert.ok(!ex.dig.depthCapped);
 });
 
 test('7. feedstock: spectral class to analog, and what the water numbers are compared with', () => {
@@ -234,7 +267,7 @@ test('9. refusals the inputs raise', () => {
   assert.match(K.parseHandoff(turned).refusal.reason, /spin/);
   const other = JSON.parse(JSON.stringify(L.bennu44())); other.outputs.surface_state.value.body = '433 Eros';
   assert.equal(K.parseHandoff(other).refusal.code, 'not_found');
-  for (const bad of [{ conc: 0 }, { run: 'Z' }, { analog: 'iron' }, { stay_days: 0 }, { T0_K: 250 }, { pairs: 1.5 }, { drum: 'huge' }, { hold: 'glue' }]) {
+  for (const bad of [{ conc: 0 }, { run: 'Z' }, { analog: 'iron' }, { stay_days: 0 }, { T0_K: 250 }, { pairs: 1.5 }, { drum: 'huge' }, { hold: 'glue' }, { mu: 0 }, { mu: 5 }]) {
     const r = K.run(bennu.src, bad);
     assert.equal(r.refusal && r.refusal.code, 'invalid_input', JSON.stringify(bad));
   }

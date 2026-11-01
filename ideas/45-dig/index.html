@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Dig: water from an asteroid</title>
-<meta name="description" content="A mining plant on the asteroid the chain landed on: what the regolith gives up when heated (measured on real meteorite chips), what that costs in heat, what the Sun delivers at that distance and at that spot, whether digging pushes the spacecraft off, and the water made each day over the stay.">
+<meta name="description" content="A mining plant on the asteroid the chain landed on: what the regolith gives up when heated (measured on real meteorite chips), what that costs in heat, what the Sun delivers at that distance and at that spot, what sideways push digging puts on the feet, and the water made each day over the stay.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
   <h1>Dig</h1>
-  <p class="lede">Idea 44 left the spacecraft standing on the asteroid, weighing a few tens of millinewtons. This page puts a mining plant there: bucket drums that dig without pushing it off, a mirror and an oven that bake water out of the regolith, and the Sun at that distance, rising and setting over that spot. It says how much water comes out each day, what limits it, and how sure that is.</p>
+  <p class="lede">Idea 44 left the spacecraft standing on the asteroid, weighing a few tens of millinewtons. This page puts a mining plant there: bucket drums whose sideways push the feet must hold, a mirror and an oven that bake water out of the regolith, and the Sun at that distance, rising and setting over that spot. It says how much water comes out each day, what limits it, and how sure that is.</p>
   <p class="series">The Long Way Round (launch to asteroid and back), module 15 of 20. Previous: <a href="../44-touch-and-go/index.html">44 Touch and Go</a>, descent and contact. Next: 46 Split, refuelling (not built yet).</p>
 </header>
 
@@ -68,8 +68,9 @@
       </div>
       <span class="lab" id="lab-res">Regolith resistance (idea 44's Bennu fit)</span>
       <div class="seg" role="group" aria-labelledby="lab-res"><button type="button" data-res="low">Low</button><button type="button" data-res="high">High</button></div>
-      <span class="lab" id="lab-hold">Held down by</span>
-      <div class="seg" role="group" aria-labelledby="lab-hold"><button type="button" data-hold="weight">Its weight only</button><button type="button" data-hold="thrust">Weight and thrusters</button></div>
+      <span class="lab" id="lab-hold">The sideways push is held by</span>
+      <div class="seg" role="group" aria-labelledby="lab-hold"><button type="button" data-hold="weight">The feet only</button><button type="button" data-hold="thrust">Feet and thrusters</button></div>
+      <div class="ctl"><label for="muIn">Feet friction on the regolith <small>a what-if; blank = not judged</small></label><input id="muIn" type="number" min="0.01" max="3" step="0.05" inputmode="decimal" placeholder="not set (none measured)"></div>
       <div class="grid2">
         <div class="ctl"><label for="rhoIn">Regolith density <small>kg/m³</small></label><input id="rhoIn" type="number" min="300" max="4000" step="10" inputmode="decimal"></div>
         <div class="ctl"><label for="massIn">Mass on the ground <small>kg</small></label><input id="massIn" type="number" min="1" max="1000000" step="1" inputmode="decimal"></div>
@@ -99,12 +100,12 @@
   </section>
 
   <section class="card wide" aria-labelledby="h-why">
-    <h2 id="h-why">The rock, the heat, the mirror and the push</h2>
+    <h2 id="h-why">The rock, the heat, the mirror and the feet</h2>
     <div class="chartgrid">
       <div><canvas id="yieldChart" class="chart" role="img" aria-label="Water released against oven peak temperature: each measured Murchison run, Winchcombe, Bennu from orbit and Itokawa, with the chosen run marked."></canvas><ul class="legend" id="yieldLegend"></ul><p class="chart-cap" id="yieldCap"></p></div>
       <div><canvas id="energyChart" class="chart" role="img" aria-label="Heat per kilogram of water against the regolith's water content, on log scales, with the analogs marked."></canvas><ul class="legend" id="energyLegend"></ul><p class="chart-cap" id="energyCap"></p></div>
       <div><canvas id="recChart" class="chart" role="img" aria-label="Fraction of the mirror's sunlight that stays in the oven against concentration ratio, at this oven temperature and distance from the Sun."></canvas><p class="chart-cap" id="recCap"></p></div>
-      <div><canvas id="pushChart" class="chart" role="img" aria-label="Push of the digging on the spacecraft against cut depth, with the spacecraft's weight on the ground marked."></canvas><ul class="legend" id="pushLegend"></ul><p class="chart-cap" id="pushCap"></p></div>
+      <div><canvas id="pushChart" class="chart" role="img" aria-label="Friction coefficient the feet need against cut depth, with the slope alone and any friction set here marked."></canvas><ul class="legend" id="pushLegend"></ul><p class="chart-cap" id="pushCap"></p></div>
     </div>
   </section>
 
@@ -133,13 +134,13 @@
     <details><summary>What the heat costs</summary>
       <p class="small">Hess's law over Robie and Hemingway's tables (USGS Bulletin 2131): the water is carried as serpentine (chrysotile) that breaks down into forsterite, enstatite and steam; the rest of the rock is heated as forsterite. Reactants at the start temperature, products at the oven's peak; the heat is the difference of their enthalpies, whatever the path. Breaking the serpentine costs 4.38 MJ per kg of water, 79% more than boiling free water; heating the rock costs more than that when the water is a few per cent, and everything when it is parts per million. Heat recovered from the spent rock can preheat the next batch.</p></details>
     <details><summary>What the Sun delivers</summary>
-      <p class="small">Where the asteroid is comes from JPL Horizons (ICRF, every 2 days); the flux is the Sun's luminosity (NSSDCA, as idea 40 uses it) over 4π r². Whether the Sun is up at the site comes from idea 43's spin, unmodified: Bennu's IAU rotation, or Apophis tumbling by Euler's equations from NAIF's CK samples (called every 2 h, with a cubic Hermite in between). A Sun-tracking mirror feeds a cavity oven; the oven's opening, the mirror's area over the concentration, radiates σT⁴ at the oven's temperature, so too little concentration means no heat goes in at all. The tests hold the Sun's elevation at Nightingale to JPL Horizons' own Bennu model.</p></details>
-    <details><summary>Digging without pushing off</summary>
-      <p class="small">NASA's IPEx and RASSOR excavators dig with pairs of bucket drums turning in opposite directions so their cutting forces cancel. The page keeps a fraction of one drum's force uncancelled (the imbalance), uses idea 44's regolith resistance (its fit to OSIRIS-REx's contact, 69 to 165 Pa) as the pressure on the cut face, and adds the momentum of the regolith thrown into the drums at their tip speed (8.5 times the cut speed, IPEx). Against it is the spacecraft's weight on the ground. Too deep a cut lifts it off: the page cuts the depth back, or holds it down with thrusters at idea 44's cost per newton-hour if there is propellant.</p></details>
+      <p class="small">Where the asteroid is comes from JPL Horizons (ICRF, every 2 days); the flux is the Sun's luminosity (NSSDCA, as idea 40 uses it) over 4π r². Whether the Sun is up at the site comes from idea 43's spin, unmodified: Bennu's IAU rotation, or Apophis tumbling by Euler's equations from NAIF's CK samples (called every 2 h, with a cubic Hermite in between). A Sun-tracking mirror feeds a cavity oven; the oven's opening, the mirror's area over the concentration, radiates σT⁴ at the oven's temperature, so too little concentration means no heat goes in at all. The tests hold the Sun's elevation above Nightingale's geodetic vertical to JPL Horizons' own Bennu model; the page's ground is idea 44's plate, which is tilted from that vertical.</p></details>
+    <details><summary>Digging without being pushed away</summary>
+      <p class="small">NASA's IPEx and RASSOR excavators dig with pairs of bucket drums turning in opposite directions. IPEx measured the excavation force as horizontal, along the cut, so a pair's forces cancel; the page keeps a fraction of one drum's force uncancelled (the imbalance), with idea 44's regolith resistance (its fit to OSIRIS-REx's contact) as the pressure on the cut face. The regolith the buckets fling to their tip speed is caught inside the drums, so that momentum stays aboard; the craft only feels the dug regolith brought to its own speed. That sideways push, with the slope's own pull along the ground, must be held by the feet's friction against the weight on the ground. No friction coefficient is measured for this regolith, so the page shows the friction needed and judges it only against one you set (a what-if): then a cut that would slip is held back. Thrusters can cancel the push at idea 44's cost per newton-hour, if the propellant lasts the stay. Whether a cut lifts the lander is not measured anywhere (IPEx's vertical force was the regolith's weight, at 1 g) and is refused.</p></details>
     <details><summary>Day by day</summary>
       <p class="small">Each day the plant processes the least of three amounts: what the day's heat can bake, what the oven can cycle while the Sun is up (batches heated at the run's rate), and what the drums can dig while the Sun is up. Water is that times the run's water fraction. The handoff gives module 46 the mean, the range and every day.</p></details>
     <details><summary>What it does not do</summary>
-      <p class="small">No terrain shadows (the horizon is the site plate's plane; a mask is offered); no heat lost or kept overnight; no kinetics beyond the measured runs; carbonates and sulfides are released but their heats of reaction are left out; no anchoring; no electrical power budget for the drums, the condenser or the radiators; the release curve of Bennu's own returned sample is not in this folder.</p></details>
+      <p class="small">No terrain shadows (the horizon is the site plate's plane; a mask is offered); no heat lost or kept overnight; no kinetics beyond the measured runs; carbonates and sulfides are released but their heats of reaction are left out; no anchoring; no lift from the cut (not measured); no electrical power budget for the drums, the condenser or the radiators; the release curve of Bennu's own returned sample is not in this folder.</p></details>
   </section>
 </main>
 <footer><p class="small">Idea 45 of the Aster Idea Bank, an idea-bank prototype. Kernel <span class="mono">dig.js</span>; idea 43's spin kernel and idea 44's handoffs in <span class="mono">snapshots/</span>; sources and their checks in the README.</p></footer>
