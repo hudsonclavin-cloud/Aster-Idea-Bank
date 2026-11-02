@@ -1,0 +1,14 @@
+{
+  "repo": "https://ssd-api.jpl.nasa.gov/nhats.api",
+  "path": "nhats.api?des=<1999 AO10|101955|2000 SG344|99942|2001 GP2>&dv=6|8|12&dur=360|450&stay=8|32&launch=2025-2030|2030-2035|2035-2040 (180 queries, the file names oracle/fetch-nhats.sh writes)",
+  "commit": "retrieved 2026-11-02",
+  "retrieved": "2026-11-02",
+  "sourceSha256": "a1206b136eccbbf8e15d40efd2db5d0c61c079ed8c1c5d652c0bdd7e3ae3e07e",
+  "sourceSha256Rule": "sha256 of the newline-joined per-response sha256 values, responses in file-name order",
+  "sourceBytes": 137493,
+  "license": "NASA/JPL public API; US Government work, public domain in the US",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --nhats: 82 distinct trajectories from 91 of 180 queries; every distinct trajectory (min_dv_traj and min_dur_traj, de-duplicated by des and tid) over dv 6|8|12 km/s × dur 360|450 d × stay 8|32 d × launch 2025-2030|2030-2035|2035-2040 for the five bodies; columns reduced to the return leg, values NHATS's own",
+  "writtenSha256": "173161ea9a92224161059365dccc4117bdbd8a1132248febac242009b80ceda6",
+  "writtenBytes": 6776
+}

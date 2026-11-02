@@ -1,0 +1,127 @@
+{
+ "generatedAtUtc": "2026-10-14T14:25:01.864Z",
+ "source": "tier-sizing.mjs over nea-catalog-slice9.json + dv-scope-results.json + cad-all-0.3.json",
+ "populations": {
+  "L0": 11,
+  "L1": 10150,
+  "L2": 31745,
+  "total": 41906,
+  "structurallyBlindL2": 688
+ },
+ "records": {
+  "433": {
+   "des": "433",
+   "tier": "L2",
+   "subReason": "measured-but-unbounded",
+   "classification": "quiet",
+   "Q": 1.783,
+   "e": 0.2229,
+   "aAU": 1.458,
+   "orbitClass": "AMO",
+   "material": false
+  },
+  "99942": {
+   "des": "99942",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.099,
+   "e": 0.1911,
+   "aAU": 0.922,
+   "orbitClass": "ATE",
+   "material": true,
+   "encounter": {
+    "jd": 2462026.674559462,
+    "cd": "2028-Sep-12 04:11",
+    "body": "Earth",
+    "dvKmS": 0.002631035645276928
+   },
+   "maxDriftEncounter": {
+    "jd": 2462240.407091969,
+    "cd": "2029-Apr-13 21:46",
+    "body": "Earth",
+    "dvKmS": 2.775704395041767
+   }
+  },
+  "101955": {
+   "des": "101955",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.355,
+   "e": 0.2037,
+   "aAU": 1.126,
+   "orbitClass": "APO",
+   "material": true,
+   "encounter": {
+    "jd": 2465101.061374439,
+    "cd": "2037-Feb-11 13:28",
+    "body": "Earth",
+    "dvKmS": 0.007164996201392661
+   }
+  },
+  "1999 AO10": {
+   "des": "1999 AO10",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.013,
+   "e": 0.111,
+   "aAU": 0.912,
+   "orbitClass": "ATE",
+   "material": true,
+   "encounter": {
+    "jd": 2462182.084602355,
+    "cd": "2029-Feb-14 14:02",
+    "body": "Venus",
+    "dvKmS": 0.015601223602443379
+   }
+  },
+  "2000 SG344": {
+   "des": "2000 SG344",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.043,
+   "e": 0.0669,
+   "aAU": 0.977,
+   "orbitClass": "ATE",
+   "material": true,
+   "encounter": {
+    "jd": 2461541.6470806,
+    "cd": "2027-May-16 03:32",
+    "body": "Earth",
+    "dvKmS": 0.002993850233507489
+   },
+   "maxDriftEncounter": {
+    "jd": 2461898.647539416,
+    "cd": "2028-May-07 03:32",
+    "body": "Earth",
+    "dvKmS": 0.13363005845150142
+   }
+  },
+  "2001 GP2": {
+   "des": "2001 GP2",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.11,
+   "e": 0.0723,
+   "aAU": 1.035,
+   "orbitClass": "APO",
+   "material": true,
+   "encounter": {
+    "jd": 2465909.36571358,
+    "cd": "2039-Apr-30 20:47",
+    "body": "Earth",
+    "dvKmS": 0.005047609445214506
+   },
+   "maxDriftEncounter": {
+    "jd": 2466411.724971787,
+    "cd": "2040-Sep-14 05:24",
+    "body": "Earth",
+    "dvKmS": 0.07765635881808826
+   }
+  }
+ }
+}

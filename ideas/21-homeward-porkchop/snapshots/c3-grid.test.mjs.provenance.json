@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/boundary/c3-grid.test.mjs",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "a65c4829a8a14fd7af57212db5bab5ec509381ce",
+  "readBlob": "a65c4829a8a14fd7af57212db5bab5ec509381ce",
+  "sourceSha256": "9aa501e9fd7b1f83f667069bf89e37e20deaf837529c311d05c54270dee494b6",
+  "sourceBytes": 5187,
+  "copiedAt": "2026-10-26T16:29:16.003Z",
+  "mode": "copy",
+  "note": "",
+  "readMatchesCommitted": true,
+  "writtenSha256": "9aa501e9fd7b1f83f667069bf89e37e20deaf837529c311d05c54270dee494b6",
+  "writtenBytes": 5187
+}

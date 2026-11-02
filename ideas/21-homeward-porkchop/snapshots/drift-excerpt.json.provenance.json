@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nea-drift-truth-2026-2046.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "432c86438caa2fcbc22bf5f6b203cf16543eca0d",
+  "readBlob": "432c86438caa2fcbc22bf5f6b203cf16543eca0d",
+  "sourceSha256": "7b421d3edaedfd6cc08b51e1847b2e65a050e88898f32105c59acac10444e8c2",
+  "sourceBytes": 2595797,
+  "copiedAt": "2026-10-26T16:29:20.768Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: records every 26 weeks from the first, inside the Earth span 2461041.5..2466519.5 (JD TDB), plus any record on an NHATS return-departure date; targets 99942, 433",
+  "readMatchesCommitted": true,
+  "writtenSha256": "581824388abe30cd8f33193efcb03df484678f424dd96c9e2fcb5e688038bf60",
+  "writtenBytes": 9188
+}

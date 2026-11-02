@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/porkchop/colormap.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "e49933b 2026-10-14T15:00:41-04:00",
+  "committedBlob": "fa704a57ec09c31011bc1fadadb101aca9c85386",
+  "readBlob": "fa704a57ec09c31011bc1fadadb101aca9c85386",
+  "sourceSha256": "2a62bb022b6d9bf8cfdb8e80fa09d7fe9ff36117381215ce224486229c72f214",
+  "sourceBytes": 1972,
+  "copiedAt": "2026-10-26T16:29:15.481Z",
+  "mode": "copy",
+  "note": "",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2a62bb022b6d9bf8cfdb8e80fa09d7fe9ff36117381215ce224486229c72f214",
+  "writtenBytes": 1972
+}
