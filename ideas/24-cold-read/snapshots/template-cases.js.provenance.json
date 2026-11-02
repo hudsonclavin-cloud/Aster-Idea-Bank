@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/flight-templates-cases.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "04bd557 2026-09-16T19:58:00+00:00",
+  "committedBlob": "0d88b4ff59b2dcd30896510d3e14c1a413383b2e",
+  "readBlob": "0d88b4ff59b2dcd30896510d3e14c1a413383b2e",
+  "sourceSha256": "6e1a08d20ba020b4610f064b061926ebdb7c1b2436149894763809106943a935",
+  "sourceBytes": 705,
+  "copiedAt": "2026-10-26T16:31:27.076Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string",
+  "readMatchesCommitted": true,
+  "writtenSha256": "f23118ff0b080d27f6a81d82b544f27011ec5b2ec67631f5622034a0058f3104",
+  "writtenBytes": 2085
+}

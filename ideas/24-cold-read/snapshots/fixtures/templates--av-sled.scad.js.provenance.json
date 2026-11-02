@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/av-sled.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "20027a2 2026-09-15T17:01:56+00:00",
+  "committedBlob": "a887cfdf686855f6d942beeaef6fbec21afcddfa",
+  "readBlob": "a887cfdf686855f6d942beeaef6fbec21afcddfa",
+  "sourceSha256": "ad3ba197dc1e1ae904fe83ae6e934c9ec2872a163c1ce82c2f47ddead626d772",
+  "sourceBytes": 5612,
+  "copiedAt": "2026-10-26T16:31:26.354Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e90a2388d66505518d01d641e0d767c726a5bf330662730f0e7ba2880b2b94ff",
+  "writtenBytes": 6676
+}

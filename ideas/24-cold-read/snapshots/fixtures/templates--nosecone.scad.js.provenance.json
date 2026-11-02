@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/templates/nosecone.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "20027a2 2026-09-15T17:01:56+00:00",
+  "committedBlob": "c94fffe4ced130cfb446c2cd72a66e2c261f974b",
+  "readBlob": "c94fffe4ced130cfb446c2cd72a66e2c261f974b",
+  "sourceSha256": "f3e133c14b73ae5a988558c10967375ac6d622ebc271c94bd23721f3d436eff8",
+  "sourceBytes": 9495,
+  "copiedAt": "2026-10-26T16:31:26.895Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string",
+  "readMatchesCommitted": true,
+  "writtenSha256": "07071e58cc1992a9da4cabe7ca9786a55215869034ae45e90798d7d61aa53d3c",
+  "writtenBytes": 10545
+}

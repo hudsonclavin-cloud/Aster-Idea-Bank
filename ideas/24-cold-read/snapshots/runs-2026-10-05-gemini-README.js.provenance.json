@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/runs/2026-10-05-gemini/README.md",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "142b5ed 2026-10-05T19:53:37+00:00",
+  "committedBlob": "2a6ad5569ed62e1fcf11559b4c59d01c4966a3e2",
+  "readBlob": "2a6ad5569ed62e1fcf11559b4c59d01c4966a3e2",
+  "sourceSha256": "8059a6ec77f44d0f2562cc43bd218b0ebc7e5a617906f206a496395b33a4e6dd",
+  "sourceBytes": 3790,
+  "copiedAt": "2026-11-02T20:27:59.022Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string (the run log that states each recorded file's gate verdict)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "efaa6ee989a484acbe41843c30d345c244ac73ec5f5ab5370d604885d5cdc894",
+  "writtenBytes": 4602
+}

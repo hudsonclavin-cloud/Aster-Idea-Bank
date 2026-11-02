@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cold Read</title>
+<meta name="description" content="A static linter for PartForge .scad files: names every SPEC and FLIGHT declaration problem with its line before anything is rendered, using the app's own parsers, and never calls a part passed.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Cold Read</h1>
+  <p class="tag">Read a PartForge <code>.scad</code> before it renders. Every SPEC and FLIGHT declaration problem PartForge reports only after a full compile is named here with its line, decided by the app's own parsers. It never says a part passes: <strong>text checks only; geometry not checked</strong>.</p>
+</header>
+
+<main>
+<section class="panel" aria-labelledby="h-file">
+  <h2 id="h-file">The file</h2>
+  <div class="controls">
+    <label class="grow"><span>A PartForge text</span>
+      <select id="pick" aria-label="PartForge text to read"></select>
+    </label>
+    <label><span>Break it</span>
+      <select id="breakit" aria-label="apply a mutation"></select>
+    </label>
+    <label><span>Grade</span>
+      <select id="grade" aria-label="grade">
+        <option value="">auto</option>
+        <option value="flight">flight</option>
+        <option value="hobby">hobby</option>
+      </select>
+    </label>
+  </div>
+  <div id="summary" class="summary" aria-live="polite"></div>
+  <div id="gate" class="gate"></div>
+</section>
+
+<div class="split">
+<section class="panel" aria-labelledby="h-code">
+  <h2 id="h-code">Source <span class="hint">edit or paste; it is read again as you type</span></h2>
+  <div class="editor">
+    <pre id="gutter" class="gutter" aria-hidden="true"></pre>
+    <textarea id="code" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" aria-label="OpenSCAD source"></textarea>
+  </div>
+  <div class="controls small">
+    <button id="reset" type="button" class="secondary">Back to the original</button>
+    <button id="clear" type="button" class="secondary">Clear to paste your own</button>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="h-diag">
+  <h2 id="h-diag">What it found</h2>
+  <div class="filters" role="group" aria-label="show severities">
+    <label><input type="checkbox" id="f-error" checked> errors</label>
+    <label><input type="checkbox" id="f-warning" checked> warnings</label>
+    <label><input type="checkbox" id="f-info" checked> notes</label>
+  </div>
+  <ol id="diags" class="diags"></ol>
+  <p id="footer" class="footer"></p>
+</section>
+</div>
+
+<section class="panel" aria-labelledby="h-corpus">
+  <h2 id="h-corpus">All bundled texts</h2>
+  <p class="other" id="corpus-intro"></p>
+  <div class="scroll"><table id="corpus" class="corpus"></table></div>
+</section>
+
+<section class="panel" aria-labelledby="h-how">
+  <h2 id="h-how">How it works</h2>
+  <div id="how" class="how"></div>
+  <details>
+    <summary id="rules-summary">The rules</summary>
+    <div class="scroll"><table id="rules" class="rules"></table></div>
+  </details>
+</section>
+</main>
+
+<footer class="page-foot">
+  <p>Aster Idea Bank, idea 24. An idea-bank prototype: it has not been through PartForge's geometry gate, its data provenance pipeline or skeptic review. Nothing on this page makes a network request.</p>
+</footer>
+
+<script src="snapshots/app-rules.js"></script>
+<script src="coldread.js"></script>
+<script src="snapshots/app-templates.js"></script>
+<script src="snapshots/dryrun-cases.js"></script>
+<script src="snapshots/template-cases.js"></script>
+<script src="snapshots/runs-2026-10-05-gemini-README.js"></script>
+<script src="snapshots/runs-2026-10-06-gemini-flight-x5-README.js"></script>
+<script src="snapshots/fixtures/dryrun--endcap.scad.js"></script>
+<script src="snapshots/fixtures/dryrun--retainer.scad.js"></script>
+<script src="snapshots/fixtures/dryrun--retainer-fixed.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-05-gemini--centering-ring-54mm.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-05-gemini--spacer-plate.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-06-gemini-flight-x5--ring1.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-06-gemini-flight-x5--ring2.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-06-gemini-flight-x5--ring3.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-06-gemini-flight-x5--ring4.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-06-gemini-flight-x5--ring5.scad.js"></script>
+<script src="snapshots/fixtures/runs--2026-10-06-gemini-flight-x5--ring6-after-doctrine-fix.scad.js"></script>
+<script src="snapshots/fixtures/templates--av-sled.scad.js"></script>
+<script src="snapshots/fixtures/templates--bulkhead.scad.js"></script>
+<script src="snapshots/fixtures/templates--centering-ring.scad.js"></script>
+<script src="snapshots/fixtures/templates--coupler.scad.js"></script>
+<script src="snapshots/fixtures/templates--fin.scad.js"></script>
+<script src="snapshots/fixtures/templates--motor-retainer.scad.js"></script>
+<script src="snapshots/fixtures/templates--nosecone.scad.js"></script>
+<script src="corpus.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

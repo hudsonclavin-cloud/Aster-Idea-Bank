@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/dryrun/retainer.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "04bd557 2026-09-16T19:58:00+00:00",
+  "committedBlob": "70cb4023562c66536121d50b2bd658a542ba4dac",
+  "readBlob": "70cb4023562c66536121d50b2bd658a542ba4dac",
+  "sourceSha256": "ebc2ea8c7d9a3d56c0f1cd98b72150911947d392dc14e9eafe25b00fea0ce1f9",
+  "sourceBytes": 10871,
+  "copiedAt": "2026-10-26T16:31:26.187Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string",
+  "readMatchesCommitted": true,
+  "writtenSha256": "c077b7a8edb1ef4be6ed949a3d4d98522b31a6517a66778840ae69784787a90e",
+  "writtenBytes": 12114
+}

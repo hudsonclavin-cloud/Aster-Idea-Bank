@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/runs/2026-10-05-gemini/centering-ring-54mm.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "142b5ed 2026-10-05T19:53:37+00:00",
+  "committedBlob": "1067cc3b64acef1a9ec75a474dea14cfed4a5155",
+  "readBlob": "1067cc3b64acef1a9ec75a474dea14cfed4a5155",
+  "sourceSha256": "8c82c58e6616b453b5498aec043391fd4f4110a1c32e9fdfea9246c1b7af564c",
+  "sourceBytes": 4773,
+  "copiedAt": "2026-11-02T20:27:58.874Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string (a model-written file the app's gate passed; verdict in docs/runs/2026-10-05-gemini/README.md)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "83b68d73da7813a397c40e7e4c1d644732d9a9d1f6dd4568ffe34a524c9a3130",
+  "writtenBytes": 5910
+}

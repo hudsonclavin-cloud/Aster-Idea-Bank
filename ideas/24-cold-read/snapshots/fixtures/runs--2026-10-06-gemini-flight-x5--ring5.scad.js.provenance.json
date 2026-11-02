@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/runs/2026-10-06-gemini-flight-x5/ring5.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "98df2a2 2026-10-06T04:20:51+00:00",
+  "committedBlob": "d4dc36b54dacd276e4edec57684e1f141cf8bd13",
+  "readBlob": "d4dc36b54dacd276e4edec57684e1f141cf8bd13",
+  "sourceSha256": "d48c1d3ddf9e92c04f357a51143d5cc1586a8ee035c0a6e59591aecf75454612",
+  "sourceBytes": 4712,
+  "copiedAt": "2026-11-02T20:27:59.402Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string (a model-written file the app's gate passed; verdict in docs/runs/2026-10-06-gemini-flight-x5/README.md)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "ae3110f4fa85460c85d3be37849f9930ff06a031f6eb3def1a253304aed566a5",
+  "writtenBytes": 5812
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/runs/2026-10-05-gemini/spacer-plate.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "142b5ed 2026-10-05T19:53:37+00:00",
+  "committedBlob": "0914e66263d991ed0e57a616b9120926b33b010c",
+  "readBlob": "0914e66263d991ed0e57a616b9120926b33b010c",
+  "sourceSha256": "655e88f207f9929a605d5f6fd92585af6ebdf1a6da0ad3caf3d9213efb93e0ed",
+  "sourceBytes": 2248,
+  "copiedAt": "2026-11-02T20:27:58.938Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string (a model-written file the app's gate passed; verdict in docs/runs/2026-10-05-gemini/README.md)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "94cdf4b4df64e2383120eff45c998d8f76ac593591fc5dfc39c3d0963c190468",
+  "writtenBytes": 3103
+}

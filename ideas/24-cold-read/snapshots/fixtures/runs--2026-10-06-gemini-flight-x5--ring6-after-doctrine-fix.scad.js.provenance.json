@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "docs/runs/2026-10-06-gemini-flight-x5/ring6-after-doctrine-fix.scad",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "3ee6b63 2026-10-06T04:25:19+00:00",
+  "committedBlob": "db390a48c7ba5dbf7dff54622867db97e8a49924",
+  "readBlob": "db390a48c7ba5dbf7dff54622867db97e8a49924",
+  "sourceSha256": "b38fb8df0c154c4b8a52b78500d314c136e1263fac9de66bee3b9f0521473075",
+  "sourceBytes": 4879,
+  "copiedAt": "2026-11-02T20:27:59.487Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the file text wrapped verbatim as a JS string (a model-written file the app's gate passed; verdict in docs/runs/2026-10-06-gemini-flight-x5/README.md)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "27df59589ab4ba04d293e0e734a0aa4b70afeabeb304934861172b4f8bedf2c8",
+  "writtenBytes": 6099
+}

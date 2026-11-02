@@ -1,0 +1,77 @@
+$ node ideas/24-cold-read/cold-read.mjs ../Partforge/tests/dryrun/endcap.scad
+../Partforge/tests/dryrun/endcap.scad:29:68: error CONTRADICTION: Critical dimension "o-ring groove width": you say shoulder() measures 4.750 mm along z, but your SPEC gives shoulder a size of 101.500 × 101.500 × 20.000 mm. A critical dimension is a module's full extent; a groove, pocket or step inside it is a bore, an od or a helper module. The app finds this only after the render (flightCheck, index.html:5620), although its doctrine says such a nominal "is rejected before anything is rendered" (index.html:1455)
+      29 | //    {"name":"o-ring groove width","module":"shoulder","axis":"z","nominal_mm":4.750,"tol_mm":0.050,"tol_src":"source","tol_ref":"Parker ORD 5700 Table 4-2 pis
+../Partforge/tests/dryrun/endcap.scad:30:68: error CONTRADICTION: Critical dimension "lightening pocket depth": you say body() measures 8.000 mm along z, but your SPEC gives body a size of 127.000 × 127.000 × 25.400 mm. A critical dimension is a module's full extent; a groove, pocket or step inside it is a bore, an od or a helper module. The app finds this only after the render (flightCheck, index.html:5620), although its doctrine says such a nominal "is rejected before anything is rendered" (index.html:1455)
+      30 | //    {"name":"lightening pocket depth","module":"body","axis":"z","nominal_mm":8.000,"tol_mm":0.130,"tol_src":"default"},
+../Partforge/tests/dryrun/endcap.scad:80:1: info PARAM_HIDDEN: groove_z0 is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      80 | groove_z0     = flange_z + 5.750; // groove near edge z from inner face (mm) = 11.150
+../Partforge/tests/dryrun/endcap.scad:82:1: info PARAM_HIDDEN: groove_bot_od is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      82 | groove_bot_od = shoulder_od - 2 * groove_depth; // = 95.960 mm
+../Partforge/tests/dryrun/endcap.scad:92:1: info PARAM_HIDDEN: total_z is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      92 | total_z       = flange_z + shoulder_z + boss_z; // 28.4 mm
+../Partforge/tests/dryrun/endcap.scad:94:1: info PARAM_HIDDEN: outer_face_z is above the parameter sentinel but the parameter panel will not show it: its value is an expression, not a number (PARAM_RE, index.html:6420)
+      94 | outer_face_z  = flange_z + shoulder_z; // 25.4 mm
+../Partforge/tests/dryrun/endcap.scad: 2 errors, 0 warnings, 4 notes — flight grade; SPEC parsed (3 parts); FLIGHT parsed (17 entries kept, 0 dropped, 0 demoted, 0 never counted); 8 modules, 7 drawn from the top level
+text checks only; geometry not checked
+(exit 1)
+
+$ node ideas/24-cold-read/cold-read.mjs --no-info ../Partforge/tests/dryrun/retainer.scad ../Partforge/docs/runs/2026-10-06-gemini-flight-x5/ring3.scad
+../Partforge/tests/dryrun/retainer.scad: 0 errors, 0 warnings, 0 notes — flight grade; SPEC parsed (2 parts); FLIGHT parsed (10 entries kept, 0 dropped, 0 demoted, 0 never counted); 4 modules, 4 drawn from the top level
+../Partforge/tests/dryrun/retainer.scad: no textual errors or warnings. That is not a pass: nothing here was rendered or measured.
+text checks only; geometry not checked
+
+../Partforge/docs/runs/2026-10-06-gemini-flight-x5/ring3.scad:19:166: warning FLIGHT_DEMOTE: loads #1 "thrust retention bolts" claims a cited input but inputs_src is "source" and there is no inputs_ref: parseFlight counts it as a tool default (index.html:4740). The app's report calls every demotion "a cited tolerance with no tol_ref" (index.html:5587), although the key missing here is inputs_ref
+      19 | //  "loads":[{"check":"bolt_shear","name":"thrust retention bolts","motor":"Loki L2050","size":"M4","grade":"8.8","n":6,"force_N":3331,"plate_t_mm":8.0,"sf_min"
+../Partforge/docs/runs/2026-10-06-gemini-flight-x5/ring3.scad: 0 errors, 1 warning, 0 notes — flight grade; SPEC parsed (1 part); FLIGHT parsed (8 entries kept, 0 dropped, 1 demoted, 0 never counted); 2 modules, 2 drawn from the top level
+text checks only; geometry not checked
+
+(exit 0)
+
+$ sed 's/union(){ plate(); bosses(); }/union(){ plate(); }/' ../Partforge/tests/templates/av-sled.scad | node ideas/24-cold-read/cold-read.mjs --no-info -
+-:57:8: error MAIN_UNREACHED: SPEC part "bosses" is never drawn: main() at the top level never calls bosses(), directly or through another module. In flight grade the gate skips its containment check here: mainPlainUnion() accepts a main() whose calls are all declared parts without asking whether every declared part is called, so placement is taken "by construction" (index.html:4536-4550, 3424-3426). [Certain: the app's own mainPlainUnion() and topLevelIsOnlyMain() were run on this text and both accept it. Likely: that the gate then sets placement "byConstruction" is read from index.html:3425-3426, not run with the engine.] It can still notice through the 4 FLIGHT entries measured on the finished object, if one of them happens to touch bosses; nothing guarantees it
+      57 | module bosses(){
+-:65:8: warning SHORTCUT: main() is a plain union of SPEC parts and nothing else renders at the top level, so in flight grade the gate takes the parts as placed by construction and skips the containment probe (index.html:3228-3235, 3426), although main() never draws bosses()
+      65 | module main(){ union(){ plate(); } }
+-: 1 error, 1 warning, 0 notes — flight grade; SPEC parsed (2 parts); FLIGHT parsed (7 entries kept, 0 dropped, 0 demoted, 0 never counted); 4 modules, 2 drawn from the top level
+text checks only; geometry not checked
+(exit 1)
+
+$ node ideas/24-cold-read/cold-read.mjs --corpus
+ 2 err  0 warn  4 note  tests/dryrun/endcap.scad  [CONTRADICTION]  gate recorded 4 fails
+ 0 err  0 warn  0 note  tests/dryrun/retainer-fixed.scad  gate recorded 0 fails
+ 0 err  0 warn  0 note  tests/dryrun/retainer.scad  gate recorded 1 fail
+ 0 err  1 warn  3 note  docs/runs/2026-10-05-gemini/centering-ring-54mm.scad  [FLIGHT_DEMOTE]  gate: PASS on attempt 2.
+ 0 err  0 warn  1 note  docs/runs/2026-10-05-gemini/spacer-plate.scad  gate: PASS on attempt 1
+ 0 err  1 warn  0 note  docs/runs/2026-10-06-gemini-flight-x5/ring1.scad  [FLIGHT_DEMOTE]  gate: PASS on attempt 2
+ 0 err  1 warn  0 note  docs/runs/2026-10-06-gemini-flight-x5/ring2.scad  [FLIGHT_DEMOTE]  gate: PASS on attempt 2
+ 0 err  1 warn  0 note  docs/runs/2026-10-06-gemini-flight-x5/ring3.scad  [FLIGHT_DEMOTE]  gate: PASS on attempt 2
+ 0 err  1 warn  0 note  docs/runs/2026-10-06-gemini-flight-x5/ring4.scad  [FLIGHT_DEMOTE]  gate: PASS on attempt 2
+ 0 err  1 warn  0 note  docs/runs/2026-10-06-gemini-flight-x5/ring5.scad  [FLIGHT_DEMOTE]  gate: PASS on attempt 2
+ 0 err  1 warn  0 note  docs/runs/2026-10-06-gemini-flight-x5/ring6-after-doctrine-fix.scad  [FLIGHT_DEMOTE]  gate: PASS on attempt 1
+ 0 err  0 warn  1 note  tests/templates/av-sled.scad  gate recorded 0 fails
+ 0 err  0 warn  2 note  tests/templates/bulkhead.scad  gate recorded 0 fails
+ 0 err  0 warn  1 note  tests/templates/centering-ring.scad  gate recorded 0 fails
+ 0 err  0 warn  1 note  tests/templates/coupler.scad  gate recorded 0 fails
+ 0 err  0 warn  1 note  tests/templates/fin.scad  gate recorded 0 fails
+ 0 err  0 warn  1 note  tests/templates/motor-retainer.scad  gate recorded 0 fails
+ 0 err  0 warn  1 note  tests/templates/nosecone.scad  gate recorded 0 fails
+ 0 err  0 warn  1 note  index.html TEMPLATES_FLIGHT[0] Nose cone ✈ (= tests/templates/nosecone.scad)  gate recorded 0 fails
+ 0 err  0 warn  1 note  index.html TEMPLATES_FLIGHT[1] Centering ring (= tests/templates/centering-ring.scad)  gate recorded 0 fails
+ 0 err  0 warn  2 note  index.html TEMPLATES_FLIGHT[2] Av-bay bulkhead
+ 0 err  0 warn  1 note  index.html TEMPLATES_FLIGHT[3] Fin + TTW tab (= tests/templates/fin.scad)  gate recorded 0 fails
+ 0 err  0 warn  1 note  index.html TEMPLATES_FLIGHT[4] Motor retainer (= tests/templates/motor-retainer.scad)  gate recorded 0 fails
+ 0 err  0 warn  1 note  index.html TEMPLATES_FLIGHT[5] Coupler tube (= tests/templates/coupler.scad)  gate recorded 0 fails
+ 0 err  0 warn  1 note  index.html TEMPLATES_FLIGHT[6] Av sled (SLS) (= tests/templates/av-sled.scad)  gate recorded 0 fails
+ 0 err  0 warn  1 note  index.html TEMPLATES[0] Hinged box ⚙
+ 0 err  0 warn  1 note  index.html TEMPLATES[1] Box + snap lid
+ 0 err  0 warn  1 note  index.html TEMPLATES[2] L-bracket
+ 0 err  0 warn  1 note  index.html TEMPLATES[3] Wall hook
+ 0 err  0 warn  1 note  index.html TEMPLATES[4] Phone stand
+ 0 err  0 warn  1 note  index.html TEMPLATES[5] Tube adapter
+ 0 err  0 warn  1 note  index.html TEMPLATES[6] Spacer / washer
+ 0 err  0 warn  1 note  index.html TEMPLATES[7] Cable clip
+ 0 err  0 warn  1 note  index.html TEMPLATES[8] Divided tray
+ 0 err  0 warn  1 note  index.html TEMPLATES[9] Fit coupon 🎯
+35 files: 2 errors, 7 warnings, 34 notes
+text checks only; geometry not checked
+(exit 1)
