@@ -2,8 +2,8 @@
 //   node --test ideas/26-required-life/model.test.mjs
 // The reconciliation tests pin numbers to things outside this code: the published conservative
 // triple in Skyhook's DECISION_LOG (snapshot), the mass ratios in params/rev_a.json (snapshot),
-// Skyhook's own finance module run live through crosscheck.py, Abramowitz and Stegun's erf table,
-// and hand-worked figures.
+// Skyhook's own finance module (a committed fixture of its outputs, and run live through
+// crosscheck.py when the checkout is here), Python's math.erf, and hand-worked figures.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -60,7 +60,7 @@ test('every quote is the exact line of its snapshot, and the parsed numbers are 
 
 test('every snapshot has a sidecar naming Skyhook at 34935cb', () => {
   const files = fs.readdirSync(path.join(here, 'snapshots')).filter((f) => !f.endsWith('.provenance.json'));
-  assert.equal(files.length, 8);
+  assert.equal(files.length, 9);
   for (const f of files) {
     const p = JSON.parse(fs.readFileSync(snap(`${f}.provenance.json`), 'utf8'));
     assert.match(p.repo, /skyhook/);
@@ -71,12 +71,14 @@ test('every snapshot has a sidecar naming Skyhook at 34935cb', () => {
 
 // ---------------------------------------------------------------- base reconciliation
 
-test('erf matches the 10-digit tabulated values', () => {
-  // Abramowitz and Stegun Table 7.1 (quoted from memory; Python's math.erf agrees):
-  // 0.5 -> 0.5204998778, 1.0 -> 0.8427007929, 2.0 -> 0.9953222650
-  close(M.erf(0.5), 0.5204998778, 2e-10);
-  close(M.erf(1.0), 0.8427007929, 2e-10);
-  close(M.erf(2.0), 0.995322265, 2e-10);
+const FX = readJSON('skyhook_finance_outputs.json');
+
+test('erf matches Python\'s math.erf (the committed fixture) to 1e-14, and its limits', () => {
+  // The builder's version pinned three values "quoted from memory"; the review replaced them with
+  // the oracle the live cross-check already used, committed so it runs without the checkout.
+  const pts = Object.entries(FX.erf);
+  assert.equal(pts.length, 8);
+  for (const [xs, v] of pts) close(M.erf(Number(xs)), v, 1e-14, `erf(${xs})`);
   assert.equal(M.erf(0), 0);
   close(M.erf(-1), -M.erf(1), 0);
   assert.equal(M.erf(9), 1);
@@ -120,21 +122,11 @@ test('all published EQ-6 mass ratios and fiber masses in rev_a.json reproduce to
   }
 });
 
-let XC = null;
-function crosscheck() {
-  if (XC) return XC;
-  const r = spawnSync('python3', ['-B', path.join(here, 'crosscheck.py'), '--repo', '/home/user/skyhook'], {
-    encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
-  });
-  XC = r.status === 0 ? JSON.parse(r.stdout) : { skip: (r.stdout + r.stderr).trim() || `exit ${r.status}` };
-  return XC;
-}
-
-test('every tier and column agrees with Skyhook\'s own finance module, with and without the line', (t) => {
-  const x = crosscheck();
-  if (x.skip) return t.skip(`Skyhook checkout or openpyxl unavailable: ${x.skip}`);
-  assert.equal(x.cases.length, 9);
-  for (const c of x.cases) {
+// One reconciliation against Skyhook's own module for every tier, column and replacement run.
+// `fx` is either the committed fixture or the live crosscheck output (which also has 40-year flows).
+function reconcile(fx) {
+  assert.equal(fx.cases.length, 9);
+  for (const c of fx.cases) {
     const E = M.economics(D, c.column, c.tier);
     const tag = `${c.column}/${c.tier}`;
     close(E.massRatio, c.mass_ratio, 1e-12, tag);
@@ -148,16 +140,47 @@ test('every tier and column agrees with Skyhook\'s own finance module, with and 
     for (const [Y, L] of Object.entries(c.closed_form || {})) {
       close(M.requiredLifeClosedForm(E, R(1, null), Number(Y)), L, 1e-12, `${tag} L*(Y${Y})`);
     }
+    assert.equal(c.runs.length, 10);
     for (const run of c.runs) {
       const repl = R(run.f, run.life, run.fiber, run.convention);
       const rt = `${tag} ${JSON.stringify([run.f, run.life, run.fiber, run.convention])}`;
       assert.equal(M.paybackYear(E, repl), run.payback, rt);
       close(M.npv_M(E, 0.1, 15, repl), run.npv10_M, 1e-12, rt);
       close(M.cumulative_M(E, 15, repl), run.cum15_M, 1e-12, rt);
-      M.netCashFlows_M(E, 40, repl).forEach((v, i) => close(v, run.flows40[i], 1e-12, `${rt} y${i + 1}`));
+      if (run.flows40) M.netCashFlows_M(E, 40, repl).forEach((v, i) => close(v, run.flows40[i], 1e-12, `${rt} y${i + 1}`));
     }
   }
+}
+
+test('every tier and column agrees with Skyhook\'s own finance module (committed fixture, no checkout needed)', () => {
+  // snapshots/skyhook_finance_outputs.json: crosscheck.py --fixture at Skyhook 34935cb (sidecar)
+  assert.ok(FX.skyhook_commit.startsWith('34935cb'));
+  reconcile(FX);
+});
+
+let XC = null;
+function crosscheck() {
+  if (XC) return XC;
+  const r = spawnSync('python3', ['-B', path.join(here, 'crosscheck.py'), '--repo', '/home/user/skyhook'], {
+    encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+  });
+  XC = r.status === 0 ? JSON.parse(r.stdout) : { skip: (r.stdout + r.stderr).trim() || `exit ${r.status}` };
+  return XC;
+}
+
+test('live: Skyhook\'s finance module run now agrees with model.js and with the committed fixture', (t) => {
+  const x = crosscheck();
+  if (x.skip) return t.skip(`Skyhook checkout or openpyxl unavailable: ${x.skip}`);
+  reconcile(x);
   for (const [xs, v] of Object.entries(x.erf)) close(M.erf(Number(xs)), v, 1e-14, `erf(${xs}) vs Python math.erf`);
+  // the fixture is still what the module computes (drift guard; fails if the checkout moves on)
+  x.cases.forEach((c, i) => {
+    const f = FX.cases[i];
+    assert.equal(`${c.column}/${c.tier}`, `${f.column}/${f.tier}`);
+    for (const k of ['mass_ratio', 'fiber_t', 'capex_M', 'npv10_M', 'revenue_M', 'var_M']) close(c[k], f[k], 1e-15, `${f.column}/${f.tier} ${k}`);
+    assert.equal(c.payback, f.payback);
+    c.runs.forEach((r, j) => close(r.cum15_M, f.runs[j].cum15_M, 1e-15, `${f.column}/${f.tier} run ${j}`));
+  });
 });
 
 // ---------------------------------------------------------------- the replacement line
@@ -381,7 +404,7 @@ test('payback is the first year cumulative cash flow is strictly positive, as sk
   assert.equal(M.paybackYear(E0, null), 7);
 });
 
-test('grade sensitivity: SK99 at 0.97 g/cm3 is within 1% of the canonical mass; SK78 strength would need 1.70-2.03x the life', () => {
+test('grade sensitivity: SK99 at 0.97 g/cm3 is within 1% of the canonical mass; SK78 strength makes it 1.70-2.03x heavier, which moves the base case itself', () => {
   // MP-001:22 (secondary): HMPE 0.97 g/cm3, SK99 +15-20% strength over SK78; rev_a: SK99 3.6 GPa
   const s = D.sourced;
   const rho = s.hmpe_density_gcc * 1000;
@@ -392,6 +415,62 @@ test('grade sensitivity: SK99 at 0.97 g/cm3 is within 1% of the canonical mass; 
   const lo = ratioFor(sk99 / (1 + s.sk99_over_sk78_low_pct / 100)) / CONS.massRatio;
   const hi = ratioFor(sk99 / (1 + s.sk99_over_sk78_high_pct / 100)) / CONS.massRatio;
   assert.deepEqual([lo.toFixed(2), hi.toFixed(2)], ['1.70', '2.03']);
+  // Added at review. A tether k times heavier also costs k times the system capex (fiber launch x
+  // hardware factor), so the base case moves before any replacement: the builder's "required life
+  // 1.70-2.03x longer (48-58 years)" held the base case at the canonical mass. With capex scaled,
+  // the base payback is Y19 / Y20, Y17 has no required life at all, and only the capex-free
+  // criteria (fixed ops, the floor) scale with k.
+  const scaled = (k) => ({ ...CONS, fiberMass_t: CONS.fiberMass_t * k, systemCapex_M: CONS.systemCapex_M * k,
+    totalCapex_M: CONS.totalCapex_M + (k - 1) * CONS.systemCapex_M });
+  const base1 = M.requiredLives(CONS, R(1, null));
+  const out = [lo, hi].map((k) => {
+    const r = M.requiredLives(scaled(k), R(1, null));
+    close(r.ops, k * base1.ops, 1e-12);
+    close(r.floor, k * base1.floor, 1e-12);
+    return [Math.round((k - 1) * CONS.systemCapex_M), r.basePayback, r.payback[0].target, r.ops.toFixed(1), r.floor.toFixed(2)];
+  });
+  assert.deepEqual(out, [[1930, 19, 19, '32.4', '3.24'], [2812, 20, 20, '38.6', '3.85']]);
+  // holding the base case fixed instead (the builder's reading) gives 48.5 and 57.7 years
+  assert.deepEqual([lo, hi].map((k) => (k * base1.payback[0].life).toFixed(1)), ['48.5', '57.7']);
+});
+
+test('the window criterion at its boundary: a base case that pays back in exactly Y15 gets a window life', () => {
+  // Baseline at 3.5 km/s (partial tier model) pays back in Y15, the last year of the window, so the
+  // window row exists and equals the "payback stays" row; one year later it would be refused.
+  const E = M.economics(D, 'Baseline', 'phase3_growth_option');
+  const r = M.requiredLives(E, R(1, null));
+  assert.equal(r.basePayback, E.window);
+  assert.ok(r.window && !r.windowRefusal);
+  close(r.window.life, r.payback[0].life, 1e-15);
+});
+
+test('the README\'s every-tier-and-column table is what the code computes, cell by cell', () => {
+  const md = fs.readFileSync(path.join(here, 'README.md'), 'utf8');
+  const tierKey = { '2.5': 'reference', '2.8': 'cislunar_revenue_gated_option', '3.5': 'phase3_growth_option' };
+  const rows = md.split('\n').filter((l) => /^\| \d\.\d km\/s, (Conservative|Baseline|Optimistic)/.test(l));
+  assert.equal(rows.length, 5);
+  const asPrinted = (v, cell) => {
+    const m = /^([\d,]+(?:\.(\d+))?) yr$/.exec(cell);
+    assert.ok(m, cell);
+    return v.toFixed(m[2] ? m[2].length : 0) === m[1].replace(/,/g, '');
+  };
+  for (const row of rows) {
+    const cells = row.split('|').slice(1, -1).map((c) => c.trim());
+    const [, v, col] = /^(\d\.\d) km\/s, (\w+)/.exec(cells[0]);
+    const E = M.economics(D, col, tierKey[v]);
+    const r = M.requiredLives(E, R(1, null));
+    assert.equal(cells[1], `${Math.round(E.loadFraction * 100)}%`, row);
+    if (r.basePayback === null) {
+      assert.equal(cells[2], `not within ${E.maxYears} years`, row);
+      assert.deepEqual(cells.slice(3, 5), ['refused', 'refused'], row);
+    } else {
+      assert.equal(cells[2], `Y${r.basePayback}`, row);
+      assert.ok(asPrinted(r.payback[0].life, cells[3]), `${row}: ${r.payback[0].life}`);
+      assert.ok(asPrinted(r.payback[1].life, cells[4]), `${row}: ${r.payback[1].life}`);
+    }
+    assert.ok(asPrinted(r.ops, cells[5]), `${row}: ${r.ops}`);
+    assert.ok(asPrinted(r.floor, cells[6]), `${row}: ${r.floor}`);
+  }
 });
 
 // ---------------------------------------------------------------- the README says the same numbers

@@ -82,7 +82,7 @@ a { color: var(--accent); }
 .verdict .big { font-size: 21px; line-height: 1.35; margin: 0 0 8px; }
 .verdict .big strong { color: var(--accent); }
 .verdict.refused .big strong { color: var(--refuse); }
-.verdict p { margin: 6px 0; }
+.verdict p { margin: 6px 0; overflow-wrap: anywhere; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .badge {
   display: inline-block;
@@ -206,11 +206,11 @@ svg .gr { stroke: var(--grid); }
 .kv div { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0; }
 .kv .k { font-size: 12.5px; color: var(--soft); display: block; }
 .kv .v { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; display: block; overflow-wrap: anywhere; }
-.kv .s { font-size: 12.5px; color: var(--soft); display: block; }
+.kv .s { font-size: 12.5px; color: var(--soft); display: block; overflow-wrap: anywhere; }
 
 /* evidence */
 .quote { margin: 10px 0; padding: 8px 12px; border-left: 3px solid var(--line); }
-.quote .where { font-family: var(--mono); font-size: 12.5px; color: var(--accent); }
+.quote .where { font-family: var(--mono); font-size: 12.5px; color: var(--accent); overflow-wrap: anywhere; }
 .quote p { margin: 4px 0 0; font-size: 14.5px; overflow-wrap: anywhere; }
 ul.plain { margin: 0; padding-left: 18px; }
 ul.plain li { margin: 4px 0; }

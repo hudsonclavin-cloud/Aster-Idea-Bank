@@ -165,6 +165,17 @@ const perUnit = M.requiredLives(E, { f: 1, fiberPerKg: null, convention: 'rollin
   ok(!(await overflow(page)), 'no sideways scroll at 390 px (Phase 3)');
   await shot(page, 'phone-dark-4-phase3');
 
+  // added at review: absurd typed values stay exact but print in exponent form, so nothing pushes the
+  // page sideways at 390 px (a $1e300/kg bracket used to overflow by about 2,800 px)
+  await page.locator('#tier label').nth(0).tap();
+  await page.locator('#fiber').fill('1e300');
+  await page.waitForTimeout(80);
+  ok(!(await overflow(page)) && /\de\d{3} years/.test(await text(page, '#verdict')), 'a $1e300/kg bracket prints in exponent form with no sideways scroll');
+  await page.locator('#fiber-clear').tap();
+  await page.locator('#life').fill('1e-300');
+  await page.waitForTimeout(80);
+  ok(!(await overflow(page)) && /\$[\d.]+e30\dM/.test(await text(page, '#forward-out')), 'a 1e-300-year life prints in exponent form with no sideways scroll');
+  await page.locator('#life').fill('8');
   ok(errors.length === 0, `no console errors on phone: ${errors.join(' | ')}`);
   ok(requests.length === 0, `no network requests: ${requests.join(' ')}`);
   await context.close();
@@ -189,6 +200,14 @@ const perUnit = M.requiredLives(E, { f: 1, fiberPerKg: null, convention: 'rollin
   ok(/Baseline: sensitivity, not base case/.test(await text(page, '#verdict')), 'non-conservative column is labelled a sensitivity');
   ok(/HMPE runs at \(1 − derate\)\/SF = 34% of rated break/.test(await text(page, '#column-note')), 'baseline column runs HMPE at 34%');
   ok(!(await overflow(page)), 'no sideways scroll at 1280 px');
+  // added at review: a share of 0 says there is nothing to replace, not "at least 0 years"
+  await page.locator('#share input').nth(3).focus();
+  await page.keyboard.press('Space');
+  await page.locator('#share-custom').fill('0');
+  await page.waitForTimeout(80);
+  const v0 = await text(page, '#verdict');
+  ok(/no HMPE to replace/.test(v0) && !/at least 0 years/.test(v0), 'share 0: verdict says there is nothing to replace');
+  ok((await page.locator('#required tbody tr').allInnerTexts()).every((r) => /nothing to replace/.test(r)), 'share 0: no row prints a life of 0');
   await page.locator('#column input').nth(0).focus();
   await page.keyboard.press('Space');
   await page.locator('#share input').nth(1).focus();

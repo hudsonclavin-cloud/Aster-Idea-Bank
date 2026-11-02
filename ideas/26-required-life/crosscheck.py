@@ -9,10 +9,19 @@ model.js. Needs openpyxl (the finance module reads the workbook with it); exits 
 openpyxl is missing, which the test reports as a skip.
 
     python3 -B ideas/26-required-life/crosscheck.py --repo /home/user/skyhook
+    python3 -B ideas/26-required-life/crosscheck.py --repo /home/user/skyhook \
+        --fixture ideas/26-required-life/snapshots/skyhook_finance_outputs.json
+
+With --fixture it also writes the same results, without the 40-year flows of the replacement runs,
+to a committed fixture (added at review), so model.test.mjs can reconcile model.js against Skyhook's
+own module on a machine that has neither the checkout nor openpyxl. Its provenance sidecar is
+written afterwards with tools/snapshot.mjs --sidecar-only against finance/skyhook_finance.py.
 """
 import argparse
+import copy
 import json
 import math
+import subprocess
 import sys
 
 sys.dont_write_bytecode = True
@@ -21,6 +30,7 @@ sys.dont_write_bytecode = True
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--repo", default="/home/user/skyhook")
+    ap.add_argument("--fixture", help="also write the results (minus the 40-year run flows) here")
     args = ap.parse_args()
     sys.path.insert(0, args.repo)
     try:
@@ -104,9 +114,21 @@ def main():
                     "cum15_M": sum(fl[:15]), "flows40": fl,
                 })
             cases.append(row)
-    print(json.dumps({"skyhook_commit_note": "base flows from finance/skyhook_finance.py net_cash_flows_M",
-                      "erf": {str(x): math.erf(x) for x in (0.1, 0.5, 1.0, 1.7325, 2.0, 2.4257, 3.0, 4.5)},
-                      "cases": cases}))
+    out = {"skyhook_commit_note": "base flows from finance/skyhook_finance.py net_cash_flows_M",
+           "erf": {str(x): math.erf(x) for x in (0.1, 0.5, 1.0, 1.7325, 2.0, 2.4257, 3.0, 4.5)},
+           "cases": cases}
+    if args.fixture:
+        head = subprocess.run(["git", "-C", args.repo, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        fx = copy.deepcopy(out)
+        fx["skyhook_commit"] = head
+        fx["generated_by"] = "crosscheck.py --fixture (the 40-year flows of each replacement run are dropped to keep it small)"
+        for c in fx["cases"]:
+            for r in c["runs"]:
+                r.pop("flows40")
+        with open(args.fixture, "w", encoding="utf-8") as fh:
+            json.dump(fx, fh, indent=1)
+            fh.write("\n")
+    print(json.dumps(out))
 
 
 if __name__ == "__main__":

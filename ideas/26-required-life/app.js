@@ -55,6 +55,8 @@
     return { f: shareValue(E), life: life, fiberPerKg: S.fiber, convention: S.convention };
   }
   function pct(v) { return v === 1 ? '100%' : F.pct(v, v < 0.995 ? 1 : 2); }
+  // $/kg with separators; exponent form for an absurd typed bracket so it cannot overflow 390 px
+  function perKg(v) { return Math.abs(v) >= 1e9 ? v.toExponential(2).replace('e+', 'e') : v.toLocaleString('en-US'); }
   function loadPct(E) { return Math.round(E.loadFraction * 100) + '%'; }
   function tierLabel(t) { return t.vTip.toFixed(1) + ' km/s'; }
 
@@ -226,7 +228,7 @@
       if (req.code === 'hmpe_share_unset' && !perUnit.refused && perUnit.payback.length) {
         var pu = perUnit.payback[0];
         html += '<p>Whatever share you choose, the answer scales with it exactly: the ' + esc(where) + ' keeps its Y' + pu.target +
-          ' payback only if the HMPE lasts at least <b>' + F.years(pu.life) + ' × the share</b> (' +
+          ' payback only if the HMPE lasts at least <b>' + F.years(pu.life) + ' × the share</b> (' + S.convention + ' replacement, ' +
           (S.fiber == null ? 'launch at $' + E.launchPerKg.toLocaleString('en-US') + '/kg only, fiber unpriced' : 'launch $' + E.launchPerKg.toLocaleString('en-US') + '/kg + fiber $' + esc(S.fiber) + '/kg') + ').</p>';
       }
       html += '<p><b>What would help:</b> ' + esc(req.whatWouldHelp) + '</p>';
@@ -244,6 +246,12 @@
     box.className = 'card verdict';
     var p0 = req.payback[0];
     var p1 = req.payback[1];
+    if (req.perEvent_M === 0) {
+      // an HMPE share of 0: nothing to replace, so no life is required (not "at least 0 years")
+      body.innerHTML = '<p class="big">With an HMPE share of 0 there is <strong>no HMPE to replace</strong>: the ' + esc(where) +
+        ' keeps its Y' + p0.target + ' payback at any life, and no creep requirement follows.</p><p>' + anchor + '</p>' + chips(E, rp);
+      return;
+    }
     var html2 = '<p class="big">The ' + esc(where) + ' needs the HMPE to last at least <strong>' + F.years(p0.life) + '</strong> at ' + loadPct(E) +
       ' of rated break for payback to stay at Y' + p0.target + '.</p>';
     if (p1) html2 += '<p>To slip by no more than a year (Y' + p1.target + ') it needs at least ' + F.years(p1.life) + '. ';
@@ -270,7 +278,7 @@
       return;
     }
     lead.innerHTML = 'HMPE share ' + pct(rp.f) + ', so each full replacement is ' + F.sig(rp.f * E.fiberMass_t, 4) + ' t at $' +
-      req.costPerKg.toLocaleString('en-US') + '/kg (construction launch' + (S.fiber == null ? ' only; fiber unpriced' : ' + your fiber bracket') + ') = <b>' + F.money(req.perEvent_M) + '</b>.';
+      perKg(req.costPerKg) + '/kg (construction launch' + (S.fiber == null ? ' only; fiber unpriced' : ' + your fiber bracket') + ') = <b>' + F.money(req.perEvent_M) + '</b>.';
     var rows = [];
     req.payback.forEach(function (p) {
       rows.push({
@@ -293,6 +301,7 @@
         v: F.years(req.floor),
       });
     }
+    if (req.perEvent_M === 0) rows.forEach(function (r) { r.v = 'any life: nothing to replace'; });
     rows.forEach(function (r) {
       var tr = document.createElement('tr');
       if (r.head) tr.className = 'head';
@@ -370,7 +379,7 @@
     var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img', 'aria-labelledby': 'chart-title chart-desc' });
     var fs = phone ? 11 : 12;
     svg.appendChild(svgEl('title', { id: 'chart-title' }, 'Payback year against HMPE life'));
-    var desc = 'Payback holds at Y' + base + ' for lives of at least ' + F.years(req.payback[0].life) + '. Anchored SK78 datum at ' + D.sourced.sk78_life_yr + ' years.';
+    var desc = (req.perEvent_M === 0 ? 'No HMPE to replace: payback stays at Y' + base + ' at any life.' : 'Payback holds at Y' + base + ' for lives of at least ' + F.years(req.payback[0].life) + '.') + ' Anchored SK78 datum at ' + D.sourced.sk78_life_yr + ' years.';
     svg.appendChild(svgEl('desc', { id: 'chart-desc' }, desc));
 
     // never region

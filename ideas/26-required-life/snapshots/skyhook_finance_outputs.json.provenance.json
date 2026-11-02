@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/skyhook_finance.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "f81b77f 2026-09-06T12:03:46-04:00",
+  "committedBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "readBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "sourceSha256": "c8e15dda24b5af0eab8e56d3dcab0e2806d525a6c095ad91c162095bf87da911",
+  "sourceBytes": 19627,
+  "copiedAt": "2026-11-02T22:10:28.337Z",
+  "mode": "derived",
+  "note": "derived by crosscheck.py --fixture at review: Skyhook's own finance/skyhook_finance.py run on all nine tier x column cases (mass ratio, fiber mass, capex, revenue, variable cost, payback, NPV@10%, the 15 annual flows, the closed-form L* for the base payback year and the next three), plus ten replacement runs per case written independently in Python on top of net_cash_flows_M (payback, NPV@10%, cumulative at Y15), and Python math.erf at eight points; ladder read by the module itself from tools/financial/skyhook_financial_model.xlsx with openpyxl",
+  "readMatchesCommitted": true,
+  "writtenSha256": "604ae52ba7085f0ae05e6b649eb14f6fbadf9c54b983f5dec772f89519aebd72",
+  "writtenBytes": 24548
+}

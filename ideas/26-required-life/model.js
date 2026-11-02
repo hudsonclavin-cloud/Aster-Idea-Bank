@@ -375,28 +375,43 @@
 
   /* ---------------------------------------------------------------- formatting ---- */
 
+  /* Absurd typed inputs (a life of 1e-300 years, a fiber bracket of 1e300 $/kg) are not refused:
+   * the arithmetic is still exact. They are printed in exponent form beyond HUGE (and below TINY
+   * for sig), so no number can run to hundreds of digits and push the page sideways at 390 px. */
+  var HUGE = 1e9;
+  var TINY = 1e-4;
+  function expo(v, n) {
+    return v.toExponential(n - 1).replace('e+', 'e');
+  }
   function sig(v, n) {
     if (v === 0) return '0';
+    if (Math.abs(v) >= HUGE || Math.abs(v) < TINY) return expo(v, n);
     var d = Math.max(0, n - 1 - Math.floor(Math.log10(Math.abs(v))));
     return Number(v.toFixed(Math.min(d, 6))).toLocaleString('en-US', { maximumFractionDigits: Math.min(d, 6), minimumFractionDigits: Math.min(d, 6) });
   }
   function years(v) {
     if (v == null) return 'n/a';
+    if (v >= HUGE) return expo(v, 3) + ' years';
     if (v >= 1000) return Math.round(v).toLocaleString('en-US') + ' years';
     return sig(v, 3) + (sig(v, 3) === '1.00' ? ' year' : ' years');
   }
   function money(vM) {
     var neg = vM < 0;
     var a = Math.abs(vM);
-    var s = a >= 1000 ? Math.round(a).toLocaleString('en-US') : Number.isInteger(a) ? String(a) : a.toFixed(a >= 10 ? 1 : 2);
+    var s = a >= HUGE ? expo(a, 3) : a >= 1000 ? Math.round(a).toLocaleString('en-US') : Number.isInteger(a) ? String(a) : a.toFixed(a >= 10 ? 1 : 2);
     return (neg ? '−' : '') + '$' + s + 'M';
   }
-  // up to 3 significant figures without trailing zeros: 8 -> "8", 28.464 -> "28.5"
+  // up to 3 significant figures without trailing zeros: 8 -> "8", 28.464 -> "28.5"; 1,000 and up
+  // with separators, and exponent form beyond HUGE
   function short(v) {
+    if (Math.abs(v) >= HUGE) return expo(v, 3);
+    if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString('en-US');
     return String(parseFloat(Number(v).toPrecision(3)));
   }
   function pct(v, digits) {
-    return (v * 100).toFixed(digits == null ? 1 : digits) + '%';
+    var d = digits == null ? 1 : digits;
+    if (Math.abs(v * 100) >= HUGE) return expo(v * 100, 3) + '%';
+    return (v * 100).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) + '%';
   }
   function yearLabel(pb, maxYears) {
     return pb == null ? 'not within ' + maxYears + ' years' : 'Y' + pb;
