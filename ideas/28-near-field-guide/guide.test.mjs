@@ -42,6 +42,9 @@ const TIERS = json('snapshots/tier-populations.json').populations;
 const LANDMARKS = json('snapshots/landmarks.json').asteroids;
 const JREC = json('snapshots/jupiter-first-record.json').targets.jupiter.records[0];
 const ORACLE = json('oracle/sbdb-tjup.json');
+// Aster's Slice 18 per-body rows for the 11 landmarks (docs/tier-sizing-per-body.json, written by
+// tools/slice18-research/tier-sizing.mjs:116-117 and rounded at :166): Aster's own a, e and Q.
+const TIER_LM = json('snapshots/tier-landmarks.json').records;
 
 // a_J and Jupiter's orbit pole, recomputed here from the snapshotted state and GMs.
 const JR = JREC.slice(1, 4);
@@ -115,6 +118,79 @@ test('Tisserand: Jupiter itself (a = a_J, e = 0, i = 0) gives exactly 3, and the
   assert.ok(Math.abs(G.tisserand(A_J / 4, 0, 1, A_J) - 5) < 1e-12);
   // polar circular orbit at a_J: T = 1.
   assert.ok(Math.abs(G.tisserand(A_J, 0, 0, A_J) - 1) < 1e-12);
+});
+
+// Added in review: derive()'s per-body a, e, Q and i, nullPaths() and medianBar() were reached only
+// by the live --check test, so a Q = a(1 - e) or a degrees slip passed every checkout-free test.
+test('derive(): every landmark\'s a, e and Q equal Aster\'s own Slice 18 rows; 1P and 3D reproduce SBDB\'s a, e, i at SBDB\'s epoch', () => {
+  let elliptic = 0;
+  for (const b of Object.values(LANDMARKS)) {
+    const t = TIER_LM[b.designation];
+    assert.ok(t, `${b.designation} has a Slice 18 row`);
+    const d = G.derive(b, CTX);
+    assert.equal(Number(d.aAu.toFixed(3)), t.aAU, `${b.designation} a`);
+    assert.equal(Number(d.e.toFixed(4)), t.e, `${b.designation} e`);
+    if (typeof d.Q === 'number') {
+      assert.equal(Number(d.Q.toFixed(3)), t.Q, `${b.designation} Q`);
+      assert.ok(Math.abs(d.q - d.aAu * (1 - d.e)) < 1e-12 && d.q < d.Q);
+      elliptic++;
+    } else {
+      assert.ok(t.aAU < 0 && d.a === 'neg' && d.Q === 'undef', `${b.designation}: hyperbolic in both`);
+    }
+  }
+  assert.equal(elliptic, 10, 'all but C/2015 D1');
+  const ix = Object.fromEntries(ORACLE.sampleFields.map((f, k) => [f, k]));
+  const sb = Object.fromEntries(ORACLE.sample.map((r) => [r[ix.pdes], r]));
+  for (const des of ['1P', '3D']) {
+    const b = LANDMARKS[`asteroid-${des}`];
+    const r = sb[des];
+    assert.equal(Number(r[ix.epoch]), b.elements.epochTdbJd, `${des}: same epoch as SBDB`);
+    const d = G.derive(b, CTX);
+    assert.ok(Math.abs(d.aAu - Number(r[ix.a])) < 1e-9, `${des} a ${d.aAu} vs ${r[ix.a]}`);
+    assert.ok(Math.abs(d.e - Number(r[ix.e])) < 1e-12, `${des} e`);
+    assert.ok(Math.abs(d.i - Number(r[ix.i])) < 1e-9, `${des} i ${d.i}° vs ${r[ix.i]}°`);
+  }
+});
+
+test('nullPaths() on the landmark records: every shipped key path, G null in all, H and radius null together, maRad null only when hyperbolic', () => {
+  const shipped = D.census.keyPaths.map((k) => k.path).sort();
+  const nullBy = {};
+  for (const b of Object.values(LANDMARKS)) {
+    const paths = G.nullPaths(b, '', []);
+    assert.deepEqual(paths.map(([p]) => p).sort(), shipped, `${b.designation}: the census's ${shipped.length} paths`);
+    for (const [p, isNull] of paths) if (isNull) (nullBy[p] = nullBy[p] || []).push(b.designation);
+  }
+  const n = Object.keys(LANDMARKS).length;
+  assert.equal((nullBy.G || []).length, n, 'G is null in Slice 9 (spec)');
+  assert.deepEqual([...(nullBy.H || [])].sort(), ['1P', '2015 D1', '3D']);
+  assert.deepEqual([...(nullBy.estimatedRadiusM || [])].sort(), [...nullBy.H].sort(), 'estimatedRadiusM is null when H is null (spec)');
+  assert.deepEqual(nullBy['elements.maRad'], ['2015 D1']);
+  assert.equal(nullBy['elements.aKm'], undefined, 'nested objects are walked');
+});
+
+test('medianBar(): nearest-rank middle of the numeric bars, null bars left out; numericCount() and the comet tail\'s H', () => {
+  const h = spec('H');
+  const bars = G.bars(h);
+  const nullK = bars.findIndex((b) => b.kind === 'null');
+  const dense = new Array(bars.length).fill(0);
+  dense[0] = 3;
+  dense[10] = 1;
+  dense[nullK] = 100;
+  assert.equal(G.medianBar(h, dense), 0, 'bodies 1-3 of 4 sit in bar 0; the 100 nulls do not count');
+  assert.equal(G.numericCount(h, dense), 4);
+  dense[10] = 4;
+  assert.equal(G.medianBar(h, dense), 10, 'the 4th of 7 sits in bar 10');
+  const nulls = new Array(bars.length).fill(0);
+  nulls[nullK] = 5;
+  assert.equal(G.medianBar(h, nulls), null);
+  assert.equal(G.numericCount(h, nulls), 0);
+  // Every body of the comet tail has H null, so the page refuses its H and radius panels.
+  const tail = G.summarize(D.atoms, { cls: ['ETC', 'HTC', 'JFC'] });
+  assert.equal(tail.n, HEADER.anomalyTailCount);
+  assert.equal(G.numericCount(h, tail.h.H), 0);
+  assert.equal(G.numericCount(spec('r'), tail.h.r), 0);
+  assert.equal(G.numericCount(spec('a'), tail.h.a), tail.n - 1, 'all but the hyperbolic C/2015 D1');
+  assert.equal(G.numericCount(h, ALL.h.H), HEADER.totalBodies - HEADER.missingAbsoluteMagnitudeCount);
 });
 
 test('designation kinds of the landmark names', () => {

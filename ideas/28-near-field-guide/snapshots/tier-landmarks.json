@@ -1,0 +1,156 @@
+{
+ "records": {
+  "433": {
+   "des": "433",
+   "tier": "L2",
+   "subReason": "measured-but-unbounded",
+   "classification": "quiet",
+   "Q": 1.783,
+   "e": 0.2229,
+   "aAU": 1.458,
+   "orbitClass": "AMO",
+   "material": false
+  },
+  "99942": {
+   "des": "99942",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.099,
+   "e": 0.1911,
+   "aAU": 0.922,
+   "orbitClass": "ATE",
+   "material": true,
+   "encounter": {
+    "jd": 2462026.674559462,
+    "cd": "2028-Sep-12 04:11",
+    "body": "Earth",
+    "dvKmS": 0.002631035645276928
+   },
+   "maxDriftEncounter": {
+    "jd": 2462240.407091969,
+    "cd": "2029-Apr-13 21:46",
+    "body": "Earth",
+    "dvKmS": 2.775704395041767
+   }
+  },
+  "101955": {
+   "des": "101955",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.355,
+   "e": 0.2037,
+   "aAU": 1.126,
+   "orbitClass": "APO",
+   "material": true,
+   "encounter": {
+    "jd": 2465101.061374439,
+    "cd": "2037-Feb-11 13:28",
+    "body": "Earth",
+    "dvKmS": 0.007164996201392661
+   }
+  },
+  "152637": {
+   "des": "152637",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 1.045,
+   "e": 0.2086,
+   "aAU": 0.865,
+   "orbitClass": "ATE",
+   "material": true,
+   "encounter": {
+    "jd": 2461218.96941724,
+    "cd": "2026-Jun-27 11:16",
+    "body": "Earth",
+    "dvKmS": 0.03496216621044362
+   }
+  },
+  "163693": {
+   "des": "163693",
+   "tier": "L1",
+   "subReason": "materially-degraded-delta-v",
+   "classification": "material",
+   "Q": 0.98,
+   "e": 0.3222,
+   "aAU": 0.741,
+   "orbitClass": "IEO",
+   "material": true,
+   "encounter": {
+    "jd": 2464753.293656019,
+    "cd": "2036-Feb-29 19:03",
+    "body": "Venus",
+    "dvKmS": 0.0032257862644526326
+   }
+  },
+  "1P": {
+   "des": "1P",
+   "tier": "L2",
+   "subReason": "structurally-blind-comet",
+   "classification": "comet",
+   "Q": 35.282,
+   "e": 0.9679,
+   "aAU": 17.929,
+   "orbitClass": "HTC",
+   "material": false
+  },
+  "3D": {
+   "des": "3D",
+   "tier": "L0",
+   "subReason": "historically-destroyed-disintegration",
+   "classification": "nonExistent",
+   "Q": 6.19,
+   "e": 0.7513,
+   "aAU": 3.535,
+   "orbitClass": "JFC",
+   "material": false,
+   "firstDayDriftKm": 253342299.89055187
+  },
+  "2008 TC3": {
+   "des": "2008 TC3",
+   "tier": "L2",
+   "subReason": "unmeasured",
+   "classification": "quiet",
+   "Q": 3.281,
+   "e": 0.0597,
+   "aAU": 3.096,
+   "orbitClass": "APO",
+   "material": false
+  },
+  "2014 AA": {
+   "des": "2014 AA",
+   "tier": "L2",
+   "subReason": "unmeasured",
+   "classification": "quiet",
+   "Q": 3.77,
+   "e": 0.1762,
+   "aAU": 3.205,
+   "orbitClass": "APO",
+   "material": false
+  },
+  "2015 D1": {
+   "des": "2015 D1",
+   "tier": "L0",
+   "subReason": "cannot-propagate-hyperbolic-orbit",
+   "classification": "hyperbolic",
+   "Q": -16.81,
+   "e": 1.0035,
+   "aAU": -8.39,
+   "orbitClass": "JFC",
+   "material": false
+  },
+  "2017 UR52": {
+   "des": "2017 UR52",
+   "tier": "L2",
+   "subReason": "structurally-blind-jupiter-crossing",
+   "classification": "jupiterCrossing",
+   "Q": 705.346,
+   "e": 0.9964,
+   "aAU": 353.304,
+   "orbitClass": "AMO",
+   "material": false
+  }
+ }
+}

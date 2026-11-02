@@ -1,0 +1,30 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "docs/tier-sizing-per-body.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "bd9d6f5 2026-10-14T15:13:15-04:00",
+  "committedBlob": "13e79faeff3522d793ce2f1f69938f409d937280",
+  "readBlob": "13e79faeff3522d793ce2f1f69938f409d937280",
+  "sourceSha256": "dff569ab5ea0751122bfb37c8f6c472c06658b7cb1d9931e0eba1cbc25974c31",
+  "sourceBytes": 10880177,
+  "copiedAt": "2026-11-02T23:22:05.334Z",
+  "mode": "excerpt",
+  "note": "the Slice 18 per-body rows (tier, aAU, e, Q as tools/slice18-research/tier-sizing.mjs:116-117 computes and :166 rounds them) for the 11 landmark bodies; guide.test.mjs pins guide.js derive()'s a and Q to Aster's own numbers with them",
+  "readMatchesCommitted": true,
+  "picked": [
+    "records.433",
+    "records.101955",
+    "records.99942",
+    "records.163693",
+    "records.152637",
+    "records.1P",
+    "records.3D",
+    "records.2008 TC3",
+    "records.2014 AA",
+    "records.2015 D1",
+    "records.2017 UR52"
+  ],
+  "writtenSha256": "6cffe95aadc7849107d09247d297ddc3fe4ce4fd607636df021c53841e66af15",
+  "writtenBytes": 3252
+}

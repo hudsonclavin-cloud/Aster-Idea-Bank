@@ -140,7 +140,22 @@ const nonzeroBins = (key, sel) => {
   await page.click(chip('fid', 'L2'));
   ok((await text(page, '#selection')).startsWith('206'), 'comet tail at L2 is 206 bodies (STATUS.md\'s "206 structurally-blind comets")');
   await page.click(chip('fid', 'all'));
+  // added in review: every comet-tail body has H null, so the H and radius panels refuse instead of
+  // drawing an empty axis, and the panels that do have values still draw
+  const tailSel = { cls: ['ETC', 'HTC', 'JFC'] };
+  ok(G.numericCount(G.SPECS.find((s) => s.key === 'H'), G.summarize(D.atoms, tailSel).h.H) === 0, 'kernel: no comet-tail body has H');
+  for (const key of ['H', 'r']) {
+    const fig = `figure.panel[data-key="${key}"]`;
+    ok((await page.getAttribute(fig, 'data-refused')) === 'insufficient_data', `comet tail: ${key} panel refuses`);
+    ok((await page.$$(`${fig} svg`)).length === 0, `comet tail: ${key} panel draws no chart`);
+    ok((await page.$eval(fig, (el) => el.textContent)).includes(`${fmt(HEADER.anomalyTailCount)} not reported (null)`), `comet tail: ${key} refusal counts the 208 nulls`);
+    ok(!(await panelMeta(page, key)).includes('median'), `comet tail: ${key} panel claims no median`);
+  }
+  ok((await page.$eval('figure.panel[data-key="r"] .refusal', (el) => el.textContent)).includes('must be null when H is null'), 'radius refusal quotes the spec\'s null rule');
+  ok((await barCount(page, 'a')) === nonzeroBins('a', tailSel) && (await page.$('figure.panel[data-key="a"][data-refused]')) === null, 'comet tail: the a panel still draws');
+  ok((await page.$$('figure.panel[data-refused]')).length === 2, 'comet tail: only H and radius refuse');
   await page.click(chip('cls', 'all'));
+  ok((await page.$$('figure.panel[data-refused]')).length === 0, 'whole fixture: no panel refuses');
 
   // landmark Eros
   await page.selectOption('#landmark', '433');
@@ -223,6 +238,11 @@ const nonzeroBins = (key, sel) => {
   ok(/bodies \(/.test(await page.$eval('figure.panel[data-key="H"] .p-note', (el) => el.textContent)), `a tap on a chart reads a bar (${box.x})`);
   const over2 = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   ok(over2 <= 0, 'still no overflow after interaction');
+  await page.tap(chip('cls', 'tail'));
+  ok((await page.$$('figure.panel[data-refused]')).length === 2, 'phone: comet tail refuses the H and radius panels');
+  const over3 = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  ok(over3 <= 0, `phone: no overflow with the panel refusals (${over3})`);
+  await page.tap(chip('cls', 'ATE'));
   if (shotDir) await page.screenshot({ path: path.join(shotDir, 'phone-dark.png'), fullPage: true });
   ok(errors.length === 0, `no console errors on the phone: ${errors.join(' | ')}`);
   await ctx.close();

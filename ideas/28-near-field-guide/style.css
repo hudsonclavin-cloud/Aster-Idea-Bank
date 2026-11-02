@@ -187,6 +187,7 @@ select {
 
 .grid-wrap { position: relative; width: 100%; }
 #grid-canvas { display: block; width: 100%; touch-action: pan-y; }
+#grid-canvas[hidden], .grid-legend[hidden] { display: none; }
 .grid-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12px; color: var(--text-2); margin-top: 6px; }
 .grid-legend .sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
 
@@ -206,6 +207,8 @@ tr.has-null td:first-child code { font-weight: 600; }
 .cards.two { grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); }
 .card td { overflow-wrap: anywhere; }
 .panel .tool { margin: 0 0 6px; flex-wrap: wrap; }
+.seg-pair { display: inline-flex; white-space: nowrap; }
+.panel .refusal { margin: 4px 0 8px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
 .card h3 { margin: 0 0 6px; }
 .card p { font-size: 13.5px; }

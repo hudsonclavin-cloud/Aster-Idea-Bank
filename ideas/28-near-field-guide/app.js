@@ -13,8 +13,8 @@
 
   // ---------------------------------------------------------------- refusals
   // Shaped like an Aster MCP evidence envelope's refusal (mcp/src/tools/envelope-schema.ts:51).
-  function refusalHtml(code, title, missing, help, quote) {
-    return `<div class="refusal" role="alert"><p class="code">refusal · ${esc(code)}</p><p><strong>${esc(title)}</strong></p>` +
+  function refusalHtml(code, title, missing, help, quote, role) {
+    return `<div class="refusal" role="${role || 'alert'}"><p class="code">refusal · ${esc(code)}</p><p><strong>${esc(title)}</strong></p>` +
       `<p><span class="cite">what is missing:</span> ${missing}</p><p><span class="cite">what would help:</span> ${help}</p>${quote || ''}</div>`;
   }
   function refuseAll(code, title, missing, help) {
@@ -118,7 +118,7 @@
     TJ: () => `Lines: T_J = 2 and 3, the Jupiter-family band in JPL's class table ("${esc(D.sbdbClasses.classes.JFc.description)}", ${esc(D.sbdbClasses.path)}:${D.sbdbClasses.classes.JFc.line}). A dynamical heuristic, not an Aster classification.`,
   };
   REF_NOTES.TJe = REF_NOTES.TJ;
-  const UNIT = (s) => (s.unit ? ` ${s.unit}` : '');
+  const UNIT = (s) => (!s.unit ? '' : s.unit === '°' ? s.unit : ` ${s.unit}`);
 
   // ---------------------------------------------------------------- tooltip
   const tip = $('tip');
@@ -189,6 +189,9 @@
     const nullIdx = bars.findIndex((b) => b.kind === 'null');
     const nNull = nullIdx >= 0 ? dense[nullIdx] : 0;
     const med = median(spec, dense);
+    // Nothing on the axis for this selection (the comet tail's H, for one): refuse, do not draw an
+    // empty chart.
+    const refused = S.n > 0 && G.numericCount(spec, dense) === 0;
     const title = spec.key === 'TJ' || spec.key === 'TJe' ? 'Tisserand parameter T_J' : spec.label;
     fig.innerHTML = `<figcaption><span class="p-title">${esc(title)}${spec.unit ? ` <span class="cite">(${esc(spec.unit)})</span>` : ''}</span>` +
       `<span class="p-meta">n ${fmt(S.n)}${nullIdx >= 0 ? ` · not reported ${fmt(nNull)}` : ''}${med ? ` · median in ${esc(med.label)}${UNIT(spec)}` : ''}</span></figcaption>`;
@@ -198,6 +201,16 @@
     const beyond = document.createElement('div');
     beyond.className = 'beyond';
     const extra = bars.filter((b) => b.kind !== 'bin');
+    if (refused) {
+      fig.dataset.refused = 'insufficient_data';
+      const where = extra.filter((b) => dense[b.idx]).map((b) => `${fmt(dense[b.idx])} ${esc(b.label)}`).join(', ');
+      const help = spec.key === 'H'
+        ? `A source that reports H for these bodies; the catalog has none for them (its header counts ${fmt(D.header.catalog.missingAbsoluteMagnitudeCount)} bodies without H in all). Or widen the selection.`
+        : spec.key === 'r'
+          ? 'H for these bodies: the catalog derives the radius from H and, by its own rule, stores none without it. Or widen the selection.'
+          : 'A source that reports this field for these bodies, or a wider selection (tap All on a row).';
+      holder.innerHTML = refusalHtml('insufficient_data', `No body in this selection has a value on this axis`, `all ${fmt(S.n)} bodies are outside it: ${where}. There is no distribution to draw, so no chart is drawn.`, esc(help), spec.key === 'r' ? quote(D.quotes.radiusNull) : '', 'note');
+    }
     if (extra.length) {
       beyond.innerHTML = `<p class="beyond-title">Beyond the axis</p>` + extra.map((b) => {
         const c = dense[b.idx];
@@ -226,15 +239,15 @@
     note.setAttribute('aria-live', 'polite');
     const refNote = REF_NOTES[spec.key] ? REF_NOTES[spec.key]() : '';
     note.dataset.base = refNote;
-    note.innerHTML = refNote || 'Hover, tap or focus the chart and use the arrow keys to read a bar.';
-    fig.appendChild(note);
+    note.innerHTML = refNote || (refused ? '' : 'Hover, tap or focus the chart and use the arrow keys to read a bar.');
+    if (note.innerHTML) fig.appendChild(note);
     if (opts && opts.extraNote) {
       const x = document.createElement('p');
       x.className = 'p-note';
       x.innerHTML = opts.extraNote;
       fig.appendChild(x);
     }
-    fig._draw = () => drawHistogram(holder, spec, S, note);
+    fig._draw = refused ? () => {} : () => drawHistogram(holder, spec, S, note);
     return fig;
   }
 
@@ -279,7 +292,8 @@
     let html = '';
     // y gridlines: counts 0, half and max (linear) or 0, 10, 100, ... (log of 1 + count)
     const maxCount = Math.max(0, ...counts);
-    const yCounts = state.log ? [0, 10, 100, 1000, 10000].filter((c) => c <= maxCount) : [0, Math.round(maxCount / 2), maxCount];
+    const yCounts = [...new Set(state.log ? [0, 10, 100, 1000, 10000].filter((c) => c <= maxCount) : [0, Math.round(maxCount / 2), maxCount])];
+    if (yCounts.length === 1 && maxCount > 0) yCounts.push(maxCount);
     for (const c of yCounts) {
       const y = m.t + ph - (tr(c) / max) * ph;
       html += `<line class="grid" x1="${m.l}" x2="${m.l + pw}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${m.l - 4}" y="${(y + 3.5).toFixed(1)}" text-anchor="end">${fmt(c)}</text>`;
@@ -624,7 +638,7 @@
         ['T_J (ecliptic)', String(r.sbdb.tJup), r.aster.TJe.toFixed(3)],
         ['Slice 18 tier', '—', `${esc(r.aster.fid)} (${esc(r.aster.tierReason)}, ${esc(r.aster.tierClassification)})`],
       ];
-      return `<div class="card" data-sbdb="${esc(r.des)}"><h3>${esc(r.des)}: re-anchored past the end of its own orbit</h3>${tableHtml(['', 'JPL SBDB record', 'Aster catalog'], rows)}<p>SBDB's Earth MOID (${fmt(r.sbdb.moidKm)} km) is ${r.moidBelowEarthRadius ? 'smaller' : 'not smaller'} than Aster's Earth radius (${C.earthRadiusKm.value} km, ${cite(C.earthRadiusKm)}), and SBDB marks the orbit invalid after ${esc(r.sbdb.notValidAfter)}. The catalog carries the body at ${esc(r.aster.epochDate)} on a re-anchored orbit with q ${r.aster.q.toFixed(2)} AU.</p><p class="cite">${esc(r.file)} (SBDB API, retrieved 2026-11-02). Why the re-anchor produced this orbit is not shown here [Likely: propagated through the encounter].</p></div>`;
+      return `<div class="card" data-sbdb="${esc(r.des)}"><h3>${esc(r.des)}: re-anchored past the end of its own orbit</h3>${tableHtml(['', 'JPL SBDB record', 'Aster catalog'], rows)}<p>SBDB's Earth MOID (${fmt(r.sbdb.moidKm)} km) is ${r.moidBelowEarthRadius ? 'smaller' : 'not smaller'} than Aster's Earth radius (${C.earthRadiusKm.value} km, ${cite(C.earthRadiusKm)}), and SBDB marks the orbit invalid after ${esc(r.sbdb.notValidAfter)}. The catalog carries the body at ${esc(r.aster.epochDate)} on a re-anchored orbit with q ${r.aster.q.toFixed(2)} AU.</p><p class="cite">${esc(r.file)} (SBDB API, retrieved 2026-11-02). Why the re-anchor produced this orbit is not shown here [Speculative: propagated through the encounter; Aster's re-anchor was not run].</p></div>`;
     }).join('');
     const disRows = cc.disagreements.map((r) => [esc(r.des), esc(r.stored), esc(r.fromElements), r.a.toFixed(3), r.q.toFixed(3), r.Q.toFixed(3), r.margin.toFixed(3), esc(r.fid)]);
     const tj = D.tjLow;
@@ -726,7 +740,7 @@
     wrap.className = 'tool';
     wrap.setAttribute('role', 'group');
     wrap.setAttribute('aria-label', 'Inclination measured from');
-    wrap.innerHTML = `<span class="tool-label">i measured from</span><button type="button" class="seg" data-tj="TJ" aria-pressed="${state.tj === 'TJ'}">Jupiter's plane</button><button type="button" class="seg" data-tj="TJe" aria-pressed="${state.tj === 'TJe'}">ecliptic (SBDB)</button>`;
+    wrap.innerHTML = `<span class="tool-label">i measured from</span><span class="seg-pair"><button type="button" class="seg" data-tj="TJ" aria-pressed="${state.tj === 'TJ'}">Jupiter's plane</button><button type="button" class="seg" data-tj="TJe" aria-pressed="${state.tj === 'TJe'}">ecliptic (SBDB)</button></span>`;
     wrap.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
       state.tj = b.dataset.tj;
       render();
@@ -793,6 +807,11 @@
     const onGrid = G.sum(S.grid);
     $('grid-meta').textContent = `${fmt(onGrid)} of ${fmt(S.n)} bodies on the grid (a 0–6 AU by 0.1, e 0–1 by 0.02); ${fmt(S.n - onGrid)} off it (a ≥ 6 AU or hyperbolic)`;
     $('grid-note').innerHTML = `Dashed: q = ${C.classRule.value.apoQ} and Q = ${C.classRule.value.ieoQ} AU and a = ${C.classRule.value.ateA} AU (Aster's class rule); dotted: q = ${C.neoQ.value} AU; long dash: Q = ${C.jupiterCrossingQ.value} AU (Slice 18's Jupiter-crossing line). Hover, tap or focus and use the arrow keys to read a cell.`;
+    // No selection the chips can make leaves the grid empty today; refuse rather than draw an empty
+    // plane if a re-derived catalog ever does.
+    $('grid-canvas').hidden = onGrid === 0;
+    $('grid-legend').hidden = onGrid === 0;
+    if (onGrid === 0) $('grid-note').innerHTML = refusalHtml('insufficient_data', 'No body in this selection lies on the grid', `all ${fmt(S.n)} have a ≥ 6 AU or a hyperbolic orbit (see the semi-major axis panel's bars beyond the axis).`, 'Widen the selection (tap All on a row).', '', 'note');
     gridCursor = -1;
     $('orbits-intro').innerHTML = `Semi-major axis from <code>elements.aKm</code> with the AU from ${cite(C.auKm)}; q and Q from a and e; inclination is to the ecliptic as stored. Hyperbolic orbits and undefined aphelia get their own bars.`;
     draw();
@@ -801,7 +820,7 @@
   function draw() {
     for (const fig of drawn) fig._draw();
     const S = G.summarize(D.atoms, sel());
-    if (S.n) drawGrid(S);
+    if (S.n && G.sum(S.grid)) drawGrid(S);
   }
 
   // ---------------------------------------------------------------- boot

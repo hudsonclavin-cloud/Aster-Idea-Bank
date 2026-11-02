@@ -202,9 +202,6 @@ function readPrereport(repo) {
   return { path: rel, u: table('Condition-code histogram:'), arc: table('Data-arc histogram:') };
 }
 
-// The report's data-arc buckets, read as [0,7), [7,30), [30,100), [100,1000), [1000, inf): the
-// left-closed reading is the one under which the committed fixture differs from the report by only
-// non-negative counts (the right-closed reading gives -828 in 7-30d). Both are recorded.
 // Evidence fetched at build time and kept in this folder (each with a provenance sidecar):
 // SBDB's own record of the two bodies whose re-anchored elements are furthest from their stored
 // class, Horizons' osculating elements of Jupiter at the catalog epoch, and the SBDB t_jup oracle.
@@ -235,6 +232,9 @@ function readHorizonsElements(rel) {
   return { path: rel, gmKm3s2: Number(gm[1]), jdTdb: Number(jd[1]), date: jd[2], aKm: field('A'), e: field('EC'), iDeg: field('IN'), nodeDeg: field('OM') };
 }
 
+// The report's data-arc buckets, read as [0,7), [7,30), [30,100), [100,1000), [1000, inf): the
+// left-closed reading is the one under which the committed fixture differs from the report by only
+// non-negative counts (the right-closed reading gives -828 in 7-30d). Both are recorded.
 const ARC_BUCKETS = [['<7d', 0, 7], ['7-30d', 7, 30], ['30-100d', 30, 100], ['100-1000d', 100, 1000], ['>1000d', 1000, Infinity]];
 
 function jdToIso(jd) {

@@ -382,6 +382,19 @@
     return n;
   }
 
+  // Bodies with a numeric value on a panel: the regular and overflow bars, not the null, zero or
+  // hyperbolic bars. 0 for a selection that has bodies means the panel has nothing to draw, and the
+  // page refuses instead of drawing an empty axis (added in review: the comet tail's H is null for
+  // every one of its bodies).
+  function numericCount(spec, dense) {
+    const list = prepared(spec).list;
+    let n = 0;
+    list.forEach((b, k) => {
+      if (b.kind === 'bin' || b.kind === 'over') n += dense[k];
+    });
+    return n;
+  }
+
   // Nearest-rank median position of a histogram: the bar that holds the middle body of the numeric bars.
   function medianBar(spec, dense) {
     const list = prepared(spec).list;
@@ -438,6 +451,7 @@
     summarize,
     countAtOrAbove,
     countBelow,
+    numericCount,
     medianBar,
     sum,
     fmtInt,
