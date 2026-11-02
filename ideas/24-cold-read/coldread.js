@@ -709,7 +709,7 @@
         if (raw === undefined) continue;
         const C = flight.counts[cat];
         if (!Array.isArray(raw)) {
-          add('error', 'FLIGHT_NOT_ARRAY', keyOf(doc, doc.loc, cat), `"${cat}" is ${Array.isArray(raw) ? 'an array' : raw === null ? 'null' : 'a ' + typeof raw}, not an array: parseFlight reads it as empty and counts nothing as dropped`, { source: 'app' });
+          add('error', 'FLIGHT_NOT_ARRAY', keyOf(doc, doc.loc, cat), `"${cat}" is ${raw === null ? 'null' : typeof raw === 'object' ? 'an object' : 'a ' + typeof raw}, not an array: parseFlight reads it as empty and counts nothing as dropped`, { source: 'app' });
           C.uncounted = 1; named.uncounted++;
           continue;
         }
@@ -903,17 +903,40 @@
     const appWarn = APP.lint(code);
     const hobbyRes = { minkowski: V.HLINT_MINKOWSKI, '$fn': V.HLINT_FN, text: V.HLINT_TEXT, import: V.HLINT_IMPORT };
     let appFnAt = -1;
+    // Why a raw-text match of one of lint()'s patterns is not real code, or null when it is.
+    const notCode = (m) => {
+      const at = m.index;
+      if (scan.inComment(at)) return 'inside a comment: lint() tests the raw source, comments included';
+      if (scan.codeOnly[at] !== code[at]) return 'inside a string: lint() tests the raw source, strings included';
+      if (at > 0 && /[A-Za-z0-9_]/.test(code[at - 1]))
+        return `the tail of the identifier "${(/[A-Za-z0-9_]+$/.exec(code.slice(0, at)) || [''])[0]}${m[0].replace(/\s*\($/, '')}": lint()'s pattern has no word boundary`;
+      return null;
+    };
     for (const w of appWarn) {
       const key = /^minkowski/.test(w) ? 'minkowski' : /^\$fn/.test(w) ? '$fn' : /^text/.test(w) ? 'text' : /^import/.test(w) ? 'import' : null;
-      const m = key ? hobbyRes[key].exec(code) : null;
-      const at = m ? m.index : null;
-      if (key === '$fn') appFnAt = at;
-      const inComment = at != null && scan.inComment(at);
-      const glued = at != null && at > 0 && /[A-Za-z0-9_]/.test(code[at - 1]);
       let msg = `lint: ${w} — the app shows this warning on the report (index.html:6581)`;
-      if (inComment) msg += '. This match is inside a comment: lint() tests the raw source, comments included, so the warning is false here';
-      else if (glued) msg += `. This match is the tail of the identifier "${(/[A-Za-z0-9_]+$/.exec(code.slice(0, at)) || [''])[0]}${m[0].replace(/\s*\($/, '')}": lint()'s pattern has no word boundary, so the warning is false here`;
-      add(inComment || glued ? 'info' : 'warning', 'APP_LINT', at, msg, { source: 'app', app: w });
+      if (!key) { add('warning', 'APP_LINT', null, msg, { source: 'app', app: w }); continue; }
+      if (key === '$fn') {
+        // lint() reads only the FIRST "$fn = <digits>" (index.html:5918): the warning is about that one match
+        const m = hobbyRes[key].exec(code), at = m ? m.index : null, why = m ? notCode(m) : null;
+        appFnAt = at;
+        if (why) msg += `. This match is ${why}, so the warning is false here`;
+        add(why ? 'info' : 'warning', 'APP_LINT', at, msg, { source: 'app', app: w });
+        continue;
+      }
+      // minkowski(), text(), import(): lint() warns once if the pattern appears anywhere, so the
+      // warning is true when ANY match is real code. Place it at the first real one.
+      const all = [...code.matchAll(new RegExp(hobbyRes[key].source, hobbyRes[key].flags.replace('g', '') + 'g'))];
+      const real = all.find((m) => !notCode(m));
+      if (real) {
+        const skipped = all.indexOf(real);
+        if (skipped) msg += ` (${plural(skipped, 'earlier match', 'earlier matches')} in comments, strings or identifier tails do not count)`;
+        add('warning', 'APP_LINT', real.index, msg, { source: 'app', app: w });
+      } else {
+        const m = all[0];
+        msg += m ? `. Every match is out of code; the first is ${notCode(m)}, so the warning is false here` : '';
+        add(m ? 'info' : 'warning', 'APP_LINT', m ? m.index : null, msg, { source: 'app', app: w });
+      }
     }
     // lint() reads only the FIRST "$fn = <digits>"; name any later one over its threshold
     for (const m of code.matchAll(new RegExp(V.HLINT_FN.source, 'g'))) {
@@ -948,8 +971,8 @@
             `SPEC part "${name}" is never drawn: ${rootDesc.join(', ')} at the top level ${hidden ? `reaches ${name}() only through a * or % modifier, which leaves it out of the render` : `never calls ${name}(), directly or through another module`}${callers.length && !hidden ? ` (it is called from ${callers.join(', ')}, which ${callers.length > 1 ? 'are' : 'is'} not drawn)` : ''}. `
             + (shortcut
               ? `In flight grade the gate skips its containment check here: mainPlainUnion() accepts a main() whose calls are all declared parts without asking whether every declared part is called, so placement is taken "by construction" (index.html:4536-4550, 3424-3426). [Certain: the app's own mainPlainUnion() and topLevelIsOnlyMain() were run on this text and both accept it. Likely: that the gate then sets placement "byConstruction" is read from index.html:3425-3426, not run with the engine.] ${onObject ? `It can still notice through the ${plural(onObject, 'FLIGHT entry', 'FLIGHT entries')} measured on the finished object, if one of them happens to touch ${name}; nothing guarantees it` : `No FLIGHT entry is measured on the finished object, so nothing in the gate looks for ${name}`}`
-              : `The gate's containment check fails this after the render (index.html:3417-3448)`),
-            { source: shortcut ? 'cold-read' : 'app', gateMisses: shortcut });
+              : `The gate's containment check should fail this after the render (index.html:3417-3448) [Likely: read, not run; it covers only parts that passed their own checks (index.html:3424), and in hobby grade only while the probe budget lasts (SPEC_MAX_PROBES = 16, index.html:3169)]`),
+            { source: 'cold-read', gateMisses: shortcut });
         }
       }
       // gauges and gauge_* modules must not be drawn
@@ -1088,7 +1111,7 @@
     ['SPEC_JSON', 'error', 'the SPEC JSON does not parse (line and column of the fault)', 'parseSpec returns null; every SPEC check skipped', 'index.html:2903-2928, 3221'],
     ['SPEC_SHAPE', 'error', 'SPEC is not an object, has no parts array, or no part survives', 'parseSpec returns null', 'index.html:2899-2929'],
     ['SPEC_DROP', 'error/warning', 'a part, joint, rule, relation or profile parseSpec drops (named, with the field)', 'dropped silently', 'index.html:2906-2926'],
-    ['SPEC_CAP', 'warning', 'rules, relations or profiles past parseSpec\'s caps', 'sliced off silently', 'index.html:2915, 2920, 2926'],
+    ['SPEC_CAP', 'warning/info', 'rules, relations or profiles past parseSpec\'s caps (a note for proportion notes)', 'sliced off silently', 'index.html:2915, 2920, 2926'],
     ['SPEC_SIZE', 'warning/info', 'size_mm missing or not three positive numbers', 'size check skipped', 'index.html:2907, 3279'],
     ['SPEC_DUP', 'warning', 'the same SPEC part name twice', 'both probed', ''],
     ['SPEC_REF', 'warning', 'a rule, relation or profile naming a part the SPEC does not declare', '"unmeasured part", no failure', 'index.html:3333, 3354, 3384'],
@@ -1115,7 +1138,7 @@
     ['APP_FLIGHT_LINT', 'error (flight) / warning (hobby)', 'the app\'s flightLint, each finding at its line', 'fails in flight grade', 'index.html:4827, 5593'],
     ['APP_LINT', 'warning (info when false)', 'the app\'s hobby lint, at its line; says when the match is in a comment or an identifier', 'shown as a warning', 'index.html:5915, 6581'],
     ['FN_HIGH', 'warning', 'a later $fn above 128 that lint() does not read', 'not reported', 'index.html:5918'],
-    ['UNKNOWN_MODULE', 'error', 'a call to a module that is neither defined nor built in', 'OpenSCAD draws nothing for it', 'OpenSCAD'],
+    ['UNKNOWN_MODULE', 'error (warning with include/use)', 'a call to a module that is neither defined nor built in', 'OpenSCAD draws nothing for it', 'OpenSCAD'],
     ['DUP_MODULE', 'warning', 'a module defined twice', '', 'OpenSCAD'],
     ['COMMENTED_MODULE', 'warning', '"module x(" only inside a comment', 'the gate\'s regex counts it', 'index.html:3226'],
     ['BRACES', 'error', 'unbalanced braces or parentheses', 'compile error', 'OpenSCAD'],
@@ -1126,7 +1149,7 @@
     ['GAUGE_RENDERED', 'warning', 'a gauge module the top level draws', 'becomes material', 'index.html:1482'],
     ['ROOT_MODIFIER', 'warning', 'a ! modifier', 'only that subtree renders', 'OpenSCAD'],
     ['TOP_LEVEL', 'warning (flight) / info (hobby)', 'top-level statements besides main(); (the app\'s topLevelIsOnlyMain, located)', 'shortcut off in flight grade; not consulted in hobby', 'index.html:3235, 4561'],
-    ['SHORTCUT', 'info', 'main() qualifies for the by-construction shortcut', 'probe skipped', 'index.html:3228-3235, 3426'],
+    ['SHORTCUT', 'info (warning when a part is unreached)', 'main() qualifies for the by-construction shortcut', 'probe skipped', 'index.html:3228-3235, 3426'],
     ['ASSEMBLY', 'info', 'an assembly manifest', 'SPEC checks skipped', 'index.html:3209'],
     ['NO_SPEC', 'info', 'no SPEC block', 'SPEC checks skipped', 'index.html:3221'],
     ['PARAM_SENTINEL', 'warning', 'no "--- end parameters ---" line', 'panel reads the whole file', 'index.html:6425-6444'],
@@ -1134,7 +1157,7 @@
     ['TESS_NOT_FIRST', 'info', 'tess_tol is not the first parameter', 'not checked', 'index.html:1479'],
     ['DUP_ASSIGN', 'warning', 'a variable assigned twice', 'last one wins', 'OpenSCAD'],
     ['UNUSED_MODULE', 'info', 'a module nothing calls and neither block names', 'never drawn', ''],
-    ['PARITY', 'error', 'Cold Read and the app disagree; the app\'s verdict is reported', '', ''],
+    ['PARITY', 'error (info when only the top-level count differs)', 'Cold Read and the app disagree; the app\'s verdict is reported', '', ''],
   ].map(([code, severity, what, app, ref]) => ({ code, severity, what, app, ref }));
 
   // Every index.html line this file and the page (app.js) cite, with text that line holds at
@@ -1148,7 +1171,7 @@
     3228: 'Flight grade: when main() is nothing but calls', 3235: 'const plain = isFlight()', 3245: 'The SPEC declares a part',
     3255: "row.note = 'missing module'", 3279: 'if(p.size_mm && p.size_mm.every', 3333: "'unmeasured part'", 3354: "'unmeasured part'",
     3384: "'unmeasured part'", 3417: 'Does the printed object actually CONTAIN', 3424: 'const placed = g.parts.filter', 3425: 'if(placed.length && plain){', 3426: 'byConstruction',
-    3231: 'took 445 s', 3442: 'difference(){ union(){', 3448: "'probe error'", 4536: 'function mainPlainUnion', 4550: '}', 4561: 'function topLevelIsOnlyMain',
+    3169: 'const SPEC_MAX_PROBES = 16', 3231: 'took 445 s', 3442: 'difference(){ union(){', 3448: "'probe error'", 4536: 'function mainPlainUnion', 4550: '}', 4561: 'function topLevelIsOnlyMain',
     4652: 'const FLIGHT_CAP = 24', 4672: 'function parseFlight(code){', 4673: 'FLIGHT-BEGIN', 4677: 'JSON.parse(json)', 4678: 'malformed:true',
     4682: 'const arr = k =>', 4684: 'FLIGHT_HAZARD.test', 4690: 'out.demoted++', 4694: 'out.dropped++', 4733: 'bolt_shear', 4740: 'out.demoted++',
     4750: '}', 4779: "f.hazard === 'pressure'", 4827: 'function flightLint(src){', 4847: 'function flightContradictions(spec, f){',

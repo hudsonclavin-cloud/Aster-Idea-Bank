@@ -287,6 +287,10 @@ test('main() that leaves out a declared part: named, and the app\'s own shortcut
   // a * modifier also leaves it out of the render
   const star = CR.lint(mutate(t0, 'union(){ plate(); bosses(); }', 'union(){ plate(); *bosses(); }'));
   assert.match(codes(star, 'MAIN_UNREACHED')[0].message, /only through a \* or % modifier/);
+  // review: % (background) is not rendered either; # (debug) and ! (root) still render it
+  const pct = CR.lint(mutate(t0, 'union(){ plate(); bosses(); }', 'union(){ plate(); %bosses(); }'));
+  assert.match(codes(pct, 'MAIN_UNREACHED')[0].message, /only through a \* or % modifier/);
+  assert.equal(codes(CR.lint(mutate(t0, 'union(){ plate(); bosses(); }', 'union(){ plate(); #bosses(); }')), 'MAIN_UNREACHED').length, 0);
 });
 
 test('a "source" tolerance with no tol_ref: a named demotion at its line and key', () => {
@@ -334,6 +338,27 @@ test('text("A") gives the app\'s text() warning at its column; the same words in
   const fl = codes(CR.lint(c), 'APP_LINT');
   assert.deepEqual(fl.map((x) => x.severity), ['info', 'info']);
   assert.match(fl[0].message, /inside a comment/);
+});
+
+test('review fix: a real text()/import()/minkowski() after a comment, a string or an identifier tail that mentions it is still a warning, at the real call', () => {
+  // Found in review: the first raw match decided the verdict, so a comment mentioning text()
+  // above a real text("A") turned the app's true warning into a "false here" note.
+  const t = mutate(mutate(text(RING), '// --- end parameters ---', '// --- end parameters --- (no text(), import() or minkowski() here)'),
+    'module main(){ ring(); }', 'module mytext(){ cube(1); }\nmodule main(){ ring(); mytext(); echo("text(", "import("); text("A"); import("x.stl"); minkowski(){ cube(1); cube(2); } }');
+  assert.equal(APP.lint(t).length, 3, 'the app\'s lint() warns about all three');
+  const d = codes(CR.lint(t), 'APP_LINT');
+  assert.deepEqual(d.map((x) => x.severity), ['warning', 'warning', 'warning']);
+  for (const [k, call] of [['minkowski', 'minkowski(){'], ['text', 'text("A")'], ['import', 'import("x.stl")']]) {
+    const x = d.find((y) => y.app.startsWith(k));
+    assert.deepEqual([x.line, x.col], [where(t, call, 'module main()').line, where(t, call, 'module main()').col], k);
+  }
+  assert.match(d.find((y) => y.app.startsWith('text')).message, /4 earlier matches in comments, strings or identifier tails do not count/);
+  // only a string mentions it: false, and said so
+  const s = mutate(text(RING), 'module main(){ ring(); }', 'module main(){ ring(); echo("import(x)"); }');
+  assert.equal(APP.lint(s).length, 1);
+  const [only] = codes(CR.lint(s), 'APP_LINT');
+  assert.equal(only.severity, 'info');
+  assert.match(only.message, /inside a string/);
 });
 
 // ------------------------------------------------------------------ JSON positions
@@ -438,6 +463,99 @@ test('robustness: every prefix of every bundled text lints without throwing and 
   t.diagnostic(`${runs} prefixes linted`);
   assert.throws(() => CR.lint(42), TypeError);
   assert.equal(CR.lint('').summary.errors, 0);
+});
+
+// ------------------------------------------------------------------ every rule, one case each (added in review)
+// Found in review: 33 of the 51 rules could be deleted from coldread.js with every test still
+// passing. Each case below makes one real PartForge text break one rule, asserts the rule fires
+// with the catalogue's severity at the line of the edit, and pins what the APP does with the same
+// text (its own function, run verbatim) so the diagnostic's claim about the app is checked too.
+const SPEC_PARTS = '"parts":[{"name":"ring","role":"thrust-transfer centering ring, chamfered OD, 8 holes","size_mm":[149.5,149.5,6.35]}]';
+const SPEC_TAIL = '"size_mm":[149.5,149.5,6.35]}]}';
+const PARAM_END = '// --- end parameters ---\n';
+const MAIN = 'module main(){ ring(); }';
+const flightDoc = (t0, edit) => {
+  const blk = CR.extractBlock(t0, APP.VOCAB.FLIGHT_BLOCK_RE, APP.VOCAB.LINE_PREFIX_RE);
+  const doc = JSON.parse(blk.json); edit(doc);
+  return t0.slice(0, blk.start) + '// FLIGHT-BEGIN\n// ' + JSON.stringify(doc) + '\n// FLIGHT-END' + t0.slice(blk.end);
+};
+const RULE_CASES = [
+  // [code, severity, build(t0) -> text, anchor for the expected line (or null: whole file), app check, opts, extra check on the result]
+  ['SPEC_SHAPE', 'error', (t) => mutate(t, SPEC_PARTS, '"parts":{"name":"ring"}'), '"parts":{', (t) => APP.parseSpec(t) === null],
+  ['SPEC_SIZE', 'warning', (t) => mutate(t, SPEC_TAIL, '"size_mm":[149.5,149.5]}]}'), '"size_mm":[149.5,149.5]}', (t) => APP.parseSpec(t).parts[0].size_mm === null],
+  ['SPEC_SIZE', 'warning', (t) => mutate(t, SPEC_TAIL, '"size_mm":[149.5,0,6.35]}]}'), '"size_mm":[149.5,0,', (t) => !APP.parseSpec(t).parts[0].size_mm.every((v) => v > 0)],
+  ['SPEC_DUP', 'warning', (t) => mutate(t, SPEC_TAIL, '"size_mm":[149.5,149.5,6.35]},{"name":"ring","size_mm":[1,1,1]}]}'), '{"name":"ring","size_mm":[1,1,1]}', (t) => APP.parseSpec(t).parts.filter((p) => p.name === 'ring').length === 2],
+  ['JOINT_MODULE', 'error', (t) => mutate(t, SPEC_TAIL, SPEC_TAIL.slice(0, -1) + ',"joints":[{"a":"ring","b":"lid"}]}'), '"joints"', (t) => APP.parseSpec(t).joints.length === 1 && !APP.appDefinedModules(t).has('lid')],
+  ['SPEC_REF', 'warning', (t) => mutate(t, SPEC_TAIL, SPEC_TAIL.slice(0, -1) + ',"layout":[{"a":"ring","b":"cap","rel":"above"}]}'), '"layout"', (t) => APP.parseSpec(t).layout[0].b === 'cap'],
+  ['SPEC_CAP', 'warning', (t) => mutate(t, SPEC_TAIL, SPEC_TAIL.slice(0, -1) + ',"proportions":[' + Array.from({ length: 9 }, () => '{"a":"ring","b":"ring","min":1,"max":2}').join(',') + ']}'), '"proportions"',
+    (t) => APP.parseSpec(t).rules.length === APP.VOCAB.SPEC_CAPS.rules, null, (r) => codes(r, 'SPEC_CAP').length === 9 - APP.VOCAB.SPEC_CAPS.rules],
+  ['FLIGHT_SHAPE', 'error', (t) => t.replace(/\/\/ FLIGHT-BEGIN\n[\s\S]*?\/\/ FLIGHT-END/, '// FLIGHT-BEGIN\n// [1]\n// FLIGHT-END'), '// [1]', (t) => APP.parseFlight(t).malformed === true],
+  ['FLIGHT_KEY', 'warning', (t) => mutate(t, '"hazard":"none",', '"hazard":"none","critcal":[],'), '"critcal"', (t) => APP.parseFlight(t).critical.length === 3],
+  ['FLIGHT_NOT_ARRAY', 'error', (t) => flightDoc(t, (d) => { d.bores = { a: d.bores }; }), '"bores"', (t) => { const f = APP.parseFlight(t); return f.bores.length === 0 && f.dropped === 0; }, null, (r) => r.summary.named.uncounted === 1],
+  ['FLIGHT_UNCOUNTED', 'error', (t) => flightDoc(t, (d) => { d.bores.unshift(7); }), '"bores"', (t) => { const f = APP.parseFlight(t); return f.bores.length === 1 && f.dropped === 0; }, null, (r) => r.summary.named.uncounted === 1],
+  ['HAZARD', 'error', (t) => mutate(t, '"hazard":"none"', '"hazard":"Pressure"'), '"hazard"', (t) => APP.parseFlight(t).hazard === 'none'],
+  ['VOCAB', 'warning', (t) => mutate(t, '"tol_mm":0.25,"tol_src":"default"', '"tol_mm":0.25,"tol_src":"Source","tol_ref":"MIL-STD"'), '"tol_src":"Source"',
+    (t) => { const f = APP.parseFlight(t); return f.critical[2].tol_src === 'default' && f.demoted === 0; }],
+  ['DUP_NAME', 'warning', (t) => mutate(t, '"name":"ring OD (y)"', '"name":"ring OD"'), '"name":"ring OD","module":"ring","axis":"y"', (t) => APP.parseFlight(t).critical.filter((c) => c.name === 'ring OD').length === 2],
+  ['NOTHING_DECLARED', 'error', (t) => flightDoc(t, (d) => { delete d.critical; delete d.bores; delete d.holes; }), 'FLIGHT-BEGIN', (t) => APP.parseFlight(t).declared === 0],
+  ['TESS_MISMATCH', 'warning', (t) => mutate(t, '"tess_tol_mm":0.01', '"tess_tol_mm":0.02'), 'tess_tol = 0.01', (t) => APP.parseFlight(t).tess_tol_mm === 0.02 && APP.flightLint(t).length === 0],
+  ['TESS_UNDECLARED', 'info', (t) => mutate(t, '"tess_tol_mm":0.01,', ''), '// {"material"', (t) => APP.parseFlight(t).tess_tol_mm === 0],
+  ['FN_HIGH', 'warning', (t) => mutate(t, PARAM_END, PARAM_END + 'module q(){ sphere(1, $fn=64); sphere(2, $fn=300); }\n'), '$fn=300', (t) => APP.lint(t).length === 0],
+  ['DUP_MODULE', 'warning', (t) => mutate(t, MAIN, 'module ring(){ cube(1); }\n' + MAIN), 'ring(){ cube(1); }', () => true],
+  ['COMMENTED_MODULE', 'warning', (t) => mutate(t, MAIN, '/*\nmodule gauge_x(){ cube(1); }\n*/\n' + MAIN), 'module gauge_x', (t) => APP.appDefinedModules(t).has('gauge_x')],
+  ['BRACES', 'error', (t) => mutate(t, MAIN, 'module main(){ ring(); '), '{ ring(); ', () => true],
+  ['INCLUDE', 'warning', (t) => mutate(mutate(t, PARAM_END, PARAM_END + 'include <lib.scad>\n'), MAIN, 'module main(){ ring(); libpart(); }'), 'include <', (t) => APP.lint(t).length === 0, null,
+    (r) => codes(r, 'UNKNOWN_MODULE', 'warning').length === 1 && !codes(r, 'UNKNOWN_MODULE', 'error').length],
+  ['MAIN_MISSING', 'warning', (t) => mutate(t, MAIN + '\nmain();', 'ring();'), '// SPEC-END', (t) => !APP.mainPlainUnion(t, ['ring'])],
+  ['MAIN_MISSING', 'error', (t) => mutate(t, MAIN + '\nmain();', 'ring();'), '// SPEC-END', (t) => !APP.mainPlainUnion(t, ['ring']), { grade: 'hobby' }],
+  ['NOTHING_RENDERS', 'error', (t) => mutate(t, MAIN + '\nmain();', MAIN), null, (t) => !APP.topLevelIsOnlyMain(t)],
+  ['GAUGE_RENDERED', 'warning', (t) => mutate(t, MAIN, 'module gauge_pin(){ cube(1); }\nmodule main(){ ring(); gauge_pin(); }'), 'gauge_pin(){', () => true],
+  ['ROOT_MODIFIER', 'warning', (t) => mutate(t, MAIN, 'module main(){ !ring(); }'), '!ring', () => true],
+  ['TOP_LEVEL', 'warning', (t) => mutate(t, 'main();\n', 'main();\ncube(1);\n'), 'cube(1);', (t) => !APP.topLevelIsOnlyMain(t)],
+  ['TOP_LEVEL', 'info', (t) => mutate(t, 'main();\n', 'main();\ncube(1);\n'), 'cube(1);', (t) => !APP.topLevelIsOnlyMain(t), { grade: 'hobby' }],
+  ['ASSEMBLY', 'info', () => '// MODULE: a\n// MODULE: b\nmodule a(){ cube(1); }\nmodule b(){ cube(1); }\na();\nb();\n', '// MODULE: a', (t) => APP.parseManifest(t).mods.join() === 'a,b'],
+  ['NO_SPEC', 'info', () => 'module main(){ cube(1); }\nmain();\n', null, (t) => APP.parseSpec(t) === null],
+  ['PARAM_SENTINEL', 'warning', (t) => mutate(t, PARAM_END, ''), null, () => true],
+  ['PARAM_HIDDEN', 'info', (t) => mutate(t, 'cut_ext = 1;', '  cut_ext = 1;'), '  cut_ext = 1;', (t) => !APP.PARAM_RE.test('  cut_ext = 1; // x')],
+  ['TESS_NOT_FIRST', 'info', (t) => mutate(mutate(t, 'tess_tol = 0.01; // max chordal deviation of curved surfaces (mm)\n', ''), 'cut_ext = 1;', 'tess_tol = 0.01; // x\ncut_ext = 1;'), 'ring_od = 149.50;',
+    (t) => APP.flightLint(t).length === 0],
+  ['DUP_ASSIGN', 'warning', (t) => mutate(t, 'cut_ext = 1;', 'cut_ext = 1; cut_ext = 2;'), 'cut_ext = 2', () => true],
+];
+
+test('every rule fires on a one-line break of a real PartForge text, at the catalogue\'s severity, and its claim about the app holds', () => {
+  const ring = text(RING);
+  const seen = new Set();
+  for (const [code, sev, build, anchor, appCheck, opts, extra] of RULE_CASES) {
+    const t = build(ring), r = CR.lint(t, opts);
+    const label = `${code} (${sev}${opts ? ', ' + opts.grade : ''})`;
+    const hits = codes(r, code, sev);
+    assert.ok(hits.length >= 1, `${label}: fires; got ${r.diagnostics.map((d) => d.code + '/' + d.severity).join(', ')}`);
+    assert.equal(hits[0].line, anchor ? where(t, anchor).line : 0, `${label}: at the line of the edit`);
+    assert.ok(appCheck(t), `${label}: the app's own function agrees with what the message says it does`);
+    if (extra) assert.ok(extra(r), `${label}: ${String(extra)}`);
+    assert.deepEqual(parityErrors(r).map((d) => d.message), [], label);
+    const cat = CR.RULES.find((x) => x.code === code);
+    assert.ok(cat && cat.severity.includes(sev), `${label}: the catalogue lists severity ${sev} (it says "${cat && cat.severity}")`);
+    assert.ok(!/undefined|NaN|\[object/.test(hits[0].message), `${label}: ${hits[0].message}`);
+    seen.add(code);
+  }
+  // the rules the tests above pin, so that every catalogued rule has at least one test
+  for (const c of ['SPEC_UNCLOSED', 'SPEC_JSON', 'SPEC_DROP', 'MODULE_MISSING', 'FLIGHT_MISSING', 'FLIGHT_UNCLOSED', 'FLIGHT_JSON', 'DUP_KEY', 'FLIGHT_CAP',
+    'FLIGHT_DROP', 'FLIGHT_DEMOTE', 'CONTRADICTION', 'APP_FLIGHT_LINT', 'APP_LINT', 'UNKNOWN_MODULE', 'MAIN_UNREACHED', 'SHORTCUT', 'UNUSED_MODULE', 'PARITY']) seen.add(c);
+  assert.deepEqual(CR.RULES.map((x) => x.code).filter((c) => !seen.has(c)), [], 'every catalogued rule has a test');
+  assert.equal(CR.RULES.length, 51);
+});
+
+test('PARITY: when the app\'s counter and Cold Read\'s named entries disagree, Cold Read says so and reports the app\'s number', () => {
+  const t = text(RING);
+  // a parseFlight that counts one extra drop on the whole file (not on the one-entry probes)
+  const lying = Object.assign({}, APP, { parseFlight: (c) => { const f = APP.parseFlight(c); if (f && !f.malformed && c.includes('tess_tol =')) f.dropped += 1; return f; } });
+  const r = CR.lint(t, { rules: lying });
+  const p = parityErrors(r);
+  assert.equal(p.length, 1);
+  assert.match(p[0].message, /Cold Read names 0 dropped FLIGHT entries; parseFlight counts 1\. Trust the app's count/);
+  assert.equal(r.summary.app.dropped, 1, 'the summary carries the app\'s number');
+  assert.deepEqual(parityErrors(CR.lint(t)), []);
 });
 
 // ------------------------------------------------------------------ the CLI
