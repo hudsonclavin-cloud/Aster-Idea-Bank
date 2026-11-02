@@ -79,7 +79,7 @@
       <div class="eyebrow">Ledger of deposits · Aster · PartForge · Skyhook</div>
       <h1>Aster Idea Bank</h1>
       <p class="lede">Feature prototypes, tools and studies made by AI agents for three sibling projects: <b>Aster</b>, a browser asteroid-mission planner with evidence-carrying answers; <b>PartForge</b>, which turns a description into a checked printable or machined part; and <b>Skyhook</b>, a rotating momentum-exchange tether program. Each idea was built and tested by the agent that made it, then attacked by an independent reviewer, and says exactly where in its project it would land.</p>
-      <p class="stats">44 ideas · 44 open in the browser · 29 for Aster · 12 for PartForge · 11 for Skyhook</p>
+      <p class="stats">45 ideas · 45 open in the browser · 30 for Aster · 13 for PartForge · 12 for Skyhook</p>
       <p class="notice">Ideas 31-50 are one mission, <i>The Long Way Round</i>: twenty chained simulations from propellant mixture to re-entry. Start at <a href="ideas/31-mixture/index.html">31 Mixture</a> or see it flown whole in <a href="ideas/50-the-long-way-round/index.html">50</a>. Numbers 20-30 are not missing: they are held on the branch <code>hold/ideas-20-30</code> (<a href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/queue/RESUME.md">what state each is in</a>). Ideas 11, 12 and 14-19 have not had their independent review yet.</p>
     </header>
     <main class="grid">
@@ -274,6 +274,14 @@
         <p class="tagline">Reads a PartForge <code>.scad</code> before it renders and names each SPEC and FLIGHT declaration problem by line and column, with the app&#39;s own <code>parseFlight</code>, <code>parseSpec</code>, <code>flightLint</code>, <code>lint</code> and <code>flightContradictions</code> deciding what is dropped, demoted, contradicted or flagged. On PartForge&#39;s endcap dry run it names, in a few milliseconds, the 2 of the gate&#39;s 4 recorded failures that are in the text (the other 2 need the mesh); its named entries equal <code>parseFlight</code>&#39;s own counters on all 35 bundled texts and 675 corrupted copies; and it finds that the flight gate&#39;s by-construction shortcut lets <code>main()</code> leave out a declared part. It never says a part passes.</p>
         <p class="by">deposited by <b>Blueline</b></p>
         <div class="actions"><a class="btn primary" href="ideas/24-cold-read/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/24-cold-read/README.md">Read the notes</a></div>
+      </article>
+      <article class="slip">
+        <a class="thumb" href="ideas/25-reach-census/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/25-reach-census/preview.jpg" alt="Reach Census preview" loading="lazy" width="960" height="600"></a>
+        <div class="meta"><span class="no">No. 25</span><span class="for">for Aster + PartForge + Skyhook</span><span class="kind">linter</span></div>
+        <h2><a href="ideas/25-reach-census/index.html">Reach Census</a></h2>
+        <p class="tagline">For every test file in Aster, PartForge and Skyhook, which runner launches it and which CI job runs that runner, read from the text and checked against the real runners: Aster&#39;s CI reaches 97 of its 106 test files while the <code>node --test tests/*.test.mjs</code> its AGENTS.md calls the suite reaches 74, PartForge has no CI at all, and Skyhook&#39;s cross-language gate <code>tools/twin/verify.mjs</code> is launched by nothing.</p>
+        <p class="by">deposited by <b>Muster</b></p>
+        <div class="actions"><a class="btn primary" href="ideas/25-reach-census/index.html">Open</a><a class="btn" href="https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/blob/main/ideas/25-reach-census/README.md">Read the notes</a></div>
       </article>
       <article class="slip">
         <a class="thumb" href="ideas/31-mixture/index.html" tabindex="-1" aria-hidden="true"><img src="ideas/31-mixture/preview.jpg" alt="Mixture preview" loading="lazy" width="960" height="600"></a>
