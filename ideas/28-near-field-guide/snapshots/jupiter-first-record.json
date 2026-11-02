@@ -1,0 +1,28 @@
+{
+ "source": "NASA/JPL Horizons API",
+ "frame": "ICRF/J2000",
+ "timeScale": "TDB",
+ "units": {
+  "position": "km",
+  "velocity": "km/s",
+  "time": "TDB Julian Date"
+ },
+ "targets": {
+  "jupiter": {
+   "targetId": "599",
+   "center": "@sun",
+   "origin": "heliocentric",
+   "records": [
+    [
+     2461161.5,
+     -378802858.9374442,
+     629749225.4350233,
+     279148416.4586373,
+     -11.61247017765112,
+     -5.333086118922775,
+     -2.003257600464848
+    ]
+   ]
+  }
+ }
+}

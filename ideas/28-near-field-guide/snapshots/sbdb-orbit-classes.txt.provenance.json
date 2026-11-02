@@ -1,0 +1,13 @@
+{
+  "repo": "https://ssd-api.jpl.nasa.gov",
+  "path": "/doc/sbdb_filter.html (the orbit-class table)",
+  "commit": "retrieved 2026-11-02",
+  "retrieved": "2026-11-02",
+  "sourceSha256": "87961015b7da39ccb4496ff77deb4cc94b5897836c1e7a8e591875ba5442aed3",
+  "sourceBytes": 50557,
+  "license": "NASA/JPL Solar System Dynamics documentation; US government work, no copyright asserted",
+  "mode": "excerpt",
+  "writtenSha256": "4d98d3aa76fe9cb8ed09400d50320ba425237aa5cd24db440e26991f638562a9",
+  "writtenBytes": 2542,
+  "note": "JPL's definitions of the orbit-class codes Aster's catalog stores (IEO/ATE/APO/AMO thresholds; ETc, JFc, JFC, HTC with their Tisserand or period criteria, after Levison and Duncan for the T_J ones). Read by build-data.mjs for the T_J reference lines (2 and 3) and for the finding that Aster's ingestion upper-cases JFc/ETc into JFC/ETC"
+}

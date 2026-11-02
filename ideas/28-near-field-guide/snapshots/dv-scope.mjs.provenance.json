@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tools/slice18-research/dv-scope.mjs",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "aa416af6ee4fa49632bb94d1be9f935fbfee74e1",
+  "readBlob": "aa416af6ee4fa49632bb94d1be9f935fbfee74e1",
+  "sourceSha256": "e99d7b8e68b24ed3c8afcac51d2fb463077f3e844384597774cfd97403c94014",
+  "sourceBytes": 10181,
+  "copiedAt": "2026-10-26T16:32:22.012Z",
+  "mode": "copy",
+  "note": "",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e99d7b8e68b24ed3c8afcac51d2fb463077f3e844384597774cfd97403c94014",
+  "writtenBytes": 10181
+}

@@ -1,0 +1,10 @@
+{
+  "repo": "https://ssd-api.jpl.nasa.gov",
+  "path": "/sbdb.api?sstr=2008%20TC3&discovery=1",
+  "commit": "retrieved 2026-11-02",
+  "retrieved": "2026-11-02",
+  "sourceSha256": "cd3e8d409a2376e282870e2ed22dd6c09fb88d9a4446ea020c16dd70fe976c3b",
+  "sourceBytes": 1990,
+  "license": "NASA/JPL Small-Body Database API output; US government work, no copyright asserted",
+  "note": "the whole API response, verbatim. Read by build-data.mjs for the orbit SBDB itself carries for this body: its epoch, first and last observation, Earth MOID and 'not_valid_after' (the time after which SBDB says the orbit solution is not valid), set against the re-anchored elements in Aster's catalog fixture"
+}

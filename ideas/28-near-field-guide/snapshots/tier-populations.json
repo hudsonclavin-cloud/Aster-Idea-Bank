@@ -1,0 +1,11 @@
+{
+ "source": "tier-sizing.mjs over nea-catalog-slice9.json + dv-scope-results.json + cad-all-0.3.json",
+ "catalogTotal": 41906,
+ "populations": {
+  "L0": 11,
+  "L1": 10150,
+  "L2": 31745,
+  "total": 41906,
+  "structurallyBlindL2": 688
+ }
+}

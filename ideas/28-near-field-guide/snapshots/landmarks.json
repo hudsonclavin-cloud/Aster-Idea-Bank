@@ -1,0 +1,510 @@
+{
+ "asteroids": {
+  "asteroid-433": {
+   "designation": "433",
+   "spkId": 20000433,
+   "name": "433 Eros (A898 PA)",
+   "class": "AMO",
+   "orbitClass": "AMO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 10.39,
+   "G": null,
+   "estimatedRadiusM": 14839.899761463936,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -184294550.5137226,
+     293987.5019030194,
+     -33140557.96937972
+    ],
+    "velocityKmPerS": [
+     -2.486718248191993,
+     -24.44629636938456,
+     -14.32918842721964
+    ]
+   },
+   "elements": {
+    "aKm": 218150587.6896261,
+    "e": 0.22288929294611265,
+    "iRad": 0.18899384901473204,
+    "omRad": 5.310478612736303,
+    "wRad": 3.1226809007487173,
+    "maRad": 0.710056713354084,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "C",
+   "conditionCode": 0,
+   "dataArcDays": 46582,
+   "nObsUsed": 9130,
+   "sigmaA": 1.5722e-10,
+   "sigmaE": 9.3863e-9,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-101955": {
+   "designation": "101955",
+   "spkId": 20101955,
+   "name": "101955 Bennu (1999 RQ36)",
+   "class": "APO",
+   "orbitClass": "APO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": true,
+   "H": 20.21,
+   "G": null,
+   "estimatedRadiusM": 161.22447352763214,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -87854528.77198242,
+     101340444.4918719,
+     57626543.74194905
+    ],
+    "velocityKmPerS": [
+     -28.32504393061313,
+     -13.19880473719875,
+     -7.340613323736131
+    ]
+   },
+   "elements": {
+    "aKm": 168444415.86363044,
+    "e": 0.20369784790713552,
+    "iRad": 0.10529366531720277,
+    "omRad": 0.03433468367554138,
+    "wRad": 1.1591643158154996,
+    "maRad": 0.7029021135002829,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "C",
+   "conditionCode": 0,
+   "dataArcDays": 7693,
+   "nObsUsed": 554,
+   "sigmaA": 1.9673e-10,
+   "sigmaE": 6.9748e-11,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-99942": {
+   "designation": "99942",
+   "spkId": 20099942,
+   "name": "99942 Apophis (2004 MN4)",
+   "class": "ATE",
+   "orbitClass": "ATE",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": true,
+   "H": 19.09,
+   "G": null,
+   "estimatedRadiusM": 270.0417833762203,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -70151129.783288,
+     133192511.4918129,
+     47724751.39335984
+    ],
+    "velocityKmPerS": [
+     -25.32756365772645,
+     -8.022652587761687,
+     -3.619120753681292
+    ]
+   },
+   "elements": {
+    "aKm": 137983836.49472314,
+    "e": 0.19114292963930402,
+    "iRad": 0.0583104793547796,
+    "omRad": 3.558669667479859,
+    "wRad": 2.210936757854796,
+    "maRad": 2.3027310118528863,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "B",
+   "conditionCode": 0,
+   "dataArcDays": 6599,
+   "nObsUsed": 7370,
+   "sigmaA": 2.4147e-9,
+   "sigmaE": 1.3149e-9,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-163693": {
+   "designation": "163693",
+   "spkId": 20163693,
+   "name": "163693 Atira (2003 CP20)",
+   "class": "IEO",
+   "orbitClass": "IEO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 16.41,
+   "G": null,
+   "estimatedRadiusM": 927.7500094395672,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -39507594.86167905,
+     -104400507.4921429,
+     -12589728.03283929
+    ],
+    "velocityKmPerS": [
+     30.91040485722095,
+     1.861655337719247,
+     -14.3750205557447
+    ]
+   },
+   "elements": {
+    "aKm": 110845970.87658529,
+    "e": 0.32216557986238864,
+    "iRad": 0.4471333982117316,
+    "omRad": 1.8128371571989383,
+    "wRad": 4.414429368204405,
+    "maRad": 4.992607692818208,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "D",
+   "conditionCode": 0,
+   "dataArcDays": 8476,
+   "nObsUsed": 1080,
+   "sigmaA": 1.0253e-9,
+   "sigmaE": 9.4596e-8,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-152637": {
+   "designation": "152637",
+   "spkId": 20152637,
+   "name": "152637 (1997 NC1)",
+   "class": "ATE",
+   "orbitClass": "ATE",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": true,
+   "H": 17.87,
+   "G": null,
+   "estimatedRadiusM": 473.6210185461291,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -96256912.13552816,
+     -89923151.23756097,
+     -4562213.827101484
+    ],
+    "velocityKmPerS": [
+     14.3072658983841,
+     -24.17158020132393,
+     -14.11201342560549
+    ]
+   },
+   "elements": {
+    "aKm": 129391266.73325016,
+    "e": 0.20856137519758422,
+    "iRad": 0.29185849857557844,
+    "omRad": 1.683448951095933,
+    "wRad": 0.28977493150094524,
+    "maRad": 1.4526088382866957,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "C",
+   "conditionCode": 0,
+   "dataArcDays": 10539,
+   "nObsUsed": 400,
+   "sigmaA": 2.1334e-9,
+   "sigmaE": 7.9177e-8,
+   "inv014Tier": "not-kepler-safe",
+   "qualityRank": 1,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-1P": {
+   "designation": "1P",
+   "spkId": 1000036,
+   "name": "1P/Halley",
+   "class": "HTC",
+   "orbitClass": "HTC",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": null,
+   "G": null,
+   "estimatedRadiusM": null,
+   "anchor": {
+    "epochTdbJd": 2439875.5,
+    "positionKm": [
+     -1991191581.205391,
+     3801655827.508223,
+     394571761.58745646
+    ],
+    "velocityKmPerS": [
+     2.456850581626164,
+     -2.462955752958441,
+     0.07153204336103303
+    ]
+   },
+   "elements": {
+    "aKm": 2682085627.8233476,
+    "e": 0.9679359956953211,
+    "iRad": 2.8307587648210633,
+    "omRad": 1.0314712132091741,
+    "wRad": 1.9589825361944564,
+    "maRad": 4.788875192352163,
+    "epochTdbJd": 2439875.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "D",
+   "conditionCode": 0,
+   "dataArcDays": 57852,
+   "nObsUsed": 8518,
+   "sigmaA": 9.9587e-9,
+   "sigmaE": 7.5527e-9,
+   "inv014Tier": "not-kepler-safe",
+   "qualityRank": 1,
+   "anchorSource": "stale-unanchored",
+   "reanchorEpochTdbJd": null
+  },
+  "asteroid-3D": {
+   "designation": "3D",
+   "spkId": 1000504,
+   "name": "3D/Biela",
+   "class": "JFC",
+   "orbitClass": "JFC",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": null,
+   "G": null,
+   "estimatedRadiusM": null,
+   "anchor": {
+    "epochTdbJd": 2390520.5,
+    "positionKm": [
+     -68311020.44127752,
+     111178265.64737613,
+     22306788.452456582
+    ],
+    "velocityKmPerS": [
+     -36.24515961779907,
+     -15.733280760070214,
+     -13.884793531749091
+    ]
+   },
+   "elements": {
+    "aKm": 528777322.92938495,
+    "e": 0.751299,
+    "iRad": 0.23066969526057857,
+    "omRad": 4.374999382681666,
+    "wRad": 3.868675876019607,
+    "maRad": 0.01652751746190586,
+    "epochTdbJd": 2390520.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "D",
+   "conditionCode": null,
+   "dataArcDays": null,
+   "nObsUsed": 26,
+   "sigmaA": null,
+   "sigmaE": null,
+   "inv014Tier": "not-kepler-safe",
+   "qualityRank": 0,
+   "anchorSource": "stale-unanchored",
+   "reanchorEpochTdbJd": null
+  },
+  "asteroid-2008 TC3": {
+   "designation": "2008 TC3",
+   "spkId": 50430314,
+   "name": "(2008 TC3)",
+   "class": "APO",
+   "orbitClass": "APO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 30.72,
+   "G": null,
+   "estimatedRadiusM": 1.274767455288222,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     430927892.2461534,
+     77506552.1505444,
+     14367252.43192719
+    ],
+    "velocityKmPerS": [
+     -2.489066156608329,
+     14.49731593082578,
+     10.14825910813689
+    ]
+   },
+   "elements": {
+    "aKm": 463171372.5830461,
+    "e": 0.059711056319944396,
+    "iRad": 0.20485857740991933,
+    "omRad": 0.3717194607118559,
+    "wRad": 5.6240632178695416,
+    "maRad": 0.4088346181836986,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "A",
+   "conditionCode": 4,
+   "dataArcDays": 1,
+   "nObsUsed": 575,
+   "sigmaA": 0.0000074156,
+   "sigmaE": 0.0000047742,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 0.373465,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-2014 AA": {
+   "designation": "2014 AA",
+   "spkId": 50655753,
+   "name": "(2014 AA)",
+   "class": "APO",
+   "orbitClass": "APO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 30.95,
+   "G": null,
+   "estimatedRadiusM": 1.1466502430449548,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     372252870.6723769,
+     193672096.2993919,
+     67904127.78690347
+    ],
+    "velocityKmPerS": [
+     -6.669308826182836,
+     15.82988307185955,
+     7.251034182292141
+    ]
+   },
+   "elements": {
+    "aKm": 479502921.1792842,
+    "e": 0.17623765463937963,
+    "iRad": 0.042188371344622784,
+    "omRad": 1.4673260878879795,
+    "wRad": 4.303274331279484,
+    "maRad": 0.736228860515233,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "B",
+   "conditionCode": 9,
+   "dataArcDays": 1,
+   "nObsUsed": 8,
+   "sigmaA": 0.0042653,
+   "sigmaE": 0.0042378,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 0.040132,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-2015 D1": {
+   "designation": "2015 D1",
+   "spkId": 1003377,
+   "name": "C/2015 D1 (SOHO)",
+   "class": "JFC",
+   "orbitClass": "JFC",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": null,
+   "G": null,
+   "estimatedRadiusM": null,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -1799142951.238439,
+     1558594572.407732,
+     4908227239.303262
+    ],
+    "velocityKmPerS": [
+     -4.140160940048609,
+     3.360358401171395,
+     11.22307240322176
+    ]
+   },
+   "elements": {
+    "aKm": -1255166219.5433092,
+    "e": 1.003535566834499,
+    "iRad": 1.1690409136006743,
+    "omRad": 1.61444299355564,
+    "wRad": 4.1273730750739155,
+    "maRad": null,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "D",
+   "conditionCode": 9,
+   "dataArcDays": 3,
+   "nObsUsed": 417,
+   "sigmaA": 0.49857,
+   "sigmaE": 0.00056513,
+   "inv014Tier": "not-kepler-safe",
+   "qualityRank": 0.080263,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  },
+  "asteroid-2017 UR52": {
+   "designation": "2017 UR52",
+   "spkId": 50799282,
+   "name": "(2017 UR52)",
+   "class": "AMO",
+   "orbitClass": "AMO",
+   "isCuratedNea": false,
+   "neo": true,
+   "pha": false,
+   "H": 21.2,
+   "G": null,
+   "estimatedRadiusM": 102.19531048251015,
+   "anchor": {
+    "epochTdbJd": 2461161.5,
+    "positionKm": [
+     -885016258.1363659,
+     -666636142.9400382,
+     -3130476878.94341
+    ],
+    "velocityKmPerS": [
+     -3.867140383465249,
+     -2.937982200812571,
+     -7.336971272880271
+    ]
+   },
+   "elements": {
+    "aKm": 52853554092.45928,
+    "e": 0.9964262210658009,
+    "iRad": 1.8888450108614434,
+    "omRad": 3.837197802672809,
+    "wRad": 2.643003375702026,
+    "maRad": 0.008112353141878081,
+    "epochTdbJd": 2461161.5
+   },
+   "elementsFrame": "FRAME_HELIO_J2000_ECLIPTIC",
+   "eccentricityBand": "D",
+   "conditionCode": 6,
+   "dataArcDays": 26,
+   "nObsUsed": 63,
+   "sigmaA": 81.155,
+   "sigmaE": 0.00083446,
+   "inv014Tier": "visualization-tier",
+   "qualityRank": 0.390821,
+   "anchorSource": "horizons-reanchor",
+   "reanchorEpochTdbJd": 2461161.5
+  }
+ }
+}

@@ -1,0 +1,22 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "docs/tier-sizing-per-body.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "bd9d6f5 2026-10-14T15:13:15-04:00",
+  "committedBlob": "13e79faeff3522d793ce2f1f69938f409d937280",
+  "readBlob": "13e79faeff3522d793ce2f1f69938f409d937280",
+  "sourceSha256": "dff569ab5ea0751122bfb37c8f6c472c06658b7cb1d9931e0eba1cbc25974c31",
+  "sourceBytes": 10880177,
+  "copiedAt": "2026-10-26T16:32:21.355Z",
+  "mode": "excerpt",
+  "note": "Slice 18 screening-fidelity tier populations (L0/L1/L2); the per-body tiers are joined by designation at derivation time and only their counts ship",
+  "readMatchesCommitted": true,
+  "picked": [
+    "source",
+    "catalogTotal",
+    "populations"
+  ],
+  "writtenSha256": "05332b38551def1e9ea48e7426e4dadae983c1ab2619b128520c3263fbdb0129",
+  "writtenBytes": 240
+}

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/physics/catalog/normalizers.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "637805037ee5637f018301d315a1ef2f87080ff1",
+  "readBlob": "637805037ee5637f018301d315a1ef2f87080ff1",
+  "sourceSha256": "48d17a72ccff80dfabc9927aa47a2297442231d13a128c36c06e21f71f6ccb36",
+  "sourceBytes": 5701,
+  "copiedAt": "2026-10-26T16:32:22.117Z",
+  "mode": "copy",
+  "note": "",
+  "readMatchesCommitted": true,
+  "writtenSha256": "48d17a72ccff80dfabc9927aa47a2297442231d13a128c36c06e21f71f6ccb36",
+  "writtenBytes": 5701
+}

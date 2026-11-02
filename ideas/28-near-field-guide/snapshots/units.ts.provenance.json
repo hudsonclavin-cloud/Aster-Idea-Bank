@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/core/units.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "edebf63f2728957f70dbf790d87d52c057dd4f8a",
+  "readBlob": "edebf63f2728957f70dbf790d87d52c057dd4f8a",
+  "sourceSha256": "2f5f874b8613cf2d8a349a8d868f8139ee2ebcbacc1620958c47f9507f22a5d1",
+  "sourceBytes": 630,
+  "copiedAt": "2026-10-26T16:32:21.798Z",
+  "mode": "copy",
+  "note": "",
+  "readMatchesCommitted": true,
+  "writtenSha256": "2f5f874b8613cf2d8a349a8d868f8139ee2ebcbacc1620958c47f9507f22a5d1",
+  "writtenBytes": 630
+}

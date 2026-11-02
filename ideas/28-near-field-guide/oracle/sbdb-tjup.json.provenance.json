@@ -1,0 +1,13 @@
+{
+  "repo": "https://ssd-api.jpl.nasa.gov",
+  "path": "/sbdb_query.api?fields=pdes,full_name,epoch,a,e,i,om,t_jup,class&sb-group=neo&full-prec=true",
+  "commit": "retrieved 2026-11-02",
+  "retrieved": "2026-11-02",
+  "sourceSha256": "d225880b6ab1ac759c8c8c837dc4df6062d3e27439dacd7a182163e793636b3f",
+  "sourceBytes": 5970052,
+  "license": "NASA/JPL Small-Body Database Query API output; US government work, no copyright asserted",
+  "mode": "derived",
+  "writtenSha256": "a96e69321e8668d894800360c834208c75cccaa82b9fdb805b709b1606f064b3",
+  "writtenBytes": 50740,
+  "note": "derived by oracle/sbdb-tjup.mjs from the 6 MB SBDB query response (43,039 NEO rows, not shipped) and Aster's catalog fixture at 62ddb17: which inclination convention reproduces SBDB's printed t_jup from SBDB's own a, e, i, node; the a_J interval at which every row reproduces; 308 sample rows (every 150th by designation, the five lowest and highest t_jup, and the 11 landmark bodies) copied verbatim as strings for guide.test.mjs; Aster's own T_J against SBDB's, by anchorSource; and Aster's stored orbitClass against the class code SBDB gives the same designation today"
+}

@@ -1,0 +1,30 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/nea-catalog-slice9.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "readBlob": "103bede6277e0bc9b3b55a2af4ebc778b72c976b",
+  "sourceSha256": "f88028d2839842299b7aae20644d15fef265b19e3bbca576c5dd0faf7d231418",
+  "sourceBytes": 52969826,
+  "copiedAt": "2026-10-26T16:32:20.299Z",
+  "mode": "excerpt",
+  "note": "11 per-body records copied verbatim as landmarks: the six bodies Aster's own boundary test spot-checks (tests/v2-boundary-slice9.test.mjs:116-121: Eros, Bennu, Apophis, Atira-class 163693, flagged 152637, 1P), 3D/Biela (the oldest element epoch), and four records this deposit flags (2008 TC3 and 2014 AA re-anchored onto q > 2.6 AU, 2015 D1 hyperbolic, 2017 UR52 the largest a)",
+  "readMatchesCommitted": true,
+  "picked": [
+    "asteroids.asteroid-433",
+    "asteroids.asteroid-101955",
+    "asteroids.asteroid-99942",
+    "asteroids.asteroid-163693",
+    "asteroids.asteroid-152637",
+    "asteroids.asteroid-1P",
+    "asteroids.asteroid-3D",
+    "asteroids.asteroid-2008 TC3",
+    "asteroids.asteroid-2014 AA",
+    "asteroids.asteroid-2015 D1",
+    "asteroids.asteroid-2017 UR52"
+  ],
+  "writtenSha256": "1f6bd4e7084ef5bb11fa882253d98a130209979241447ada01412be7bf77b6ec",
+  "writtenBytes": 12071
+}

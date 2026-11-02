@@ -1,0 +1,31 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tests/fixtures/v2/horizons-jupiter-system-90d.json",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "8c9a21bee0c0d6b5d9f609a0e283c51d285f8558",
+  "readBlob": "8c9a21bee0c0d6b5d9f609a0e283c51d285f8558",
+  "sourceSha256": "8c6696dfc4789327d5025ed9281b6842e1db4842c9bcb9ff260c1331cd64279f",
+  "sourceBytes": 778269,
+  "copiedAt": "2026-10-26T16:32:21.126Z",
+  "mode": "excerpt",
+  "note": "Jupiter's first heliocentric ICRF state (2026-05-01 TDB, the catalog's common re-anchor epoch); a_J and Jupiter's orbit pole for the Tisserand parameter come from it by vis-viva",
+  "readMatchesCommitted": true,
+  "picked": [
+    "source",
+    "frame",
+    "timeScale",
+    "units",
+    "targets.jupiter"
+  ],
+  "limits": [
+    {
+      "path": "targets.jupiter.records",
+      "kept": 1,
+      "of": 91
+    }
+  ],
+  "writtenSha256": "bc5abc689f72cb012bfd54c47f19418b3c5999f1c286d8f8a0b2cb9177ebb068",
+  "writtenBytes": 475
+}

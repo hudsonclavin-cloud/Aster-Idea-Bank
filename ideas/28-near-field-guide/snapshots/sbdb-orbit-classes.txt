@@ -1,0 +1,25 @@
+# JPL SBDB orbit classes, the table under "Orbit class" in https://ssd-api.jpl.nasa.gov/doc/sbdb_filter.html (retrieved 2026-11-02).
+# Cells joined with " | ", HTML tags removed, whitespace collapsed; nothing else changed.
+Code | Name | Kind | Description
+IEO | Atira | asteroid | An asteroid orbit contained entirely within the orbit of the Earth (Q < 0.983 au). Also known as an Interior Earth Object
+ATE | Aten | asteroid | Near-Earth asteroid orbits similar to that of 2062 Aten (a < 1.0 au; Q > 0.983 au)
+APO | Apollo | asteroid | Near-Earth asteroid orbits which cross the Earth’s orbit similar to that of 1862 Apollo (a > 1.0 au; q < 1.017 au)
+AMO | Amor | asteroid | Near-Earth asteroid orbits similar to that of 1221 Amor (1.017 au < q < 1.3 au)
+MCA | Mars-crossing Asteroid | asteroid | Asteroids that cross the orbit of Mars constrained by (1.3 au < q < 1.666 au; a < 3.2 au)
+IMB | Inner Main-belt Asteroid | asteroid | Asteroids with orbital elements constrained by (a < 2.0 au; q > 1.666 au)
+MBA | Main-belt Asteroid | asteroid | Asteroids with orbital elements constrained by (2.0 au < a < 3.2 au; q > 1.666 au)
+OMB | Outer Main-belt Asteroid | asteroid | Asteroids with orbital elements constrained by (3.2 au < a < 4.6 au)
+TJN | Jupiter Trojan | asteroid | Asteroids trapped in Jupiter’s L4/L5 Lagrange points (4.6 au < a < 5.5 au; e < 0.3)
+AST | Asteroid | asteroid | Asteroid orbit not matching any defined orbit class
+CEN | Centaur |  | Objects with orbits between Jupiter and Neptune (5.5 au < a < 30.1 au)
+TNO | TransNeptunian Object |  | Objects with orbits outside Neptune (a > 30.1 au)
+PAA | Parabolic “Asteroid” |  | “Asteroids” (objects other than comets) on parabolic orbits (e = 1.0)
+HYA | Hyperbolic “Asteroid” |  | “Asteroids” (objects other than comets) on hyperbolic orbits (e > 1.0)
+ETc | Encke-type Comet | comet | Encke-type comet, as defined by Levison and Duncan (Tj > 3; a < aJ)
+JFc | Jupiter-family Comet | comet | Jupiter-family comet, as defined by Levison and Duncan (2 < Tj < 3)
+JFC | Jupiter-family Comet* | comet | Jupiter-family comet, classical definition (P < 20 y)
+CTc | Chiron-type Comet | comet | Chiron-type comet, as defined by Levison and Duncan (Tj > 3; a > aJ)
+HTC | Halley-type Comet* | comet | Halley-type comet, classical definition (20 y < P < 200 y)
+PAR | Parabolic Comet | comet | Comets on parabolic orbits (e = 1.0)
+HYP | Hyperbolic Comet | comet | Comets on hyperbolic orbits (e > 1.0)
+COM | Comet | comet | Comet orbit not matching any defined orbit class

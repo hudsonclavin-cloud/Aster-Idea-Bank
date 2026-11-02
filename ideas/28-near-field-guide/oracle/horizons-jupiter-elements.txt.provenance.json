@@ -1,0 +1,10 @@
+{
+  "repo": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "path": "?format=text&COMMAND='599'&OBJ_DATA=NO&MAKE_EPHEM=YES&EPHEM_TYPE=ELEMENTS&CENTER='500@10'&START_TIME='2026-05-01'&STOP_TIME='2026-05-02'&STEP_SIZE='1 d'&REF_PLANE=ECLIPTIC&REF_SYSTEM=ICRF&OUT_UNITS=KM-S&TP_TYPE=ABSOLUTE&TIME_TYPE=TDB",
+  "commit": "retrieved 2026-11-02",
+  "retrieved": "2026-11-02",
+  "sourceSha256": "11419ee03862d179279cb5d011acc36a1f33d10b138a9d8ac4f804faba60c3ca",
+  "sourceBytes": 5359,
+  "license": "NASA/JPL Horizons API output; US government work, no copyright asserted",
+  "note": "Horizons' own osculating heliocentric elements of Jupiter (ecliptic J2000) at 2026-05-01 00:00 TDB, the catalog's common re-anchor epoch, with the Keplerian GM Horizons used. The oracle for guide.js elementsFromState() run on Aster's Jupiter state at the same instant (guide.test.mjs)."
+}

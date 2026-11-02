@@ -1,0 +1,46 @@
+Near Field Guide — Aster 62ddb17 (2026-10-25), tests/fixtures/v2/nea-catalog-slice9.json
+  sha256 f88028d2839842299b7aae20644d15fef265b19e3bbca576c5dd0faf7d231418, 52,969,826 bytes, 41,906 records binned in 18 atoms (orbitClass x inv014Tier x Slice 18 tier)
+  element epochs: 41,539 at 2026-05-01 TDB; 367 at 140 other epochs, 1832-12-03 to 2026-05-15
+
+Null census (every key path of every record):
+  G                      41,906 null of 41,906
+  H                         210 null of 41,906
+  conditionCode              10 null of 41,906
+  dataArcDays               417 null of 41,906
+  elements.maRad              1 null of 41,906
+  estimatedRadiusM          210 null of 41,906
+  reanchorEpochTdbJd        367 null of 41,906
+  sigmaA                    137 null of 41,906
+  sigmaE                    137 null of 41,906
+  (34 key paths, 25 never null; every record carries every path)
+  asked for, not carried: rotation period (keys matching /rot|period|spin/i: none)
+  asked for, not carried: taxonomy / spectral class (keys matching /tax|spec/i: none)
+  asked for, not carried: albedo (keys matching /albedo|^pv$|\.pv$/i: none)
+
+Reconciled with the fixture header: total, classDistribution, inv014TierDistribution, missingAbsoluteMagnitudeCount, anomalyTailCount; with the Slice 18 artifact: L0/L1/L2.
+  classes: AMO 14,516, APO 23,757, ATE 3,387, IEO 38, ETC 6, HTC 36, JFC 166
+  inv014Tier: visualization-tier 41,558, planning-tier 0, not-kepler-safe 348
+  Slice 18 tier: L0 11, L1 10,150, L2 31,745 (L1 at 10^6 km against the 2026-09-11 CAD snapshot)
+  Q >= 4.95 AU among NEA-class L2 bodies: 482 (L1: 0); comet-class L2 bodies 206, of which Q < 4.95 AU: 26
+
+Jupiter for T_J: a_J = 5.2034 AU by vis-viva at 2026-05-01 (mu = GM_sun + GM_Jupiter; GM_sun alone gives 5.2083; over the 90-day file 5.2010–5.2041); orbit inclined 1.304 deg to the ecliptic
+  T_J with GM_sun-only a_J moves by at most 0.0104 (16 bodies cross 3); with ecliptic instead of Jupiter-plane inclination by 0.0262 (38 cross 3)
+  Horizons' own elements at the same instant (GM 1.3283912657e+11): a 5.2033915 AU, e 0.04834027, i 1.303505 deg; ours with that GM: a 5.2033915, e 0.04834027, i 1.303505
+  NEA-class bodies with T_J < 2 (Jupiter plane): 25: 2019 Q2 -1.20, 2016 XK24 -1.10, 2019 EJ3 -0.94, 2026 BW8 -0.79, 2017 UR52 -0.44, 2020 BZ12 -0.23, 2025 VP -0.22, 2024 G8 -0.14, 2014 PP69 0.14, 343158 1.31, 1999 XS35 1.42, 2008 UY91 1.55, 2009 SY63 1.58, 2018 GZ7 1.63, 858130 1.67, 2019 UA14 1.76, 2022 BG4 1.79, 2005 MW9 1.88, 2025 OX434 1.88, 2017 AQ20 1.90, 2023 HQ2 1.91, 2019 OC5 1.91, 2026 AA14 1.92, 2009 WN25 1.94, 2020 QH4 1.95
+  NEA-class bodies with T_J < 2 (ecliptic, as SBDB): 25
+  JPL SBDB t_jup (43039 NEO rows, retrieved 2026-11-02) from SBDB's own a, e, i: ecliptic inclination reproduces 42419 to ±0.0005 (max |diff| 0.00053); inclination to Jupiter's orbit plane reproduces 8202 to ±0.0005 (max |diff| 0.02623); every row reproduces at a_J 5.203363–5.2033631 AU
+  Aster's own elements vs SBDB t_jup, ecliptic form: horizons-reanchor n 41464, median |diff| 0.0003, 517 over 0.01; stale-unanchored n 58, median |diff| 0.0002, 0 over 0.01; sbdb n 308, median |diff| 0.0003, 8 over 0.01; 76 catalog designations not in today's SBDB NEO list
+
+Stored orbitClass vs Aster's class rule on the stored elements: 82 disagree (horizons-reanchor 82).
+  2008 TC3: stored APO, elements say AMO (a 3.096, q 2.911, Q 3.281 AU; 1.894 AU from the nearest class threshold; Slice 18 L2)
+  2014 AA: stored APO, elements say AMO (a 3.205, q 2.640, Q 3.770 AU; 1.623 AU from the nearest class threshold; Slice 18 L2)
+  the other 80 sit within 0.1 AU of a class threshold
+  NEA-class bodies with q >= 1.3 AU: 11: 2008 TC3 2.9112, 2014 AA 2.6404, 2015 TP178 1.3191, 2016 CL248 1.3110, 2011 XL1 1.3099, 2015 BN515 1.3074, 2013 NU 1.3011, 2020 JS15 1.3005, 2021 VR11 1.3003, 2025 QJ15 1.3003, 518426 1.3000
+  SBDB on 2008 TC3: orbit epoch 2008-10-07, observed 2008-10-06 to 2008-10-07, not valid after 2008-Oct-07.116, Earth MOID 0.0000078 AU = 1,167 km (Earth radius 6378.1366 km), q 0.9 AU; the catalog carries it at 2026-05-01 with q 2.911 AU, Slice 18 L2 unmeasured
+  SBDB on 2014 AA: orbit epoch 2014-01-01, observed 2014-01-01 to 2014-01-02, not valid after 2014-Jan-02.128, Earth MOID 4.54e-7 AU = 68 km (Earth radius 6378.1366 km), q 0.917 AU; the catalog carries it at 2026-05-01 with q 2.640 AU, Slice 18 L2 unmeasured
+
+Checks: eccentricityBand from e matches all records (0 mismatches); estimatedRadiusM from H at albedo 0.14 matches 41,696 records to a relative 2.48e-16.
+
+Pre-research report (tools/slice9-research/SLICE_9_PRERESEARCH_REPORT.md, 41,902 rows) vs the committed fixture:
+  U: 0 +0, 1 +0, 2 +0, 3 +0, 4 +0, 5 +0, 6 +0, 7 +2, 8 +1, 9 +1, missing +0
+  arc (left-closed): <7d +4, 7-30d +0, 30-100d +0, 100-1000d +0, >1000d +0, missing +0
