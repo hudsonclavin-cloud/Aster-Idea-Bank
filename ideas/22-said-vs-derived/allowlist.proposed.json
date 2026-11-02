@@ -1,0 +1,33 @@
+{
+ "_note": "A proposal, not an agreed list. Each entry says why one finding at Aster 62ddb17 is acceptable under DEC-17-5; under the landing plan in README.md the maintainer agrees or rejects every row. Ids name one finding (class|path:line|literal) or one literal anywhere in a file (class|path|literal). Only renderer tuning is proposed here: nothing a person reads as a number.",
+ "entries": [
+  {
+   "id": "TWO-HOMES|src/v2/app/earth-moon/runtime.ts:23|WHEEL_ZOOM_SENSITIVITY = 0.0015",
+   "reason": "Camera wheel-zoom tuning repeated in the three 3D route runtimes (earth-moon, inner-solar-system, solar-system); never shown as a number. Fold into a shared camera-controls module when one exists."
+  },
+  {
+   "id": "TWO-HOMES|src/v2/app/earth-moon/runtime.ts:24|TIME_SCRUB_STEP = 1",
+   "reason": "Time-scrub keyboard step repeated per 3D route runtime; a control setting, never shown as a number."
+  },
+  {
+   "id": "TWO-HOMES|src/v2/app/inner-solar-system/runtime.ts:20|ORBIT_SENSITIVITY = 0.005",
+   "reason": "Camera orbit-drag tuning repeated per 3D route runtime (earth-moon uses 0.006 on purpose or not; the tool cannot say); never shown as a number."
+  },
+  {
+   "id": "TWO-HOMES|src/v2/app/inner-solar-system/runtime.ts:18|MIN_CAMERA_DISTANCE_M = 1e9",
+   "reason": "Camera near-limit repeated in two 3D route runtimes; a control clamp, never shown as a number."
+  },
+  {
+   "id": "TWO-HOMES|src/v2/app/inner-solar-system/runtime.ts:24|FOCUS_TRANSITION_DURATION_MS = 650",
+   "reason": "Focus animation length repeated in two 3D route runtimes; motion tuning, never shown as a number."
+  },
+  {
+   "id": "TWO-HOMES|src/v2/app/solar-system/runtime.ts:88|SLICE9_HYBRID_COARSE_CELL_SIZE_AU = 1",
+   "reason": "Two different spatial partitions (the Slice 9 hybrid coarse level and render/spatial-grid.ts, whose comment at :10-12 records 1 AU as a measured choice) that happen to use the same cell size; not one quantity."
+  },
+  {
+   "id": "TWO-HOMES|src/v2/render/asteroid-renderer.ts:27|ASTEROID_POINTS_TO_INSTANCE_EXIT_DIAMETER_PX = 1.5",
+   "reason": "Level-of-detail thresholds in two renderer modules; equal at 1.5 px, possibly as a deliberate hand-off that nothing enforces. Renderer tuning, never shown as a number."
+  }
+ ]
+}

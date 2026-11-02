@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "mcp/src/tools/explain-cell.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "fbe8e89 2026-10-12T13:43:53-04:00",
+  "committedBlob": "17a2f9799095989eeaeaff48b96ffc0e60dba5db",
+  "readBlob": "17a2f9799095989eeaeaff48b96ffc0e60dba5db",
+  "sourceSha256": "d6ca26115a9d7e83f055fa604337d38592b210c88707fe30745a2692d2c2b183",
+  "sourceBytes": 12595,
+  "copiedAt": "2026-10-26T15:19:09.701Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: lines 132-136, 260-266 verbatim, all other lines empty (line numbers preserved)",
+  "readMatchesCommitted": true,
+  "writtenSha256": "de413931da8826d6ece0fc08c6fa2f2431609858b6abcc2bcbcb564a140bbbbb",
+  "writtenBytes": 963
+}

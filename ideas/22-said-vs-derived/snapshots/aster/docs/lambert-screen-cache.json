@@ -1,0 +1,29 @@
+{
+ "metadata": {
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-30T04:43:31.918Z",
+  "catalogSize": 41906,
+  "screeningWindow": {
+   "startUtc": "2026-01-01",
+   "endUtc": "2040-12-31"
+  },
+  "departureGridSpacingDays": 7,
+  "tofGridSpacingDays": 30,
+  "tofMinDays": 182,
+  "tofMaxDays": 1826,
+  "feasibleC3MaxKm2S2": 25,
+  "coorbitalCriteria": {
+   "eMax": 0.1,
+   "iMaxRad": 0.08726646259971647,
+   "aDeltaKm": 7479893.535
+  },
+  "totalSolves": 1804638825,
+  "wallTimeSeconds": 3137.744173,
+  "provenance": {
+   "solverCommit": "8471659bb1c66c7adc6998730e28da31e60b367d",
+   "catalogFixtureSha256": "f88028d2839842299b7aae20644d15fef265b19e3bbca576c5dd0faf7d231418",
+   "horizonsFixtureSha256": "b278dd5567f30266593c49bf4fef203e7570d3613187fd112dc7015109a39c15",
+   "precomputeScriptSha256": "44d9443500cb280a625fc99cfd12756c2928430390cda8c46d7b55763f6db4f7"
+  }
+ }
+}
