@@ -1,0 +1,12 @@
+{
+ "source": "docs/DECISION_LOG.md",
+ "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+ "lines": {
+  "66": "## 10. HMPE creep at Rev A sustained load — named hard part [Likely — creep guidance is secondary-sourced (MP-001), spot-check pending]",
+  "68": "**Date 2026-09-02 · Status OPEN · Sources: `docs/research/mp001_market_pricing.md` §3c; `docs/research/lr001_splice_literature.md` §D.**",
+  "70": "At SF 2.5 the HMPE bulk sections carry a steady centrifugal load of 28–40% of rated break strength (40% raw; 28% if the 30% strength derate is applied in sizing). Published HMPE guidance is to keep sustained load at or below ~20% of break for multi-year life (SK78 ≈ 8 years at 20% load, 20 °C). The centrifugal load is genuinely sustained in the rotating frame, so this is the unfavourable regime.",
+  "72": "**Consequence:** Reaching 20% sustained load would require SF ≈ 5, which cuts characteristic velocity by √2 and drives the 2.5 km/s reference mass ratio from ~41× to order ~800× under the Moravec form. That is a refutation of the design, not a variant of it. SF 2.5 therefore stands, and the creep exposure is carried as a named hard part rather than designed away.",
+  "74": "**Admissible outcomes (not yet decided):** (a) creep-governed tether replacement cadence, costed into ops; (b) hybrid material boundary shifted toward PBO for the high-stress fraction; (c) HMPE grade change — DM20-class is reported to creep >50× slower than SK78 (LR-001 §D), so grade may matter as much as geometry; (d) some mix of the above.",
+  "76": "**Evidence that would close or change this entry:** ST-002 coupon creep-rate ratio at ~20% vs ~40% of break (4–8 week hold); the TP-001 creep test series; a rope-maker application-engineering dataset on DM20 vs SK78 sustained-load life; a primary-source creep curve replacing the secondary guidance above."
+ }
+}

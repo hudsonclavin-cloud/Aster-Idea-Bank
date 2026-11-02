@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "physics/skyhook_physics.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "30419ef 2026-07-02T02:53:59-04:00",
+  "committedBlob": "ce4c48d78c9d9942b54b6877b80ad852015e675b",
+  "readBlob": "ce4c48d78c9d9942b54b6877b80ad852015e675b",
+  "sourceSha256": "e58897b1d10dd01248c1cbf2845dd8b1a8d2503dea9333a1dc0c8f186292991c",
+  "sourceBytes": 12085,
+  "copiedAt": "2026-10-26T15:23:34.792Z",
+  "mode": "copy",
+  "note": "Whole file: Skyhook's own EQ-4/EQ-6 implementation, run by twenty.test.mjs as an oracle for the single-material limits (python3 -I -B, beside the rev_a.json snapshot).",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e58897b1d10dd01248c1cbf2845dd8b1a8d2503dea9333a1dc0c8f186292991c",
+  "writtenBytes": 12085
+}

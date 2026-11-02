@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twenty Percent Line</title>
+<meta name="description" content="Skyhook's HMPE creep line, costed: a two-material rotovator arm sized three ways, with the load each metre carries while a payload rides and between catches. Every tether number is read from params/rev_a.json or a cited Skyhook line.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">Skyhook · Rev A · DECISION_LOG item 10 · an idea-bank prototype</p>
+    <h1>Twenty percent line</h1>
+    <p class="lede" id="lede">Skyhook's construction baseline is an HMPE arm with a Zylon (PBO) tip. Its sizing rule loads the HMPE to a fixed fraction of break while a payload rides; published guidance for multi-year creep life is lower. This page sizes the arm three ways and says, in tonnes, what keeping HMPE under the line costs, and where along the arm the extra PBO should go.</p>
+    <p class="canon" id="canon-line">Reading the canon…</p>
+  </header>
+
+  <div id="notice" class="notice" role="alert" hidden></div>
+
+  <section class="card readout" aria-live="polite" aria-label="Result">
+    <p class="sentence" id="sentence"></p>
+    <div class="tiles" id="tiles"></div>
+    <div class="refusal" id="refusal" hidden></div>
+  </section>
+
+  <section class="card controls" aria-label="Controls" id="controls">
+    <fieldset class="field">
+      <legend>Tip speed (rev_a.json tiers)</legend>
+      <div class="seg" id="tiers" role="radiogroup" aria-label="Tip speed tier"></div>
+    </fieldset>
+    <fieldset class="field">
+      <legend>How HMPE is sized</legend>
+      <div class="seg" id="modes" role="radiogroup" aria-label="Sizing rule for HMPE">
+        <button type="button" role="radio" data-mode="none" aria-checked="true"><span class="sw sw-none" aria-hidden="true"></span>Canon rule, no cap</button>
+        <button type="button" role="radio" data-mode="every" aria-checked="false"><span class="sw sw-every" aria-hidden="true"></span>Cap on every load</button>
+        <button type="button" role="radio" data-mode="between" aria-checked="false"><span class="sw sw-between" aria-hidden="true"></span>Cap between catches</button>
+      </div>
+      <p class="hint" id="mode-hint"></p>
+    </fieldset>
+    <div class="field">
+      <label for="p">PBO added per arm <output id="p-out" for="p"></output></label>
+      <input id="p" type="range" min="0" step="1" value="0">
+      <div class="seg small" id="wheres" role="radiogroup" aria-label="Where the added PBO goes">
+        <button type="button" role="radio" data-where="tip" aria-checked="true">at the tip end (baseline order)</button>
+        <button type="button" role="radio" data-where="hub" aria-checked="false">at the hub end</button>
+      </div>
+      <p class="hint" id="p-hint"></p>
+    </div>
+    <div class="field">
+      <label for="fs">Working load while a payload rides, both fibres <output id="fs-out" for="fs"></output></label>
+      <input id="fs" type="range" min="10" step="1">
+      <div class="chips" id="fs-chips" aria-label="Set the working load to a rung of the canon's derate ladder"></div>
+    </div>
+    <div class="field">
+      <label for="cap">HMPE creep cap <output id="cap-out" for="cap"></output></label>
+      <input id="cap" type="range" min="10" step="1">
+      <div class="chips"><button type="button" class="chip" id="cap-reset">guidance value</button></div>
+      <p class="hint" id="cap-hint"></p>
+    </div>
+    <details class="field more" id="more">
+      <summary>Tip mass between catches, and the HMPE fibre</summary>
+      <div class="field">
+        <label for="beta">Mass on each tip between catches <output id="beta-out" for="beta"></output></label>
+        <input id="beta" type="range" min="0" max="100" step="5" value="0">
+        <p class="hint" id="beta-hint"></p>
+      </div>
+      <div class="field">
+        <label for="hmpe">HMPE fibre</label>
+        <select id="hmpe">
+          <option value="sk99">Dyneema SK99</option>
+          <option value="custom">Custom HMPE (user-entered, not canon)</option>
+        </select>
+        <p class="hint" id="hmpe-hint"></p>
+      </div>
+      <div class="custom" id="custom" hidden>
+        <div class="field">
+          <label for="c-sigma">Tensile strength σ (GPa)</label>
+          <input id="c-sigma" type="number" inputmode="decimal" min="0" step="0.1" placeholder="type a strength">
+        </div>
+        <div class="field">
+          <label for="c-rho">Density ρ (kg/m³)</label>
+          <input id="c-rho" type="number" inputmode="decimal" min="0" step="10" placeholder="type a density">
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <figure class="card fig" id="strip-card">
+    <figcaption>
+      <h2>Where the load sits</h2>
+      <p>The tether from upper tip to lower tip, drawn as a round line with each section's cross-section (width ∝ √area, so the hub is not off the page). Colour is the load as a fraction of break: grey at the cap, red above it, blue below. PBO is hatched: the repo gives it no creep cap.</p>
+    </figcaption>
+    <div class="strip" id="strip"></div>
+    <div class="legend-bar" id="strip-legend"></div>
+  </figure>
+
+  <figure class="card fig" id="chart-card">
+    <figcaption>
+      <h2>What the PBO buys back</h2>
+      <p>Two-arm tether mass over the payload's, against the PBO added to each arm, for the three ways of sizing HMPE. Log scale. Drag across the plot, or use the slider.</p>
+    </figcaption>
+    <ul class="legend" id="chart-legend"></ul>
+    <div class="plot" id="chart"></div>
+    <div class="tip" id="tooltip" hidden></div>
+    <details class="table-view">
+      <summary>The curves as a table</summary>
+      <div class="scroll"><table id="chart-table"></table></div>
+    </details>
+  </figure>
+
+  <section class="card" id="where-card">
+    <h2>Which end should the PBO go to?</h2>
+    <p class="hint" id="where-intro"></p>
+    <div class="scroll"><table id="where-table"></table></div>
+    <p class="note" id="where-note"></p>
+  </section>
+
+  <section class="card" id="item10-card">
+    <h2>DECISION_LOG item 10, recomputed</h2>
+    <blockquote id="item10-quote"></blockquote>
+    <div class="scroll"><table id="item10-table"></table></div>
+    <ul class="findings" id="item10-findings"></ul>
+  </section>
+
+  <section class="card" id="limits-card">
+    <h2>What this page does not do</h2>
+    <ul class="limits" id="limits"></ul>
+  </section>
+
+  <section class="card sources" id="sources-card">
+    <h2>Where every number comes from</h2>
+    <ul id="sources"></ul>
+  </section>
+
+  <footer>
+    <p>Idea-bank prototype for Skyhook. Not through Skyhook's Rule 1 canon review, a verification memo or its pytest suite. Free-space centrifugal load only, the approximation EQ-6 makes.</p>
+  </footer>
+</main>
+<script src="page-data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+ "source": "docs/project_instructions.md",
+ "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+ "lines": {
+  "10": "A skyhook, for the purposes of this project, is a **rotating momentum-exchange tether**: a very long, very strong cable in orbit around Earth, spinning end-over-end around its own center of mass while that center of mass orbits the planet. The rotation is timed so that at the bottom of each swing, the lower tip of the tether dips deep into the upper atmosphere (or close to it) while moving, relative to the ground, far slower than orbital velocity. A vehicle launched from Earth only needs to reach that slow-moving tip, grab on, and then be flung up and forward as the tether continues to rotate — gaining altitude and velocity it never had to pay for with rocket propellant. Half an orbit and half a rotation later, the payload is released at the top of the swing with a velocity *above* orbital, free to coast to higher orbits, the Moon, or interplanetary trajectories.",
+  "67": "| Dyneema SK99 (UHMWPE) | ~3.6 GPa | 970 kg/m³ | ~3.7 MJ/kg | ~2.7 km/s |",
+  "108": "- **Architecture:** Hoytether-style redundant multi-line ribbon or tubular truss of primary load lines with diagonal cross-links. **Construction baseline (adopted from HASTOL Phase I, verified in VM-001):** Spectra/Dyneema-class UHMWPE for the bulk of each arm, with the outer ~20 km of the lower arm in heat-resistant Zylon for the aerothermal regime. Minimum redundancy: survive complete severance of any 25% of primary lines at any cross-section while carrying full design load at remaining safety factor ≥ 1.5.",
+  "112": "- **Environmental protection:** Zylon degrades badly under UV and atomic oxygen. Every load-bearing fiber gets a protective jacket (metallized coating and/or aluminized polymer over-braid). Requirement: ≤ 10% strength loss over 10 years at operational altitude, validated by accelerated AO/UV/thermal-cycling chamber testing and by exposure coupons flown on early missions."
+ }
+}

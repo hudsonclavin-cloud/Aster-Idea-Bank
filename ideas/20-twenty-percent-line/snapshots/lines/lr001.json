@@ -1,0 +1,7 @@
+{
+ "source": "docs/research/lr001_splice_literature.md",
+ "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+ "lines": {
+  "45": "**D · Creep couples straight into MP-001 §3c.** Published HMPE creep concern rises above ~15–20% of break load; **DM20 grade creeps >50× slower than SK78**; offshore uses creep safety factors ~5–8. Our Rev A HMPE sections sit at 28–40% steady load — squarely in the bad regime — so **material grade (DM20-class) may matter as much as splice geometry**, and ST-002's coupons test exactly this. Feeds TP-001 and the risk register."
+ }
+}
