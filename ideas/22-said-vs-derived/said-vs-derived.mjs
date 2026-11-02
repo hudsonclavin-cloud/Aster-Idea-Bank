@@ -23,6 +23,8 @@ index.html of an Aster checkout (default: the current directory).
 
 Canon (what the code owns): depth-0 \`const NAME = <number|'YYYY-MM-DD'>\`, first-level fields of
 depth-0 \`const NAME = { ... }\`, and the \`metadata\` object at the head of the screening cache.
+Depth-0 constants computed by arithmetic (\`A = B * C\`) are evaluated but are not canon: they only
+name a home for a retyped code literal that no literal constant holds.
 
 Classes (failing unless allow-listed): LITERAL-MATCHES-CONSTANT, LITERAL-DATE-SPAN,
 RETYPED-CONSTANT, DUPLICATE-DATE, TWO-HOMES. Informational: LITERAL-WITH-UNITS (fails with --strict).
@@ -37,7 +39,7 @@ Options:
   --cache PATH            JSON whose leading "metadata" object is canon
                           (default tests/fixtures/v2/lambert-screen-cache.json, then docs/…)
   --no-cache              do not read the cache metadata
-  --list-canon            print the harvested canon and exit 0
+  --list-canon            print the harvested canon (then the computed constants, as # lines) and exit 0
   --emit-page-data FILE   write the run as a classic script for index.html
   -h, --help              this text
 `;
@@ -169,9 +171,15 @@ function main() {
   const files = listFiles(root);
   const sources = new Map(files.ts.map((f) => [f, fs.readFileSync(path.join(root, f), 'utf8')]));
 
-  // Canon
+  // Canon, and the constants computed by arithmetic (not canon: they only name a home for a
+  // retyped literal that no literal constant holds)
   const canon = [];
-  for (const [f, src] of sources) canon.push(...SD.harvestTs(f, src));
+  const computedFound = [];
+  for (const [f, src] of sources) {
+    const L = SD.lex(src);
+    canon.push(...SD.harvestTs(f, src, L));
+    computedFound.push(...SD.harvestComputed(f, src, L));
+  }
   let cacheRefusal = null;
   let jsonFrom = null;
   if (!o.noCache) {
@@ -190,8 +198,12 @@ function main() {
     }
   } else cacheRefusal = 'skipped (--no-cache)';
 
+  const computed = SD.resolveComputed(computedFound, canon);
+
   if (o.listCanon) {
     for (const h of canon) console.log(`${h.name}\t${h.text}\t${h.dim}\t${h.path}${h.line ? `:${h.line}` : ''}${h.exported ? '\texported' : ''}`);
+    console.log(`# computed by arithmetic (not canon; ${computed.length} of ${computedFound.length} evaluated)`);
+    for (const c of computed) console.log(`# ${c.name}\t${c.expr} = ${c.value}\t${c.path}:${c.line}${c.exported ? '\texported' : ''}`);
     return 0;
   }
 
@@ -216,7 +228,7 @@ function main() {
     scans.push(s);
   }
 
-  const report = SD.buildReport(scans, canon, { minSig: o.minSig, allowlist, strict: o.strict });
+  const report = SD.buildReport(scans, canon, { minSig: o.minSig, allowlist, strict: o.strict, computed });
   // Only a checkout whose own top level is <root> has a commit to report; a tree inside another
   // repository (this deposit's snapshots/aster) does not borrow that repository's HEAD.
   const top = git(root, ['rev-parse', '--show-toplevel']);
@@ -231,6 +243,7 @@ function main() {
     fileSource: files.source,
     scanned: { ts: files.ts.length, display: files.ts.length, html: files.html.length, literals, displayLiterals },
     canon: { total: canon.length, ts: canon.filter((h) => h.source === 'ts').length, json: canon.filter((h) => h.source === 'json').length, jsonFrom },
+    computed: { found: computedFound.length, evaluated: computed.length },
     cacheRefusal,
     minSig: o.minSig,
     allowlistFile: o.allowlist ? path.basename(o.allowlist) : null,

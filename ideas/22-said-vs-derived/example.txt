@@ -3,6 +3,7 @@
 Checkout: /home/user/asteroid-mining-planner at 62ddb17
 Scanned: 121 TypeScript files and 10 HTML files (git ls-files); 5007 literals, 766 of them display text.
 Canon: 258 homes (244 TypeScript constants or fields, 14 cache metadata leaves from tests/fixtures/v2/lambert-screen-cache.json).
+Computed: 32 top-level constants defined by arithmetic, 29 evaluated; not canon, they only name a home for a retyped literal that no literal constant holds.
 Allow-list: allowlist.proposed.json, 7 entries, 7 applied.
 
 | class | found | allowed | what it means |
@@ -47,12 +48,12 @@ Allow-list: allowlist.proposed.json, 7 entries, 7 applied.
 
 ## RETYPED-CONSTANT (26)
 
-- `mcp/src/tools/compute-shared.ts:135` `946_728_000`
-  - typed in 5 files; no named home
+- `mcp/src/tools/compute-shared.ts:135` `946_728_000` = UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY = 946728000 (src/v2/core/units/utc-to-tdb.ts:31)
+  - typed in 5 files; no literal home, but a constant computes it
 - `mcp/src/tools/compute-shared.ts:136` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
   - typed in 5 files; the value has a named home
-- `mcp/src/tools/compute-shared.ts:143` `946_728_000`
-  - typed in 5 files; no named home
+- `mcp/src/tools/compute-shared.ts:143` `946_728_000` = UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY = 946728000 (src/v2/core/units/utc-to-tdb.ts:31)
+  - typed in 5 files; no literal home, but a constant computes it
 - `mcp/src/tools/compute-shared.ts:144` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
   - typed in 5 files; the value has a named home
 - `mcp/src/tools/dla-feasibility.ts:116` `2451545.0` = J2000_TDB_JULIAN_DAY = 2451545 (src/v2/app/solar-system/runtime.ts:225); J2000_TDB_JULIAN_DATE = 2451545.0 (src/v2/core/units.ts:1)
@@ -61,12 +62,12 @@ Allow-list: allowlist.proposed.json, 7 entries, 7 applied.
   - typed in 3 files; the value has a named home
 - `mcp/src/tools/explain-cell.ts:134` `2451545.0` = J2000_TDB_JULIAN_DAY = 2451545 (src/v2/app/solar-system/runtime.ts:225); J2000_TDB_JULIAN_DATE = 2451545.0 (src/v2/core/units.ts:1)
   - typed in 3 files; the value has a named home
-- `src/v2/app/compare/main.ts:95` `946_728_000`
-  - typed in 5 files; no named home
+- `src/v2/app/compare/main.ts:95` `946_728_000` = UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY = 946728000 (src/v2/core/units/utc-to-tdb.ts:31)
+  - typed in 5 files; no literal home, but a constant computes it
 - `src/v2/app/compare/main.ts:96` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
   - typed in 5 files; the value has a named home
-- `src/v2/app/porkchop-smoke/main.ts:32` `946_728_000`
-  - typed in 5 files; no named home
+- `src/v2/app/porkchop-smoke/main.ts:32` `946_728_000` = UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY = 946728000 (src/v2/core/units/utc-to-tdb.ts:31)
+  - typed in 5 files; no literal home, but a constant computes it
 - `src/v2/app/porkchop-smoke/main.ts:33` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
   - typed in 5 files; the value has a named home
 - `src/v2/app/porkchop-smoke/main.ts:67` `182.5` = TOF_MIN_DAYS = 182.5 (src/v2/app/compare/main.ts:112); GRID_PARAMS.tofMinDays = 182.5 (src/v2/app/porkchop/main.ts:197)
@@ -75,18 +76,18 @@ Allow-list: allowlist.proposed.json, 7 entries, 7 applied.
   - typed in 2 files; the value has a named home
 - `src/v2/app/porkchop/main.ts:167` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
   - typed in 5 files; the value has a named home
-- `src/v2/app/porkchop/main.ts:167` `946_728_000`
-  - typed in 5 files; no named home
-- `src/v2/app/porkchop/main.ts:188` `946_728_000`
-  - typed in 5 files; no named home
+- `src/v2/app/porkchop/main.ts:167` `946_728_000` = UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY = 946728000 (src/v2/core/units/utc-to-tdb.ts:31)
+  - typed in 5 files; no literal home, but a constant computes it
+- `src/v2/app/porkchop/main.ts:188` `946_728_000` = UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY = 946728000 (src/v2/core/units/utc-to-tdb.ts:31)
+  - typed in 5 files; no literal home, but a constant computes it
 - `src/v2/app/porkchop/main.ts:189` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
   - typed in 5 files; the value has a named home
 - `src/v2/app/solar-system/runtime.ts:619` `block of 8 literals`
-  - lines 619-627 (1867216.25, 36524.25, 1524, 122.1, 365.25, 30.6001, 4716, 4715) repeat src/v2/porkchop/porkchop-view.ts:275-285; no named home
+  - lines 619-627 (1867216.25, 36524.25, 1524, 122.1, 365.25, 30.6001, 4716, 4715) repeat src/v2/porkchop/porkchop-view.ts:275-285; no top-level constant holds them
 - `src/v2/app/solar-system/slice9-runtime-asteroids.ts:18` `1329`
-  - typed in 2 files; no named home
-- `src/v2/app/ui-overlay/overlay.ts:152` `946_728_000`
-  - typed in 5 files; no named home
+  - typed in 2 files; no top-level constant holds it
+- `src/v2/app/ui-overlay/overlay.ts:152` `946_728_000` = UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY = 946728000 (src/v2/core/units/utc-to-tdb.ts:31)
+  - typed in 5 files; no literal home, but a constant computes it
 - `src/v2/app/ui-overlay/overlay.ts:153` `69.184` = TDB_MINUS_UTC_SECONDS = 69.184 (src/v2/core/units/utc-to-tdb.ts:28)
   - typed in 5 files; the value has a named home
 - `src/v2/app/ui-overlay/overlay.ts:162` `182.5` = TOF_MIN_DAYS = 182.5 (src/v2/app/compare/main.ts:112); GRID_PARAMS.tofMinDays = 182.5 (src/v2/app/porkchop/main.ts:197)
@@ -96,9 +97,9 @@ Allow-list: allowlist.proposed.json, 7 entries, 7 applied.
 - `src/v2/boundary/tier-assignments.ts:64` `41_906` = SLICE9_NEA_CATALOG_TOTAL_BODIES = 41_906 (src/v2/boundary/slice9-nea-catalog.ts:20)
   - typed in 1 file; the value has a named home
 - `src/v2/core/constants/asteroids.ts:80` `1329`
-  - typed in 2 files; no named home
+  - typed in 2 files; no top-level constant holds it
 - `src/v2/porkchop/porkchop-view.ts:275` `block of 8 literals`
-  - lines 275-285 (1867216.25, 36524.25, 1524, 122.1, 365.25, 30.6001, 4716, 4715) repeat src/v2/app/solar-system/runtime.ts:619-627; no named home
+  - lines 275-285 (1867216.25, 36524.25, 1524, 122.1, 365.25, 30.6001, 4716, 4715) repeat src/v2/app/solar-system/runtime.ts:619-627; no top-level constant holds them
 
 ## DUPLICATE-DATE (9)
 

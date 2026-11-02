@@ -87,6 +87,11 @@ const noOverflow = (page) => page.evaluate(() => document.documentElement.scroll
   const n69 = (await page.$$('#findings .finding')).length;
   ok(n69 === RUN.findings.filter((f) => f.literal === '69.184').length && n69 === 7, `text filter 69.184 shows the seven retyped sites (got ${n69})`);
   ok((await page.textContent('#count')).startsWith(`${n69} of ${RUN.findings.length}`), 'the count line says how many are shown');
+  // added in review: the J2000 offset has no literal home, and the page names the core constant
+  // that computes it instead of saying there is none
+  await page.fill('#q', '946_728_000');
+  const unix = await page.$$eval('#findings .finding', (ns) => ns.map((n) => n.innerText));
+  ok(unix.length === 7 && unix.every((t) => t.includes('UNIX_TO_J2000_SECONDS') && t.includes('utc-to-tdb.ts:31') && t.includes('computed by arithmetic')), `946_728_000 shows its seven sites, each naming the computed core constant (got ${unix.length})`);
   await page.fill('#q', '');
 
   // the snippet scanner, by touch
@@ -106,6 +111,11 @@ const noOverflow = (page) => page.evaluate(() => document.documentElement.scroll
   await page.tap('#scan');
   const unrelated = await page.textContent('#try-out');
   ok(unrelated.includes('LITERAL-MATCHES-CONSTANT') && unrelated.includes('feasibleC3MaxKm2S2'), 'a pasted line with the threshold and the word "feasible" matches the metadata');
+  // added in review: a regex after `if (...)` and a division after a postfix ++ lex as TypeScript does
+  await page.fill('#snippet', "if (ok) /it's/.test(s);\nconst half = n++ / 2;\nconst note = 'Feasible below 25 km²/s² only';");
+  await page.tap('#scan');
+  const slashes = await page.textContent('#try-out');
+  ok(!slashes.includes('could not close') && slashes.includes('1 literal,') && slashes.includes('feasibleC3MaxKm2S2'), 'a regex after a control head and a postfix ++ division leave the later string intact');
   await page.tap('#reset');
   ok((await page.inputValue('#snippet')).includes('GRID_PARAMS'), 'restore puts the example back');
 

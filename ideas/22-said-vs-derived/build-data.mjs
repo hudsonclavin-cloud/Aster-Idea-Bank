@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Builds snapshots/aster/: a miniature Aster checkout (same paths, same line numbers) holding just
-// the files and line ranges the reconciliation tests need, so they run without the 1 GB checkout.
+// the files and line ranges the reconciliation tests need, so they run without the checkout (about 500 MB on disk).
 //
 //   node ideas/22-said-vs-derived/build-data.mjs [/home/user/asteroid-mining-planner]
 //
@@ -28,6 +28,8 @@ const WHOLE = [
   'src/v2/app/catalog-list/honesty-disclosure.ts',
   'src/v2/app/porkchop-smoke/main.ts',
   'src/v2/core/units/utc-to-tdb.ts',
+  // SECONDS_PER_DAY, which utc-to-tdb.ts imports to compute UNIX_TO_J2000_SECONDS (added in review)
+  'src/v2/core/units.ts',
   'src/v2/core/constants/asteroids.ts',
   'src/v2/porkchop/delta-v.ts',
 ];

@@ -161,7 +161,7 @@
     if (f.context) li.appendChild(el('p', { cls: 'ctx', text: f.context }));
     if (f.homes && f.homes.length) {
       var ul = el('ul', { cls: 'homes' });
-      f.homes.forEach(function (h) { ul.appendChild(el('li', null, code(h.name + ' = ' + h.value), ' at ', code(h.at))); });
+      f.homes.forEach(function (h) { ul.appendChild(el('li', null, code(h.name + ' = ' + h.value), ' at ', code(h.at), h.computed ? ' (computed by arithmetic; not a literal home)' : null)); });
       li.appendChild(ul);
     }
     if (f.alsoEqual && f.alsoEqual.length) {
@@ -228,7 +228,7 @@
   RUN.derived.forEach(function (d) { (byFile[d.path] = byFile[d.path] || []).push(d); });
   var dl = el('ul');
   Object.keys(byFile).sort().forEach(function (p) {
-    dl.appendChild(el('li', null, code(p), ': ' + byFile[p].map(function (d) { return ':' + d.line + ' ' + d.reads + (d.via ? ' (← ' + d.via.join(', ') + ')' : ''); }).join(', ')));
+    dl.appendChild(el('li', null, code(p), ' ' + byFile[p].map(function (d) { return 'line ' + d.line + ' reads ' + d.reads + (d.via ? ' (← ' + d.via.join(', ') + ')' : ''); }).join('; ')));
   });
   derivedBody.appendChild(dl);
   if (RUN.runtimeReads.length) {

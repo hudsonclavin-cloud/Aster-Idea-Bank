@@ -1,15 +1,18 @@
 /*
  * Said vs Derived: the pure logic behind said-vs-derived.mjs and index.html.
  *
- * Aster's DEC-17-5 (SLICE_17_FOUNDING.md:197-217, LOCKED) and DEC-19.5-8
+ * Aster's DEC-17-5 (SLICE_17_FOUNDING.md:197-212, LOCKED) and DEC-19.5-8
  * (src/v2/SLICE_19_5_FOUNDING.md:176-181, PROPOSED) say a label is read from the computation
  * that produced the numbers, never typed. This module finds the places where it is typed:
  *
  *   1. lex()            a TypeScript lexer that knows strings, templates (with nested ${}),
  *                       comments, regex literals and the call/object context of each literal.
- *   2. harvestCanon()   the values the code already owns: top-level `const NAME = <number|date>`,
- *                       first-level fields of top-level `const NAME = { ... }` objects, and the
+ *   2. harvestTs(),     the values the code already owns: top-level `const NAME = <number|date>`,
+ *      harvestJson()    first-level fields of top-level `const NAME = { ... }` objects, and the
  *                       screening cache's `metadata` block, each with its home (file:line).
+ *      harvestComputed(), top-level constants computed by arithmetic (UNIX_TO_J2000_SECONDS =
+ *      resolveComputed() UNIX_TO_J2000_DAYS * SECONDS_PER_DAY): not canon, they only name a home
+ *                       for a retyped literal that no literal constant holds.
  *   3. scanSource()     classes every string/template literal (import, console, error, css,
  *                       token, display) and reads dates, year spans and unit-bearing numbers out
  *                       of the static text of display literals; `${}` text is DERIVED.
@@ -34,6 +37,8 @@
     'else', 'yield', 'await', 'export', 'default',
   ]);
   const CONTROL_KEYWORDS = new Set(['if', 'for', 'while', 'switch', 'catch', 'function', 'with']);
+  // heads after whose ')' a statement (and so a regex literal) may start
+  const CONTROL_HEADS = new Set(['if', 'for', 'while', 'with']);
 
   function isIdentStart(c) {
     return /[A-Za-z_$\u00C0-\uFFFF]/.test(c);
@@ -95,7 +100,18 @@
       if (!prev) return true;
       if (prev.type === 'num' || prev.type === 'str' || prev.type === 'regex') return false;
       if (prev.type === 'ident') return KEYWORDS_BEFORE_REGEX.has(prev.value);
-      if (prev.type === 'punct') return !(prev.value === ')' || prev.value === ']' || prev.value === '}');
+      if (prev.type === 'punct') {
+        // `if (a) /re/.test(s)`: the ')' that closes a control head ends no expression
+        if (prev.value === ')') return !!prev.controlHead;
+        if (prev.value === ']' || prev.value === '}') return false;
+        // `a++ / 2`: after a postfix ++ or -- the slash divides (the lexer emits '+','+')
+        const k = tokens.length - 1;
+        if ((prev.value === '+' || prev.value === '-') && k >= 1 && tokens[k - 1].type === 'punct' && tokens[k - 1].value === prev.value && tokens[k - 1].end === prev.start) {
+          const before = tokens[k - 2];
+          if (before && (before.type === 'num' || before.type === 'str' || (before.type === 'ident' && !KEYWORDS_BEFORE_REGEX.has(before.value)) || (before.type === 'punct' && (before.value === ')' || before.value === ']')))) return false;
+        }
+        return true;
+      }
       return true;
     }
     function calleeBefore() {
@@ -300,9 +316,12 @@
         if (c === ')' || c === ']' || c === '}') {
           if (c === '}' && stopDepth !== undefined && stack.length === stopDepth) return i;
           const want = c === ')' ? '(' : c === ']' ? '[' : '{';
-          if (stack.length && stack[stack.length - 1].open === want) stack.pop();
+          let closed = null;
+          if (stack.length && stack[stack.length - 1].open === want) closed = stack.pop();
           else errors.push(`unbalanced '${c}' at line ${lineOf(lineStarts, i)}`);
-          push({ type: 'punct', value: c, start: i, end: i + 1, depth: stack.length });
+          const tok = { type: 'punct', value: c, start: i, end: i + 1, depth: stack.length };
+          if (closed && c === ')' && CONTROL_HEADS.has(closed.callee)) tok.controlHead = true;
+          push(tok);
           i++;
           continue;
         }
@@ -372,6 +391,10 @@
       } else if (d === 'n') ch = '\n';
       else if (d === 't') ch = '\t';
       else if (d === 'r') ch = '\r';
+      else if (d === 'b') ch = '\b';
+      else if (d === 'f') ch = '\f';
+      else if (d === 'v') ch = '\v';
+      else if (d === '0' && !/[0-9]/.test(raw[i + 2] || '')) ch = '\u0000';
       else if (d === '\n') ch = '';
       else if (d === '\r') {
         ch = '';
@@ -468,19 +491,25 @@
   // Claims inside display text
   // ---------------------------------------------------------------------------------------------
 
-  // The astronomical unit, exactly, by IAU 2012 Resolution B2: 149 597 870 700 m.
+  // The astronomical unit, exactly, by IAU 2012 Resolution B2: 149 597 870 700 m (known here from
+  // secondary sources). Aster defines the same value as AU_M in three files at 62ddb17 (e.g.
+  // src/v2/app/inner-solar-system/runtime.ts:16), and the tests pin it through the screening cache's
+  // coorbitalCriteria.aDeltaKm = 7 479 893.535 km, which is 0.05 of it to the last digit.
   const AU_M = 149597870700;
+  const SECONDS_PER_DAY = 24 * 60 * 60;
+  const DEGREES_PER_RADIAN = 180 / Math.PI;
   // Units, longest first: [text, dimension, metres|seconds|degrees|… per unit, needs a space before].
   const UNITS = [
     ['km²/s²', 'c3', 1], ['km^2/s^2', 'c3', 1], ['km2/s2', 'c3', 1], ['km²s⁻²', 'c3', 1],
     ['km/s', 'speed', 1000], ['m/s', 'speed', 1],
     ['AU', 'length', AU_M], ['au', 'length', AU_M],
     ['km', 'length', 1000], ['m', 'length', 1, true],
-    ['days', 'time', 86400], ['day', 'time', 86400], ['d', 'time', 86400, true],
-    ['years', 'time', 31557600], ['year', 'time', 31557600], ['yr', 'time', 31557600],
+    ['days', 'time', SECONDS_PER_DAY], ['day', 'time', SECONDS_PER_DAY], ['d', 'time', SECONDS_PER_DAY, true],
+    // a year is the Julian year, 365.25 days (the astronomical convention; Aster's TOF bound 1826.25 d is 5 of them)
+    ['years', 'time', 365.25 * SECONDS_PER_DAY], ['year', 'time', 365.25 * SECONDS_PER_DAY], ['yr', 'time', 365.25 * SECONDS_PER_DAY],
     ['hours', 'time', 3600], ['hour', 'time', 3600], ['h', 'time', 3600, true], ['min', 'time', 60],
     ['seconds', 'time', 1], ['second', 'time', 1], ['ms', 'time', 0.001], ['s', 'time', 1, true],
-    ['degrees', 'angle', 1], ['deg', 'angle', 1], ['°', 'angle', 1], ['rad', 'angle', 57.29577951308232],
+    ['degrees', 'angle', 1], ['deg', 'angle', 1], ['°', 'angle', 1], ['rad', 'angle', DEGREES_PER_RADIAN],
     ['%', 'fraction', 0.01],
     ['kg', 'mass', 1], ['t', 'mass', 1000, true],
     ['MB', 'data', 1e6], ['KB', 'data', 1e3], ['kB', 'data', 1e3], ['GB', 'data', 1e9],
@@ -646,10 +675,10 @@
     [/(_KM$|Km$)/, 'length', 1000],
     [/(_M$|[a-z]M$)/, 'length', 1],
     [/(_AU$|Au$|AU$)/, 'length', AU_M],
-    [/(DAYS?$|Days?$|_DAYS?_)/, 'time', 86400],
+    [/(DAYS?$|Days?$|_DAYS?_)/, 'time', SECONDS_PER_DAY],
     [/(SECONDS?$|Seconds?$|_S$|_SEC$)/, 'time', 1],
     [/(DEG$|Deg$|_DEG_)/, 'angle', 1],
-    [/(RAD$|Rad$)/, 'angle', 57.29577951308232],
+    [/(RAD$|Rad$)/, 'angle', DEGREES_PER_RADIAN],
     [/(FRACTION$|Fraction$)/, 'fraction', 1],
     [/(ALBEDO|Albedo)/, 'ratio', 1],
     [/(_PX$|Px$|_PIXELS?$)/, 'pixel', 1],
@@ -795,6 +824,189 @@
       }
     })(obj, prefix);
     return homes;
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Computed constants: depth-0 `const NAME = <arithmetic over numbers and names>`, such as
+  // UNIX_TO_J2000_SECONDS = UNIX_TO_J2000_DAYS * SECONDS_PER_DAY. They are NOT canon: no display
+  // number is matched against them and they never make a finding. They only name a home for a
+  // retyped code literal that no literal constant holds, so the report does not say "no named
+  // home" when the code already computes the value under a name.
+  // ---------------------------------------------------------------------------------------------
+
+  const STATEMENT_START = new Set(['const', 'let', 'var', 'export', 'function', 'class', 'interface', 'type', 'import', 'enum', 'declare']);
+  const BUILTIN_VALUES = { 'Math.PI': Math.PI, 'Math.E': Math.E, 'Number.EPSILON': Number.EPSILON };
+  const ARITH = new Set(['+', '-', '*', '/', '(', ')']);
+
+  /** Depth-0 constants whose initializer is arithmetic over numeric literals and names. */
+  function harvestComputed(path, src, lexed) {
+    const L = lexed || lex(src);
+    const T = L.tokens;
+    const out = [];
+    for (let k = 0; k < T.length; k++) {
+      const t = T[k];
+      if (t.type !== 'ident' || t.value !== 'const' || t.depth !== 0) continue;
+      const nameTok = T[k + 1];
+      if (!nameTok || nameTok.type !== 'ident') continue;
+      let j = k + 2;
+      while (j < T.length && !(T[j].type === 'punct' && T[j].value === '=' && T[j].depth === 0)) {
+        if (T[j].depth === 0 && ((T[j].type === 'punct' && T[j].value === ';') || (T[j].type === 'ident' && T[j].value === 'const'))) break;
+        j++;
+      }
+      if (!T[j] || T[j].value !== '=') continue;
+      const from = j + 1;
+      let e = from;
+      while (e < T.length) {
+        const x = T[e];
+        if (x.depth === 0 && x.type === 'punct' && (x.value === ';' || x.value === ',')) break;
+        if (e > from && x.depth === 0 && x.type === 'ident' && STATEMENT_START.has(x.value) && !(T[e - 1].type === 'punct' && T[e - 1].value === '.') && !(x.value === 'const' && T[e - 1].value === 'as')) break;
+        e++;
+      }
+      let expr = T.slice(from, e);
+      if (expr.length >= 2 && expr[expr.length - 2].value === 'as' && expr[expr.length - 1].value === 'const') expr = expr.slice(0, -2);
+      if (!expr.length) continue;
+      // numbers, names (a.b.c), + - * / ** and parentheses only; no calls, no strings
+      let ops = 0;
+      let okExpr = true;
+      for (let q = 0; q < expr.length; q++) {
+        const x = expr[q];
+        if (x.type === 'num') continue;
+        if (x.type === 'ident') {
+          if (expr[q + 1] && expr[q + 1].type === 'punct' && expr[q + 1].value === '(') okExpr = false;
+          continue;
+        }
+        if (x.type === 'punct' && x.value === '.' && expr[q - 1] && expr[q - 1].type === 'ident' && expr[q + 1] && expr[q + 1].type === 'ident') continue;
+        if (x.type === 'punct' && ARITH.has(x.value)) {
+          if (x.value !== '(' && x.value !== ')') ops++;
+          continue;
+        }
+        okExpr = false;
+      }
+      if (!okExpr || ops === 0) continue;
+      const exported = k > 0 && T[k - 1].type === 'ident' && T[k - 1].value === 'export';
+      const text = src.slice(expr[0].start, expr[expr.length - 1].end).replace(/\s+/g, ' ');
+      out.push({ name: nameTok.value, expr: text, tokens: expr, path, line: nameTok.line, exported, source: 'computed' });
+    }
+    return out;
+  }
+
+  // Evaluate one computed constant's tokens; names resolve through lookup(name). undefined when a
+  // name does not resolve or the result is not finite.
+  function evalTokens(toks, lookup) {
+    let p = 0;
+    const peek = () => toks[p];
+    const isOp = (v) => peek() && peek().type === 'punct' && peek().value === v;
+    function primary() {
+      const t = peek();
+      if (!t) return undefined;
+      if (t.type === 'num') {
+        p++;
+        return numberValue(t.value);
+      }
+      if (t.type === 'ident') {
+        const parts = [t.value];
+        p++;
+        while (isOp('.') && toks[p + 1] && toks[p + 1].type === 'ident') {
+          parts.push(toks[p + 1].value);
+          p += 2;
+        }
+        return lookup(parts.join('.'));
+      }
+      if (isOp('(')) {
+        p++;
+        const v = sum();
+        if (!isOp(')')) return undefined;
+        p++;
+        return v;
+      }
+      return undefined;
+    }
+    function power() {
+      const base = primary();
+      // '**' arrives as two adjacent '*' tokens
+      if (isOp('*') && toks[p + 1] && toks[p + 1].value === '*' && toks[p + 1].start === peek().end) {
+        p += 2;
+        const ex = unary();
+        return base === undefined || ex === undefined ? undefined : base ** ex;
+      }
+      return base;
+    }
+    function unary() {
+      if (isOp('-')) {
+        p++;
+        const v = unary();
+        return v === undefined ? undefined : -v;
+      }
+      if (isOp('+')) {
+        p++;
+        return unary();
+      }
+      return power();
+    }
+    function product() {
+      let v = unary();
+      while (isOp('*') || isOp('/')) {
+        const op = peek().value;
+        p++;
+        const r = unary();
+        if (v === undefined || r === undefined) return undefined;
+        v = op === '*' ? v * r : v / r;
+      }
+      return v;
+    }
+    function sum() {
+      let v = product();
+      while (isOp('+') || isOp('-')) {
+        const op = peek().value;
+        p++;
+        const r = product();
+        if (v === undefined || r === undefined) return undefined;
+        v = op === '+' ? v + r : v - r;
+      }
+      return v;
+    }
+    const v = sum();
+    return p === toks.length && Number.isFinite(v) ? v : undefined;
+  }
+
+  /**
+   * Values of computed constants. A name resolves, in order, to: Math.PI, Math.E, Number.EPSILON;
+   * a literal home or an evaluated computed constant of that name in the same file; otherwise the
+   * value every literal home (then every evaluated computed constant) of that name agrees on in
+   * other files. Unresolved constants are left out. Returns [{name, expr, value, path, line, ...}].
+   */
+  function resolveComputed(list, canon) {
+    const lit = new Map();
+    for (const h of canon) if (typeof h.value === 'number') lit.set(h.name, (lit.get(h.name) || []).concat(h));
+    const done = new Map();
+    const key = (path, name) => `${path}\u0001${name}`;
+    let pending = list.slice();
+    const agree = (vals) => (vals.length && vals.every((v) => sameValue(v, vals[0])) ? vals[0] : undefined);
+    const lookupIn = (path) => (name) => {
+      if (Object.prototype.hasOwnProperty.call(BUILTIN_VALUES, name)) return BUILTIN_VALUES[name];
+      const same = (lit.get(name) || []).filter((h) => h.path === path);
+      if (same.length) return same[0].value;
+      if (done.has(key(path, name))) return done.get(key(path, name)).value;
+      if (pending.some((c) => c.path === path && c.name === name)) return undefined;
+      const lv = agree((lit.get(name) || []).map((h) => h.value));
+      if (lv !== undefined) return lv;
+      return agree([...done.values()].filter((c) => c.name === name).map((c) => c.value));
+    };
+    for (let progress = true; progress && pending.length; ) {
+      progress = false;
+      const next = [];
+      for (const c of pending) {
+        const v = evalTokens(c.tokens, lookupIn(c.path));
+        if (v === undefined) next.push(c);
+        else {
+          const { tokens, ...rest } = c;
+          done.set(key(c.path, c.name), Object.assign(rest, { value: v }));
+          progress = true;
+        }
+      }
+      pending = next;
+    }
+    return [...done.values()].sort((a, b) => a.path.localeCompare(b.path) || a.line - b.line);
   }
 
   /**
@@ -1067,7 +1279,8 @@
 
   /**
    * Build the report from per-file scans and the canon.
-   * opts: {minSig (default 4), allowlist: {entries:[{id, reason}]}, strict, classes (keep only these)}
+   * opts: {minSig (default 4), allowlist: {entries:[{id, reason}]}, strict, classes (keep only these),
+   *        computed (resolveComputed's list: names a home for a retyped literal with no literal home)}
    */
   function buildReport(scans, canon, opts) {
     const o = Object.assign({ minSig: 4, allowlist: null, strict: false }, opts || {});
@@ -1157,14 +1370,22 @@
         }
         continue;
       }
+      // no literal home: a constant computed by arithmetic may still hold the value under a name
+      const computedOwners = g.owners.length ? [] : (o.computed || []).filter((c) => sameValue(Math.abs(c.value), g.value));
       for (const site of g.sites) {
         const f = {
           class: 'RETYPED-CONSTANT',
           path: site.path,
           line: site.line,
           literal: site.text,
-          context: g.owners.length ? `typed in ${g.files.size} file${g.files.size > 1 ? 's' : ''}; the value has a named home` : `typed in ${g.files.size} files; no named home`,
-          homes: g.owners.map((h) => ({ name: h.name, value: h.text, at: `${h.path}:${h.line}` })),
+          context: g.owners.length
+            ? `typed in ${g.files.size} file${g.files.size > 1 ? 's' : ''}; the value has a named home`
+            : computedOwners.length
+              ? `typed in ${g.files.size} files; no literal home, but a constant computes it`
+              : `typed in ${g.files.size} files; no top-level constant holds it`,
+          homes: g.owners.length
+            ? g.owners.map((h) => ({ name: h.name, value: h.text, at: `${h.path}:${h.line}` }))
+            : computedOwners.map((c) => ({ name: c.name, value: `${c.expr} = ${c.value}`, at: `${c.path}:${c.line}`, computed: true })),
           group: String(g.value),
         };
         f.id = fid(f);
@@ -1180,7 +1401,7 @@
         path: blk.path,
         line: lo,
         literal: `block of ${blk.values.size} literals`,
-        context: `lines ${lo}-${hi} (${[...blk.values].join(', ')}) repeat ${blk.other}${otherBlk ? `:${Math.min(...otherBlk.lines)}-${Math.max(...otherBlk.lines)}` : ''}; no named home`,
+        context: `lines ${lo}-${hi} (${[...blk.values].join(', ')}) repeat ${blk.other}${otherBlk ? `:${Math.min(...otherBlk.lines)}-${Math.max(...otherBlk.lines)}` : ''}; no top-level constant holds them`,
         homes: [],
         group: `block:${[...blk.values].sort().join(',')}`,
       };
@@ -1365,6 +1586,7 @@
     if (m.root) out.push(`Checkout: ${m.root}${m.commit ? ` at ${m.commit}` : ' (not a git checkout of its own; no commit to report)'}${m.dirty ? ' (working tree differs from HEAD)' : ''}`);
     if (m.scanned) out.push(`Scanned: ${m.scanned.ts} TypeScript files and ${m.scanned.html} HTML files${m.fileSource ? ` (${m.fileSource})` : ''}; ${m.scanned.literals} literals, ${m.scanned.displayLiterals} of them display text.`);
     if (m.canon) out.push(`Canon: ${m.canon.total} homes (${m.canon.ts} TypeScript constants or fields, ${m.canon.json} cache metadata leaves${m.canon.jsonFrom ? ` from ${m.canon.jsonFrom}` : ''}).`);
+    if (m.computed) out.push(`Computed: ${m.computed.found} top-level constants defined by arithmetic, ${m.computed.evaluated} evaluated; not canon, they only name a home for a retyped literal that no literal constant holds.`);
     if (m.cacheRefusal) out.push(`Cache metadata: NOT READ, ${m.cacheRefusal}`);
     out.push(`Allow-list: ${report.allow.entries ? `${m.allowlistFile ? `${m.allowlistFile}, ` : ''}${report.allow.entries} entries, ${report.allow.allowed.size} applied` : 'none'}${report.strict ? '; strict (informational class fails too)' : ''}.`);
     out.push('');
@@ -1473,6 +1695,11 @@
     dimFromName,
     harvestTs,
     harvestJson,
+    harvestComputed,
+    resolveComputed,
+    wordsAgree,
+    sharedWords,
+    unitInfo,
     jsonObjectAfterKey,
     scanSource,
     scanHtml,
