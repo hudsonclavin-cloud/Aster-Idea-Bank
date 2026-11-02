@@ -1,0 +1,41 @@
+$ node ideas/27-torque-receipt/torque-receipt.mjs --preset endcap
+==============================================================================
+TORQUE RECEIPT · M8 ISO 898-1 8.8 · lubricated at assembly
+------------------------------------------------------------------------------
+Fastener   d 8 mm, p 1.25 mm, As 36.6 mm²
+           from fasteners_metric.json M8.tensile_stress_area_mm2 [likely]
+Grade      proof 580 / yield 640 / UTS 800 MPa [likely]
+           from fasteners_metric.json grades["8.8"] (ISO 898-1:2013 Table 3)
+           proof load 21,228 N = As × proof (table column proof_load_8_8_N: 21,200 N)
+Nut factor K 0.15 (mid of 0.14–0.16) [likely]
+           from fasteners_metric.json design_rules.preload_and_torque:
+           "0.14-0.16 lubricated or zinc-plated"
+Scatter    ±25 % [certain] from preload_uncertainty_lubricated
+           "preload uncertainty (variation) of 25 percent from a typical
+           (nominal or mean) value [for fasteners lubricated at assembly]"
+------------------------------------------------------------------------------
+Torque window at K 0.15: 16.6 N·m – 19.1 N·m puts the nominal at 0.65–0.75 ×
+proof (17.8 N·m at 0.70); at most 20.4 N·m keeps F × (1 + 0.25) at or below
+proof.
+------------------------------------------------------------------------------
+PRELOAD    COMPUTED · CHECK · above the 0.65–0.75 target
+  T 25.0 N·m → F = T/(K·d) = 20,833 N, 98.1 % of proof
+  scatter 15,625 N – 26,042 N
+  across the K range: 22,321 N at K 0.14, 19,531 N at K 0.16
+ASSEMBLY   COMPUTED · OVER · past yield
+  σ at F_max = 711.5 MPa: SF 0.82 on proof, 0.90 on yield, 1.12 on UTS
+SERVICE    COMPUTED · OVER · upper bound past UTS (no joint-stiffness credit)
+  F_ext 6,080 N per bolt (endcap.scad:49 bolt_shear force_N 48641 ÷ n 8 (an axial pressure load declared as shear))
+  σ at F_max + F_ext = 877.6 MPa: SF 0.66 proof, 0.73 yield, 0.91 UTS; F_ext alone 166.1 MPa
+THREAD     COMPUTED · CHECK · strip capacity below the worst-case bolt load
+  threadCheck: Le 16 mm in Aluminum 6061-T6 (σu 310); strip 31,165 N vs bolt 29,287 N; needs ≥ 15.0 mm, rule ≥ 16.0 mm
+  strip / worst bolt load (F_max + F_ext = 32,122 N) = 0.97
+  table minimum 13 mm, fasteners_metric.json M8.min_engagement_6061T6_8_8_mm
+  [unlabelled] (add 1–2 pitches, per its column)
+------------------------------------------------------------------------------
+OVER: At the top of the scatter the bolt is past yield before any load is
+applied (σ 711.5 MPa, proof SF 0.82).
+· fasteners_metric.json design_rules.preload_and_torque: "do not rely on
+torque alone for a pressure boundary." Every line here is COMPUTED, never
+PASS.
+==============================================================================

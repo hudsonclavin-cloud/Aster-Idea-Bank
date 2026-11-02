@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/design_factors_nasa.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fa6d6b8 2026-09-23T21:25:43+00:00",
+  "committedBlob": "1daba47396e0bd8ff8efbb4d4c17c49b0eaefcd3",
+  "readBlob": "1daba47396e0bd8ff8efbb4d4c17c49b0eaefcd3",
+  "sourceSha256": "1d693e06a85a6ca59ce7733fd1ceea149b98c7a6cfc7fab944d0132ad3fa79b2",
+  "sourceBytes": 17757,
+  "copiedAt": "2026-10-26T16:43:22.029Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the exact text of data/tables/design_factors_nasa.json (sha256 1d693e06a85a6ca59ce7733fd1ceea149b98c7a6cfc7fab944d0132ad3fa79b2) inside a classic-script wrapper; nothing else changed",
+  "readMatchesCommitted": true,
+  "writtenSha256": "70f00bb953f14010a41f484da64b666e6a79cc7e79f337cc08d3c7934f6e5d98",
+  "writtenBytes": 19345
+}
