@@ -134,8 +134,16 @@ const setRange = (page, id, v) => page.evaluate(([i, val]) => { const e = docume
   ok(note.includes('cap on every load, every row is lighter with the PBO at the tip end'), 'note: every -> tip end');
   ok(note.includes('cap between catches, every row is lighter with the PBO at the hub end'), 'note: between -> hub end');
   ok((await page.locator('#where-table td.best').count()) === 10, 'ten bold cells');
+  ok(note.includes('replacing that stretch is what pays'), 'note: hub-end reasoning when the table says hub end');
+  // review fix: with a full tip between catches the between rule is the every rule, and the note follows its table
+  await setRange(page, 'beta', 100);
+  const noteB = await page.locator('#where-note').textContent();
+  ok(noteB.includes('cap between catches, every row is lighter with the PBO at the tip end'), 'note: between with a full tip -> tip end');
+  ok(!noteB.includes('replacing that stretch is what pays'), 'note: no hub-end reasoning when the table says tip end');
+  await setRange(page, 'beta', 0);
   // phase 3 tier at all PBO: the canon's 3,085.95
   await page.locator('#tiers button[data-tier="phase3"]').click();
+  ok((await page.locator('#where-note').textContent()).includes('with cap between catches the lighter end changes from row to row'), 'note: 3.5 km/s with bare tips, the between verdict is mixed');
   await setRange(page, 'p', I.Lkm);
   ok((await tile(page, 0)) === fxl(ladder.phase3_3p5kms_30pct_derate), 'phase 3 all PBO is the canon rung');
   await page.locator('#tiers button[data-tier="cislunar"]').click();
@@ -184,6 +192,15 @@ const setRange = (page, id, v) => page.evaluate(([i, val]) => { const e = docume
   ok(!(await page.locator('#refusal').isHidden()), 'one value is not enough');
   await page.locator('#c-rho').fill(String(I.sk99.rho));
   ok((await tile(page, 0)) === '122.56×', 'custom with the SK99 numbers equals the baseline');
+  // review fix: a fibre far from PBO's V_c gets no "because they are within x %" sentence
+  await page.locator('#c-sigma').fill('2.4');
+  const nfar = await page.locator('#where-note').textContent();
+  ok(nfar.includes('not close') && !nfar.includes('because the two fibres'), 'note: no V_c-coincidence claim for a fibre far from PBO');
+  // review fix: an absurd but finite pair whose V_c overflows is refused, and nothing prints Infinity
+  await page.locator('#c-sigma').fill('1e300');
+  await page.locator('#c-rho').fill('1e-300');
+  ok((await page.locator('#refusal').textContent()).includes('finite characteristic velocity'), 'custom overflow refuses');
+  ok(!/Infinity|NaN/.test(await page.locator('main').textContent()), 'custom overflow: no Infinity or NaN anywhere');
   ok(errors.length === 0, `desktop console errors: ${errors.join(' | ')}`);
   await context.close();
 }

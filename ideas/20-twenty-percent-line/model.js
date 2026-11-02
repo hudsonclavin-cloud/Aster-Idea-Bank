@@ -232,6 +232,13 @@
       return { refusal: refusal('invalid_input', 'A custom HMPE needs both a tensile strength (GPa) and a density (kg/m³), each a positive number.',
         'Type both values from a datasheet you can cite; nothing is filled in for you.') };
     }
+    // Both finite is not enough: an absurd pair (say 1e300 GPa, or a density of 1e-300 kg/m³) makes
+    // sigma in Pa or V_c = sqrt(2 sigma / rho) overflow, and the page would print "Infinity".
+    const Vc = vc(s * 1e9, d);
+    if (!(Number.isFinite(s * 1e9) && Number.isFinite(Vc) && Vc > 0)) {
+      return { refusal: refusal('invalid_input', 'These values give no finite characteristic velocity: √(2σ/ρ) overflows, so there is nothing physical to size.',
+        'Type a strength in GPa and a density in kg/m³ from a datasheet you can cite.') };
+    }
     return { fibre: { name: 'Custom HMPE (user-entered, not canon)', sigmaGPa: s, rho: d, canon: false } };
   }
 

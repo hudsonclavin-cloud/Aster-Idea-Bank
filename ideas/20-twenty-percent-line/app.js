@@ -293,7 +293,7 @@
       } else if (state.mode === 'between') {
         parts.push(`While a payload rides (${mins}) ${a.aboveKm >= hm - 1e-6 ? 'all' : fkm(a.aboveKm) + ' of the'} ${fkm(hm)} of HMPE ${a.aboveKm >= hm - 1e-6 ? 'is' : 'are'} above ${capTxt}, up to ${fpct(a.peak)} of break; between catches none is.`);
       } else {
-        parts.push(`While a payload rides (${mins}) ${fkm(a.aboveKm)} of its ${fkm(hm)} of HMPE is above ${capTxt}; between catches ${fkm(b.aboveKm)} is, up to ${fpct(b.peak)} of break at the hub end.`);
+        parts.push(`While a payload rides (${mins}) ${fkm(a.aboveKm)} of its ${fkm(hm)} of HMPE is above ${capTxt}; between catches ${fkm(b.aboveKm)} is, up to ${fpct(b.peak)} of break at the inboard end of the HMPE.`);
       }
     } else if (hm === 0) {
       parts.push('There is no HMPE left: this is the all-PBO tether.');
@@ -605,7 +605,24 @@
     };
     const none = ps.map((p) => [M.compute(I, { ...state, pKm: p, mode: 'none', where: 'tip' }), M.compute(I, { ...state, pKm: p, mode: 'none', where: 'hub' })]).filter(([a, b]) => !a.refusal && !b.refusal);
     const spread = none.length ? Math.max(...none.map(([a, b]) => Math.abs(a.ratio - b.ratio) / Math.min(a.ratio, b.ratio))) : null;
-    $('where-note').textContent = `At these settings, ${say('every')}; ${say('between')}.${spread != null ? ` Under the canon rule the two ends differ by at most ${fpct(spread, 2)}, because the two fibres' characteristic velocities are within ${fpct(Math.abs(last.H.Vc / last.P.Vc - 1), 2)} of each other.` : ''} Why: a kilogram far out on the arm is carried by every metre inboard of it, so a kilometre of the costlier fibre costs more the further out it sits. With a cap on every load HMPE is the costlier fibre everywhere, so it belongs at the hub and the PBO at the tip. With a cap between catches HMPE costs extra only where the cap binds, near the hub, where the arm's own weight keeps the load high with no payload aboard; replacing that stretch is what pays.`;
+    const vcGap = Math.abs(last.H.Vc / last.P.Vc - 1);
+    let canonTxt = '';
+    if (spread != null) {
+      canonTxt = vcGap < 0.01
+        ? ` Under the canon rule the two ends differ by at most ${fpct(spread, 2)}, because the two fibres' characteristic velocities are within ${fpct(vcGap, 2)} of each other.`
+        : ` Under the canon rule the two ends differ by up to ${fpct(spread, 1)}: this HMPE's characteristic velocity is not close to ${last.P.name}'s, so the end matters even without a cap.`;
+    }
+    // The explanation follows the verdict the table shows, never a fixed story (review fix: the
+    // between-catch verdict reverses with tip mass and at the 3.5 km/s tier).
+    const only = (mode, end) => verdict[mode].size === 1 && verdict[mode].has(end);
+    const whyEvery = only('every', 'tip')
+      ? ' With a cap on every load HMPE is the costlier fibre everywhere, so it belongs at the hub and the PBO at the tip.'
+      : ' With a cap on every load the costlier fibre is not the same along the whole arm at these settings, so neither end wins outright.';
+    let whyBetween;
+    if (only('between', 'hub')) whyBetween = ' With a cap between catches HMPE costs extra only where the cap binds, near the hub, where the arm\'s own weight keeps the load high with no payload aboard; replacing that stretch is what pays.';
+    else if (only('between', 'tip')) whyBetween = ' With a cap between catches the cap binds over most of each arm at these settings (a heavier tip between catches, or a faster tip, raises the between-catch load everywhere), so the rule behaves like a cap on every load and the PBO belongs at the tip end too.';
+    else whyBetween = ' With a cap between catches the answer depends on how far out the cap binds: where it binds only near the hub, PBO at the hub end pays; where it binds over most of the arm (more tip mass between catches, a faster tip), the tip end does. So which end is lighter here depends on how much PBO is added.';
+    $('where-note').textContent = `At these settings, ${say('every')}; ${say('between')}.${canonTxt} Why: a kilogram far out on the arm is carried by every metre inboard of it, so a kilometre of the costlier fibre costs more the further out it sits.${whyEvery}${whyBetween} The between-catch verdict depends on the tip mass, which rev_a.json does not give.`;
   }
 
   // ---- item 10 -----------------------------------------------------------------------------------

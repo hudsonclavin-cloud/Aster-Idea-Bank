@@ -324,7 +324,7 @@ test('marginal cost: dM/du_b = 2(X_H^2 - X_P^2)[t(u_b) + u_b M_in(u_b)], increas
   }
 });
 
-test('which end: with a cap on every load PBO belongs at the tip end, with a cap between catches at the hub end', () => {
+test('which end, at the canon load and cap with bare tips: a cap on every load puts the PBO at the tip end, a cap between catches at the hub end (2.5 and 2.8 km/s)', () => {
   for (const tierKey of ['reference', 'cislunar']) {
     for (const p of [20, 40, 80, 160, 240, 300]) {
       const e = [run({ tierKey, mode: 'every', pKm: p, where: 'tip' }).ratio, run({ tierKey, mode: 'every', pKm: p, where: 'hub' }).ratio];
@@ -333,6 +333,51 @@ test('which end: with a cap on every load PBO belongs at the tip end, with a cap
       assert.ok(b[1] < b[0], `between ${tierKey} ${p}`);
     }
   }
+});
+
+// Added by the independent review: the between-catch verdict is not a law. It reverses as the tips
+// carry mass between catches (at beta = 1 the rule IS the cap on every load) and, even with bare
+// tips, over most of the slider at 3.5 km/s. These pins are what the README's scoped claims cite.
+test('which end, scoped: the between-catch verdict reverses with tip mass and at 3.5 km/s; the cap-on-every-load verdict does not', () => {
+  const L = I.Lkm;
+  const rows = [L / 16, L / 8, L / 4, L / 2, (3 * L) / 4].map((x) => Math.round(x)); // the page's table rows
+  assert.deepEqual(rows, [20, 40, 80, 160, 240]);
+  const hubLighter = (o) => run({ mode: 'between', ...o, where: 'hub' }).ratio < run({ mode: 'between', ...o, where: 'tip' }).ratio;
+  // first tip mass (1 % steps, fraction of a payload on each tip) at which the tip end is lighter
+  const firstFlip = (tierKey, pKm) => { for (let b = 0; b <= 100; b++) if (!hubLighter({ tierKey, pKm, beta: b / 100 })) return b; return null; };
+  assert.deepEqual(rows.map((p) => firstFlip('reference', p)), [70, 65, 56, 49, 61]);
+  assert.deepEqual(rows.map((p) => firstFlip('cislunar', p)), [66, 58, 43, 28, 51]);
+  assert.deepEqual(rows.map((p) => firstFlip('phase3', p)), [49, 30, 0, 0, 0]);
+  // so every row favours the hub end up to 48 % (2.5 km/s) and 27 % (2.8 km/s), and the tip end from 70 % / 66 %
+  for (const p of rows) {
+    for (let b = 0; b <= 48; b++) assert.ok(hubLighter({ pKm: p, beta: b / 100 }), `reference ${p} km, beta ${b} %`);
+    for (let b = 70; b <= 100; b++) assert.ok(!hubLighter({ pKm: p, beta: b / 100 }), `reference ${p} km, beta ${b} %`);
+    for (let b = 0; b <= 27; b++) assert.ok(hubLighter({ tierKey: 'cislunar', pKm: p, beta: b / 100 }), `cislunar ${p} km, beta ${b} %`);
+    for (let b = 66; b <= 100; b++) assert.ok(!hubLighter({ tierKey: 'cislunar', pKm: p, beta: b / 100 }), `cislunar ${p} km, beta ${b} %`);
+  }
+  // 3.5 km/s with bare tips, every km of the slider: hub end lighter 1-61 km, tip end 62-242 km, hub end again 243-319 km
+  const runs = [];
+  for (let p = 1; p < L; p++) {
+    const h = hubLighter({ tierKey: 'phase3', pKm: p }) ? 'hub' : 'tip';
+    if (!runs.length || runs[runs.length - 1][1] !== h) runs.push([p, h]);
+  }
+  assert.deepEqual(runs, [[1, 'hub'], [62, 'tip'], [243, 'hub']]);
+  // and at 2.5 km/s with bare tips the hub end is lighter at every km
+  for (let p = 1; p < L; p++) assert.ok(hubLighter({ pKm: p }), `reference bare tips ${p}`);
+  // the cap on every load: tip end lighter in every cell of a tier x load x cap scan (cap below the load)
+  let cells = 0;
+  for (const tierKey of ['reference', 'cislunar', 'phase3']) {
+    for (let fi = 12; fi <= 40; fi += 2) {
+      for (let ci = 10; ci < fi; ci += 2) {
+        for (const p of rows) {
+          const o = { tierKey, fs: fi / 100, cap: ci / 100, mode: 'every', pKm: p };
+          assert.ok(run({ ...o, where: 'tip' }).ratio < run({ ...o, where: 'hub' }).ratio, JSON.stringify(o));
+          cells++;
+        }
+      }
+    }
+  }
+  assert.equal(cells, 1800);
 });
 
 test('rule equivalences: between with a full tip equals every; a cap at or above the working load equals the canon rule', () => {
@@ -456,6 +501,15 @@ test('refusals: no canon, no density, no layout line, no cap, bad input, overflo
   for (const c of [{}, { sigmaGPa: '3' }, { rho: '970' }, { sigmaGPa: '-1', rho: '970' }, { sigmaGPa: 'abc', rho: '970' }]) {
     assert.equal(run({ hmpe: 'custom', custom: c }).refusal.code, 'invalid_input');
   }
+  // review fix: finite inputs whose V_c overflows (the page printed "Infinity %") are refused too
+  for (const c of [{ sigmaGPa: '1e300', rho: '1e-300' }, { sigmaGPa: '3', rho: '1e-300' }, { sigmaGPa: '1e300', rho: '970' }]) {
+    const r = run({ hmpe: 'custom', custom: c });
+    assert.equal(r.refusal && r.refusal.code, 'invalid_input', JSON.stringify(c));
+    assert.ok(/finite characteristic velocity/.test(r.refusal.reason));
+  }
+  // a large but finite V_c still computes, to a finite ratio
+  const big = run({ hmpe: 'custom', custom: { sigmaGPa: '1e200', rho: '970' } });
+  assert.ok(!big.refusal && Number.isFinite(big.ratio) && Number.isFinite(big.H.Vc));
   // bad controls
   for (const over of [{ fs: 0 }, { fs: 1.5 }, { mode: 'every', cap: 0 }, { beta: -0.1 }, { beta: 2 }, { pKm: -1 }, { pKm: I.Lkm + 1 }, { mode: 'x' }, { where: 'middle' }]) {
     assert.equal(run(over).refusal.code, 'invalid_input', JSON.stringify(over));
@@ -514,4 +568,17 @@ test('README: the tagline and the numbers table say what the code computes', () 
   }
   assert.ok(md.includes(`${Math.round(none.between.aboveKm)} km`), 'between-catch length above cap');
   assert.ok(md.includes(`${(none.between.peak * 100).toFixed(1)} %`), 'hub load between catches');
+  // the review's scoping of the which-end result: the thresholds the README quotes are the computed ones
+  const L = I.Lkm;
+  const rowsKm = [L / 16, L / 8, L / 4, L / 2, (3 * L) / 4].map((x) => Math.round(x));
+  const hubLighter = (o) => run({ mode: 'between', ...o, where: 'hub' }).ratio < run({ mode: 'between', ...o, where: 'tip' }).ratio;
+  const flips = (tierKey) => rowsKm.map((p) => { for (let b = 0; b <= 100; b++) if (!hubLighter({ tierKey, pKm: p, beta: b / 100 })) return b; return null; });
+  for (const tierKey of ['reference', 'cislunar', 'phase3']) {
+    const s = `${flips(tierKey).join(' / ')} %`;
+    assert.ok(md.includes(s), `README lacks the ${tierKey} reversal tip masses ${s}`);
+  }
+  const runs = [];
+  for (let p = 1; p < L; p++) { const h = hubLighter({ tierKey: 'phase3', pKm: p }) ? 'hub' : 'tip'; if (!runs.length || runs[runs.length - 1][1] !== h) runs.push([p, h]); }
+  assert.equal(runs.length, 3);
+  assert.ok(md.includes(`${runs[1][0]}–${runs[2][0] - 1} km`), 'README states the 3.5 km/s tip-end span');
 });
