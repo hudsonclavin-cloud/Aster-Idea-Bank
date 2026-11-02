@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Required Life</title>
+<meta name="description" content="Skyhook study: how long the HMPE in the Rev A tether must last before creep-governed replacement breaks the conservative case, against the one anchored creep datum. It never predicts a life.">
+<meta name="color-scheme" content="light dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <p class="kicker">Skyhook · DECISION_LOG item 10, outcome (a) · idea-bank prototype</p>
+    <h1>Required Life</h1>
+    <p class="tag">Nobody in Skyhook's repository knows how long HMPE lasts at <span data-fill="load-range">…</span> of its break load. This page asks the question the program can answer: how long would it <em>have</em> to last for a creep-governed replacement line not to break the case? It adds that line to Skyhook's own cash flow and runs it backwards. It never prints a predicted life.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card verdict" id="verdict" aria-live="polite" aria-labelledby="h-verdict">
+    <h2 id="h-verdict" class="sr-only">Verdict</h2>
+    <div id="verdict-body"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-inputs">
+    <h2 id="h-inputs">Inputs</h2>
+    <div class="grid">
+      <fieldset class="field">
+        <legend>Tier <span class="src">rev_a.json kinematics</span></legend>
+        <div class="seg" id="tier" role="radiogroup"></div>
+        <p class="small" id="tier-note"></p>
+      </fieldset>
+      <fieldset class="field">
+        <legend>Ladder column <span class="src">workbook Assumptions B–D</span></legend>
+        <div class="seg" id="column" role="radiogroup"></div>
+        <p class="small" id="column-note"></p>
+      </fieldset>
+    </div>
+
+    <fieldset class="field">
+      <legend>HMPE share of tether mass <span class="badge spec">[Speculative]</span></legend>
+      <p class="small">Not in canon. <code>rev_a.json</code> says <q id="q-baseline"></q>; the founding document says <q id="q-founding"></q>. Choose a reading. Nothing is computed until you do.</p>
+      <div class="choices" id="share" role="radiogroup" aria-label="HMPE share of tether mass"></div>
+      <div class="custom" id="share-custom-row" hidden>
+        <label for="share-custom">Your share</label>
+        <input type="range" id="share-custom" min="0" max="1" step="0.001" value="0.9">
+        <output id="share-custom-out" for="share-custom"></output>
+      </div>
+    </fieldset>
+
+    <div class="grid">
+      <div class="field">
+        <label for="fiber">Fiber purchase, $/kg <span id="fiber-badge" class="badge refuse">unpriced</span></label>
+        <div class="row">
+          <input id="fiber" type="number" min="0" step="any" inputmode="decimal" placeholder="no quote: unpriced" autocomplete="off" aria-describedby="fiber-help">
+          <button type="button" id="fiber-clear" class="secondary">Clear</button>
+        </div>
+        <p class="small" id="fiber-help"><code>rev_a.json economics.fiber_cost_per_kg</code> is <code>null</code> (“<span data-fill="fiber-note">…</span>”). Left empty, the term is absent rather than priced at zero, and every required life below is a floor. A number you type is your bracket, not a quote.</p>
+      </div>
+      <fieldset class="field">
+        <legend>Replacement convention</legend>
+        <div class="seg" id="convention" role="radiogroup"></div>
+        <p class="small" id="convention-note"></p>
+      </fieldset>
+    </div>
+
+    <div class="field">
+      <label class="check"><input type="checkbox" id="dm20"> Show a DM20-class tick <span class="badge spec">[Speculative]</span></label>
+      <p class="small">LR-001 §D reports DM20 creeping “<span data-fill="dm20-quote">…</span>”. The tick is the SK78 datum times that factor, which assumes life scales as 1/creep rate at the same load. It moves only the tick, never the life you are testing.</p>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-required">
+    <h2 id="h-required">How long the HMPE must last</h2>
+    <p class="lead" id="required-lead"></p>
+    <div class="tablewrap">
+      <table id="required">
+        <thead><tr><th scope="col">For this to hold</th><th scope="col" class="num">HMPE must last at least</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div id="required-refusals"></div>
+    <div id="st002" class="note"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-chart">
+    <h2 id="h-chart">Payback year against HMPE life</h2>
+    <figure class="chart" id="chart-fig">
+      <div id="chart-box"></div>
+      <ul class="legend" id="legend" aria-label="Chart key"></ul>
+      <figcaption class="small" id="chart-caption"></figcaption>
+    </figure>
+  </section>
+
+  <section class="card" aria-labelledby="h-forward">
+    <h2 id="h-forward">Suppose it lasts <span id="life-title">8</span> years</h2>
+    <p class="lead">Move the life you are testing. It starts at the anchored datum, which was given for <span data-fill="anchor-load">…</span> of break; Rev A runs its HMPE harder, so read <span data-fill="anchor-life">…</span> as generous, not as a forecast.</p>
+    <div class="row life-row">
+      <label for="life-range" class="sr-only">Life, logarithmic slider</label>
+      <input type="range" id="life-range" min="0" max="1000" step="1" aria-describedby="life-help">
+      <label for="life" class="inline">years</label>
+      <input type="number" id="life" min="0.1" max="1000" step="any" inputmode="decimal" value="8">
+    </div>
+    <p class="small" id="life-help">Logarithmic, 0.5 to 500 years; type any positive value in the box.</p>
+    <div id="forward-out"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-evidence">
+    <h2 id="h-evidence">What the repository says</h2>
+    <p class="small">Quoted from snapshots of Skyhook at <code id="commit"></code>; each line is checked against its snapshot by the tests.</p>
+    <div id="evidence"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-not">
+    <h2 id="h-not">What this is not</h2>
+    <ul class="plain" id="not"></ul>
+  </section>
+</main>
+
+<footer class="wrap foot small">Required Life · Aster Idea Bank No. 26 · made by Holdfast · numbers from <code>snapshots/</code> via <code>data.js</code>; arithmetic in <code>model.js</code>.</footer>
+
+<script src="data.js"></script>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

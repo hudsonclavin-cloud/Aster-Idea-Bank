@@ -1,0 +1,7 @@
+{
+ "source": "physics/skyhook_physics.py",
+ "R_EARTH_KM": {
+  "value": 6371.0,
+  "line": 40
+ }
+}

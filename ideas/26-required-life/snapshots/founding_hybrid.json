@@ -1,0 +1,7 @@
+{
+ "source": "docs/project_instructions.md",
+ "line": 108,
+ "line_text": "- **Architecture:** Hoytether-style redundant multi-line ribbon or tubular truss of primary load lines with diagonal cross-links. **Construction baseline (adopted from HASTOL Phase I, verified in VM-001):** Spectra/Dyneema-class UHMWPE for the bulk of each arm, with the outer ~20 km of the lower arm in heat-resistant Zylon for the aerothermal regime. Minimum redundancy: survive complete severance of any 25% of primary lines at any cross-section while carrying full design load at remaining safety factor ≥ 1.5.",
+ "sentence": "Spectra/Dyneema-class UHMWPE for the bulk of each arm, with the outer ~20 km of the lower arm in heat-resistant Zylon for the aerothermal regime.",
+ "zylon_outer_lower_arm_km": 20.0
+}

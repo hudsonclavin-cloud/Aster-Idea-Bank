@@ -1,0 +1,51 @@
+{
+ "source": "finance/skyhook_finance.py",
+ "capex_spread": {
+  "value": [
+   0.15,
+   0.3,
+   0.35,
+   0.2
+  ],
+  "line": 74
+ },
+ "ops_start_year": {
+  "value": 5,
+  "line": 75
+ },
+ "ramp_step": {
+  "value": 0.3,
+  "line": 76
+ },
+ "window_years": {
+  "value": 15,
+  "line": 77
+ },
+ "payback_max_years": {
+  "value": 40,
+  "line": 264
+ },
+ "npv_rate": {
+  "value": 0.1,
+  "line": 324
+ },
+ "ladder_rows": {
+  "value": {
+   "strength_retention": 3,
+   "ascent_losses_ms": 4,
+   "construction_launch_per_kg": 5,
+   "power_chain_efficiency": 6,
+   "electricity_per_kwh": 7,
+   "ops_wear_per_kg": 8,
+   "hardware_mass_factor": 9,
+   "customer_price_per_kg": 10,
+   "catches_per_day": 11,
+   "payload_kg": 12,
+   "revenue_ramp_y1": 13,
+   "fixed_ops_M": 14,
+   "tip_speed_kms": 15,
+   "program_fleet_capex_M": 16
+  },
+  "line": 56
+ }
+}

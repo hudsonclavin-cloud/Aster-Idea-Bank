@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "finance/skyhook_finance.py",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "f81b77f 2026-09-06T12:03:46-04:00",
+  "committedBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "readBlob": "020638a000a5e745cd6b76918e61e5184cca81ed",
+  "sourceSha256": "c8e15dda24b5af0eab8e56d3dcab0e2806d525a6c095ad91c162095bf87da911",
+  "sourceBytes": 19627,
+  "copiedAt": "2026-10-26T15:39:29.592Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: CAPEX_SPREAD, OPS_START_YEAR, RAMP_STEP, WINDOW_YEARS, _LADDER_ROWS (module literals via ast), payback_year max_years default and summarize()'s NPV rate, each with its line number",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a0a18ba0a4ae41b5f5fd213ef34fe52f8d9fce9acc1f6e8217c012d27687c3cd",
+  "writtenBytes": 830
+}

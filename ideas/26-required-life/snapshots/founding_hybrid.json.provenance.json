@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "docs/project_instructions.md",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "4d4072b 2026-09-02T14:02:59-04:00",
+  "committedBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "readBlob": "23bea05e3890d975e477e11c1b6921d62578befc",
+  "sourceSha256": "4f89e168ee9450d9d9530bf0ff7818919d63dcd3c3dab5998759326cbc086db4",
+  "sourceBytes": 43975,
+  "copiedAt": "2026-10-26T15:39:29.919Z",
+  "mode": "derived",
+  "note": "derived by build_data.py: the Part IV section 4.1 construction-baseline line (UHMWPE bulk, outer ~20 km of the lower arm in Zylon), its line number, and the 20 km it states; the only canon text that bounds the HMPE share",
+  "readMatchesCommitted": true,
+  "writtenSha256": "e8f926a33111362e0c030ceba44ef4a320eaf5a2761943b0902f30b800a031ed",
+  "writtenBytes": 791
+}
