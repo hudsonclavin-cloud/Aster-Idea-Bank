@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/avionics.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "bf61c435d62c631991413ecfe197c66a5abcbe39",
+  "readBlob": "bf61c435d62c631991413ecfe197c66a5abcbe39",
+  "sourceSha256": "bcc7f00458009259f6999465881d04d5a30c77e9bf1d8a76d82127cdbcbe43dc",
+  "sourceBytes": 62419,
+  "copiedAt": "2026-11-02T23:54:41.440Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script. Kept: every row's key (front-coded), confidence, source text (a sorted, front-coded dictionary of its \"; \"-separated segments; lossless), its field-name set, disputed entries and field_confidence (deduplicated), numeric inch/mm pair values, *_confidence fields and vendor / len_mm / len_variants / current / current_upstream_main; the columns keys (description text kept only for inch/mm pair fields); the ISO dates found in each metadata block; the supplement's keys, labels and source presence; license_note length; table-level disputed, fits count and field_confidence. Values are not edited.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "176bc7bdc7b7a76c49a1b72037c948a2a9fd3de1d5f97983765637a0b9a7dabf",
+  "writtenBytes": 8526
+}

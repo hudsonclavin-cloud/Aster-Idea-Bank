@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/orings_as568.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "2902617 2026-09-20T02:35:52+00:00",
+  "committedBlob": "40b00d2c2b0175ff79dc1423633dc2809620467e",
+  "readBlob": "40b00d2c2b0175ff79dc1423633dc2809620467e",
+  "sourceSha256": "31a60639df754726b3b9202af1cfb7b3bc45796f162f01026df42703aa979b1a",
+  "sourceBytes": 360828,
+  "copiedAt": "2026-11-02T23:54:42.168Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script. Kept: every row's key (front-coded), confidence, source text (a sorted, front-coded dictionary of its \"; \"-separated segments; lossless), its field-name set, disputed entries and field_confidence (deduplicated), numeric inch/mm pair values, *_confidence fields and vendor / len_mm / len_variants / current / current_upstream_main; the columns keys (description text kept only for inch/mm pair fields); the ISO dates found in each metadata block; the supplement's keys, labels and source presence; license_note length; table-level disputed, fits count and field_confidence. Values are not edited.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "aca0b40506eca824604a04ec19e277768927882d5a217da4ad88651df017ae78",
+  "writtenBytes": 31310
+}

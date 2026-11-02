@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/npt.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "c1030e12458eb93d87d9541f2fda49fb2e3ce9ae",
+  "readBlob": "c1030e12458eb93d87d9541f2fda49fb2e3ce9ae",
+  "sourceSha256": "8b3c19f93ffbc31456d4b2fe57bc7ccb6ba719f899769f6a58b7cd81c260d664",
+  "sourceBytes": 41964,
+  "copiedAt": "2026-11-02T23:54:42.104Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script. Kept: every row's key (front-coded), confidence, source text (a sorted, front-coded dictionary of its \"; \"-separated segments; lossless), its field-name set, disputed entries and field_confidence (deduplicated), numeric inch/mm pair values, *_confidence fields and vendor / len_mm / len_variants / current / current_upstream_main; the columns keys (description text kept only for inch/mm pair fields); the ISO dates found in each metadata block; the supplement's keys, labels and source presence; license_note length; table-level disputed, fits count and field_confidence. Values are not edited.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "808dfa5efbb62dc63dcd257e9b119b416173f959c55595d65f8d8f6482f9345f",
+  "writtenBytes": 13973
+}

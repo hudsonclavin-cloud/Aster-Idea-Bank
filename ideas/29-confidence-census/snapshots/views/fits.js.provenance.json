@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/fits.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "ad4d587 2026-09-18T01:59:04+00:00",
+  "committedBlob": "1390c474344b1a0c5024b534654cda6d73c2a8ee",
+  "readBlob": "1390c474344b1a0c5024b534654cda6d73c2a8ee",
+  "sourceSha256": "328508fa44c771b26a0dd578c366a3d5ea2197f8b9bc02021b6db38c38019639",
+  "sourceBytes": 17453,
+  "copiedAt": "2026-11-02T23:54:41.830Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script. Kept: every row's key (front-coded), confidence, source text (a sorted, front-coded dictionary of its \"; \"-separated segments; lossless), its field-name set, disputed entries and field_confidence (deduplicated), numeric inch/mm pair values, *_confidence fields and vendor / len_mm / len_variants / current / current_upstream_main; the columns keys (description text kept only for inch/mm pair fields); the ISO dates found in each metadata block; the supplement's keys, labels and source presence; license_note length; table-level disputed, fits count and field_confidence. Values are not edited.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "fa4a62abd506da5bc6cdeef820e1c62e7f35210e78ee5dffe58db2d1f379494f",
+  "writtenBytes": 2771
+}

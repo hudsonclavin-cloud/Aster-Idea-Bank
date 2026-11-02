@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/tables/drills.json",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fae75b8 2026-09-18T00:35:44+00:00",
+  "committedBlob": "430f96dd706865636e1fd166985ecf70dcba6e8f",
+  "readBlob": "430f96dd706865636e1fd166985ecf70dcba6e8f",
+  "sourceSha256": "dce274ce6a94f39c4146844058b5cbdd11731ac6cba7af76d90bc30c3ae63659",
+  "sourceBytes": 283803,
+  "copiedAt": "2026-11-02T23:54:41.598Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script. Kept: every row's key (front-coded), confidence, source text (a sorted, front-coded dictionary of its \"; \"-separated segments; lossless), its field-name set, disputed entries and field_confidence (deduplicated), numeric inch/mm pair values, *_confidence fields and vendor / len_mm / len_variants / current / current_upstream_main; the columns keys (description text kept only for inch/mm pair fields); the ISO dates found in each metadata block; the supplement's keys, labels and source presence; license_note length; table-level disputed, fits count and field_confidence. Values are not edited.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "90482aa8d7ea7110ff8bbb7a09bd2c57b30555937aee5e164a9badbff5177f72",
+  "writtenBytes": 20578
+}

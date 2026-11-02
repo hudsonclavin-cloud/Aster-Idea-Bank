@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Confidence Census</title>
+<meta name="description" content="PartForge's fourteen reference tables counted against what they say about themselves: the certain/likely/recall census, the two hand-written census statements reconciled, and every gap as a finding.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Confidence Census</h1>
+  <p class="lede">PartForge's fourteen reference tables (<code>data/tables/*.json</code>), counted against what they say about themselves. Every row carries a confidence label; <code>data/README.md</code> and <code>docs/data/PROVENANCE.md</code> each state the census by hand. This page counts the rows, checks those statements, and lists the gaps the embed test cannot see.</p>
+  <p class="stamp" id="stamp">Loading the snapshots…</p>
+  <div class="summary" id="summary" aria-live="polite"></div>
+</header>
+
+<main>
+  <section aria-labelledby="h-census">
+    <h2 id="h-census">The census</h2>
+    <p class="hint">Rows per confidence label, as stored. Bars are to scale within each table. “Dated” is the newest YYYY-MM-DD anywhere in the table's metadata.</p>
+    <div class="scroll"><table class="census" id="census"></table></div>
+    <p class="legend"><span class="sw c-certain"></span>certain <span class="sw c-likely"></span>likely <span class="sw c-recall"></span>recall</p>
+  </section>
+
+  <section aria-labelledby="h-rec">
+    <h2 id="h-rec">What the repo says vs what the rows say</h2>
+    <p class="hint">Each countable statement in the <code>data/README.md</code> policy column and the <code>PROVENANCE.md</code> “Overall confidence” lines, checked against the rows. A statement the parser cannot count is shown as prose, never guessed.</p>
+    <div class="seg" role="group" aria-label="Which statements to show">
+      <button type="button" data-rec="problems" aria-pressed="true">Contradicted and prose</button>
+      <button type="button" data-rec="all" aria-pressed="false">All</button>
+    </div>
+    <ol class="claims" id="claims"></ol>
+  </section>
+
+  <section aria-labelledby="h-find">
+    <h2 id="h-find">Findings</h2>
+    <p class="hint"><b>defect</b>: the repo states something its own rows contradict, or a row breaks the promised shape. <b>review</b>: a judgment only the maintainer can make. <b>info</b>: a census fact.</p>
+    <div class="filters">
+      <div class="seg" role="group" aria-label="Severity">
+        <button type="button" data-sev="defect" aria-pressed="true">defect <span class="n" id="n-defect"></span></button>
+        <button type="button" data-sev="review" aria-pressed="true">review <span class="n" id="n-review"></span></button>
+        <button type="button" data-sev="info" aria-pressed="false">info <span class="n" id="n-info"></span></button>
+      </div>
+      <label>Table <select id="f-table"><option value="">all tables</option></select></label>
+      <label>Rule <select id="f-rule"><option value="">all rules</option></select></label>
+      <label class="grow">Search <input id="f-text" type="search" placeholder="key, field or words" autocomplete="off"></label>
+    </div>
+    <p class="count" id="f-count"></p>
+    <ul class="findings" id="findings"></ul>
+  </section>
+
+  <section aria-labelledby="h-ledger">
+    <h2 id="h-ledger">The disputed ledger</h2>
+    <p class="hint">Every <code>disputed</code> entry: what a reviewer contested and what the table kept. The label beside each key is the row's confidence as stored.</p>
+    <label>Table <select id="l-table"></select></label>
+    <p class="count" id="l-count"></p>
+    <ul class="ledger" id="ledger"></ul>
+  </section>
+</main>
+
+<footer>
+  <p id="prov"></p>
+  <p>Command line, from the bank root: <code>node ideas/29-confidence-census/census.mjs /path/to/Partforge</code> (exit 1 on any defect). An idea-bank prototype: not part of PartForge, not through its data-provenance pipeline or skeptic review.</p>
+</footer>
+
+<script src="census.js"></script>
+<script src="snapshots/views/airframes.js"></script>
+<script src="snapshots/views/avionics.js"></script>
+<script src="snapshots/views/design_factors_nasa.js"></script>
+<script src="snapshots/views/drills.js"></script>
+<script src="snapshots/views/fasteners_metric.js"></script>
+<script src="snapshots/views/fasteners_un.js"></script>
+<script src="snapshots/views/fits.js"></script>
+<script src="snapshots/views/materials_thermal.js"></script>
+<script src="snapshots/views/motor_perf.js"></script>
+<script src="snapshots/views/motors.js"></script>
+<script src="snapshots/views/npt.js"></script>
+<script src="snapshots/views/orings_as568.js"></script>
+<script src="snapshots/views/rails.js"></script>
+<script src="snapshots/views/stock.js"></script>
+<script src="snapshots/readme-policy.js"></script>
+<script src="snapshots/provenance-overall.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

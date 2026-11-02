@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "data/README.md",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "fa6d6b8 2026-09-23T21:25:43+00:00",
+  "committedBlob": "c1fa11473b7da4462dc3899d69ce664514658ee7",
+  "readBlob": "c1fa11473b7da4462dc3899d69ce664514658ee7",
+  "sourceSha256": "736169cd6aae64d481fb8fc2f4bf2803353946aa79ece3778e982793a1681657",
+  "sourceBytes": 12106,
+  "copiedAt": "2026-11-02T23:54:42.360Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: lines 30-45 of data/README.md (the confidence-policy table) verbatim with their line numbers, wrapped as a UMD script",
+  "readMatchesCommitted": true,
+  "writtenSha256": "12817c36db0334c68afec0577c471e4553585435072a1f3c2a3ad5bbf656df22",
+  "writtenBytes": 5452
+}

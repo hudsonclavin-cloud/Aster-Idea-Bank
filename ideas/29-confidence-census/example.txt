@@ -1,0 +1,69 @@
+$ node ideas/29-confidence-census/census.mjs /home/user/Partforge
+# Confidence Census — PartForge data/tables at 0974a62
+
+14 tables; 182 findings: 15 defect, 134 review, 33 info. Exit 1.
+
+| table | rows | certain | likely | recall | disputed rows | dated | supplement (c/l/r of n) |
+|---|---:|---:|---:|---:|---:|---|---|
+| airframes | 291 | 0 | 130 | 161 | 169 | none | 1/22/25 of 48 |
+| avionics | 22 | 0 | 3 | 19 | 8 | none |  |
+| design_factors_nasa | 12 | 12 | 0 | 0 | 0 | 2026-09-23 |  |
+| drills | 282 | 204 | 74 | 4 | 10 | none |  |
+| fasteners_metric | 12 | 0 | 12 | 0 | 2 | none |  |
+| fasteners_un | 16 | 0 | 12 | 4 | 3 | 2026-09-17 |  |
+| fits | 13 | 0 | 13 | 0 | 0 (+5 table-level) | none |  |
+| materials_thermal | 21 | 0 | 7 | 14 | 0 | none |  |
+| motor_perf | 1037 | 0 | 875 | 162 | 7 | none |  |
+| motors | 124 | 0 | 95 | 29 | 53 | 2026-09-17 | 1/88/30 of 119 |
+| npt | 7 | 0 | 7 | 0 | 2 | none |  |
+| orings_as568 | 299 | 0 | 289 | 10 | 9 | 2026-09-20 | object |
+| rails | 18 | 4 | 6 | 8 | 10 | 2026-09-17 |  |
+| stock | 192 | 0 | 44 | 148 | 48 | none |  |
+
+Hand-written census statements: 69 claims parsed — 56 match, 2 contradicted, 11 not reconcilable (prose).
+
+By rule: undocumented-field 13, policy-mismatch 2, label-vs-text 94, field-weaker-than-row 30, dateless 9, inch-mm 2, length-vs-records 2, supplement-no-key 1, disputed 12, inch-mm-undeclared 4, supplement-census 2, policy-prose 11.
+
+## defect (15)
+
+- **airframes** [undocumented-field] `lengths_all_mm` is carried by 9 of 291 rows but not described in columns
+- **airframes** [undocumented-field] `pns_all` is carried by 7 of 291 rows but not described in columns
+- **airframes** [policy-mismatch] data/README.md:32 says “Madcow/Blue Tube/PML/Estes `likely`”; the rows have 130 `likely`, 45 not (45 recall; 40 of them disputed)
+- **design_factors_nasa** [undocumented-field] `coefficient_of_friction_max` is carried by 2 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `note` is carried by 12 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `preload_uncertainty` is carried by 2 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `proof_test_factor` is carried by 4 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `protrusion_min_pitches` is carried by 1 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `qualification_test_factor` is carried by 2 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `service_life_factor` is carried by 1 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `ultimate_design_factor` is carried by 3 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `verification_approach` is carried by 2 of 12 rows but not described in columns
+- **design_factors_nasa** [undocumented-field] `yield_design_factor` is carried by 3 of 12 rows but not described in columns
+- **fasteners_un** [policy-mismatch] data/README.md:39 says “`likely`”; the rows have 12 `likely`, 4 not (#2-56 recall, #12-24 recall, 1/2-13 recall, 1/2-20 recall)
+- **motor_perf** [undocumented-field] `disputed` is carried by 7 of 1037 rows but not described in columns
+
+## review (134, grouped by table and rule)
+
+- **airframes** [dateless] no YYYY-MM-DD in table, license_note, columns, supplement, families, structural_issues, notes
+- **avionics** [label-vs-text] 3 findings (`bat_9v_pp3_alkaline`, `bat_9v_lithium_u9vl`, `bat_cr123a`); first: labelled `likely`; source says “s from Energizer 522 product datasheet (recalled)”
+- **avionics** [dateless] no YYYY-MM-DD in table, license_note, columns, notes, reconciliation
+- **drills** [label-vs-text] 16 findings (`frac_1-1-64`, `frac_1-1-32`, `frac_1-3-64`, …); first: labelled `likely`; source says “eming' drills); listing membership from recall, value exact by arithmetic”
+- **drills** [field-weaker-than-row] 5 findings; first: 204 rows labelled `certain` carry `din338_jobber_flute_mm` as `recall` (field_confidence)
+- **drills** [dateless] no YYYY-MM-DD in table, license_note, columns, notes, reconciliation
+- **fasteners_metric** [field-weaker-than-row] 11 findings; first: 8 rows labelled `likely` carry `button_head_d_mm` as `recall` (field_confidence)
+- **fasteners_metric** [dateless] no YYYY-MM-DD in table, license_note, core_fields, columns, field_sources, grades, design_rules, notes, reconciliation
+- **fasteners_un** [label-vs-text] 12 findings (`#4-40`, `#6-32`, `#8-32`, …); first: labelled `likely`; source says “clearance_*: ASME B18.2.8-1999 Table 1 (recall) cross-checked cq_warehouse clearance_hole_size”
+- **fits** [dateless] no YYYY-MM-DD in table, license_note, columns, notes, fits, disputed
+- **materials_thermal** [label-vs-text] 7 findings (`6061-T6`, `7075-T6`, `2024-T3`, …); first: labelled `likely`; source says “Recall of the standard published figures (ASM/MatWeb-c”
+- **materials_thermal** [dateless] no YYYY-MM-DD in table, license_note, columns, notes
+- **motor_perf** [dateless] no YYYY-MM-DD in table, license_note, columns, notes (rows carry `updated`, a per-record upstream date, not when the table was compiled)
+- **motors** [supplement-no-key] 119 of 119 supplement rows have no `key`
+- **npt** [label-vs-text] 7 findings (`npt_1-16`, `npt_1-8`, `npt_1-4`, …); first: labelled `likely`; source says “; values stable across recent editions; recall); metric drill equivalents, blind drill depths,”
+- **npt** [field-weaker-than-row] 14 findings; first: 7 rows labelled `likely` carry `blind_drill_depth_full_dia_mm` as `recall` (table field_confidence)
+- **npt** [dateless] no YYYY-MM-DD in table, license_note, columns, field_confidence, notes, reconciliation
+- **rails** [label-vs-text] 5 findings (`rod_0125`, `rod_01875`, `rod_025`, …); first: labelled `certain`; source says “pically -0.000/-0.005 in under nominal (recall) and can be bent; a lug ID is sized to nominal”
+- **stock** [label-vs-text] 44 findings (`bar_6061_i_0.250`, `bar_6061_i_0.375`, `bar_6061_i_0.500`, …); first: labelled `likely`; source says “ASTM B211 (recall); McMaster-Carr / Online Metals catalogue (reca”
+- **stock** [dateless] no YYYY-MM-DD in table, license_note, columns, notes, reconciliation
+
+Info findings (33: disputed-entry counts, rounding-scale inch/mm notes, supplement census, prose the parser does not count) are in findings.json; the page lists every disputed entry.
+(exit 1)
