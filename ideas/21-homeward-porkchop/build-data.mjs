@@ -97,11 +97,25 @@ const NHATS_API = 'https://ssd-api.jpl.nasa.gov/nhats.api';
 const sha256Hex = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 
 /**
+ * JSON with every object's keys sorted, so a digest depends on the content only. Added at the
+ * 2026-11-02 review: the NHATS API returns the same content with its keys in a different order on
+ * every call (three identical queries gave three different sha256 values), so a digest of the raw
+ * bytes can never be reproduced by a fresh fetch.
+ */
+export function canonicalJson(v) {
+  if (Array.isArray(v)) return `[${v.map(canonicalJson).join(',')}]`;
+  if (v && typeof v === 'object') return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canonicalJson(v[k])}`).join(',')}}`;
+  return JSON.stringify(v);
+}
+
+/**
  * Every distinct NHATS trajectory (min-ΔV and min-duration, de-duplicated by object and trajectory id)
  * the fetched query grid returned for the five bodies, reduced to the columns the return leg needs.
  * Values are NHATS's strings parsed to numbers; nothing is rounded or reordered within a row.
+ * `retrieved` (YYYY-MM-DD, the fetch date) is carried into the excerpt so the page can say it.
  */
-export function deriveNhatsLegs(dir) {
+export function deriveNhatsLegs(dir, retrieved) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(retrieved))) throw new Error('build-data: deriveNhatsLegs needs the fetch date (YYYY-MM-DD)');
   const files = fs.readdirSync(path.join(dir, 'nhats')).filter((f) => f.endsWith('.json')).sort();
   if (files.length !== 180) throw new Error(`build-data: expected 180 NHATS responses, found ${files.length}`);
   const seen = new Map();
@@ -112,9 +126,9 @@ export function deriveNhatsLegs(dir) {
   let bytes = 0;
   for (const f of files) {
     const buf = fs.readFileSync(path.join(dir, 'nhats', f));
-    perFileSha.push(sha256Hex(buf));
     bytes += buf.length;
     const d = JSON.parse(buf.toString('utf8'));
+    perFileSha.push(sha256Hex(Buffer.from(canonicalJson(d))));
     if (!d.des || !d.min_dv_traj) {
       if (!/no matching results/.test(String(d.error || ''))) throw new Error(`build-data: unexpected NHATS response ${f}`);
       continue;
@@ -122,7 +136,10 @@ export function deriveNhatsLegs(dir) {
     withTrajectories += 1;
     if (version && version !== d.signature.version) throw new Error('build-data: mixed NHATS API versions');
     version = d.signature.version;
-    bodies[d.des] = { fullname: d.fullname.trim(), orbit_id: d.orbit_id, computed: d.computed };
+    // NHATS's count of viable trajectories for the object: the listed trips are its extremes, not all of them.
+    const nVia = Number(d.n_via_traj);
+    if (bodies[d.des] && bodies[d.des].n_via_traj !== nVia) throw new Error(`build-data: n_via_traj differs between queries for ${d.des}`);
+    bodies[d.des] = { fullname: d.fullname.trim(), orbit_id: d.orbit_id, computed: d.computed, n_via_traj: nVia };
     for (const k of ['min_dv_traj', 'min_dur_traj']) {
       const t = d[k];
       if (!t) continue;
@@ -136,6 +153,7 @@ export function deriveNhatsLegs(dir) {
   for (const r of rows) if (!order.includes(r[0])) throw new Error(`build-data: NHATS returned a body not carried here: ${r[0]}`);
   const data = {
     source: `JPL NHATS Data API ${version} (${NHATS_API})`,
+    retrieved,
     rule: 'every distinct trajectory (min_dv_traj and min_dur_traj, de-duplicated by des and tid) over dv 6|8|12 km/s × dur 360|450 d × stay 8|32 d × launch 2025-2030|2030-2035|2035-2040 for the five bodies; columns reduced to the return leg, values NHATS\'s own',
     queries: files.length,
     queriesWithTrajectories: withTrajectories,
@@ -147,7 +165,7 @@ export function deriveNhatsLegs(dir) {
 }
 
 function stageNhats(dir, retrieved) {
-  const d = deriveNhatsLegs(dir);
+  const d = deriveNhatsLegs(dir, retrieved);
   const dest = path.join(SNAP, 'nhats-legs.js');
   fs.writeFileSync(dest, d.text);
   const written = fs.readFileSync(dest);
@@ -157,7 +175,7 @@ function stageNhats(dir, retrieved) {
     commit: `retrieved ${retrieved}`,
     retrieved,
     sourceSha256: sha256Hex(Buffer.from(d.perFileSha.join('\n'))),
-    sourceSha256Rule: 'sha256 of the newline-joined per-response sha256 values, responses in file-name order',
+    sourceSha256Rule: 'sha256 of the newline-joined per-response sha256 values, responses in file-name order, each response hashed as canonical JSON (keys sorted, no whitespace; build-data.mjs canonicalJson) because the API reorders keys between identical calls',
     sourceBytes: d.bytes,
     license: 'NASA/JPL public API; US Government work, public domain in the US',
     mode: 'derived',

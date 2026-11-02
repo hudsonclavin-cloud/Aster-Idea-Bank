@@ -11,7 +11,7 @@ import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { buildAggregate, aggregateText, deriveEarth, deriveDrift, deriveNhatsLegs, readConstants, EARTH_REL, DRIFT_REL, BODY_KEYS } from './build-data.mjs';
+import { buildAggregate, aggregateText, deriveEarth, deriveDrift, deriveNhatsLegs, canonicalJson, readConstants, EARTH_REL, DRIFT_REL, BODY_KEYS } from './build-data.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SNAP = path.join(HERE, 'snapshots');
@@ -48,7 +48,9 @@ test('every snapshot hashes to its sidecar, all from one clean Aster commit; dat
       assert.equal(side.repo, 'https://ssd-api.jpl.nasa.gov/nhats.api');
       assert.match(side.commit, /^retrieved \d{4}-\d{2}-\d{2}$/);
       assert.match(side.sourceSha256, /^[0-9a-f]{64}$/);
+      assert.match(side.sourceSha256Rule, /canonical JSON/, 'the digest must not depend on the API’s key order');
       assert.ok(side.license && side.note.includes('82 distinct trajectories'));
+      assert.equal(LEGS.retrieved, side.retrieved, 'the page states the sidecar’s fetch date');
       continue;
     }
     assert.equal(side.readMatchesCommitted, true, `${path.basename(f)} read from a clean checkout`);
@@ -549,6 +551,20 @@ test("capture into Aster's 200 km parking orbit is Aster's own injectionDvFromC3
     assert.ok(Math.abs(ours - theirs) < 1e-12, `${vInf}`);
   }
   assert.ok(Math.abs(H.speedAtRadius(0, C.muEarthKm3S2, C.entryRadiusKm) - Math.sqrt(122.5871)) < 1e-4, 'escape speed at 125 km');
+  // The leg the page shows carries that capture, at Aster's parking radius (added at review: a returnLeg wired
+  // to the 125 km entry radius instead passed every test and every UI check).
+  const ao = bodyOf('1999 AO10');
+  const t = D.nhats['1999_AO10'].min_dv_traj;
+  const d = H.nhatsReturnDates(t);
+  const legs = [H.returnLeg(ao, earth, d.depJd, d.tofDays, C)];
+  const g = H.computeGrid(bodyOf('101955'), earth, lattice, C);
+  legs.push(H.cellAt(g, bodyOf('101955'), earth, g.minima.vInfArr.i, g.minima.vInfArr.j, C));
+  for (const leg of legs) {
+    assert.equal(leg.status, H.STATUS.OK);
+    assert.ok(Math.abs(leg.captureDv - asterInjection(leg.vInfArr ** 2, C.muEarthKm3S2, C.parkingRadiusKm)) < 1e-12, `capture ${leg.captureDv}`);
+  }
+  // AO10's NHATS leg by hand: v∞ 4.3053 km/s into 6,578.137 km: √(4.3053² + 2μ/r) − √(μ/r) = 4.0363 km/s.
+  assert.ok(Math.abs(legs[0].captureDv - 4.0363) < 5e-4, `AO10 capture ${legs[0].captureDv}`);
 });
 
 test('calendar and NHATS date arithmetic', () => {
@@ -567,6 +583,10 @@ test('a minimum on an edge of what was searched says so (lattice edge, ephemeris
   assert.deepEqual(H.edgesOf(ao10, ao10.minima.vInfArr), []);
   const sg = H.computeGrid(bodyOf('2000 SG344'), earth, lattice, C);
   assert.deepEqual(H.edgesOf(sg, sg.minima.vInfArr), ['last departure before the L1 encounter']);
+  // …and only that column says so: one column earlier is an interior cell (added at review).
+  const lastBefore = sg.deps.findIndex((dj) => dj >= sg.boundary.encounterJd) - 1;
+  assert.deepEqual(H.edgesOf(sg, { i: lastBefore, j: 20, k: lastBefore * sg.tofs.length + 20 }), ['last departure before the L1 encounter']);
+  assert.deepEqual(H.edgesOf(sg, { i: lastBefore - 1, j: 20, k: (lastBefore - 1) * sg.tofs.length + 20 }), []);
   assert.ok(sg.vInfArr[sg.minima.vInfArrAll.k] < sg.vInfArr[sg.minima.vInfArr.k], 'a lower value exists past the boundary');
   const nT = ao10.tofs.length;
   assert.deepEqual(H.edgesOf(ao10, { i: 3, j: 0, k: 3 * nT }), ['shortest flight time']);
@@ -614,6 +634,11 @@ test('NHATS legs: 82 trajectories on the five bodies, 27 braked; every one solve
   const per = Object.fromEntries(['1999 AO10', '101955', '2000 SG344', '99942', '2001 GP2'].map((d) => [d, auditOf(d).length]));
   assert.deepEqual(per, { '1999 AO10': 24, 101955: 14, '2000 SG344': 19, 99942: 15, '2001 GP2': 10 });
   assert.equal(audits.filter((a) => a.braked).length, 27);
+  // These are the extremes NHATS returns per constraint set, not every viable trip: NHATS's own count of viable
+  // trajectories is in the hundreds of thousands to millions per body (n_via_traj, carried since the review).
+  const nVia = Object.fromEntries(Object.entries(LEGS.bodies).map(([k, v]) => [k, v.n_via_traj]));
+  assert.equal(nVia['1999 AO10'], 470959);
+  assert.ok(Object.values(nVia).every((n) => Number.isInteger(n) && n > 40000), JSON.stringify(nVia));
   for (const a of audits) {
     if (a.status === H.STATUS.OK) assert.ok(Number.isFinite(a.residual.vInfDep) && Number.isFinite(a.residual.vInfArr));
     else assert.ok(D.refusalCodes.includes(a.refusal.code));
@@ -635,6 +660,17 @@ test("Aster's tier rule keyed on departure is safe on the way home: all 23 legs 
   assert.ok(s.lineKmS > 0.030 && s.lineKmS < 0.031, `worst supported departure-v∞ residual ${s.lineKmS}`);
   assert.ok(s.supportedWorstVInfArrKmS > 0.14 && s.supportedWorstVInfArrKmS < 0.15, `arrival v∞ ${s.supportedWorstVInfArrKmS}`);
   assert.ok(s.supportedWorstDecDeg < 0.95, `declination ${s.supportedWorstDecDeg}`);
+  // Added at review. On the Earth-arrival v∞ (the quantity K1 hands to K2) the supported legs are only good to
+  // 148 m/s, five times the departure line, all from Bennu's 2036 legs; by that measure 14 of the 57 past legs
+  // are no worse, so the rule separates the legs on departure v∞, not on arrival v∞.
+  assert.equal(s.pastWithinArrivalLine, 14);
+  const bennu = auditOf('101955').filter((a) => a.departureRule === 'supported');
+  const worstArr = (xs) => Math.max(...xs.map((a) => Math.abs(a.residual.vInfArr)));
+  const in2036 = bennu.filter((a) => H.jdToIso(a.depJd).startsWith('2036'));
+  assert.equal(in2036.length, 8);
+  assert.equal(worstArr(in2036), s.supportedWorstVInfArrKmS, 'the worst arrival residual is a Bennu 2036 leg');
+  const earlier = bennu.filter((a) => !H.jdToIso(a.depJd).startsWith('2036'));
+  assert.ok(worstArr(earlier) < 0.026 && worstArr(auditOf('1999 AO10').filter((a) => a.departureRule === 'supported')) < 0.041);
   // Past the boundary the same pipeline misses: 52 of 57 legs by more than the worst supported one, up to 186 km/s.
   assert.equal(s.past, 57);
   assert.equal(s.pastBeyondLine, 52);
@@ -696,8 +732,19 @@ test('the NHATS excerpt re-derives byte for byte from the fetched responses, whe
     t.skip('set NHATS_DIR to a directory filled by oracle/fetch-nhats.sh');
     return;
   }
-  const d = deriveNhatsLegs(dir);
-  assert.equal(d.text, readSnap('nhats-legs.js'));
   const side = JSON.parse(readSnap('nhats-legs.js.provenance.json'));
+  const d = deriveNhatsLegs(dir, side.retrieved);
+  assert.equal(d.text, readSnap('nhats-legs.js'));
+  // Each response is hashed as canonical JSON: the API returns identical content with its keys in a
+  // different order on every call, so a raw-byte digest never reproduces (found at the 2026-11-02 review).
   assert.equal(sha256(Buffer.from(d.perFileSha.join('\n'))), side.sourceSha256);
+});
+
+test('canonical JSON: key order does not change the digest, content does', () => {
+  const a = canonicalJson({ b: 1, a: { d: [1, { y: 2, x: '3' }], c: null } });
+  const b = canonicalJson({ a: { c: null, d: [1, { x: '3', y: 2 }] }, b: 1 });
+  assert.equal(a, b);
+  assert.equal(a, '{"a":{"c":null,"d":[1,{"x":"3","y":2}]},"b":1}');
+  assert.notEqual(canonicalJson({ a: '0.206' }), canonicalJson({ a: '0.207' }));
+  assert.notEqual(canonicalJson([1, 2]), canonicalJson([2, 1]), 'array order is content');
 });

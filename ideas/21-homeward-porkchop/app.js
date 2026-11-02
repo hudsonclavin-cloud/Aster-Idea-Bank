@@ -669,13 +669,19 @@
   }
   function renderAudit() {
     const s = auditSum;
-    $('auNote').textContent = `JPL's NHATS lists ${s.legs} distinct round trips for these five bodies (fetched 2026-11-02; ` +
-      `the same query grid as idea 47, which carries three of them). Each return leg is solved here from Aster's two-body ` +
+    const nVia = Object.values(LEGS.bodies).reduce((n, b) => n + b.n_via_traj, 0);
+    $('auNote').textContent = `${LEGS.queries} queries to JPL's NHATS (fetched ${LEGS.retrieved}; the same query grid as idea 47, ` +
+      `which carries three of these bodies) return ${s.legs} distinct round trips for the five bodies: the minimum-ΔV and ` +
+      `minimum-duration trip of each constraint set, a sample of the ${fmtInt(nVia)} viable trajectories NHATS counts for them. ` +
+      `Each return leg is solved here from Aster's two-body ` +
       `elements and set against NHATS, which flies JPL's integrated orbits. Keyed on departure, Aster's L1 rule supports ` +
       `${s.supported}; every one is within ${fmtMs(s.lineKmS * 1000)} of NHATS's departure v∞. Of the ${s.past} past the ` +
       `boundary, ${s.pastBeyondLine} miss by more, up to ${fmtMs(s.pastWorstKmS * 1000)}; ${s.pastWithinLine} do not, so the rule ` +
       `is conservative. Keyed on arrival, as Aster does outbound, it would support ${s.arrivalRuleSupported} and refuse ` +
-      `${s.supportedArrivalRuleFlags} that reproduce. ${s.refused} legs reach Earth after the ephemeris and are refused. ` +
+      `${s.supportedArrivalRuleFlags} that reproduce. On the Earth-arrival v∞ the supported legs agree only to ` +
+      `${fmtMs(s.supportedWorstVInfArrKmS * 1000)} and ${s.supportedWorstDecDeg.toFixed(2)}° in declination, and ` +
+      `${s.pastWithinArrivalLine} of the ${s.past} past legs do no worse, so the rule separates the legs on departure v∞, not on ` +
+      `arrival v∞. ${s.refused} legs reach Earth after the ephemeris and are refused. ` +
       `Residuals under ${AU_YMIN} m/s sit on the floor; tap or click a point.`;
     $('auLineKey').textContent = `Grey dashes: the worst supported leg, ${fmtMs(s.lineKmS * 1000)}`;
     const tbl = $('auTable');
@@ -741,9 +747,10 @@
       `Frame check for ${b.name}: its catalog elements (J2000 ecliptic), propagated to their own epoch ${iso(b.elements.epochTdbJd)} and turned through the J2000 obliquity, land ${(dr * 1e6).toFixed(1)} mm from the catalog's ICRF anchor state.`,
       `Earth: ${E.keptRecords} of the ${fmtInt(E.sourceRecords)} daily JPL Horizons records Aster commits (every 7th, plus the last), joined by cubic Hermite. Measured against the other ${fmtInt(E.heldOut.count)}: at most ${E.heldOut.maxPositionErrorKm.toFixed(0)} km in position and ${(E.heldOut.maxVelocityErrorKmS * 1000).toFixed(2)} m/s in velocity.`,
       'Lambert: this deposit’s own universal-variable solver, zero revolutions, prograde about the ICRF z axis (Aster calls izzo.ts the same way). It reproduces Aster’s own Lambert oracle vectors; the README lists them.',
+      'The thin bright streaks are legs whose transfer angle is close to 180° (or 0°): there the asteroid, the Sun and the arrival point are nearly in line, the transfer plane is barely defined, and a zero-revolution leg must tilt far out of the ecliptic. They are real two-body solutions, not glitches; a few days more or less of flight time steps off them.',
       `The asteroid moves on a two-body Kepler orbit from its catalog elements; the L1 boundary is Slice 18's earliest material encounter, from Aster's tier artifact (${D.tierMeta.generatedAtUtc.slice(0, 10)}).`,
       `Aster's sample-return ΔV stack books this burn home as the outbound arrival v∞ (src/v2/porkchop/delta-v.ts:${C.symmetricReturnLine}); this page computes it.`,
-      `JPL NHATS: ${LEGS.rows.length} distinct trajectories from ${LEGS.queriesWithTrajectories} of ${LEGS.queries} queries to ${LEGS.source}, fetched when the deposit was built (snapshots/nhats-legs.js and its sidecar); this page never touches the network. NHATS dates are read as midnight TDB; a braked NHATS return's arrival v∞ is its ${C.entryCapKmS} km/s cap's plus the braking.`,
+      `JPL NHATS: ${LEGS.rows.length} distinct trajectories from ${LEGS.queriesWithTrajectories} of ${LEGS.queries} queries to ${LEGS.source}, fetched ${LEGS.retrieved} (snapshots/nhats-legs.js and its sidecar); this page never touches the network. NHATS dates are read as midnight TDB; a braked NHATS return's arrival v∞ is its ${C.entryCapKmS} km/s cap's plus the braking.`,
     ];
     for (const t of items) ul.appendChild(el('li', null, t));
     $('foot').textContent = `Data: Aster ${D.aster.commit.slice(0, 7)} (${D.aster.commitDate.slice(0, 10)}), copied with provenance sidecars into snapshots/. Idea-bank prototype: not through Aster's math audit, oracle validation or founding-document process.`;

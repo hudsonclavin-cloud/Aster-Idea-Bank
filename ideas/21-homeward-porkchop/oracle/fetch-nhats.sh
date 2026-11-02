@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fetch JPL NHATS round trips for the five NHATS validation targets this deposit carries, into an
-# empty directory given as $1. Then `node ideas/21-homeward-porkchop/build-data.mjs --nhats <that dir>`
-# derives snapshots/nhats-legs.json (the return leg of every distinct trajectory) and its sidecar.
+# empty directory given as $1. Then `node ideas/21-homeward-porkchop/build-data.mjs --nhats <that dir>
+# --retrieved <fetch date>` derives snapshots/nhats-legs.js (the return leg of every distinct trajectory) and its sidecar.
 # Source: JPL NHATS Data API v1.3, https://ssd-api.jpl.nasa.gov/nhats.api (public JPL API, US Government work).
 # The query grid is idea 47's (dv 6|8|12 km/s, dur 360|450 d, stay 8|32 d, three launch spans), so the
 # legs on the three bodies both deposits carry can be compared row for row.

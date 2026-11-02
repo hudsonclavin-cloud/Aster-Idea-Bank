@@ -125,6 +125,11 @@ function expectCell(rd, des, i, j, label) {
     ok(rd['Earth-arrival v∞'] === `${f3(cell.vInfArr)} km/s`, `${label}: arrival v∞`);
     ok(rd[`Entry speed at ${C.entryAltitudeKm} km`] === `${f3(cell.entrySpeed)} km/s`, `${label}: entry speed`);
     ok(rd['Arrival declination'] === `${cell.decArrDeg.toFixed(2)}°`, `${label}: declination`);
+    // Added at review: the capture row, against Aster's parking radius (a page showing the 125 km speed minus the
+    // circular speed passed all 106 earlier checks).
+    const parkKm = (C.parkingRadiusKm - C.earthRadiusKm).toFixed(0);
+    const capture = H.captureDvKmS(cell.vInfArr, C.muEarthKm3S2, C.parkingRadiusKm);
+    ok(rd[`Capture into a ${parkKm} km circular orbit`] === `${f3(capture)} km/s`, `${label}: capture ${rd[`Capture into a ${parkKm} km circular orbit`]} vs ${f3(capture)}`);
   }
   return cell;
 }
@@ -159,7 +164,10 @@ function expectCell(rd, des, i, j, label) {
   ok(rows.some((r) => r.includes('Apophis') && r.includes('past the L1 boundary (2028-09-12)')), 'Apophis past the boundary');
   // Every NHATS leg against the tier rule: the note and table carry the kernel's counts.
   const note = await text(page, '#auNote');
-  ok(note.includes(`lists ${auditSum.legs} distinct round trips`) && auditSum.legs === 82, 'audit note: 82 legs');
+  ok(note.includes(`180 queries to JPL's NHATS (fetched ${LEGS.retrieved};`) && LEGS.retrieved === '2026-11-02', 'audit note: query count and fetch date from the excerpt');
+  ok(note.includes(`return ${auditSum.legs} distinct round trips`) && auditSum.legs === 82, 'audit note: 82 legs');
+  ok(note.includes('a sample of the 5,506,319 viable trajectories NHATS counts'), 'audit note: the 82 are a sample, not every NHATS trip');
+  ok(note.includes(`agree only to 148 m/s and 0.94° in declination, and ${auditSum.pastWithinArrivalLine} of the 57 past legs do no worse`) && auditSum.pastWithinArrivalLine === 14, 'audit note: the arrival-v∞ caveat');
   ok(note.includes(`supports ${auditSum.supported}; every one is within 30.5 m/s`) && auditSum.supported === 23, 'audit note: 23 supported, within 30.5 m/s');
   ok(note.includes(`Of the 57 past the boundary, 52 miss by more, up to 185.7 km/s; 5 do not`), 'audit note: 52 of 57 past miss, 5 do not');
   ok(note.includes('it would support 15 and refuse 8 that reproduce'), 'audit note: arrival rule supports 15, refuses 8 good legs');
@@ -232,6 +240,20 @@ function expectCell(rd, des, i, j, label) {
   rd = await readout(page);
   ok(rd['Body state vs JPL integrated truth'] !== undefined, 'Apophis shows its measured two-body drift');
   ok(/^[\d,]+ km, [\d.]+ m\/s$/.test(rd['Body state vs JPL integrated truth'] || ''), 'drift format');
+  // Added at review: the drift's value, from JPL's record nearest the selected departure, in km and m/s.
+  {
+    const g = gridOf('99942');
+    const nd = H.nhatsReturnDates(D.nhats['99942'].min_dv_traj);
+    const [ci] = nearestCell('99942', nd.depJd, nd.tofDays);
+    const recs = D.drift.targets['99942'].records;
+    const best = recs.reduce((b, r) => (Math.abs(r[0] - g.deps[ci]) < Math.abs(b[0] - g.deps[ci]) ? r : b));
+    const s2 = H.keplerState(body('99942').elements, best[0], C);
+    const dr = Math.hypot(s2.r[0] - best[1], s2.r[1] - best[2], s2.r[2] - best[3]);
+    const dv = Math.hypot(s2.v[0] - best[4], s2.v[1] - best[5], s2.v[2] - best[6]);
+    const want = `${Math.round(dr).toLocaleString('en-US')} km, ${(dv * 1000).toFixed(1)} m/s`;
+    ok(rd['Body state vs JPL integrated truth'] === want, `Apophis drift ${rd['Body state vs JPL integrated truth']} vs ${want}`);
+    ok(dv > 1, 'past the 2029 flyby the two-body velocity is km/s off');
+  }
   ok((await text(page, '#support')).startsWith('Past the L1 boundary'), 'Apophis NHATS leg is past the boundary');
   // Show button on the Bennu row.
   await page.locator('#nhTable button[data-body="101955"]').click();

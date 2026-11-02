@@ -552,6 +552,9 @@
     const worst = (xs, f) => xs.reduce((m, a) => Math.max(m, Math.abs(f(a))), 0);
     const line = Number.isFinite(lineKmS) ? lineKmS : sup.length ? worst(sup, (a) => a.residual.vInfDep) : null;
     const beyond = line === null ? null : past.filter((a) => Math.abs(a.residual.vInfDep) > line).length;
+    // The same question asked of the Earth-arrival v∞, the quantity K1 hands to K2 (added at review):
+    // how many past legs are no worse than the worst supported one on that measure.
+    const arrLine = sup.length ? worst(sup, (a) => a.residual.vInfArr) : null;
     return {
       legs: audits.length,
       refused: audits.filter((a) => a.status !== STATUS.OK).length,
@@ -564,6 +567,7 @@
       pastBeyondLine: beyond,
       pastWithinLine: beyond === null ? null : past.length - beyond,
       pastWorstKmS: past.length ? worst(past, (a) => a.residual.vInfDep) : null,
+      pastWithinArrivalLine: arrLine === null ? null : past.filter((a) => Math.abs(a.residual.vInfArr) <= arrLine).length,
       supportedArrivalRuleFlags: sup.filter((a) => a.arrivalRuleFlags).length,
       arrivalRuleSupported: audits.filter((a) => a.status === STATUS.OK && a.departureRule !== 'none' && !a.arrivalRuleFlags).length,
     };
