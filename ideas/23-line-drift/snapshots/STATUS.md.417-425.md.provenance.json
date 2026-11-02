@@ -8,7 +8,7 @@
   "readBlob": "7b1baf317884f96c6b68449fd67429c6148cdef1",
   "sourceSha256": "41f51a709e39709e058c44fe15ca667a6acb6edd8dc5b7362f520d53e2a0b243",
   "sourceBytes": 83134,
-  "copiedAt": "2026-10-26T16:33:49.786Z",
+  "copiedAt": "2026-11-02T20:10:22.756Z",
   "mode": "derived",
   "note": "derived by build-data.mjs: lines 417-425 verbatim after a one-line header; Slice 19 item 1: the porkchop \"Grid spans\" literal with citations :637, :646, :187-194, :189",
   "readMatchesCommitted": true,

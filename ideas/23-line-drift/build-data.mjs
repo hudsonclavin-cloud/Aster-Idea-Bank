@@ -24,6 +24,9 @@ export const EXCERPTS = [
   { path: 'STATUS.md', from: 535, to: 535, why: 'Cleanup C17: a table row citing .githooks/pre-commit:53 with an escaped pipe in its code span' },
   { path: 'INVARIANTS.md', from: 171, to: 180, why: 'INV-034 evidence-artifact tracking, citing SLICE_9_FOUNDING.md:202, :350-353 and .gitignore:17' },
   { path: 'src/v2/SLICE_9_FOUNDING.md', from: 423, to: 428, why: 'the 2026-07-12 amendment: .gitignore:17 next to the glob it names' },
+  // Added by the independent review: commits named inside a code-span command and a code-span range.
+  { path: 'STATUS.md', from: 25, to: 25, why: 'commits inside a code-span command (git rev-list --count 3d395fb..HEAD)' },
+  { path: 'STATUS.md', from: 247, to: 247, why: 'a commit range in a code span (22774cc..67c4c18)' },
 ];
 
 const git = (args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });

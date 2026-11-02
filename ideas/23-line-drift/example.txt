@@ -1,35 +1,35 @@
-Line Drift: 1316 references in 26 documents
+Line Drift: 1333 references in 26 documents
 checkout /home/user/asteroid-mining-planner (worktree)
 at 62ddb17 (2026-10-25T19:36:43-04:00) from https://github.com/hudsonclavin-cloud/asteroid-mining-planner; 50 commits reachable; working tree clean
 shallow clone: history starts at fbe8e89 (2026-10-12); older commits read UNCHECKABLE, not unreachable
 
 status              line   path   commit  total
-OK                  22     516    39      577
+OK                  22     516    40      578
 PARTIAL             2      0      0       2
 MOVED               13     0      0       13
 GONE                8      0      0       8
 IN-RANGE            53     0      0       53
 MISSING-PATH        2      71     0       73
 IGNORED             0      2      0       2
-UNCHECKABLE         8      32     548     588
-all                 108    621    587     1316
+UNCHECKABLE         8      32     564     604
+all                 108    621    604     1333
 
 document                                           refs  OK        PARTIAL   MOVED     GONE      IN-RANGE  MISSING   IGNORED   UNCHECK   
-STATUS.md                                          333   94        0         5         6         16        17        0         195       
+STATUS.md                                          340   94        0         5         6         16        17        0         202       
 INVARIANTS.md                                      65    57        0         1         0         3         0         0         4         
 AGENTS.md                                          14    11        0         0         0         0         0         1         2         
-README.md                                          20    20        0         0         0         0         0         0         0         
+README.md                                          21    20        0         0         0         0         0         0         1         
 mcp/README.md                                      5     1         0         3         0         1         0         0         0         
-SLICE_17_FOUNDING.md                               48    0         1         0         0         8         0         0         39        
+SLICE_17_FOUNDING.md                               49    0         1         0         0         8         0         0         40        
 src/v2/SLICE_10_FOUNDING.md                        30    2         0         0         0         0         3         0         25        
 src/v2/SLICE_11_FOUNDING.md                        58    15        0         0         0         0         0         0         43        
-src/v2/SLICE_12_FOUNDING.md                        23    14        0         1         0         2         0         0         6         
+src/v2/SLICE_12_FOUNDING.md                        24    14        0         1         0         2         0         0         7         
 src/v2/SLICE_13_FOUNDING.md                        24    2         0         0         0         2         5         0         15        
-src/v2/SLICE_14_FOUNDING.md                        65    21        0         0         0         4         0         0         40        
-src/v2/SLICE_15_FOUNDING.md                        90    39        0         0         0         0         5         0         46        
-src/v2/SLICE_16_FOUNDING.md                        160   116       0         1         1         3         1         0         38        
-src/v2/SLICE_18_FOUNDING.md                        144   70        0         0         0         1         17        0         56        
-src/v2/SLICE_19_5_FOUNDING.md                      54    41        1         0         1         0         6         0         5         
+src/v2/SLICE_14_FOUNDING.md                        66    21        0         0         0         4         0         0         41        
+src/v2/SLICE_15_FOUNDING.md                        91    39        0         0         0         0         5         0         47        
+src/v2/SLICE_16_FOUNDING.md                        163   116       0         1         1         3         1         0         41        
+src/v2/SLICE_18_FOUNDING.md                        145   70        0         0         0         1         17        0         57        
+src/v2/SLICE_19_5_FOUNDING.md                      55    42        1         0         1         0         6         0         5         
 src/v2/SLICE_19_FOUNDING.md                        44    13        0         1         0         3         6         0         21        
 src/v2/SLICE_8_5_FOUNDING.md                       0     0         0         0         0         0         0         0         0         
 src/v2/SLICE_9_FOUNDING.md                         27    3         0         1         0         0         0         1         22        
@@ -294,10 +294,10 @@ src/v2/SLICE_9_FOUNDING.md:426  path  tools/slice9-research/data/slice9-cutover-
     history: first appeared and last edited fbe8e89, 2026-10-12: at this shallow clone's boundary, so possibly older; not checked
     context: its own sentence says so
 
-Not fully checkable (588), by reason:
-  538   commit: not in this shallow clone (history starts at the boundary)
+Not fully checkable (604), by reason:
+  547   commit: not in this shallow clone (history starts at the boundary)
   30    path: several files share this name
-  10    commit: reads as a content hash, not a commit
+  17    commit: reads as a content hash, not a commit
   7     line: several files share this name
   2     path: reads as a placeholder name, not a file the document says exists
   1     line: a bare :N with no path earlier in its paragraph

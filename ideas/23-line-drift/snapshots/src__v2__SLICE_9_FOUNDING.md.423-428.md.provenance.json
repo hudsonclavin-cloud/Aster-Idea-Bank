@@ -8,7 +8,7 @@
   "readBlob": "4f5701fa56af0d3a1c217b3ce1c9ffc4a489c3a0",
   "sourceSha256": "16861369493eeaa9f0234fa480678cb8987cc1b60064458e516be88512e016e5",
   "sourceBytes": 25456,
-  "copiedAt": "2026-10-26T16:33:50.151Z",
+  "copiedAt": "2026-11-02T20:10:23.002Z",
   "mode": "derived",
   "note": "derived by build-data.mjs: lines 423-428 verbatim after a one-line header; the 2026-07-12 amendment: .gitignore:17 next to the glob it names",
   "readMatchesCommitted": true,

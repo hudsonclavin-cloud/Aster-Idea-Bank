@@ -5,8 +5,12 @@
  *   line   `path:N`, `path:N-M`, `path:N,M`, and a bare `:N` that inherits the last path named
  *          in the same paragraph (`:646` after `src/v2/app/porkchop/main.ts:637`);
  *   path   a backticked repository path with no line (`tools/x/y.json`, `src/v2/core/`);
- *   commit a 7–40 hex token with at least one digit and one letter (`bcf1738`), backticked or not,
- *          unless the sentence says it is a content hash (sha256 / md5 / blob) or it ends in "…".
+ *   commit a 7-12 or 40 hex token with at least one digit and one letter (`bcf1738`): backticked,
+ *          in plain text or a quote, inside a code span that is a command or a range
+ *          (`git rev-list --count 3d395fb..HEAD`, `22774cc..67c4c18`), after a branch (main@c185c33)
+ *          or another commit (2cf7526/84fefe8); never inside a path segment or URL. Other lengths, and
+ *          a token the sentence calls a content hash (sha256 / md5 / blob) or that ends in "…" or
+ *          "...", read as hashes, not commits.
  * It pairs each line citation with the snippets (backticked code or a quoted string of 2+ words)
  * that sit closer to it than to any other citation in the same sentence, and, given an `env` that
  * answers questions about a tree of files, judges each reference:
@@ -271,7 +275,10 @@
   const CITE_CONT = new RegExp(`^:${LINES_RE}$`);
   const CITE_PLAIN = new RegExp(`(?<![A-Za-z0-9_./@+:-])${PATH_CORE}:${LINES_RE}(?![A-Za-z0-9_:])`, 'g');
   const HEX_RE = /^[0-9a-f]{7,40}$/;
-  const HEX_PLAIN = /(?<![A-Za-z0-9_\/.#@-])([0-9a-f]{7,40})(?![A-Za-z0-9_-])/g;
+  // A hex token standing on its own: not inside a word, a path segment (`sanity-69472a3/`), a URL
+  // (`/a030000/`), a colour (`#a03000`) or a file name (`abc1234.json`). It may follow a branch
+  // (`main@c185c33`), a range operator (`22774cc..67c4c18`) or another commit (`2cf7526/84fefe8`).
+  const HEX_PLAIN = /(?:(?<=(?<![A-Za-z0-9_\/.-])[0-9a-f]{7,12}\/)|(?<=[^.]\.\.\.?)|(?<![A-Za-z0-9_\/.#-]))([0-9a-f]{7,40})(?![A-Za-z0-9_-]|\.[A-Za-z0-9])/g;
   const KNOWN_EXT = /\.(md|ts|tsx|mts|js|mjs|cjs|jsx|json|jsonl|py|html|css|yml|yaml|sh|txt|csv|toml|svg|png|jpg|jpeg|webp|pdf|xlsx|wasm|glb|bin|ndjson|lock|scad|stl|ps1|bat|cfg|ini|xml|map|zip|gz)$/i;
 
   function parseRanges(s) {
@@ -342,8 +349,10 @@
       while ((m = CITE_PLAIN.exec(masked))) {
         events.push({ type: 'plaincite', start: m.index, end: m.index + m[0].length, path: m[1], lines: m[2] });
       }
+      // Commits in plain text and inside quoted strings ("HEAD c6c0c52"): scanned with only code
+      // spans masked.
       HEX_PLAIN.lastIndex = 0;
-      while ((m = HEX_PLAIN.exec(masked))) {
+      while ((m = HEX_PLAIN.exec(masked0))) {
         if (!looksLikeCommit(m[1])) continue;
         events.push({ type: 'plaincommit', start: m.index, end: m.index + m[0].length, hex: m[1] });
       }
@@ -370,6 +379,16 @@
             items.push({ ...base, kind: 'path', path: trimmed.replace(/^\.\//, ''), raw: trimmed, form: 'code' });
           } else if (trimmed.length >= 2) {
             items.push({ ...base, kind: 'snippet', text: content, form: 'code' });
+            // A command or a range in code names commits too (`git rev-list --count 3d395fb..HEAD`,
+            // `22774cc..67c4c18`, `"src/v2/... @ 41abd8a"`).
+            const rawSpan = t.slice(ev.start, ev.end);
+            let hm;
+            HEX_PLAIN.lastIndex = 0;
+            while ((hm = HEX_PLAIN.exec(rawSpan))) {
+              if (!looksLikeCommit(hm[1])) continue;
+              const at = ev.start + hm.index;
+              items.push({ ...base, start: at, end: at + hm[1].length, line: lineOfOffset(unit, at), kind: 'commit', hex: hm[1], raw: hm[1], form: 'in-code' });
+            }
           }
         } else if (ev.type === 'plaincite') {
           lastPath = ev.path;
@@ -416,8 +435,10 @@
       // Commit tokens first: which of them read as content hashes rather than commits.
       for (const it of items) {
         if (it.kind !== 'commit') continue;
-        const after = t.slice(it.end, it.end + 2);
-        it.hashLike = /^(\u2026|\.\.)/.test(after) || !commitLength(it.hex.length) ||
+        // Elided ("b278dd55...", "eb118425\u2026") reads as a hash; a range ("22774cc..67c4c18",
+        // "3d395fb..HEAD") does not.
+        const after = t.slice(it.end, it.end + 4);
+        it.hashLike = /^(\u2026|\.{2,3}(?![0-9A-Za-z_]))/.test(after) || !commitLength(it.hex.length) ||
           (it.hex.length !== 40 && HASH_CONTEXT.test(t.slice(Math.max(sentences[it.sentence][0], it.start - 40), it.start)));
       }
       // A commit pins the line and path references near it: the only commit in the sentence, or
@@ -588,8 +609,15 @@
     });
     const out = { lineCount: n, snippetResults: results };
     if (bad) {
+      // PAST-EOF covers every cited line the file cannot have: beyond its end, line 0, a reversed
+      // range, or a number too large to be a line. The note says which.
       out.status = 'PAST-EOF';
-      out.note = `cites line ${fmtRanges([bad])}; the file has ${n} line${n === 1 ? '' : 's'}`;
+      const [a, b] = bad;
+      const why = !Number.isSafeInteger(a) || !Number.isSafeInteger(b) ? 'cites a line number too large to be a line'
+        : a < 1 ? `cites line ${a}; lines start at 1`
+          : b < a ? `cites the reversed range ${a}-${b}`
+            : `cites line ${fmtRanges([bad])}`;
+      out.note = `${why}; the file has ${n} line${n === 1 ? '' : 's'}`;
       const found = results.filter((r) => r.verdict !== 'GONE');
       if (found.length) out.note += `; snippet now at ${found[0].at.join(', ')}`;
       return out;
@@ -612,16 +640,18 @@
       out.status = 'OK';
       if (ok.match === 'loose') out.note = 'matches only after folding dashes, quotes and ×';
       if (ok.match === 'compact') out.note = 'matches only with spacing and quote style ignored';
-    } else if (partial) {
-      out.status = 'PARTIAL';
-      out.note = `the cited lines hold ${partial.run} of the snippet's ${partial.words} words in a row ("${partial.text}"); the rest is not quoted verbatim`;
-      partial.r.verdict = 'PARTIAL';
     } else if (moved) {
+      // The quote stands verbatim elsewhere in the file, so the cited lines are stale even when they
+      // hold part of it: MOVED wins over PARTIAL.
       out.status = 'MOVED';
       out.movedTo = moved.at;
       out.note = `snippet now at ${moved.at.join(', ')}${moved.count > moved.at.length ? ` (+${moved.count - moved.at.length} more)` : ''}`;
       if (moved.match === 'loose') out.note += ' (after folding dashes, quotes and ×)';
       if (moved.match === 'compact') out.note += ' (spacing and quote style ignored)';
+    } else if (partial) {
+      out.status = 'PARTIAL';
+      out.note = `the cited lines hold ${partial.run} of the snippet's ${partial.words} words in a row ("${partial.text}"); the rest is not quoted verbatim`;
+      partial.r.verdict = 'PARTIAL';
     } else {
       out.status = 'GONE';
       out.note = 'snippet not found anywhere in the file';

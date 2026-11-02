@@ -105,6 +105,53 @@ test('commit tokens: 7-12 or 40 hex with a digit and a letter; fingerprints, has
   ]);
 });
 
+// Added by the independent review: commit mentions the first build did not extract.
+test('commits inside a code command or range, a quote, after a branch or another commit; never in a path or URL', () => {
+  const refs = refsOf([
+    'Measured with `git rev-list --count 3d395fb..HEAD`; pushed `22774cc..67c4c18`.',
+    '',
+    'The recon says "HEAD c6c0c52" and main@c185c33; confirmed in 2cf7526/84fefe8.',
+    '',
+    'Elided `b278dd55...` and `eb118425…` are not commits.',
+    '',
+    'Not commits: `tools/audit/sanity-69472a3/REPORT.md`, https://svs.example/vis/a030000/a030003/x.tif, abc1234.json, #a03000f.',
+  ].join('\n'));
+  assert.deepEqual(refs.filter((r) => r.kind === 'commit').map((r) => [r.hex, !!r.hashLike]), [
+    ['3d395fb', false], ['22774cc', false], ['67c4c18', false],
+    ['c6c0c52', false], ['c185c33', false], ['2cf7526', false], ['84fefe8', false],
+    ['b278dd55', true], ['eb118425', true],
+  ]);
+});
+
+test('PARTIAL needs a third of the quote, a verbatim copy elsewhere makes it MOVED, and impossible lines say why', () => {
+  const words = 'alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo';
+  const files = {
+    'p.md': ['alpha bravo charlie delta echo and then something else', 'filler', ''].join('\n'),
+    'm.md': ['alpha bravo charlie delta echo foxtrot golf but not the rest', 'filler', words, ''].join('\n'),
+  };
+  const v = (doc) => judgeAll(doc, files).filter((r) => r.kind === 'line')[0];
+  assert.equal(v(`\`p.md:1\` reads "${words}".`).status, 'GONE', 'a 5-word run of an 18-word quote is under a third: not PARTIAL');
+  assert.equal(v(`\`m.md:3\` reads "${words}".`).status, 'OK');
+  const moved = v(`\`m.md:1\` reads "${words}".`);
+  assert.equal(moved.status, 'MOVED', 'the quote stands verbatim on :3, so :1 is stale even though it holds 7 of its words');
+  assert.deepEqual(moved.movedTo, [':3']);
+  assert.match(v('`m.md:0` (`filler`).').note, /cites line 0; lines start at 1/);
+  assert.match(v('`m.md:3-1` (`filler`).').note, /cites the reversed range 3-1/);
+  assert.match(v('`m.md:99999999999999999999` (`filler`).').note, /too large to be a line/);
+  assert.equal(v('`m.md:4` (`filler`).').status, 'PAST-EOF');
+});
+
+test('table cells are separate sentences; curly quotes are snippets; ~~~ fences are skipped; a plain citation passes on its path', () => {
+  const row = refsOf('| `a.ts:3` | `export const answer = 42` |').filter((r) => r.kind === 'line');
+  assert.deepEqual(row[0].snippets, [], 'a snippet in the next cell does not pair');
+  const curly = refsOf('`a.ts:3` reads “export const answer = 42”.').filter((r) => r.kind === 'line');
+  assert.deepEqual(curly[0].snippets.map((s) => [s.text, s.form]), [['export const answer = 42', 'quote']]);
+  const fenced = refsOf(['~~~', '`src/in-tilde.ts:1`', '~~~', '', '```', 'a', '', '`src/in-backtick.ts:2`', '```', '', 'After: `src/out.ts:3`.'].join('\n'));
+  assert.deepEqual(fenced.map((r) => r.raw), ['src/out.ts:3']);
+  const plain = refsOf('Plain tools/z.py:40 and then `:44`.').filter((r) => r.kind === 'line');
+  assert.deepEqual(plain.map((r) => [r.path, r.inherited || '']), [['tools/z.py', ''], ['tools/z.py', 'last citation']]);
+});
+
 test('paths: extensions and folders count; extension-only, globs, routes and node: specifiers do not', () => {
   for (const p of ['src/v2/core/', 'tools/x/y.json', 'STATUS.md', '.gitignore', 'mcp/.gitignore']) assert.equal(L.looksLikePath(p), true, p);
   for (const p of ['.md', '.ts', 'docs/**', '/v2/porkchop/', 'node:test', 'GRID_PARAMS.nDep', 'km/s', '../a.ts', 'a b.md']) assert.equal(L.looksLikePath(p), false, p);
@@ -247,7 +294,7 @@ function buildRepo() {
   // the real first commit and record the removal in a later paragraph.
   write(REPO, 'a.ts', A_V2);
   fs.rmSync(path.join(REPO, 'gone.json'));
-  write(REPO, 'docs/NOTES.md', `${NOTES(C1.slice(0, 7), ABSENT, true)}\nCorrection: \`gone.json\` was deleted in the second commit.\n`);
+  write(REPO, 'docs/NOTES.md', `${NOTES(C1.slice(0, 7), ABSENT, true)}\nCorrection: \`gone.json\` was deleted in the second commit.\n\nPlanned: \`plans/future.json\` will be created in the next slice.\n`);
   g(REPO, 'add', '-A');
   g(REPO, 'commit', '-q', '-m', 'c2');
   C2 = g(REPO, 'rev-parse', 'HEAD');
@@ -328,9 +375,19 @@ test('allowlist and --accept-annotated silence named drift only; a reason is req
   assert.equal(json([REPO, '--doc', DOC, '--allow', allowFile]).rep.failing, 1);
   fs.writeFileSync(allowFile, JSON.stringify([{ doc: DOC, ref: 'a.ts:3', reason: ' ' }]));
   assert.equal(cli([REPO, '--doc', DOC, '--allow', allowFile]).code, 2);
+  // An entry's line must match: one for another line allows nothing.
+  fs.writeFileSync(allowFile, JSON.stringify([{ doc: DOC, ref: 'a.ts:3', line: 103, reason: 'wrong line' }]));
+  assert.equal(json([REPO, '--doc', DOC, '--allow', allowFile]).rep.failing, rep.failing, 'an entry for another line allows nothing');
+  fs.writeFileSync(allowFile, JSON.stringify([{ doc: DOC, ref: 'a.ts:3', line: 3, reason: 'right line' }]));
+  assert.equal(json([REPO, '--doc', DOC, '--allow', allowFile]).rep.failing, rep.failing - 1);
   const ann = json([REPO, '--doc', DOC, '--accept-annotated']).rep;
   assert.deepEqual(ann.findings.filter((f) => f.excused).map((f) => `${f.raw}@${f.line}`), ['gone.json@19', 'gone.json@25'], 'the annotated mention and the annotation itself');
   assert.equal(ann.failing, rep.failing - 2);
+  // A plan is not an annotation: it reads as one in its context, and still fails.
+  const plan = one(ann, DOC, 'plans/future.json');
+  assert.equal(plan.status, 'MISSING-PATH');
+  assert.equal(plan.context.planned, true);
+  assert.equal(plan.excused, undefined);
 });
 
 test('a shallow clone never calls a commit unreachable: missing commits read UNCHECKABLE and say why', () => {
@@ -449,6 +506,15 @@ test('the SLICE_9 amendment (snapshot) against .gitignore at 62ddb17: :17 MOVED 
   assert.match(giText[16], /^# Evidence artifacts/, 'line 17 is now a comment');
   assert.equal(giText[18], 'tools/slice9-research/data/*');
   assert.deepEqual(r.filter((x) => x.kind === 'path').map((x) => x.raw), ['tools/slice9-research/data/slice9-cutover-sample.json']);
+});
+
+test('STATUS.md:25 and :247 (snapshots): commits inside a code-span command and a code-span range are commits, not hashes', () => {
+  const commitsOf = (name) => {
+    const e = excerpt(name);
+    return L.extract(e.text, e.doc).refs.filter((r) => r.kind === 'commit').map((r) => [r.line + e.from - 1, r.hex, !!r.hashLike]);
+  };
+  assert.deepEqual(commitsOf('STATUS.md.25-25.md'), [[25, '3d395fb', false], [25, '81252f2', false]]);
+  assert.deepEqual(commitsOf('STATUS.md.247-247.md'), [[247, '22774cc', false], [247, '67c4c18', false]]);
 });
 
 test('STATUS.md C17 (snapshot): the escaped pipe is unescaped, and the cited hook line is GONE; only the comment keeps the pattern', () => {

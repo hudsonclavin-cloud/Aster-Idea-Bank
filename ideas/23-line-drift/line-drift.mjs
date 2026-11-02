@@ -7,6 +7,8 @@
 //
 // Options:
 //   --rev REV          read documents and targets from commit REV instead of the working tree
+//                      (ignore rules are not checked at a commit: an absent path reads
+//                      MISSING-PATH there, never IGNORED)
 //   --doc PATH         check this document (repeatable; replaces the default set)
 //   --json             print the full report as JSON
 //   --markdown         print the counts and the drift findings as Markdown tables
@@ -190,8 +192,9 @@ function commitEnv(git, commit, info) {
     },
     why: (p) => whyMap.get(p),
     tracked: (p, type) => (type === 'dir' ? dirs.has(p.replace(/\/$/, '')) : set.has(p)),
-    ignored: () => null,
-    forceAdded: () => null,
+    // A commit's tree carries no answer about the working tree's ignore rules: not checked.
+    ignored: () => undefined,
+    forceAdded: () => undefined,
     commit: undefined,
   };
 }

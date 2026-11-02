@@ -272,7 +272,7 @@
         const res = L.resolvePath(r.path, docPath, env, unitText);
         if (res.status !== 'FOUND') {
           status = 'UNCHECKABLE';
-          note = r.path ? `not checked: only ${filePath || 'no file'} is loaded here` : res.reason || 'no path';
+          note = !r.path ? res.reason || 'no path' : filePath ? `not checked: only ${filePath} is loaded here` : 'not checked: no file is loaded here';
         } else {
           const j = L.judge(r, env, unitText);
           status = j.status;
