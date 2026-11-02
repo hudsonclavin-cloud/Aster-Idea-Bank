@@ -27,6 +27,7 @@ const CONFIG = JSON.parse(fs.readFileSync(path.join(HERE, 'census.config.json'),
 const NODE_ORACLE = JSON.parse(fs.readFileSync(path.join(HERE, 'oracle/node-behaviour.json'), 'utf8'));
 const RUNNERS = JSON.parse(fs.readFileSync(path.join(HERE, 'oracle/runners.json'), 'utf8'));
 const PYTEST = fs.readFileSync(path.join(HERE, 'oracle/pytest.txt'), 'utf8');
+const PYTEST_COLLECTION = JSON.parse(fs.readFileSync(path.join(HERE, 'oracle/pytest-collection.json'), 'utf8'));
 
 const treeOf = (k) => { const p = PACKS[k]; return C.treeFromPack(p, p.base ? PACKS[p.base].config : p.config, PACKS); };
 const censusOf = (k, opts) => C.censusRepo(treeOf(k), opts || {});
@@ -150,7 +151,12 @@ test('PartForge @0974a62: node tests/run.mjs reaches what the real run.mjs launc
   assert.deepEqual(e.conditionalReach, ['headless/test/api.test.mjs', 'headless/test/http.test.mjs', 'headless/test/llm.test.mjs']);
   const f = r.files.find((x) => x.path === 'headless/test/api.test.mjs');
   const route = f.routes.find((x) => x.entry === e.id);
-  assert.match(route.conditions[0], /^tests\/run\.mjs:61 if \(fs\.existsSync\(path\.join\(hl, 'node_modules', 'openscad-wasm'\)\)\)$/);
+  // the condition is quoted with its own line, and the quote is that line of tests/run.mjs as written
+  const cm = /^tests\/run\.mjs:(\d+) (.+)$/.exec(route.conditions[0]);
+  assert.ok(cm, route.conditions[0]);
+  assert.equal(cm[1], '59');
+  assert.equal(PF_RUNNER.split('\n')[58].trim(), cm[2] + '{');
+  assert.match(cm[2], /^if\(fs\.existsSync\(path\.join\(hl, 'node_modules', 'openscad-wasm'\)\)\)$/);
   assert.equal(e.sources.length, 21);
 });
 
@@ -187,6 +193,54 @@ test('Skyhook @34935cb: pytest reach and the openpyxl skips match real pytest co
   // the files pytest collected in venv A are exactly the other four
   const collectedA = sorted(Array.from(venvA.matchAll(/^\s+\d+ (tests\/test_\w+\.py)$/gm)).map((m) => m[1]));
   assert.deepEqual(collectedA, collected.filter((p) => !skipped.includes(p)));
+});
+
+test('pytest model matches real pytest 9.2.0 collection on every recorded case (norecursedirs, virtualenvs, *_test.py, explicit paths)', () => {
+  const O = PYTEST_COLLECTION;
+  assert.match(O.pytest, /^pytest 9\.2\.0$/);
+  const tree = C.makeTree({ id: 'p', files: O.files, read: (f) => (f.endsWith('.py') ? 'def test_it():\n    pass\n' : '') });
+  for (const c of O.cases) {
+    const r = C.evaluateCommand(tree, 'pytest ' + c.args.map((a) => `'${a}'`).join(' '), {});
+    assert.deepEqual(r.notUnderstood, [], c.args.join(' '));
+    assert.deepEqual(sorted(r.reach.concat(r.nonCandidates)), c.collected, `pytest ${c.args.join(' ')}: collected`);
+    assert.equal(r.broken.length > 0, c.exit !== 0, `pytest ${c.args.join(' ')}: fails`);
+  }
+  assert.equal(O.cases.length, 13);
+  // the inventory's Python rule is pytest's default python_files (test_*.py, *_test.py): every file real
+  // pytest collected while recursing is a candidate, and names it ignores (Test_cap.py, testing.py,
+  // tests_plural.py, helper.py) are not; node_modules is never a candidate
+  const inv = C.inventory(tree);
+  const recursed = new Set(O.cases.filter((c) => !c.args.some((a) => a.endsWith('.py') || a.includes('::'))).flatMap((c) => c.collected));
+  for (const f of recursed) assert.ok(inv.has(f), `${f} is collected by pytest but is not a candidate`);
+  assert.ok(recursed.has('t/b_test.py') && recursed.has('t/sub/deep/d_test.py'), 'the record exercises *_test.py');
+  for (const f of ['t/Test_cap.py', 't/testing.py', 't/tests_plural.py', 'helper.py', 't/helper2.py', 't/node_modules/test_nm.py']) assert.ok(!inv.has(f), f);
+  // an importorskip inside a test skips that test, not the file: Skyhook's tests/test_finance_tiers.py has
+  // one at :49 (indented) and real pytest still collects its 5 tests without openpyxl (oracle/pytest.txt)
+  assert.match(PYTEST.split('## venv b')[0], /^\s+5 tests\/test_finance_tiers\.py$/m);
+  const fx2 = C.makeTree({ id: 'q', files: ['tests/test_in.py', 'tests/test_top.py'], read: (f) => (f.endsWith('test_in.py') ? 'import pytest\n\ndef test_x():\n    pytest.importorskip("openpyxl")\n' : 'import pytest\npytest.importorskip("openpyxl")\n') });
+  const q = C.evaluateCommand(fx2, 'pytest tests', {});
+  assert.deepEqual(q.routes['tests/test_in.py'][0].conditions, []);
+  assert.match(q.routes['tests/test_top.py'][0].conditions[0], /^tests\/test_top\.py:2 pytest\.importorskip\("openpyxl"\)/);
+});
+
+test('a tracked file whose text the tree cannot give is refused, not reported broken or empty', () => {
+  // the Skyhook pack keeps only what the census read at build time: tools/twin/physics.js and
+  // scripts/generate_golden.py are tracked but carry no text there
+  const t = treeOf('skyhook');
+  assert.ok(t.fileSet.has('tools/twin/physics.js') && t.read('tools/twin/physics.js') == null);
+  for (const cmd of ['node tools/twin/physics.js', 'python3 scripts/generate_golden.py']) {
+    const r = C.evaluateCommand(t, cmd, { node: 22 });
+    assert.deepEqual(r.broken, [], cmd);
+    assert.equal(r.notUnderstood.length, 1, cmd);
+    assert.match(r.notUnderstood[0].why, /text is not available here/);
+  }
+  // a file that is not tracked at all is still broken
+  assert.match(C.evaluateCommand(t, 'node tools/twin/nope.mjs', { node: 22 }).broken[0].why, /not in the tracked tree/);
+  // the same for configuration a runner would read: a tsconfig, a package.json, a conftest
+  const tree = C.makeTree({ id: 'x', files: ['tsconfig.json', 'a/package.json', 'p/conftest.py', 'p/test_q.py'], read: (f) => (f === 'p/test_q.py' ? 'def test_x():\n    pass\n' : null) });
+  assert.match(C.evaluateCommand(tree, 'tsc -p .', {}).notUnderstood[0].why, /not available/);
+  assert.match(C.evaluateCommand(tree, 'npm test', { cwd: 'a' }).notUnderstood[0].why, /not available/);
+  assert.match(C.evaluateCommand(tree, 'pytest p', {}).notUnderstood[0].why, /not available/);
 });
 
 test('PartForge @0974a62 with headless/node_modules installed: run.mjs launches all 13, as the census\'s conditional route says', () => {
@@ -264,6 +318,17 @@ test('PartForge census: no workflow, 27 test files, 15 CI-less, 12 manual, serve
   assert.deepEqual([r.counts.candidates, r.counts.ci, r.counts['ci-less'], r.counts.manual, r.counts.orphan], [27, 0, 15, 12, 0]);
   assert.ok(!r.files.some((f) => f.path === 'tests/harness/server.mjs'));
   assert.ok(r.files.filter((f) => f.class === 'manual').every((f) => f.path.startsWith('tests/harness/')));
+  // tests/run.mjs:59 reaches the headless trio only conditionally, but headless/package.json:18 (npm test
+  // there) launches the same three unconditionally, so at the ci-less level they are not conditional
+  const pkg = JSON.parse(PACKS.partforge.contents['headless/package.json']);
+  assert.equal(pkg.scripts.test, 'node --test test/api.test.mjs test/http.test.mjs test/llm.test.mjs');
+  for (const p of ['headless/test/api.test.mjs', 'headless/test/http.test.mjs', 'headless/test/llm.test.mjs']) {
+    const f = r.files.find((x) => x.path === p);
+    assert.equal(f.class, 'ci-less');
+    assert.equal(f.conditional, false, p);
+    assert.ok(f.routes.some((x) => x.conditions.length) && f.routes.some((x) => !x.conditions.length));
+  }
+  assert.equal(r.counts.conditional, 0);
 });
 
 test('Skyhook census: tools/twin/verify.mjs is the one orphan, and exit is 1 for it', () => {
@@ -305,13 +370,15 @@ test('fixture: a CI runner, a narrower npm test, a doc that calls npm test the s
     '.github/workflows/ci.yml': WF('node tools/run-tests.mjs'),
     'tools/run-tests.mjs': runner,
     'tests/a.test.mjs': T, 'tests/b.test.mjs': T, 'tests/deep/c.test.mjs': T, 'tests/docs/skipped.test.mjs': T,
-    'lib/x.test.mjs': T,
+    'lib/x.test.mjs': T, 'lib/y.test.mjs': T,
     'CONTRIBUTING.md': 'Before any commit, run the test suite: `npm test`.\n',
+    // not drift: the CI command itself (as many files as CI), one file, and a set that leaves CI's reach
+    'RUN.md': 'Everything: `node tools/run-tests.mjs`\n\nOne file: `node --test tests/a.test.mjs`\n\nWith lib: `node --test tests/a.test.mjs lib/y.test.mjs`\n',
   });
   const r = C.censusRepo(tree, {});
   const cls = Object.fromEntries(r.files.map((f) => [f.path, f.class]));
-  assert.deepEqual(cls, { 'lib/x.test.mjs': 'orphan', 'tests/a.test.mjs': 'ci', 'tests/b.test.mjs': 'ci', 'tests/deep/c.test.mjs': 'ci', 'tests/docs/skipped.test.mjs': 'orphan' });
-  assert.equal(r.drift.length, 1);
+  assert.deepEqual(cls, { 'lib/x.test.mjs': 'orphan', 'lib/y.test.mjs': 'ci-less', 'tests/a.test.mjs': 'ci', 'tests/b.test.mjs': 'ci', 'tests/deep/c.test.mjs': 'ci', 'tests/docs/skipped.test.mjs': 'orphan' });
+  assert.equal(r.drift.length, 1, r.drift.map((d) => d.command).join(' | '));
   assert.deepEqual([r.drift[0].command, r.drift[0].reach, r.drift[0].ciReach, r.drift[0].missing], ['npm test', 2, 3, ['tests/deep/c.test.mjs']]);
   assert.deepEqual(r.drift[0].claimSources, ['CONTRIBUTING.md:1']);
 });
@@ -365,13 +432,18 @@ test('documented commands: placeholders are skipped, cd chains are followed, a m
   const tree = fx({
     'headless/package.json': JSON.stringify({ scripts: { 'test:parity': 'node --test test/p.test.mjs' } }),
     'headless/test/p.test.mjs': T,
-    'docs/HOW.md': 'Run `cd headless && npm run test:parity`, then `node --test <file>`, then `node --test tests/gone.test.mjs`.\n',
+    'docs/HOW.md': 'Run `cd headless && npm run test:parity`, then `node --test <file>`, then `node --test tests/gone.test.mjs`, then `cd nowhere && npm run test:parity`.\n',
   });
   const r = C.censusRepo(tree, { localNode: 24 });
   assert.equal(r.files[0].class, 'ci-less');
   const cmds = r.entries.filter((e) => e.kind === 'doc').map((e) => e.command);
-  assert.ok(cmds.includes('cd headless && npm run test:parity'));
-  assert.ok(!cmds.some((c) => /<file>/.test(c)), 'placeholder skipped');
+  // the placeholder line is dropped whole (normalizing would otherwise read `<file>` as a redirection
+  // and leave a bare `node --test`)
+  assert.deepEqual(sorted(cmds), ['cd headless && npm run test:parity', 'cd nowhere && npm run test:parity', 'node --test tests/gone.test.mjs']);
+  // a cd that fails stops the && chain: the npm run after it reaches nothing
+  const nowhere = r.entries.find((e) => e.command === 'cd nowhere && npm run test:parity');
+  assert.deepEqual(nowhere.reach, []);
+  assert.match(nowhere.broken[0].why, /no such directory/);
   const gone = r.docBroken.find((d) => /gone/.test(d.command));
   assert.match(gone.why[0], /Could not find/);
 });

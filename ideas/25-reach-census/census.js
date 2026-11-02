@@ -799,6 +799,8 @@
       return r.abs != null ? r.abs : join(normalize(cwd), r.rel);
     };
     // conditions from enclosing if/else blocks around an offset
+    const headerLine = (b) => { const k = m.nc.slice(b.headerAt).search(/\S/); return lineOf(b.headerAt + (k < 0 ? 0 : k)); };
+    const quoteHeader = (h) => h.replace(/^\}\s*/, '').replace(/^else\s+(?=if\b)/, '').replace(/\s*\n\s*/g, ' ');
     const conditionsAt = (at) => {
       const conds = [];
       for (const b of enclosing(blocks, at)) {
@@ -807,7 +809,8 @@
         if (cm) {
           const ex = /^fs\.existsSync\(([\s\S]*)\)$/.exec(cm[1].trim()) || /^existsSync\(([\s\S]*)\)$/.exec(cm[1].trim());
           const p = ex ? absPath(ex[1]) : null;
-          conds.push({ text: `if (${cm[1].trim()})`, path: p, negated: false });
+          // quoted as written, with the line the condition is on (not the launch's line)
+          conds.push({ text: quoteHeader(h), line: headerLine(b), path: p, negated: false });
           continue;
         }
         if (/^(?:\}\s*)?else$/.test(h)) {
@@ -816,7 +819,7 @@
           if (prev) {
             const pc = /if\s*\(([\s\S]*)\)$/.exec(prev.header);
             const ex = pc && (/^fs\.existsSync\(([\s\S]*)\)$/.exec(pc[1].trim()) || /^existsSync\(([\s\S]*)\)$/.exec(pc[1].trim()));
-            conds.push({ text: `else of if (${pc ? pc[1].trim() : '?'})`, path: ex ? absPath(ex[1]) : null, negated: true });
+            conds.push({ text: `else of ${quoteHeader(prev.header)}`, line: headerLine(prev), path: ex ? absPath(ex[1]) : null, negated: true });
           } else conds.push({ text: 'else', path: null, negated: true, unknown: true });
           continue;
         }
@@ -897,7 +900,7 @@
       }
       if (!ok) continue;
       if (!scriptSeen) { res.problems.push(`line ${l.line}: a node launch with no file argument`); continue; }
-      res.launches.push({ line: l.line, test: flags.includes('--test'), flags, files, conditions: conds.map((c) => ({ text: c.text, path: c.path, negated: c.negated })) });
+      res.launches.push({ line: l.line, test: flags.includes('--test'), flags, files, conditions: conds.map((c) => ({ text: c.text, line: c.line, path: c.path, negated: c.negated })) });
     }
     if (res.problems.length) res.kind = 'not-understood';
     return res;
@@ -1227,6 +1230,10 @@
     if (!script) { ctx.acc.others.push({ what: 'node (REPL)', via: ctx.via.join(' → ') }); return; }
     return evalNodeScript(ctx, script.text, conds);
   }
+  // A tracked file whose text this tree cannot give (a pack keeps only the files the census read
+  // when it was built; a checkout file that cannot be read) is refused, never guessed as empty.
+  const NO_TEXT = 'its text is not available here (a page pack keeps only the files the census read when it was built; the CLI over a checkout reads it)';
+  function noText(ctx, p) { return ctx.tree.fileSet.has(p) && ctx.tree.read(p) == null; }
   function evalNodeScript(ctx, scriptText, conds) {
     const v = view(ctx.tree, ctx.virtual);
     const p = resolveFrom(ctx.cwd, scriptText);
@@ -1240,7 +1247,7 @@
     if (cands && cands.has(src)) { ctx.conditions.push(...conds); addReach(ctx, p, `node ${scriptText}`); ctx.conditions.splice(ctx.conditions.length - conds.length, conds.length); return; }
     if (ctx.depth > 6) { ctx.acc.notUnderstood.push({ what: p, why: 'runner nesting deeper than 6', via: ctx.via.join(' → ') }); return; }
     const an = analyzeNodeScript(ctx.tree, src, ctx.cwd);
-    if (an.kind === 'missing') { ctx.acc.broken.push({ what: `node ${scriptText}`, why: 'cannot read the script', via: ctx.via.join(' → ') }); return; }
+    if (an.kind === 'missing') { ctx.acc.notUnderstood.push({ what: `node ${scriptText}`, why: NO_TEXT, via: ctx.via.join(' → ') }); return; }
     if (an.kind === 'other') {
       const s = ctx.tree.read(src) || '';
       if (/--test\b|node:test|\.test\.(m|c)?js|pytest/.test(maskJs(s).nc) && /\b(spawn|spawnSync|execFile|execFileSync|fork|import\()/.test(s)) {
@@ -1254,7 +1261,7 @@
     ctx.via.push(`node ${src}`);
     ctx.depth++;
     for (const l of an.launches) {
-      const lconds = l.conditions.map((c) => ({ text: `${src}:${l.line} ${c.text}`, path: c.path, negated: c.negated }));
+      const lconds = l.conditions.map((c) => ({ text: `${src}:${c.line || l.line} ${c.text}`, path: c.path, negated: c.negated }));
       for (const f of l.files) {
         const fv = view(ctx.tree, ctx.virtual);
         if (!fv.isFile(f.path)) {
@@ -1391,6 +1398,7 @@
       if (owners.length === 1) { pkg = { dir: dirname(owners[0]), path: owners[0] }; ctx.acc.notes.push({ what: `npm run ${name}`, why: `read against ${owners[0]}, the only package.json with a "${name}" script` }); }
     }
     if (!pkg) { ctx.acc.broken.push({ what: `npm run ${name}`, why: `no package.json at or above ${ctx.cwd || '.'}`, via: ctx.via.join(' → ') }); return; }
+    if (noText(ctx, pkg.path)) { ctx.acc.notUnderstood.push({ what: pkg.path, why: NO_TEXT, via: ctx.via.join(' → ') }); return; }
     let json;
     try { json = JSON.parse(ctx.tree.read(pkg.path)); } catch (e) { ctx.acc.notUnderstood.push({ what: pkg.path, why: 'package.json does not parse', via: ctx.via.join(' → ') }); return; }
     const scripts = (json && json.scripts) || {};
@@ -1461,6 +1469,7 @@
       let cfgPath;
       if (project) { const p = resolveFrom(ctx.cwd, project); cfgPath = p != null && ctx.tree.fileSet.has(p) ? p : join(p || '', 'tsconfig.json'); }
       else { let d = ctx.cwd; for (;;) { if (ctx.tree.fileSet.has(join(d, 'tsconfig.json'))) { cfgPath = join(d, 'tsconfig.json'); break; } if (d === '') break; d = dirname(d); } }
+      if (cfgPath && noText(ctx, cfgPath)) { ctx.acc.notUnderstood.push({ what: cfgPath, why: NO_TEXT, via: ctx.via.join(' → ') }); return; }
       const text = cfgPath ? ctx.tree.read(cfgPath) : null;
       if (text == null) { ctx.acc.broken.push({ what: label, why: 'no tsconfig.json found', via: ctx.via.join(' → ') }); return; }
       let cfg;
@@ -1528,6 +1537,7 @@
     for (;;) {
       for (const f of ['pytest.ini', '.pytest.ini', 'pyproject.toml', 'tox.ini', 'setup.cfg']) {
         const p = join(d, f);
+        if (noText(ctx, p)) { ctx.acc.notUnderstood.push({ what: label, why: `${p}: ${NO_TEXT}`, via: ctx.via.join(' → ') }); return; }
         const s = ctx.tree.fileSet.has(p) ? ctx.tree.read(p) : null;
         if (s != null && (f.includes('pytest') || /\[(tool\.pytest\.ini_options|pytest|tool:pytest)\]/.test(s))) { ctx.acc.notUnderstood.push({ what: label, why: `pytest configuration in ${p} is not modelled`, via: ctx.via.join(' → ') }); return; }
       }
@@ -1539,6 +1549,9 @@
     const found = [];
     const ignoreAbs = ignores.map((x) => resolveFrom(ctx.cwd, x));
     const norecurse = (name) => PYTEST_NORECURSE.some((g) => segRegex(g.replace(/[{}]/g, '\\$&')).test(name));
+    // pytest also skips a virtualenv it meets while recursing (not one named on the command line):
+    // _pytest/main.py _in_venv, pytest 9.2.0: pyvenv.cfg, or conda-meta/history
+    const inVenv = (d) => v.isFile(join(d, 'pyvenv.cfg')) || v.isFile(join(d, 'conda-meta', 'history'));
     for (const s of starts) {
       const p = resolveFrom(ctx.cwd, s);
       if (p == null || outside(p)) { ctx.acc.broken.push({ what: label, why: `path ${s} is outside the tree`, via: ctx.via.join(' → ') }); continue; }
@@ -1549,6 +1562,7 @@
         const e = v.list(dir);
         const conftest = join(dir, 'conftest.py');
         if (v.isFile(conftest)) {
+          if (noText(ctx, conftest)) { ctx.acc.notUnderstood.push({ what: label, why: `${conftest}: ${NO_TEXT}`, via: ctx.via.join(' → ') }); return 'stop'; }
           const c = ctx.tree.read(conftest) || '';
           if (/collect_ignore|pytest_ignore_collect|pytest_collect_file|pytest_collection_modifyitems|pytest_pycollect/.test(c)) { ctx.acc.notUnderstood.push({ what: label, why: `${conftest} changes collection`, via: ctx.via.join(' → ') }); return 'stop'; }
         }
@@ -1557,7 +1571,7 @@
           if (ignoreAbs.includes(fp)) continue;
           if (/^test_.*\.py$/.test(f) || /_test\.py$/.test(f)) found.push(fp);
         }
-        for (const sub of e.dirs) { if (norecurse(sub)) continue; if (rec(join(dir, sub)) === 'stop') return 'stop'; }
+        for (const sub of e.dirs) { if (norecurse(sub) || inVenv(join(dir, sub))) continue; if (rec(join(dir, sub)) === 'stop') return 'stop'; }
         return null;
       };
       if (rec(p) === 'stop') return;
@@ -1573,6 +1587,7 @@
   // Module-level skips make a reached file contribute nothing. Only column-0 statements count
   // (an importorskip inside a fixture skips some tests, not the file).
   function pythonFileConditions(tree, f, installs) {
+    if (tree.fileSet.has(f) && tree.read(f) == null) return [{ text: `${f}: its text is not available here, so a module-level skip cannot be ruled out`, module: null, satisfied: null }];
     const src = tree.read(f) || '';
     const out = [];
     const re = /^(?:pytest\.importorskip|importorskip)\(\s*(['"])([\w.]+)\1/gm;
@@ -1607,6 +1622,7 @@
     const p = resolveFrom(ctx.cwd, script);
     if (p == null || !ctx.tree.fileSet.has(p)) { ctx.acc.broken.push({ what: `python ${script}`, why: 'script not in the tracked tree', via: ctx.via.join(' → ') }); return; }
     if (ctx.candidates.has(p)) { addReach(ctx, p, `python ${script}`, pythonFileConditions(ctx.tree, p, ctx.installs)); return; }
+    if (noText(ctx, p)) { ctx.acc.notUnderstood.push({ what: `python ${script}`, why: NO_TEXT, via: ctx.via.join(' → ') }); return; }
     const src = ctx.tree.read(p) || '';
     if (/\b(pytest\.main|unittest\.main|TextTestRunner|TestLoader)\b/.test(src) || (/\bsubprocess\b/.test(src) && /pytest|unittest/.test(src))) {
       ctx.acc.notUnderstood.push({ what: p, why: 'Python script that may run tests in a way the census does not model', via: ctx.via.join(' → ') });
@@ -1962,7 +1978,7 @@
           for (const f of group) {
             if (f.allowed) w(`       allowed: ${f.path} — ${f.allowed.reason}${f.allowed.cite ? ' (' + f.allowed.cite + ')' : ''}`);
             if (f.declared && cls === 'orphan') w(`       ${f.path}: candidate because ${f.declared}`);
-            if (f.mentions && f.mentions.length && cls === 'orphan') w(`       named (not as a command) at ${f.mentions.slice(0, 5).map((m) => m.file + ':' + m.line).join(', ')}${f.mentions.length > 5 ? ', …' : ''}`);
+            if (f.mentions && f.mentions.length && cls === 'orphan') w(`       named (not as a command) in docs/config at ${f.mentions.slice(0, 5).map((m) => m.file + ':' + m.line).join(', ')}${f.mentions.length > 5 ? ', …' : ''}`);
           }
         }
       }

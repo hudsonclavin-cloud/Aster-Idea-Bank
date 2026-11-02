@@ -7,11 +7,7 @@
    "value": {
     "name": "CI",
     "on": {
-     "push": {
-      "branches": [
-       "main"
-      ]
-     },
+     "push": {"branches":["main"]},
      "pull_request": "",
      "workflow_dispatch": ""
     },
@@ -20,73 +16,41 @@
       "name": "tsc --noEmit",
       "runs-on": "ubuntu-latest",
       "steps": [
-       {
-        "name": "Checkout",
-        "uses": "actions/checkout@v4"
-       },
+       {"name":"Checkout","uses":"actions/checkout@v4"},
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24",
-         "cache": "npm"
-        }
+        "with": {"node-version":"24","cache":"npm"}
        },
-       {
-        "name": "Install dependencies",
-        "run": "npm ci"
-       },
-       {
-        "name": "Typecheck (tsc --noEmit)",
-        "run": "npx tsc --noEmit"
-       }
+       {"name":"Install dependencies","run":"npm ci"},
+       {"name":"Typecheck (tsc --noEmit)","run":"npx tsc --noEmit"}
       ]
      },
      "build": {
       "name": "build",
       "runs-on": "ubuntu-latest",
       "steps": [
-       {
-        "name": "Checkout",
-        "uses": "actions/checkout@v4"
-       },
+       {"name":"Checkout","uses":"actions/checkout@v4"},
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24",
-         "cache": "npm"
-        }
+        "with": {"node-version":"24","cache":"npm"}
        },
-       {
-        "name": "Install dependencies",
-        "run": "npm ci"
-       },
-       {
-        "name": "Build",
-        "run": "npm run build"
-       }
+       {"name":"Install dependencies","run":"npm ci"},
+       {"name":"Build","run":"npm run build"}
       ]
      },
      "golden-numbers": {
       "name": "golden-numbers (df3225f guard)",
       "runs-on": "ubuntu-latest",
       "steps": [
-       {
-        "name": "Checkout",
-        "uses": "actions/checkout@v4"
-       },
+       {"name":"Checkout","uses":"actions/checkout@v4"},
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24"
-        }
+        "with": {"node-version":"24"}
        },
-       {
-        "name": "Golden-numbers test (payloadAtC3 / deliveredMassKg)",
-        "run": "node --test tests/v2-golden/launch-vehicles.golden.test.mjs"
-       }
+       {"name":"Golden-numbers test (payloadAtC3 / deliveredMassKg)","run":"node --test tests/v2-golden/launch-vehicles.golden.test.mjs"}
       ]
      },
      "full-tests": {
@@ -96,26 +60,15 @@
        {
         "name": "Checkout",
         "uses": "actions/checkout@v4",
-        "with": {
-         "fetch-depth": "0"
-        }
+        "with": {"fetch-depth":"0"}
        },
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24",
-         "cache": "npm"
-        }
+        "with": {"node-version":"24","cache":"npm"}
        },
-       {
-        "name": "Install dependencies",
-        "run": "npm ci"
-       },
-       {
-        "name": "Full test suite",
-        "run": "node tools/run-tests.mjs"
-       }
+       {"name":"Install dependencies","run":"npm ci"},
+       {"name":"Full test suite","run":"node tools/run-tests.mjs"}
       ]
      }
     }
@@ -127,45 +80,23 @@
    "value": {
     "name": "Physics Verification",
     "on": {
-     "push": {
-      "branches": [
-       "main",
-       "dev"
-      ]
-     },
-     "pull_request": {
-      "branches": [
-       "main"
-      ]
-     }
+     "push": {"branches":["main","dev"]},
+     "pull_request": {"branches":["main"]}
     },
     "jobs": {
      "test": {
       "runs-on": "ubuntu-latest",
       "name": "Rev A Physics Assertions",
       "steps": [
-       {
-        "uses": "actions/checkout@v4"
-       },
+       {"uses":"actions/checkout@v4"},
        {
         "name": "Set up Python",
         "uses": "actions/setup-python@v5",
-        "with": {
-         "python-version": "3.11"
-        }
+        "with": {"python-version":"3.11"}
        },
-       {
-        "name": "Install pytest",
-        "run": "pip install pytest openpyxl"
-       },
-       {
-        "name": "Run Rev A physics assertions",
-        "run": "pytest tests/ -v --tb=short"
-       },
-       {
-        "name": "Verify canonical parameters load cleanly",
-        "run": "python3 physics/skyhook_physics.py"
-       }
+       {"name":"Install pytest","run":"pip install pytest openpyxl"},
+       {"name":"Run Rev A physics assertions","run":"pytest tests/ -v --tb=short"},
+       {"name":"Verify canonical parameters load cleanly","run":"python3 physics/skyhook_physics.py"}
       ]
      }
     }
@@ -177,11 +108,7 @@
    "value": {
     "name": "CI",
     "on": {
-     "push": {
-      "branches": [
-       "main"
-      ]
-     },
+     "push": {"branches":["main"]},
      "pull_request": "",
      "workflow_dispatch": ""
     },
@@ -190,99 +117,55 @@
       "name": "tsc --noEmit",
       "runs-on": "ubuntu-latest",
       "steps": [
-       {
-        "name": "Checkout",
-        "uses": "actions/checkout@v4"
-       },
+       {"name":"Checkout","uses":"actions/checkout@v4"},
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24",
-         "cache": "npm"
-        }
+        "with": {"node-version":"24","cache":"npm"}
        },
-       {
-        "name": "Install dependencies",
-        "run": "npm ci"
-       },
-       {
-        "name": "Typecheck (tsc --noEmit)",
-        "run": "npx tsc --noEmit"
-       }
+       {"name":"Install dependencies","run":"npm ci"},
+       {"name":"Typecheck (tsc --noEmit)","run":"npx tsc --noEmit"}
       ]
      },
      "build": {
       "name": "build",
       "runs-on": "ubuntu-latest",
       "steps": [
-       {
-        "name": "Checkout",
-        "uses": "actions/checkout@v4"
-       },
+       {"name":"Checkout","uses":"actions/checkout@v4"},
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24",
-         "cache": "npm"
-        }
+        "with": {"node-version":"24","cache":"npm"}
        },
-       {
-        "name": "Install dependencies",
-        "run": "npm ci"
-       },
-       {
-        "name": "Build",
-        "run": "npm run build"
-       }
+       {"name":"Install dependencies","run":"npm ci"},
+       {"name":"Build","run":"npm run build"}
       ]
      },
      "golden-numbers": {
       "name": "golden-numbers (df3225f guard)",
       "runs-on": "ubuntu-latest",
       "steps": [
-       {
-        "name": "Checkout",
-        "uses": "actions/checkout@v4"
-       },
+       {"name":"Checkout","uses":"actions/checkout@v4"},
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24"
-        }
+        "with": {"node-version":"24"}
        },
-       {
-        "name": "Golden-numbers test (payloadAtC3 / deliveredMassKg)",
-        "run": "node --test tests/v2-golden/launch-vehicles.golden.test.mjs"
-       }
+       {"name":"Golden-numbers test (payloadAtC3 / deliveredMassKg)","run":"node --test tests/v2-golden/launch-vehicles.golden.test.mjs"}
       ]
      },
      "full-tests": {
       "name": "full-tests",
       "runs-on": "ubuntu-latest",
       "steps": [
-       {
-        "name": "Checkout",
-        "uses": "actions/checkout@v4"
-       },
+       {"name":"Checkout","uses":"actions/checkout@v4"},
        {
         "name": "Set up Node",
         "uses": "actions/setup-node@v4",
-        "with": {
-         "node-version": "24",
-         "cache": "npm"
-        }
+        "with": {"node-version":"24","cache":"npm"}
        },
-       {
-        "name": "Install dependencies",
-        "run": "npm ci"
-       },
-       {
-        "name": "Full test suite",
-        "run": "node tools/run-tests.mjs"
-       }
+       {"name":"Install dependencies","run":"npm ci"},
+       {"name":"Full test suite","run":"node tools/run-tests.mjs"}
       ]
      }
     }
@@ -292,27 +175,21 @@
    "name": "literal block, keep indentation",
    "text": "a:\n  run: |\n    one \\\n      two\n    three\n",
    "value": {
-    "a": {
-     "run": "one \\\n  two\nthree\n"
-    }
+    "a": {"run":"one \\\n  two\nthree\n"}
    }
   },
   {
    "name": "folded block, strip",
    "text": "a:\n  run: >-\n    one\n    two\n\n    three\n",
    "value": {
-    "a": {
-     "run": "one two\nthree"
-    }
+    "a": {"run":"one two\nthree"}
    }
   },
   {
    "name": "literal block, keep trailing",
    "text": "a:\n  run: |+\n    one\n\n",
    "value": {
-    "a": {
-     "run": "one\n\n"
-    }
+    "a": {"run":"one\n\n"}
    }
   },
   {
@@ -322,13 +199,9 @@
     "steps": [
      {
       "name": "x",
-      "with": {
-       "node-version": "24"
-      }
+      "with": {"node-version":"24"}
      },
-     {
-      "run": "echo hi"
-     }
+     {"run":"echo hi"}
     ]
    }
   },
@@ -337,48 +210,25 @@
    "text": "on: { push: { branches: [main, dev] } }\nb: [ \"a,b\", 'c' ]\n",
    "value": {
     "on": {
-     "push": {
-      "branches": [
-       "main",
-       "dev"
-      ]
-     }
+     "push": {"branches":["main","dev"]}
     },
-    "b": [
-     "a,b",
-     "c"
-    ]
+    "b": ["a,b","c"]
    }
   },
   {
    "name": "quotes and comments",
    "text": "a: 'it''s'  # c\nb: \"x # y\"\nc: x#y\nd: ~\ne:\n",
-   "value": {
-    "a": "it's",
-    "b": "x # y",
-    "c": "x#y",
-    "d": "~",
-    "e": ""
-   }
+   "value": {"a":"it's","b":"x # y","c":"x#y","d":"~","e":""}
   },
   {
    "name": "sequence of scalars at key indent",
    "text": "branches:\n- main\n- \"dev\"\n",
-   "value": {
-    "branches": [
-     "main",
-     "dev"
-    ]
-   }
+   "value": {"branches":["main","dev"]}
   },
   {
    "name": "block scalar in a sequence item",
    "text": "steps:\n  - |\n    echo a\n    echo b\n",
-   "value": {
-    "steps": [
-     "echo a\necho b\n"
-    ]
-   }
+   "value": {"steps":["echo a\necho b\n"]}
   }
  ],
  "about": "PyYAML BaseLoader parse of each document (all scalars strings). Written by oracle/yaml-oracle.mjs.",

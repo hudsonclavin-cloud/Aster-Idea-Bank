@@ -100,4 +100,12 @@ for (const commit of ['0974a62b309b8cf7acd33771b49e9357d4d191f4', '60a90cd0475df
   record.runs.push({ repo: 'skyhook', commit, command: 'node tools/twin/verify.mjs', exit: r.status, seconds: Math.round((Date.now() - t0) / 100) / 10, lastLine: (r.stdout || '').trim().split('\n').pop() });
   fs.rmSync(dir, { recursive: true, force: true });
 }
-process.stdout.write(JSON.stringify(record, null, 1) + '\n');
+process.stdout.write(compactJson(record) + '\n');
+
+// Pretty JSON with every array or object of plain values on one line (records stay diffable, and small).
+function compactJson(v, ind = '') {
+  const flat = (x) => x === null || typeof x !== 'object' || (Array.isArray(x) ? x : Object.values(x)).every((y) => y === null || typeof y !== 'object' || (Array.isArray(y) && y.every((z) => z === null || typeof z !== 'object')));
+  if (v === null || typeof v !== 'object' || flat(v)) return JSON.stringify(v);
+  if (Array.isArray(v)) return '[\n' + v.map((x) => ind + ' ' + compactJson(x, ind + ' ')).join(',\n') + '\n' + ind + ']';
+  return '{\n' + Object.keys(v).map((k) => ind + ' ' + JSON.stringify(k) + ': ' + compactJson(v[k], ind + ' ')).join(',\n') + '\n' + ind + '}';
+}

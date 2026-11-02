@@ -63,5 +63,13 @@ if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(new URL(im
     about: 'Which files real `node --test <args>` ran in a fixture tree, per Node version. Written by oracle/node-oracle.mjs; compared against census.js by census.test.mjs.',
     recorded: new Date().toISOString().slice(0, 10), files: FILES, runs: bins.map(run),
   };
-  process.stdout.write(JSON.stringify(record, null, 1) + '\n');
+  process.stdout.write(compactJson(record) + '\n');
+}
+
+// Pretty JSON with every array or object of plain values on one line (records stay diffable, and small).
+function compactJson(v, ind = '') {
+  const flat = (x) => x === null || typeof x !== 'object' || (Array.isArray(x) ? x : Object.values(x)).every((y) => y === null || typeof y !== 'object' || (Array.isArray(y) && y.every((z) => z === null || typeof z !== 'object')));
+  if (v === null || typeof v !== 'object' || flat(v)) return JSON.stringify(v);
+  if (Array.isArray(v)) return '[\n' + v.map((x) => ind + ' ' + compactJson(x, ind + ' ')).join(',\n') + '\n' + ind + ']';
+  return '{\n' + Object.keys(v).map((k) => ind + ' ' + JSON.stringify(k) + ': ' + compactJson(v[k], ind + ' ')).join(',\n') + '\n' + ind + '}';
 }

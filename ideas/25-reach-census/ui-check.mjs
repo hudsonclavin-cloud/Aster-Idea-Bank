@@ -79,6 +79,8 @@ async function main() {
       ok(fx.includes('Doc drift: node --test tests/*.test.mjs') && fx.includes('Presented as the test suite at AGENTS.md:32, AGENTS.md:177'), 'findings: doc drift with its claim sources');
       ok(fx.includes('node --test tools/slice16-harness/test/') && fx.includes('Cannot find module'), 'findings: the RUNBOOK directory command reaches nothing under Node 24');
       ok(fx.includes('9 CI-less files'), 'findings: 9 CI-less files');
+      const nu = R.aster.docNotUnderstood.length;
+      ok(nu > 0 && fx.includes(`${nu} documented commands the census could not read`), `findings: the ${nu} documented commands it could not read are listed, not hidden`);
       // try a command
       ok((await text(p, '#tryout .big')) === 'Reaches 74 test files', 'try: npm test reaches 74');
       await p.click('#examples button:has-text("node --test tools/slice16-harness/test/")');
@@ -115,6 +117,11 @@ async function main() {
       await p.fill('#cmd', 'python3 -m unittest discover tests');
       await p.waitForTimeout(300);
       ok((await text(p, '#tryout')).includes('Not understood.'), 'try: unittest discovery is refused, not counted');
+      // a tracked script whose text the pack does not carry is refused, not called broken
+      await p.fill('#cmd', 'node tools/twin/physics.js');
+      await p.waitForTimeout(300);
+      const nt = await text(p, '#tryout');
+      ok(nt.includes('Not understood.') && nt.includes('text is not available here') && !nt.includes('Broken.'), 'try: a script the pack has no text for is refused, not called broken');
       if (shotsAt) await p.screenshot({ path: path.join(shotsAt, 'desktop-skyhook.png'), fullPage: true });
       ok(errors.length === 0, 'no console errors or requests at 1280 px' + (errors.length ? ': ' + errors.join(' | ') : ''));
       await ctx.close();
@@ -131,7 +138,8 @@ async function main() {
       await p.locator('.repo[data-repo="aster"]').tap();
       for (const d of await p.$$('#map details.dir:not([open]) > summary')) await d.tap();
       await p.locator('#examples button').nth(3).tap();
-      ok(!(await overflow(p)), 'no horizontal overflow at 390 px: Aster, all folders open, a broken command shown');
+      for (const d of await p.$$('#findings details:not([open]) > summary')) await d.tap();
+      ok(!(await overflow(p)), 'no horizontal overflow at 390 px: Aster, all folders and findings open, a broken command shown');
       if (shotsAt) await p.screenshot({ path: path.join(shotsAt, 'phone-dark.png'), fullPage: false });
       // keyboard: the repository cards are buttons in the tab order
       await p.focus('.repo[data-repo="skyhook"]');

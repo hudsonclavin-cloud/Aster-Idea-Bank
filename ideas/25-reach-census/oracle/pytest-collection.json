@@ -1,0 +1,15 @@
+{"about":"Which files real pytest collects (--collect-only, default configuration, no conftest) from a fixture tree, per argument list. Written by oracle/pytest-collection-oracle.mjs; compared against census.js by census.test.mjs.","recorded":"2026-11-02","pytest":"pytest 9.2.0","files":["test_top.py","helper.py","t/test_a.py","t/b_test.py","t/helper2.py","t/Test_cap.py","t/testing.py","t/tests_plural.py","t/sub/test_c.py","t/sub/deep/d_test.py","t/.hid/test_hid.py","t/node_modules/test_nm.py","t/build/test_build.py","t/dist/test_dist.py","t/venv/test_venv.py","t/x.egg/test_egg.py","t/CVS/test_cvs.py","t/_darcs/test_darcs.py","t/{arch}/test_arch.py","t/builds/test_builds.py","t/node_modules_x/test_nmx.py","build/test_rootbuild.py","t/env/pyvenv.cfg","t/env/test_env.py","t/.venv/pyvenv.cfg","t/.venv/test_dotvenv.py"],"cases":[
+{"args":[],"exit":0,"collected":["t/b_test.py","t/builds/test_builds.py","t/node_modules_x/test_nmx.py","t/sub/deep/d_test.py","t/sub/test_c.py","t/test_a.py","test_top.py"]},
+{"args":["t"],"exit":0,"collected":["t/b_test.py","t/builds/test_builds.py","t/node_modules_x/test_nmx.py","t/sub/deep/d_test.py","t/sub/test_c.py","t/test_a.py"]},
+{"args":["t/"],"exit":0,"collected":["t/b_test.py","t/builds/test_builds.py","t/node_modules_x/test_nmx.py","t/sub/deep/d_test.py","t/sub/test_c.py","t/test_a.py"]},
+{"args":["build"],"exit":0,"collected":["build/test_rootbuild.py"]},
+{"args":["t/build"],"exit":0,"collected":["t/build/test_build.py"]},
+{"args":["t/.hid"],"exit":0,"collected":["t/.hid/test_hid.py"]},
+{"args":["t/helper2.py"],"exit":0,"collected":["t/helper2.py"]},
+{"args":["t","t/sub"],"exit":0,"collected":["t/b_test.py","t/builds/test_builds.py","t/node_modules_x/test_nmx.py","t/sub/deep/d_test.py","t/sub/test_c.py","t/test_a.py"]},
+{"args":["t/sub/test_c.py::test_it"],"exit":0,"collected":["t/sub/test_c.py"]},
+{"args":["--ignore=t/sub","t"],"exit":0,"collected":["t/b_test.py","t/builds/test_builds.py","t/node_modules_x/test_nmx.py","t/test_a.py"]},
+{"args":["missing"],"exit":4,"collected":[]},
+{"args":["t/sub/deep"],"exit":0,"collected":["t/sub/deep/d_test.py"]},
+{"args":["t/env"],"exit":0,"collected":["t/env/test_env.py"]}
+]}

@@ -56,7 +56,7 @@ Static: runner definitions are read as text and nothing is executed; "reached" m
        via node tests/run.mjs (README.md:676)
    CONDITIONAL routes (reached only when a quoted condition holds)
      headless/test/ (3: api.test.mjs, http.test.mjs, llm.test.mjs) via node tests/run.mjs
-       only tests/run.mjs:61 if (fs.existsSync(path.join(hl, 'node_modules', 'openscad-wasm')))
+       only tests/run.mjs:59 if(fs.existsSync(path.join(hl, 'node_modules', 'openscad-wasm')))
 
 == Skyhook  skyhook @ 34935cb  (local Node 22, assumed; 1 workflow)
    7 test files: 6 run in CI · 0 CI-less · 0 manual only · 1 orphan
@@ -70,7 +70,7 @@ Static: runner definitions are read as text and nothing is executed; "reached" m
    ORPHANS (no runner, no CI job, no documented command reaches them): 1
      tools/twin/ (1: verify.mjs)
        tools/twin/verify.mjs: candidate because its header (tools/twin/verify.mjs:3) calls it the cross-language verification gate, and it exits non-zero on failure
-       named (not as a command) at materials/core.md:96, tools/sims/skyhook_program_site.html:948
+       named (not as a command) in docs/config at materials/core.md:96, tools/sims/skyhook_program_site.html:948
    FILE-LEVEL SKIPS (a reached file that skips itself whole unless a module is importable)
      tests/test_export_grid.py:18 pytest.importorskip("openpyxl") skips the whole file unless openpyxl is importable
        CI test (.github/workflows/ci.yml:26): installed · pytest tests/ -v (CLAUDE.md:19): unknown · pytest tests/ (README.md:32): unknown · pytest tests/ -v (README.md:70): NOT installed

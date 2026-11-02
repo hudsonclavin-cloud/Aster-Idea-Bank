@@ -157,7 +157,7 @@
     });
     if (!f.routes.length) via.appendChild(el('li', { text: 'no runner, CI step or documented command launches it' }));
     if (f.declared) via.appendChild(el('li', { text: 'a candidate because ' + f.declared }));
-    if (f.mentions && f.mentions.length) via.appendChild(el('li', { text: 'named, not as a command, at ' + f.mentions.map(function (m) { return m.file + ':' + m.line; }).join(', ') }));
+    if (f.mentions && f.mentions.length) via.appendChild(el('li', { text: 'named, not as a command, in docs/config at ' + f.mentions.map(function (m) { return m.file + ':' + m.line; }).join(', ') }));
     return el('li', { cls: 'file' + (route && !reached ? ' dim' : ''), 'data-path': f.path, 'data-class': f.class }, [head, via]);
   }
   function renderMap() {
@@ -222,7 +222,7 @@
     var orph = r.files.filter(function (f) { return f.class === 'orphan'; });
     if (orph.length) add('orphan', plural(orph.length, 'orphan') + ': nothing launches ' + (orph.length === 1 ? 'it' : 'them'), [el('ul', null, orph.map(function (f) {
       return el('li', null, [code(f.path), f.declared ? el('div', { cls: 'src', text: 'a candidate because ' + f.declared }) : null,
-        f.mentions && f.mentions.length ? el('div', { cls: 'src', text: 'named, not as a command, at ' + f.mentions.map(function (m) { return m.file + ':' + m.line; }).join(', ') }) : null]);
+        f.mentions && f.mentions.length ? el('div', { cls: 'src', text: 'named, not as a command, in docs/config (Markdown, HTML, YAML, JSON; not source comments) at ' + f.mentions.map(function (m) { return m.file + ':' + m.line; }).join(', ') }) : null]);
     }))]);
     r.drift.forEach(function (d) {
       add('ci-less', 'Doc drift: ' + d.command, [el('p', null, [code(d.command), ' reaches ' + d.reach + ' of the ' + d.ciReach + ' files CI runs; it misses ' + d.missing.length + ': ' + C.describeSet(d.missing, 3) + '.']),
@@ -255,6 +255,11 @@
       var rt = f && f.routes.filter(function (x) { return x.entry === e.id && x.conditions.length; })[0];
       return el('li', null, [C.describeSet(e.conditionalReach, 4) + ' via ', code(e.command), el('div', { cls: 'src', text: 'only ' + (rt ? rt.conditions.join(' & ') : 'under a condition') })]);
     }))]);
+    if (r.docNotUnderstood.length) {
+      var det = el('details', { cls: 'unread' }, [el('summary', { text: plural(r.docNotUnderstood.length, 'documented command') + ' the census could not read (not counted; the CLI lists them with --verbose)' }),
+        el('ul', null, r.docNotUnderstood.map(function (d) { return el('li', null, [code(d.command), ' at ' + d.sources[0] + (d.sources.length > 1 ? ' +' + (d.sources.length - 1) : ''), el('div', { cls: 'src', text: d.why.filter(function (v, i, a) { return a.indexOf(v) === i; }).join('; ') })]); }))]);
+      box.appendChild(el('div', { cls: 'finding note' }, [det]));
+    }
     if (!box.childNodes.length) box.appendChild(el('p', { text: 'Every test file is reached by a CI step, unconditionally.' }));
   }
 
@@ -291,7 +296,7 @@
     }
     var n = res.reach.length;
     if (res.notUnderstood.length) {
-      out.appendChild(el('div', { cls: 'refusal' }, [el('strong', { text: 'Not understood. ' }), 'Part of this command is something the census does not model, so the files it might launch are not counted as reached:',
+      out.appendChild(el('div', { cls: 'refusal' }, [el('strong', { text: 'Not understood. ' }), 'Part of this command is something the census does not model or cannot read, so the files it might launch are not counted as reached:',
         el('ul', null, res.notUnderstood.map(function (x) { return el('li', null, [code(String(x.what)), ' — ' + x.why]); }))]));
     }
     if (res.broken.length) {

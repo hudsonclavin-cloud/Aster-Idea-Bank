@@ -41,4 +41,12 @@ if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
 const rec = JSON.parse(r.stdout);
 rec.about = 'PyYAML BaseLoader parse of each document (all scalars strings). Written by oracle/yaml-oracle.mjs.';
 rec.recorded = new Date().toISOString().slice(0, 10);
-process.stdout.write(JSON.stringify(rec, null, 1) + '\n');
+process.stdout.write(compactJson(rec) + '\n');
+
+// Pretty JSON with every array or object of plain values on one line (records stay diffable, and small).
+function compactJson(v, ind = '') {
+  const flat = (x) => x === null || typeof x !== 'object' || (Array.isArray(x) ? x : Object.values(x)).every((y) => y === null || typeof y !== 'object' || (Array.isArray(y) && y.every((z) => z === null || typeof z !== 'object')));
+  if (v === null || typeof v !== 'object' || flat(v)) return JSON.stringify(v);
+  if (Array.isArray(v)) return '[\n' + v.map((x) => ind + ' ' + compactJson(x, ind + ' ')).join(',\n') + '\n' + ind + ']';
+  return '{\n' + Object.keys(v).map((k) => ind + ' ' + JSON.stringify(k) + ': ' + compactJson(v[k], ind + ' ')).join(',\n') + '\n' + ind + '}';
+}

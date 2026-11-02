@@ -1,7 +1,8 @@
 # Drafted for PartForge by Aster Idea Bank idea 25 (Reach Census); NOT applied to PartForge.
 # Copy to .github/workflows/ci.yml. Both jobs were run by hand on a git-archive export of
-# 0974a62 with Node 22.22.0 (oracle/runners.json): tests/run.mjs exits 0 in about 13 s, and
-# headless `npm ci && npm test` passes 27 of 27 in about 13 s. test:parity is left out on purpose:
+# 0974a62 with Node 22.22.0 (oracle/runners.json): tests/run.mjs exits 0 in about 1 s (with no
+# headless/node_modules it skips the headless trio, which the second job runs), and headless
+# `npm ci && npm test` passes 27 of 27 (its time was not recorded). test:parity is left out on purpose:
 # headless/test/parity.test.mjs:5-6 calls it slow (the fixed retainer alone is ~90 s).
 name: tests
 
