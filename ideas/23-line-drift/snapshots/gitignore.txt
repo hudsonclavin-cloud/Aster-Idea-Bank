@@ -1,0 +1,37 @@
+worker/.dev.vars
+.env.local
+worker/.dev.vars.*
+.env
+.env.*
+.DS_Store
+.wrangler/
+worker/.wrangler/
+node_modules/
+.tmp-tests/
+.obsidian/
+tools/slice8-ingestion/checkpoint.json
+tools/slice8-ingestion/full-run.log
+tools/slice8-ingestion/caffeinate.log
+tools/slice8-ingestion/full-run.pid
+tools/slice8-5-research/data/*
+# Evidence artifacts under this ignored glob must get explicit ! exceptions
+# before any doc/test may describe them as committed evidence.
+tools/slice9-research/data/*
+!tools/slice9-research/data/cad-flags.json
+!tools/slice9-research/data/inv014-truth.json
+!tools/slice9-research/data/inv014-sample-results.json
+!tools/slice9-research/data/occupancy-summary.json
+!tools/slice9-research/data/sbdb-nea-summary.json
+!tools/slice9-diagnostic/data/staleness-distribution-cad.json
+!tools/slice9-diagnostic/data/staleness-distribution-truth.json
+!tools/slice9-diagnostic/data/staleness-distribution-results.json
+!tools/slice9-diagnostic/data/staleness-distribution-sample.json
+!tools/slice9-diagnostic/data/staleness-distribution-summary.json
+tools/slice9-ingestion/data/*
+!tools/slice9-ingestion/data/reanchor-stale-checkpoint.json
+!tools/slice9-ingestion/data/reanchor-stale-summary.json
+tests/fixtures/v2/nea-catalog-slice9.json.tmp
+
+# S16-LOCK-AND-HARNESS-2026-07-27-A — key-name template must be committed;
+# real .env files stay ignored by the .env / .env.* rules above.
+!tools/slice16-harness/.env.example

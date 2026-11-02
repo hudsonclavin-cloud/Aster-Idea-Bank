@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/app/porkchop/main.ts",
+  "commit": "62ddb1713feab34ac0730ecd66f18db8a076d718",
+  "commitDate": "2026-10-25T19:36:43-04:00",
+  "pathLastChanged": "001c87d 2026-10-21T19:19:57-04:00",
+  "committedBlob": "a0e2b7676320e9e2e5a176c29ed0aec66ae5a5e5",
+  "readBlob": "a0e2b7676320e9e2e5a176c29ed0aec66ae5a5e5",
+  "sourceSha256": "0da056a7fb08c120c61ed182018e2220a3294e0af3c8c945f241ee3851f21ea1",
+  "sourceBytes": 44543,
+  "copiedAt": "2026-10-26T16:33:50.506Z",
+  "mode": "copy",
+  "note": "whole porkchop page module at 62ddb17: STATUS.md item 1 cites :637, :646, :187-194, :189",
+  "readMatchesCommitted": true,
+  "writtenSha256": "0da056a7fb08c120c61ed182018e2220a3294e0af3c8c945f241ee3851f21ea1",
+  "writtenBytes": 44543
+}
