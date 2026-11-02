@@ -1,0 +1,7 @@
+      # Drafted for Aster by Aster Idea Bank idea 25 (Reach Census); NOT applied to Aster.
+      # Append to the `full-tests` job's steps in .github/workflows/ci.yml (after line 93), with
+      # census.js and reach-census.mjs copied to tools/reach-census/ and aster-reach-allow.json
+      # beside them as allow.json. It fails the job when a test file is reached by no CI step,
+      # unless the allow list names it with a reason.
+      - name: Reach census (every test file is run by CI, or allowed with a reason)
+        run: node tools/reach-census/reach-census.mjs . --fail-on ci-less --allow tools/reach-census/allow.json

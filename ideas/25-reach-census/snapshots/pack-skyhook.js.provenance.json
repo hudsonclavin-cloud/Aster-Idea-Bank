@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/skyhook",
+  "path": ".github/workflows/ci.yml",
+  "commit": "34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-09-10T23:52:55-04:00",
+  "pathLastChanged": "941b8c0 2026-08-30T18:56:14-04:00",
+  "committedBlob": "9a41e6c4a8b49950bfceeeed9b722bef849fd970",
+  "readBlob": "9a41e6c4a8b49950bfceeeed9b722bef849fd970",
+  "sourceSha256": "737cd3cb3bcae54d7268deec3d005b004ca3d6f1f7d5f1f1e3942cbf7a1a5945",
+  "sourceBytes": 600,
+  "copiedAt": "2026-11-02T21:15:57.618Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the tracked file list at HEAD, the text of every file the census read (.github/workflows/ci.yml and tools/twin/package.json whole; Python test files reduced to their module-level skip lines; others blanked to their line count, with blob ids), the runner commands found in all tracked Markdown, and the mention lookups.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "b1b258c0aeb04d4cf87a442602ff7b964dc7f1ccc715bfa356f99f1c5abdf5b9",
+  "writtenBytes": 7753
+}

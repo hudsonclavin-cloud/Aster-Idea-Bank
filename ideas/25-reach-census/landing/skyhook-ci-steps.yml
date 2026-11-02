@@ -1,0 +1,11 @@
+      # Drafted for Skyhook by Aster Idea Bank idea 25 (Reach Census); NOT applied to Skyhook.
+      # Append to the `test` job's steps in .github/workflows/ci.yml (after line 29). verify.mjs
+      # needs no install; on a git-archive export of 34935cb it printed PASS and exited 0 in
+      # well under a second on Node 20.19.5, 22.22.0 and 24.18.0 (oracle/runners.json).
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Cross-language verification gate (JS port against the Python golden run)
+        run: node tools/twin/verify.mjs

@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/run.mjs",
+  "commit": "0974a62b309b8cf7acd33771b49e9357d4d191f4",
+  "commitDate": "2026-10-25T23:57:27+00:00",
+  "pathLastChanged": "f506108 2026-10-05T18:00:12+00:00",
+  "committedBlob": "397577fa997a36fb81ec1e52cee217ae38897ff3",
+  "readBlob": "397577fa997a36fb81ec1e52cee217ae38897ff3",
+  "sourceSha256": "d7229799368674a4b97bb8638c0b7c892eabb39a197910d45ad3e005e19f6545",
+  "sourceBytes": 5078,
+  "copiedAt": "2026-11-02T21:15:57.555Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs: the tracked file list at HEAD, the text of every file the census read (tests/run.mjs and every package.json whole; files read only to decide they launch nothing blanked to their line count, with blob ids), the runner commands found in all tracked Markdown, and the mention lookups.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "1dc30649101b9c6edbfafdaa4cd37d94a0021ac722bb8d4907ff1557affe9c15",
+  "writtenBytes": 26083
+}

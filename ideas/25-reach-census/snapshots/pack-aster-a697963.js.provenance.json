@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "tools/run-tests.mjs",
+  "commit": "a697963506c2638bbfa9d7a3c644b5f0aaf8709b",
+  "commitDate": "2026-10-14T19:55:22-04:00",
+  "committedBlob": "c7009c1758a14532e34d68a87a80215d1b066151",
+  "readBlob": "c7009c1758a14532e34d68a87a80215d1b066151",
+  "sourceSha256": "555e3dbfd7613bdd73b00aac0c8b8d37979f508fe4c72be3fc6cc08671ff2660",
+  "sourceBytes": 6968,
+  "copiedAt": "2026-11-02T21:16:08.084Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs from git objects at this historical commit (git ls-tree / git show; the working tree was not used): the file list stored as a difference from pack-aster.js, the text of every file the census read there (runner definitions whole, others blanked to their line count, with blob ids). Markdown commands not extracted. Pinned because tools/audit/sanity-69472a3/s19-5-runs/fix2-LOG.md:14 logs npm run verify at 96/96 files from this HEAD.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "5a1cf39195e1544e5fe0253525027537042e8e271971f1325367c3ab992858ff",
+  "writtenBytes": 18697,
+  "sidecarWrittenBy": "hand (tools/snapshot.mjs records HEAD, not a historical commit), same fields"
+}

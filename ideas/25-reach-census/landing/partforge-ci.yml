@@ -1,0 +1,44 @@
+# Drafted for PartForge by Aster Idea Bank idea 25 (Reach Census); NOT applied to PartForge.
+# Copy to .github/workflows/ci.yml. Both jobs were run by hand on a git-archive export of
+# 0974a62 with Node 22.22.0 (oracle/runners.json): tests/run.mjs exits 0 in about 13 s, and
+# headless `npm ci && npm test` passes 27 of 27 in about 13 s. test:parity is left out on purpose:
+# headless/test/parity.test.mjs:5-6 calls it slow (the fixed retainer alone is ~90 s).
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  flight:
+    name: node tests/run.mjs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Flight units and node:test suites (no dependencies)
+        run: node tests/run.mjs
+
+  headless:
+    name: headless npm test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install the headless package (engine and parser)
+        working-directory: headless
+        run: npm ci
+
+      - name: Drift guard, envelope, refusals, MCP over HTTP, provider check
+        working-directory: headless
+        run: npm test

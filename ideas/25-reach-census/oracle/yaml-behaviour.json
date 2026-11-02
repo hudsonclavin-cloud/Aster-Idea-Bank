@@ -1,0 +1,386 @@
+{
+ "pyyaml": "6.0.3",
+ "docs": [
+  {
+   "name": "aster:.github/workflows/ci.yml",
+   "text": "name: CI\n\n# First committed workflow in this repo (Slice 14 Phase A / DEC-14-5).\n# Two gates: `typecheck` (tsc --noEmit type-regression) and `golden-numbers`\n# (pins payloadAtC3 / deliveredMassKg — the df3225f data-literal guard).\n# It is deliberately SEPARATE from the GitHub Pages deploy: it never builds\n# docs/, never deploys, never writes to the repo. Pages continues to serve from\n# the committed docs/ folder via built-in branch-deploy, untouched by this workflow.\n\non:\n  push:\n    branches: [main]\n  pull_request:\n  workflow_dispatch:\n\njobs:\n  typecheck:\n    name: tsc --noEmit\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          node-version: '24'\n          cache: npm\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Typecheck (tsc --noEmit)\n        run: npx tsc --noEmit\n\n  build:\n    name: build\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          node-version: '24'\n          cache: npm\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Build\n        run: npm run build\n\n  golden-numbers:\n    name: golden-numbers (df3225f guard)\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          # Node 24: the golden test imports production TypeScript directly via\n          # native type-stripping (no tsc spawn, no .bin/tsc shim). Requires\n          # Node >= 22.18 / 24. No `npm ci` — the test only touches node builtins\n          # and the self-contained launch-vehicles module.\n          node-version: '24'\n\n      - name: Golden-numbers test (payloadAtC3 / deliveredMassKg)\n        run: node --test tests/v2-golden/launch-vehicles.golden.test.mjs\n\n  full-tests:\n    name: full-tests\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          node-version: '24'\n          cache: npm\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Full test suite\n        run: node tools/run-tests.mjs\n",
+   "value": {
+    "name": "CI",
+    "on": {
+     "push": {
+      "branches": [
+       "main"
+      ]
+     },
+     "pull_request": "",
+     "workflow_dispatch": ""
+    },
+    "jobs": {
+     "typecheck": {
+      "name": "tsc --noEmit",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24",
+         "cache": "npm"
+        }
+       },
+       {
+        "name": "Install dependencies",
+        "run": "npm ci"
+       },
+       {
+        "name": "Typecheck (tsc --noEmit)",
+        "run": "npx tsc --noEmit"
+       }
+      ]
+     },
+     "build": {
+      "name": "build",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24",
+         "cache": "npm"
+        }
+       },
+       {
+        "name": "Install dependencies",
+        "run": "npm ci"
+       },
+       {
+        "name": "Build",
+        "run": "npm run build"
+       }
+      ]
+     },
+     "golden-numbers": {
+      "name": "golden-numbers (df3225f guard)",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24"
+        }
+       },
+       {
+        "name": "Golden-numbers test (payloadAtC3 / deliveredMassKg)",
+        "run": "node --test tests/v2-golden/launch-vehicles.golden.test.mjs"
+       }
+      ]
+     },
+     "full-tests": {
+      "name": "full-tests",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4",
+        "with": {
+         "fetch-depth": "0"
+        }
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24",
+         "cache": "npm"
+        }
+       },
+       {
+        "name": "Install dependencies",
+        "run": "npm ci"
+       },
+       {
+        "name": "Full test suite",
+        "run": "node tools/run-tests.mjs"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "name": "skyhook:.github/workflows/ci.yml",
+   "text": "name: Physics Verification\n\non:\n  push:\n    branches: [main, dev]\n  pull_request:\n    branches: [main]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    name: Rev A Physics Assertions\n\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Set up Python\n        uses: actions/setup-python@v5\n        with:\n          python-version: \"3.11\"\n\n      - name: Install pytest\n        run: pip install pytest openpyxl\n\n      - name: Run Rev A physics assertions\n        run: pytest tests/ -v --tb=short\n\n      - name: Verify canonical parameters load cleanly\n        run: python3 physics/skyhook_physics.py\n",
+   "value": {
+    "name": "Physics Verification",
+    "on": {
+     "push": {
+      "branches": [
+       "main",
+       "dev"
+      ]
+     },
+     "pull_request": {
+      "branches": [
+       "main"
+      ]
+     }
+    },
+    "jobs": {
+     "test": {
+      "runs-on": "ubuntu-latest",
+      "name": "Rev A Physics Assertions",
+      "steps": [
+       {
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Python",
+        "uses": "actions/setup-python@v5",
+        "with": {
+         "python-version": "3.11"
+        }
+       },
+       {
+        "name": "Install pytest",
+        "run": "pip install pytest openpyxl"
+       },
+       {
+        "name": "Run Rev A physics assertions",
+        "run": "pytest tests/ -v --tb=short"
+       },
+       {
+        "name": "Verify canonical parameters load cleanly",
+        "run": "python3 physics/skyhook_physics.py"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "name": "aster-a697963:.github/workflows/ci.yml",
+   "text": "name: CI\n\n# First committed workflow in this repo (Slice 14 Phase A / DEC-14-5).\n# Two gates: `typecheck` (tsc --noEmit type-regression) and `golden-numbers`\n# (pins payloadAtC3 / deliveredMassKg — the df3225f data-literal guard).\n# It is deliberately SEPARATE from the GitHub Pages deploy: it never builds\n# docs/, never deploys, never writes to the repo. Pages continues to serve from\n# the committed docs/ folder via built-in branch-deploy, untouched by this workflow.\n\non:\n  push:\n    branches: [main]\n  pull_request:\n  workflow_dispatch:\n\njobs:\n  typecheck:\n    name: tsc --noEmit\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          node-version: '24'\n          cache: npm\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Typecheck (tsc --noEmit)\n        run: npx tsc --noEmit\n\n  build:\n    name: build\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          node-version: '24'\n          cache: npm\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Build\n        run: npm run build\n\n  golden-numbers:\n    name: golden-numbers (df3225f guard)\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          # Node 24: the golden test imports production TypeScript directly via\n          # native type-stripping (no tsc spawn, no .bin/tsc shim). Requires\n          # Node >= 22.18 / 24. No `npm ci` — the test only touches node builtins\n          # and the self-contained launch-vehicles module.\n          node-version: '24'\n\n      - name: Golden-numbers test (payloadAtC3 / deliveredMassKg)\n        run: node --test tests/v2-golden/launch-vehicles.golden.test.mjs\n\n  full-tests:\n    name: full-tests\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n\n      - name: Set up Node\n        uses: actions/setup-node@v4\n        with:\n          node-version: '24'\n          cache: npm\n\n      - name: Install dependencies\n        run: npm ci\n\n      - name: Full test suite\n        run: node tools/run-tests.mjs\n",
+   "value": {
+    "name": "CI",
+    "on": {
+     "push": {
+      "branches": [
+       "main"
+      ]
+     },
+     "pull_request": "",
+     "workflow_dispatch": ""
+    },
+    "jobs": {
+     "typecheck": {
+      "name": "tsc --noEmit",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24",
+         "cache": "npm"
+        }
+       },
+       {
+        "name": "Install dependencies",
+        "run": "npm ci"
+       },
+       {
+        "name": "Typecheck (tsc --noEmit)",
+        "run": "npx tsc --noEmit"
+       }
+      ]
+     },
+     "build": {
+      "name": "build",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24",
+         "cache": "npm"
+        }
+       },
+       {
+        "name": "Install dependencies",
+        "run": "npm ci"
+       },
+       {
+        "name": "Build",
+        "run": "npm run build"
+       }
+      ]
+     },
+     "golden-numbers": {
+      "name": "golden-numbers (df3225f guard)",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24"
+        }
+       },
+       {
+        "name": "Golden-numbers test (payloadAtC3 / deliveredMassKg)",
+        "run": "node --test tests/v2-golden/launch-vehicles.golden.test.mjs"
+       }
+      ]
+     },
+     "full-tests": {
+      "name": "full-tests",
+      "runs-on": "ubuntu-latest",
+      "steps": [
+       {
+        "name": "Checkout",
+        "uses": "actions/checkout@v4"
+       },
+       {
+        "name": "Set up Node",
+        "uses": "actions/setup-node@v4",
+        "with": {
+         "node-version": "24",
+         "cache": "npm"
+        }
+       },
+       {
+        "name": "Install dependencies",
+        "run": "npm ci"
+       },
+       {
+        "name": "Full test suite",
+        "run": "node tools/run-tests.mjs"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "name": "literal block, keep indentation",
+   "text": "a:\n  run: |\n    one \\\n      two\n    three\n",
+   "value": {
+    "a": {
+     "run": "one \\\n  two\nthree\n"
+    }
+   }
+  },
+  {
+   "name": "folded block, strip",
+   "text": "a:\n  run: >-\n    one\n    two\n\n    three\n",
+   "value": {
+    "a": {
+     "run": "one two\nthree"
+    }
+   }
+  },
+  {
+   "name": "literal block, keep trailing",
+   "text": "a:\n  run: |+\n    one\n\n",
+   "value": {
+    "a": {
+     "run": "one\n\n"
+    }
+   }
+  },
+  {
+   "name": "dash-line mapping with nested sequence",
+   "text": "steps:\n  - name: x\n    with:\n      node-version: 24\n  - run: echo hi\n",
+   "value": {
+    "steps": [
+     {
+      "name": "x",
+      "with": {
+       "node-version": "24"
+      }
+     },
+     {
+      "run": "echo hi"
+     }
+    ]
+   }
+  },
+  {
+   "name": "flow sequence and flow mapping",
+   "text": "on: { push: { branches: [main, dev] } }\nb: [ \"a,b\", 'c' ]\n",
+   "value": {
+    "on": {
+     "push": {
+      "branches": [
+       "main",
+       "dev"
+      ]
+     }
+    },
+    "b": [
+     "a,b",
+     "c"
+    ]
+   }
+  },
+  {
+   "name": "quotes and comments",
+   "text": "a: 'it''s'  # c\nb: \"x # y\"\nc: x#y\nd: ~\ne:\n",
+   "value": {
+    "a": "it's",
+    "b": "x # y",
+    "c": "x#y",
+    "d": "~",
+    "e": ""
+   }
+  },
+  {
+   "name": "sequence of scalars at key indent",
+   "text": "branches:\n- main\n- \"dev\"\n",
+   "value": {
+    "branches": [
+     "main",
+     "dev"
+    ]
+   }
+  },
+  {
+   "name": "block scalar in a sequence item",
+   "text": "steps:\n  - |\n    echo a\n    echo b\n",
+   "value": {
+    "steps": [
+     "echo a\necho b\n"
+    ]
+   }
+  }
+ ],
+ "about": "PyYAML BaseLoader parse of each document (all scalars strings). Written by oracle/yaml-oracle.mjs.",
+ "recorded": "2026-11-02"
+}

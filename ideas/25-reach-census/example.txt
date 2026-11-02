@@ -1,0 +1,80 @@
+Reach Census: which runner reaches each test file, and which CI job runs that runner.
+Static: runner definitions are read as text and nothing is executed; "reached" means launched, not passed.
+
+== Aster  asteroid-mining-planner @ 62ddb17  (local Node 24; 1 workflow)
+   106 test files: 97 run in CI · 9 CI-less · 0 manual only · 0 orphan
+   CI steps
+     .github/workflows/ci.yml:72  job golden-numbers: node --test tests/v2-golden/launch-vehicles.golden.test.mjs  → 1 file
+     .github/workflows/ci.yml:93  job full-tests: node tools/run-tests.mjs  → 97 files
+     (5 other steps reach no test file: npm ci | npx tsc --noEmit | npm ci | npm run build | npm ci)
+   package.json scripts that reach test files
+     mcp/package.json:37  npm test (in mcp)  → 3 files
+     package.json:11  npm test  → 74 files
+     package.json:12  npm run test:all  → 97 files
+     package.json:14  npm run verify  → 97 files
+   documented suite commands
+     node tools/run-tests.mjs  → 97 files  [7 places: STATUS.md:316, STATUS.md:339, tools/audit/sanity-69472a3/ASTER_AUDIT_REPORT.md:86, …]
+     npm run verify  → 97 files  [10 places: src/v2/SLICE_19_5_FOUNDING.md:355, src/v2/SLICE_19_FOUNDING.md:172, src/v2/SLICE_19_FOUNDING.md:299, …]
+     npm test  → 74 files  [17 places: .claude/skills/dispatch-writer/SKILL.md:108, AGENTS.md:163, STATUS.md:348, …]
+     node --test tests/*.test.mjs  → 74 files  [8 places: AGENTS.md:32, AGENTS.md:177, DEVLOG.md:43, …]
+     npm run test  → 74 files  [1 place: src/v2/SLICE_19_FOUNDING.md:172]
+     node --test tools/slice16-harness/test/*.test.mjs  → 6 files  [4 places: STATUS.md:341, tools/slice16-harness/ARCHIVE_REPORT.md:127, tools/slice16-harness/CLOSE_REPORT.md:99, …]
+   CI-LESS (a runner reaches them; no CI job runs that runner): 9
+     mcp/test/ (3: compute-tools.test.ts, envelope.test.ts, provenance-bake.test.ts)
+       via npm test (mcp/package.json)
+     tools/slice16-harness/test/ (6)
+       via node --test tools/slice16-harness/test/*.test.mjs (STATUS.md:341)
+   DOC DRIFT (a documented command reaches fewer of the files CI runs)
+     node --test tests/*.test.mjs: 74 of the 97 files CI reaches; misses 23: src/v2/app/catalog-list/ (1: row.test.mjs); src/v2/boundary/ (1: c3-grid.test.mjs); src/v2/porkchop/ (8); tests/v2-golden/ (1: launch-vehicles.golden.test.mjs); tests/v2-lambert/ (12)
+       presented as the suite at AGENTS.md:32, AGENTS.md:177
+       also named at DEVLOG.md:43, QA.md:11, UPDATES.md:893, UPDATES.md:939 and 2 more
+     npm test: 74 of the 97 files CI reaches; misses 23: src/v2/app/catalog-list/ (1: row.test.mjs); src/v2/boundary/ (1: c3-grid.test.mjs); src/v2/porkchop/ (8); tests/v2-golden/ (1: launch-vehicles.golden.test.mjs); tests/v2-lambert/ (12)
+       also named at .claude/skills/dispatch-writer/SKILL.md:108, AGENTS.md:163, STATUS.md:348, STATUS.md:400 and 13 more
+     npm run test: 74 of the 97 files CI reaches; misses 23: src/v2/app/catalog-list/ (1: row.test.mjs); src/v2/boundary/ (1: c3-grid.test.mjs); src/v2/porkchop/ (8); tests/v2-golden/ (1: launch-vehicles.golden.test.mjs); tests/v2-lambert/ (12)
+       also named at src/v2/SLICE_19_FOUNDING.md:172
+   DOCUMENTED COMMANDS THAT REACH NOTHING
+     node --test tools/slice16-harness/test/  [tools/slice16-harness/PRE_RUN_GATE.md:56, tools/slice16-harness/RUNBOOK.md:41, tools/slice16-harness/RUNBOOK.md:217]: "tools/slice16-harness/test/" matches the directory tools/slice16-harness/test: Node ≥21 hands it to the loader, which fails (Cannot find module); Node 20 would reach 6 file(s)
+
+== PartForge  Partforge @ 0974a62  (local Node 22, assumed; no workflow files)
+   27 test files: 0 run in CI · 15 CI-less · 12 manual only · 0 orphan
+   package.json scripts that reach test files
+     headless/package.json:18  npm test (in headless)  → 3 files
+     headless/package.json:19  npm run test:parity (in headless)  → 2 files
+   documented suite commands
+     node tests/run.mjs  → 13 files (3 conditional)  [21 places: README.md:676, README.md:821, README.md:873, …]
+     npm run test:parity  → 2 files  [4 places: docs/MCP-STUDY.md:61, docs/MCP-STUDY.md:62, docs/STATUS.md:25, …]
+     cd headless && npm run test:parity  → 2 files  [2 places: docs/STATUS.md:21, docs/STATUS.md:312]
+   MANUAL ONLY (reached only by one-file commands written in docs): 12
+     tests/harness/ (12)
+       via documented one-file commands
+   CI-LESS (a runner reaches them; no CI job runs that runner): 15
+     headless/test/ (3: api.test.mjs, http.test.mjs, llm.test.mjs)
+       via npm test (headless/package.json); node tests/run.mjs (README.md:676)
+     headless/test/ (2: eval-truth.test.mjs, parity.test.mjs)
+       via npm run test:parity (headless/package.json); npm run test:parity (docs/MCP-STUDY.md:61); cd headless && npm run test:parity (docs/STATUS.md:21)
+     tests/ (10)
+       via node tests/run.mjs (README.md:676)
+   CONDITIONAL routes (reached only when a quoted condition holds)
+     headless/test/ (3: api.test.mjs, http.test.mjs, llm.test.mjs) via node tests/run.mjs
+       only tests/run.mjs:61 if (fs.existsSync(path.join(hl, 'node_modules', 'openscad-wasm')))
+
+== Skyhook  skyhook @ 34935cb  (local Node 22, assumed; 1 workflow)
+   7 test files: 6 run in CI · 0 CI-less · 0 manual only · 1 orphan
+   CI steps
+     .github/workflows/ci.yml:26  job test: pytest tests/ -v --tb=short  → 6 files
+     (2 other steps reach no test file: pip install pytest openpyxl | python3 physics/skyhook_physics.py)
+   documented suite commands
+     pytest tests/ -v  → 6 files  [1 place: CLAUDE.md:19]
+     pytest tests/  → 6 files  [1 place: README.md:32]
+     pytest tests/ -v  → 6 files  [1 place: README.md:70]
+   ORPHANS (no runner, no CI job, no documented command reaches them): 1
+     tools/twin/ (1: verify.mjs)
+       tools/twin/verify.mjs: candidate because its header (tools/twin/verify.mjs:3) calls it the cross-language verification gate, and it exits non-zero on failure
+       named (not as a command) at materials/core.md:96, tools/sims/skyhook_program_site.html:948
+   FILE-LEVEL SKIPS (a reached file that skips itself whole unless a module is importable)
+     tests/test_export_grid.py:18 pytest.importorskip("openpyxl") skips the whole file unless openpyxl is importable
+       CI test (.github/workflows/ci.yml:26): installed · pytest tests/ -v (CLAUDE.md:19): unknown · pytest tests/ (README.md:32): unknown · pytest tests/ -v (README.md:70): NOT installed
+     tests/test_finance.py:24 pytest.importorskip("openpyxl") skips the whole file unless openpyxl is importable
+       CI test (.github/workflows/ci.yml:26): installed · pytest tests/ -v (CLAUDE.md:19): unknown · pytest tests/ (README.md:32): unknown · pytest tests/ -v (README.md:70): NOT installed
+
+exit 1: 1 file at or beyond "orphan" and not in an allow list: skyhook:tools/twin/verify.mjs

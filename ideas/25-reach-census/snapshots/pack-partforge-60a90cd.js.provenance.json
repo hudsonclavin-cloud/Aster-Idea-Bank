@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/Partforge",
+  "path": "tests/run.mjs",
+  "commit": "60a90cd0475df8ae0ae28accb28e1a41448a6c8b",
+  "commitDate": "2026-09-28T15:06:19-04:00",
+  "committedBlob": "34834eba79d97cfdeb51af1464bebd55d5cad48c",
+  "readBlob": "34834eba79d97cfdeb51af1464bebd55d5cad48c",
+  "sourceSha256": "cb6211f43256b0c8ab1c02ce431abb4f7c4bc0e435eab4201ed48afa652ea14f",
+  "sourceBytes": 3411,
+  "copiedAt": "2026-11-02T21:16:08.105Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs from git objects at this historical commit (git ls-tree / git show): the file list stored as a difference from pack-partforge.js, the text of every file the census read there, and the runner commands in all its Markdown. Pinned because it is the first parent of b011ddc, whose tests/run.mjs comment (now tests/run.mjs:44-47) says two node:test files shipped passing and were never run by this file.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "5d502020224f09db6eb8d179a074448eb27de5dc64e05cb08e4367d72013003f",
+  "writtenBytes": 15750,
+  "sidecarWrittenBy": "hand (tools/snapshot.mjs records HEAD, not a historical commit), same fields"
+}

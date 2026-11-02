@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reach Census</title>
+<meta name="description" content="For every test file in Aster, PartForge and Skyhook: which runner launches it and which CI job runs that runner, read statically from package scripts, workflows, runner scripts and documented commands.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Reach Census</h1>
+  <p class="tag">For every test file in the three repositories: which runner launches it, and which CI job runs that runner. Read from package scripts, workflow steps, runner scripts and the commands written in the docs; <strong>nothing is executed, so "reached" means launched, not passed</strong>. A runner the census cannot read is reported as not understood, never as reached.</p>
+</header>
+
+<main>
+<section class="panel" aria-labelledby="h-repos">
+  <h2 id="h-repos">Three repositories</h2>
+  <div id="repos" class="repos" role="group" aria-label="choose a repository"></div>
+  <p class="legend" id="legend"></p>
+</section>
+
+<section class="panel" aria-labelledby="h-map">
+  <h2 id="h-map"><span id="map-title">Who reaches what</span></h2>
+  <div class="controls">
+    <label class="grow"><span>Show the files one runner reaches</span>
+      <select id="route" aria-label="runner to show"></select>
+    </label>
+    <label><span>Commit</span>
+      <select id="commit" aria-label="commit"></select>
+    </label>
+  </div>
+  <p id="route-summary" class="summary" aria-live="polite"></p>
+  <div class="filters" role="group" aria-label="show classes" id="filters"></div>
+  <div id="map" class="map"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-find">
+  <h2 id="h-find">What the census found here</h2>
+  <div id="findings" class="findings"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-try">
+  <h2 id="h-try">Try a command <span class="hint">evaluated against the same tracked tree; nothing runs</span></h2>
+  <div class="controls">
+    <label class="grow"><span>Command</span>
+      <input id="cmd" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="command to evaluate">
+    </label>
+    <label><span>Run from</span>
+      <select id="cwd" aria-label="working folder"></select>
+    </label>
+    <label><span>Node</span>
+      <select id="node" aria-label="Node version">
+        <option value="20">20</option>
+        <option value="22">22</option>
+        <option value="24" selected>24</option>
+      </select>
+    </label>
+    <label><span>Shell</span>
+      <select id="shell" aria-label="shell">
+        <option value="sh" selected>sh</option>
+        <option value="bash">bash</option>
+      </select>
+    </label>
+  </div>
+  <div id="examples" class="examples" role="group" aria-label="example commands"></div>
+  <div id="tryout" class="tryout" aria-live="polite"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-policy">
+  <h2 id="h-policy">As a CI gate</h2>
+  <div class="controls">
+    <label><span>Fail when a file is</span>
+      <select id="failon" aria-label="fail on class">
+        <option value="orphan" selected>orphan</option>
+        <option value="manual">manual only or worse</option>
+        <option value="ci-less">CI-less or worse</option>
+      </select>
+    </label>
+  </div>
+  <div id="policy" class="policy" aria-live="polite"></div>
+</section>
+
+<section class="panel" aria-labelledby="h-how">
+  <h2 id="h-how">How it works</h2>
+  <div id="how" class="how"></div>
+</section>
+</main>
+
+<footer class="page-foot">
+  <p>Aster Idea Bank, idea 25. An idea-bank prototype: it has not been through Aster's multi-agent audit or founding-doc process, PartForge's skeptic review, or Skyhook's Rule 1 canon and pytest gate. Nothing on this page makes a network request; every number on it is recomputed in your browser from the tracked-file packs in <code>snapshots/</code>.</p>
+</footer>
+
+<script src="census.js"></script>
+<script src="snapshots/pack-aster.js"></script>
+<script src="snapshots/pack-partforge.js"></script>
+<script src="snapshots/pack-skyhook.js"></script>
+<script src="snapshots/pack-aster-a697963.js"></script>
+<script src="snapshots/pack-partforge-60a90cd.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

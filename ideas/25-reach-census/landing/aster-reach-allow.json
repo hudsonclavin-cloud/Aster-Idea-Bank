@@ -1,0 +1,16 @@
+[
+  {
+    "repo": "asteroid-mining-planner",
+    "glob": "mcp/test/*.test.ts",
+    "upTo": "ci-less",
+    "reason": "open item L4-1: CI does not yet run the MCP package tests (mcp's own npm test: tsc, then node --test dist/mcp/test/*.js). Delete this entry in the commit that adds the CI job.",
+    "cite": "STATUS.md:348, STATUS.md:400, mcp/package.json:37"
+  },
+  {
+    "repo": "asteroid-mining-planner",
+    "glob": "tools/slice16-harness/test/*.test.mjs",
+    "upTo": "ci-less",
+    "reason": "open item L4-1: CI does not yet run the Slice 16 suite (191/191 when last measured by hand). Delete this entry in the commit that adds the CI job.",
+    "cite": "STATUS.md:341, STATUS.md:348, STATUS.md:400"
+  }
+]
