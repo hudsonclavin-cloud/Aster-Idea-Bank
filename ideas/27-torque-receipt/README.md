@@ -3,7 +3,7 @@
 
 **Kind:** tool
 **For:** PartForge
-**Run:** open `ideas/27-torque-receipt/index.html` in a browser (classic scripts, works from `file://`, no build, no network; `?preset=endcap`, `endcap-dry`, `m6-through`, `by-feel` or `quarter-20` opens a worked example). Command line, from the bank root: `node ideas/27-torque-receipt/torque-receipt.mjs --preset endcap` (`--help` for every option; `--guide` reproduces the table's torque-guide column, `--sweep` runs one torque under every thread condition, `--json` prints the receipt object; exit 0 computed, 2 refused, 3 usage). Tests: `node --test ideas/27-torque-receipt/torque.test.mjs` (17 tests, under 2 s) and `node ideas/27-torque-receipt/ui-check.mjs` (79 checks in headless Chromium; `check.mjs` runs it for `tools/check.mjs`). `node ideas/27-torque-receipt/build-data.mjs [--check]` rebuilds or verifies `snapshots/` from a PartForge checkout.
+**Run:** open `ideas/27-torque-receipt/index.html` in a browser (classic scripts, works from `file://`, no build, no network; `?preset=endcap`, `endcap-dry`, `m6-through`, `by-feel` or `quarter-20` opens a worked example). Command line, from the bank root: `node ideas/27-torque-receipt/torque-receipt.mjs --preset endcap` (`--help` for every option; `--guide` reproduces the table's torque-guide column, `--sweep` runs one torque under every thread condition, `--json` prints the receipt object; exit 0 computed, 2 refused, 3 usage). Tests: `node --test ideas/27-torque-receipt/torque.test.mjs` (20 tests, under 2 s) and `node ideas/27-torque-receipt/ui-check.mjs` (85 checks in headless Chromium; `check.mjs` runs it for `tools/check.mjs`). `node ideas/27-torque-receipt/build-data.mjs [--check]` rebuilds or verifies `snapshots/` from a PartForge checkout.
 **Made by:** Clicker
 
 ## What it is
@@ -17,7 +17,7 @@ A receipt for one bolt. You give it what the assembly instruction gives: a size,
 - protrusion past the nut against two thread pitches (the NASA rule PartForge's table says it "does not check yet"), or, for a tapped hole, PartForge's own `threadCheck()` cut verbatim from `index.html`, held to what the screw actually reaches;
 - a sweep of the same torque under every thread condition the table gives a nut factor for.
 
-Nothing on it says PASS. PartForge's fastener table says "do not rely on torque alone for a pressure boundary", and the roadmap evaluation's guard for this feature is "Force COMPUTED, never PASS, for torque-derived preload". When an input is missing (no torque, a grade whose strengths the repo does not carry, an inch screw below J429's size floor, a declared value with no source), that line is a structured refusal that names what is missing and what would help, never a stand-in number.
+Nothing on it says PASS. PartForge's fastener table says "do not rely on torque alone for a pressure boundary", and the roadmap evaluation's guard for this feature is "Force COMPUTED, never PASS, for torque-derived preload". When an input is missing (no torque, a grade whose strengths the repo does not carry, an inch screw outside J429's size range, a declared value with no source), that line is a structured refusal that names what is missing and what would help, never a stand-in number. A typed value that is not a finite positive number (a torque of `Infinity`, a stack of 0, a load of `abc`), or one whose preload would overflow, is refused as out of envelope rather than printed as ∞ or NaN.
 
 The page opens on PartForge's own dry-run end cap (`tests/dryrun/endcap.scad`) and shows, beside the receipt, what PartForge reports for the same joint today.
 
@@ -55,7 +55,7 @@ The page opens on PartForge's own dry-run end cap (`tests/dryrun/endcap.scad`) a
 
 `build-data.mjs --check` reports all six current against the checkout. The sidecars carry `copiedAt` 2026-10-26, the date the folder was rebuilt by transcript replay; the commit, blob and sha256 they record are what matter, and they match.
 
-`torque.js` then reads numbers out of the tables' own words. Each read goes through `must()`, which throws rather than guessing if the text changes. The nut factors K = 0.20 dry, 0.14–0.16 lubricated or zinc-plated and ~0.12 with anti-seize come from the design-rule sentence. So do the 0.65–0.75 × proof target and the guide column's "K = 0.20 and F = 0.7 x proof load". The inch K values (0.20, 0.15–0.17, 0.12–0.14 moly, 0.25–0.35 stainless) come from `fasteners_un` notes (6). The SAE J429 grade 5 and 8 strengths, labelled `[certain, SAE J429-2014]` by PartForge, come from notes (7) prose, as does its floor "J429 grades start at 1/4 in; #2-#12 machine screws are NOT graded to J429". Test 2 checks the metric values against the evaluation's own summary of them (`:398`).
+`torque.js` then reads numbers out of the tables' own words. Each read goes through `must()`, which throws rather than guessing if the text changes. The nut factors K = 0.20 dry, 0.14–0.16 lubricated or zinc-plated and ~0.12 with anti-seize come from the design-rule sentence. So do the 0.65–0.75 × proof target and the guide column's "K = 0.20 and F = 0.7 x proof load". The inch K values (0.20, 0.15–0.17, 0.12–0.14 moly, 0.25–0.35 stainless) come from `fasteners_un` notes (6). The SAE J429 grade 5 and 8 strengths, labelled `[certain, SAE J429-2014]` by PartForge, come from notes (7) prose, and so do their size ranges ("grade 5, 1/4-1 in", "grade 8, 1/4-1-1/2 in", parsed, not typed) and the floor sentence "J429 grades start at 1/4 in; #2-#12 machine screws are NOT graded to J429". Test 2 checks the metric values against the evaluation's own summary of them (`:398`).
 
 **The math** (N, mm, MPa; d in metres inside F = T/(K·d)):
 
@@ -85,13 +85,13 @@ The proof load uses A_s × S_p rather than the table's `proof_load_8_8_N` column
 
 The evaluation's own counter-example (`:403`: "F_i = 20.8 kN against a 21.2 kN proof load (At 36.6 mm2, 580 MPa) … 712 MPa and the proof SF is 0.82") reproduces exactly. The sweep shows what the 25 N·m was right for: dry at K 0.20 it gives 15,625 N, 73.6 % of proof, inside the target band, and the top of the ±35 % scatter is 576.3 MPa, within proof. The dry window is 22.1–25.5 N·m and the table's own dry guide for M8 is 23.8 N·m. With anti-seize (K 0.12) the same torque gives 122.7 % of proof nominal.
 
-**The other presets** are illustrations, and say so. `m6-through` uses the table's M6 dry guide torque (9.79 N·m, which lands at 70.0 % of proof) with a 500 N "example load": protrusion 20 − (10 + 1.6 + 5.2) = 3.20 mm against 2p = 2.00 mm. `quarter-20` is 1/4-20 J429 grade 5 dry at 10.7 N·m (the window's 0.70 point at K 0.20) with a 2,500 N "example load"; its nut and washer heights are `recall` in the inch table, and the receipt says so. Neither load comes from a PartForge part.
+**The other presets** are illustrations, and say so. Their torques are read, not typed: `m6-through` takes the M6 cell of `torque_guide_8_8_dry_Nm` (9.79 N·m, which lands at 70.0 % of proof), and `quarter-20` takes the 0.70-proof point of its own dry window at K 0.20 to 3 sf (0.20 × 0.70 × 586 × 20.52 × 0.00635 = 10.69 → 10.7 N·m). The receipt prints where each torque came from. Their loads (500 N and 2,500 N, labelled "example load") and their screw lengths and stacks (20 mm through 10 mm; 25.4 mm through 12.7 mm) are declared example inputs, the kind a user types, not PartForge numbers. `m6-through`'s protrusion is 20 − (10 + 1.6 + 5.2) = 3.20 mm against 2p = 2.00 mm. `quarter-20`'s nut and washer heights are `recall` in the inch table, and the receipt says so.
 
-**Refusals.** No torque, or "tightened by feel": the preload, assembly and service lines are refused, quoting the NASA row's note "A joint tightened by feel has no defensible preload at all". The torque window stays, because it says what to set. Other refusals: a size not in either table; an unknown grade; a declared grade without a source, or with proof > yield > UTS out of order; an inch screw below 1/4 in with a J429 grade; A574 or F837 (whose strengths are `recall` in the notes); zinc-plated inch threads (the notes give no K); a declared K without its source or its lubrication state; a negative external load; a nyloc nut on a size whose height is null; a tapped part that is not a metal. A verdict also names any line it left out ("Not computed: in service (no external load per bolt was given)"), so a refused line never reads as a passed one.
+**Refusals.** No torque, or "tightened by feel": the preload, assembly and service lines are refused, quoting the NASA row's note "A joint tightened by feel has no defensible preload at all". The torque window stays, because it says what to set. Other refusals: a size not in either table; an unknown grade; a declared grade without a source, or with proof > yield > UTS out of order; an inch screw outside a J429 grade's size range; A574 or F837 (whose strengths are `recall` in the notes); zinc-plated inch threads (the notes give no K); a declared K without its source or its lubrication state; a negative external load; a nyloc nut on a size whose height is null; a tapped part that is not a metal. A value that is given but is not a finite positive number (torque, K, a declared strength, screw length, stack, engagement; a non-finite external load) is refused as `out_of_envelope`, separately from a value that was not given at all (`insufficient_data`). A verdict also names any line it left out ("Not computed: in service (no external load per bolt was given)"), so a refused line never reads as a passed one.
 
 ## Tests
 
-`torque.test.mjs`, 17 tests, Node built-ins. What they are pinned to, outside this folder's code:
+`torque.test.mjs`, 20 tests, Node built-ins. What they are pinned to, outside this folder's code:
 
 - **The snapshots are the source.** Three snapshots re-hash to their sidecars' `sourceSha256`. All six were read at one commit. The code cut contains `threadCheck`'s exact signature line.
 - **The evaluation's numbers** (`roadmap-evaluation.md:398`, `:403`, read from the snapshot): the four facts at `:398` equal what the parser read from the tables. The `:403` counter-example (20.8 kN, 21.2 kN, 36.6 mm², 580 MPa, 1.25, 712 MPa, SF 0.82) reproduces field by field from a regex over that line. Exact: σ = 711.5209 MPa.
@@ -103,14 +103,15 @@ The evaluation's own counter-example (`:403`: "F_i = 20.8 kN against a 21.2 kN p
 - **Refusals and words.** 19 refusal cases each check the code, the missing field or the reason, and a refused line carries no number. Across every size × grade × condition (over 100 receipts), no headline or note says PASS. Stainless dry carries the 0.25–0.35 K caveat. A verdict names the lines it did not compute.
 - **The CLI.** `--help` exits 0; the end cap prints the receipt lines above; by-feel and an unknown size exit 2; usage errors exit 3; `--guide` prints 12 rows; `example.txt` equals the CLI's current output byte for byte.
 - **The README** quotes the kernel's end-cap numbers (this file), and the page loads every snapshot.
+- **Added by the independent review** (three tests). Ten typed values that are not finite positive numbers are refused as out of envelope, and across every size at 1e-9 to 1e300 N·m with a 1e300 N load no receipt carries a non-finite number. The J429 ranges equal the hand-read "1/4-1 in" and "1/4-1-1/2 in", and a copy of notes (7) cut to "1/4-3/8 in" refuses 1/2-13 grade 5 and accepts 3/8-16. The `m6-through` torque equals the M6 guide cell read straight from the JSON, and `quarter-20`'s equals the hand-worked 10.7 N·m. The CLI test now also checks that `--sweep` with no torque exits 2 without printing "undefined".
 
-`ui-check.mjs` (79 checks, headless Chromium, about 5 s). At 390 px in dark mode by touch: the end cap's receipt numbers, two OVER stamps, the sweep, the "today" card (visible), the chart's label, its marks and the nominal dot at the middle of the scatter bar, and a tap tooltip. Tightened by feel refuses with no stress number, a disabled torque field and no chart bar. Typing 17.8 N·m brings the nominal to about 70 % and the headline to the C = 1 bound only. At 1280 px in light mode by keyboard: M6 protrusion, a 16 mm screw ending inside the nut, the nyloc recall flag, a declared grade refused until it has a source, #8-32 J429-5 refused in the table's own words, the 1/4-20 lbf·in readout, a cleared load naming the line left out, the K-range caption styled as a caption, and Enter on a preset button. Every preset at both widths and both schemes: no horizontal overflow, no console errors.
+`ui-check.mjs` (85 checks, headless Chromium, about 5 s). At 390 px in dark mode by touch: the end cap's receipt numbers, two OVER stamps, the sweep, the "today" card (visible), the chart's label, its marks and the nominal dot at the middle of the scatter bar, and a tap tooltip. Tightened by feel refuses with no stress number, a disabled torque field and no chart bar. Typing 17.8 N·m brings the nominal to about 70 % and the headline to the C = 1 bound only. At 1280 px in light mode by keyboard: M6 protrusion, a 16 mm screw ending inside the nut, the nyloc recall flag, a declared grade refused until it has a source, #8-32 J429-5 refused in the table's own words, the 1/4-20 lbf·in readout, a cleared load naming the line left out, the K-range caption styled as a caption, and Enter on a preset button. Every preset at both widths and both schemes: no horizontal overflow, no console errors. Added by the review: a 1e306 N·m torque is refused, and neither it nor a 1e306 N load puts NaN, Infinity or ∞ on the page or a console error in the log; the "today" card's verdict on the fixture note equals the kernel's assembly line; the grade's own table note is on the receipt.
 
-**Teeth.** I broke the code on purpose, one sabotage at a time, and counted failing tests out of 17:
+**Teeth.** I broke the code on purpose, one sabotage at a time, and counted failing tests out of 17. The independent review re-ran 14 of these rows against the 20 tests: all match except "d in mm/100", which now fails 10 (the preset test reads the window too). Adding tests cannot lower a count, so the rows it did not re-run are at least what they say.
 
 | Sabotage in `torque.js` | Tests failing |
 |---|---|
-| d in mm/100 instead of mm/1000 | 8 |
+| d in mm/100 instead of mm/1000 | 8 (10 of 20 after review) |
 | proof load from the 3-sf table column instead of A_s × S_p | 6 |
 | lubricated and as-received scatter rows swapped | 5 |
 | assembly stress at the nominal, not the top of the scatter | 5 |
@@ -138,7 +139,17 @@ The evaluation's own counter-example (`:403`: "F_i = 20.8 kN against a 21.2 kN p
 | *data:* 8.8 proof 580 → 590 in the snapshot | 8 |
 | *data:* the fixture's torque 25 → 20 N·m | 4 |
 
-All 27 are caught. The page sabotages, counted against `ui-check.mjs`:
+All 27 are caught. The review's sabotages of its own fixes, counted out of 20:
+
+| Sabotage in `torque.js` (review) | Tests failing |
+|---|---|
+| a non-finite value counts as given and positive (`Infinity` torque computes) | 1 |
+| the preload-overflow guard removed (1e306 N·m prints ∞ N) | 1 |
+| a non-finite external load refused as "not declared" | 1 |
+| J429 grade 5's upper size typed as 1, or as 0.4 | 1 each |
+| the M6 preset torque typed back as 9.79 (no source on the receipt) | 1 |
+
+Before the review, J429 grade 5's upper size was typed and moving it to 0.4 in failed no test, because every inch row is at most 1/2 in. The page sabotages, counted against `ui-check.mjs`:
 
 | Sabotage in `app.js` / `style.css` | Checks failing |
 |---|---|
@@ -147,6 +158,8 @@ All 27 are caught. The page sabotages, counted against `ui-check.mjs`:
 | the "as PartForge checks it today" card is never shown | 1 (escaped until I added a visibility check: Playwright's `innerText` reads hidden text) |
 | the scatter bar drawn from the nominal, not F_min | 1 (escaped until I added the dot-at-the-middle check) |
 | the dark-mode page colour lost | 1 |
+| (review) the chart scale multiplies before it divides, so a 1e306 N load draws `x="Infinity"` | 3 |
+| (review) the "today" card's verdict on the fixture note typed back as fixed text | 1 |
 
 The scripts that ran these lived in the session scratchpad and are not shipped; each mutation was applied alone to a copy of this folder.
 
@@ -154,8 +167,8 @@ The scripts that ran these lived in the session scratchpad and are not shipped; 
 
 **What works.**
 - [Certain] The arithmetic is right where it can be checked from outside. It reproduces the evaluation's worked counter-example to the digit, the table's own torque-guide column at all 12 sizes, PartForge's `threadCheck` test vector, the inch notes' worked example, and hand-worked protrusion stacks. I also recomputed the end-cap numbers in Python straight from the JSON tables, not through `torque.js`; they agree.
-- [Certain] No number on the page or in the CLI is typed into the code. Every one is read from a snapshot whose sha256 matches PartForge `0974a62`, or computed from those, and each line names its table, field and PartForge confidence label.
-- [Certain] It refuses rather than guesses: no torque, no grade, no source, a grade outside the repo's data, an inch screw below J429's floor.
+- [Certain] No PartForge or standard value on the page or in the CLI is typed into the code. Every one is read from a snapshot whose sha256 matches PartForge `0974a62`, or computed from those, and each line names its table, field and PartForge confidence label. The only typed numbers are the two illustration presets' example loads, screw lengths and stacks (500 N, 20 mm, 10 mm; 2,500 N, 25.4 mm, 12.7 mm), which stand where a user's own inputs go and are labelled "example load". Until the independent review this line also claimed the preset torques, which were typed (9.79 and 10.7 N·m, correct values, but typed); they are now read from the tables.
+- [Certain] It refuses rather than guesses: no torque, no grade, no source, a grade outside the repo's data, an inch screw outside J429's size range, and (since the review) a typed value that is not a finite positive number.
 - [Likely] The NASA ±25 % / ±35 % rows are the right scatter to put on a torque-controlled amateur joint as a citable floor, which is how PartForge's table itself presents them ("Used here as a CITABLE floor … conservative for amateur HPR").
 
 **What is rough.**
@@ -178,7 +191,17 @@ The scripts that ran these lived in the session scratchpad and are not shipped; 
 7. **`min_engagement_6061T6_8_8_mm` has no confidence label.** It is neither a core field nor in `field_confidence` (idea 11 also records this).
 8. **The protrusion rule is still unchecked.** `design_factors_nasa.json` `fastener_protrusion_min` says "PartForge does not check it yet", and there is no protrusion logic in `index.html` outside the embedded table.
 
-**Gates not passed.** An idea-bank prototype. It has not been through PartForge's geometry gate (it measures no mesh: stack and engagement are typed or read from the fixture's declarations), its data-provenance pipeline or its skeptic review. It has not had an independent review in this bank. PartForge's maintainers have not seen it. NASA TM-106943, the source PartForge's table names for this check, has not been used to validate it.
+**What the independent review changed** (2026-11-02, a second agent that tried to prove the deposit wrong, then fixed what it found).
+- *Checked and held.* The end-cap numbers recomputed again in Python straight from PartForge's JSON (20,833 N, 21,228 N, 98.1 %, 711.52 MPa, SF 0.815 / 0.899 / 1.124, window 16.56–19.11 N·m, cap 20.38 N·m, 877.64 MPa, dry 576.33 MPa, anti-seize 122.7 %), the guide-column reconciliation (all 12 by A_s × S_p; the proof column misses exactly M2.5, M6, M8, M10 and M12), the strip and boltShear figures (31,165 N, 29,287 N, 0.97; shear 2.22, bearing 9.22). Every `index.html`, fixture, evaluation and table citation opened at `0974a62` and held, as did the overlap claims about ideas 07 and 11. 14 of the builder's 27 kernel sabotages re-run and caught.
+- *Infinity and NaN on extreme inputs* (fixed). A torque of 1e306 N·m printed "∞ N", "Infinity % of proof" and "SF 0.00"; that torque, a 1e306 N load and a declared UTS of 1e308 MPa each drew `NaN` or `Infinity` coordinates into the chart (25, 9 and 25 console errors at 390 px); `Infinity` or `1e400` N·m was refused as "No tightening torque was given", and a load of `abc` as "No external load per bolt was declared". The kernel now refuses a given-but-non-finite value, and an overflowing preload, as `out_of_envelope`; the chart divides before it multiplies; a stack of 0 or a negative engagement is refused as out of envelope, not as "missing".
+- *A typed size range* (fixed). J429 grade 5's 1–in and grade 8's 1-1/2–in upper limits were typed constants; a sabotage moving grade 5's to 0.4 in failed no test. They are now parsed from the notes' sentence and pinned, with a test that edits the sentence.
+- *Typed preset torques behind a [Certain] "nothing typed" claim* (fixed, and the claim reworded above).
+- *A typed verdict on the page* (fixed). The "as PartForge checks it today" card said the fixture's note "puts the top of the preload scatter past proof" as fixed text; it now prints the kernel's word, σ and proof SF for the fixture's own inputs.
+- *CLI* (fixed). `--sweep` with no torque printed "Same torque (undefined N·m …)", four "refused" rows and exited 0; it now prints the refusal and exits 2.
+- *Small additions.* The grade's own table note (the 8.8 size split, the A2-70 strength trap, 12.9's hydrogen-embrittlement warning) now rides on the receipt; the receipt-wide notes are styled as captions instead of body text.
+- *Not changed.* The math, the snapshots, the findings about PartForge and the headline numbers: nothing the review recomputed disagreed with them.
+
+**Gates not passed.** An idea-bank prototype. It has not been through PartForge's geometry gate (it measures no mesh: stack and engagement are typed or read from the fixture's declarations), its data-provenance pipeline or its skeptic review. It has had one independent review in this bank (above), by an agent, not by PartForge's maintainers, who have not seen it. NASA TM-106943, the source PartForge's table names for this check, has not been used to validate it.
 
 **How this folder came to be.** It was begun by a builder before the 2026-10-26 hold, which stopped it after `torque.js`, 14 tests, the CLI, the page and a 75-check `ui-check.mjs`, with no README and never run through the bank checker. It was recovered from `hold/ideas-20-30` by transcript replay and finished on 2026-11-02. I re-verified every citation above and every snapshot against the checkout, and recomputed the end-cap numbers independently. Kept: the kernel's math, the snapshots and `build-data.mjs` (all six current), the CLI and the page. Fixed: a verdict could say "No line exceeds proof" while the in-service line had been refused for want of a load; it now names the lines it left out. `endcapToday()` used a hard-coded 6061-T6 and now reads the fixture's own FLIGHT material. Added: three tests (the dry-torque finding, the not-computed verdict and fixture material, the CLI and `example.txt`), a per-condition K and scatter pin and three page checks (each added because a sabotage escaped), the torsion caveat on the page, a phone layout for the condition sweep, a halo on the chart labels so reference lines do not strike through them, a fix for the K-range caption that rendered as a bordered box, `check.mjs`, `example.txt` and this README.
 

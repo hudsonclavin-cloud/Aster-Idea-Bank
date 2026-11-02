@@ -320,6 +320,71 @@ test('a verdict names the lines it leaves out, and the fixture\'s own material d
   assert.throws(() => TR.endcapToday(badCtx), /FLIGHT_MATERIALS\["unobtainium"\]/, 'an unknown fixture material is an error, not a silent 6061-T6');
 });
 
+// Every number anywhere in a receipt object (JSON.stringify would hide Infinity as null).
+function numbersIn(o, out = []) {
+  if (typeof o === 'number') out.push(o);
+  else if (o && typeof o === 'object') for (const k of Object.keys(o)) { if (k !== 'row' && k !== 'uRow') numbersIn(o[k], out); }
+  return out;
+}
+
+test('independent review: a typed value that is not a finite positive number is refused as out of envelope, never shown as Infinity or NaN', () => {
+  const cases = [
+    [{ ...M8_25_LUB, torque_Nm: 'Infinity' }, (r) => r.sections.preload.refusal.code === 'out_of_envelope' && /finite/.test(r.sections.preload.refusal.reason)],
+    [{ ...M8_25_LUB, torque_Nm: '1e400' }, (r) => r.sections.preload.refusal.code === 'out_of_envelope'],
+    // Finite, but the preload overflows double precision: refused, not printed as "∞ N".
+    [{ ...M8_25_LUB, torque_Nm: 1e306 }, (r) => r.sections.preload.refusal.code === 'out_of_envelope' && /too large to represent/.test(r.sections.preload.refusal.reason)],
+    [{ ...M8_25_LUB, condition: 'declared', K: 'Infinity', K_source: 'x', lubricated: true }, (r) => !r.ok && r.refusal.code === 'out_of_envelope' && r.refusal.missing[0] === 'K'],
+    [{ ...M8_25_LUB, condition: 'declared', K: 1e-320, K_source: 'x', lubricated: true }, (r) => r.sections.preload.refusal.code === 'out_of_envelope'],
+    [{ ...M8_25_LUB, grade: 'declared', declared: { proof_MPa: 600, yield_MPa: 660, uts_MPa: 1e308, source: 'x' } }, (r) => !r.ok && r.refusal.code === 'out_of_envelope' && r.refusal.missing.includes('uts_MPa')],
+    [{ ...M8_25_LUB, Fext_N: 'abc' }, (r) => r.sections.service.refusal.code === 'out_of_envelope' && !/No external load/.test(r.sections.service.refusal.reason)],
+    [{ ...M8_25_LUB, joint: 'nut', screw_len_mm: 20, stack_mm: 0 }, (r) => r.sections.protrusion.refusal.code === 'out_of_envelope' && r.sections.protrusion.refusal.missing[0] === 'stack_mm'],
+    [{ ...M8_25_LUB, joint: 'tapped', engagement_mm: -3, material: '6061-T6' }, (r) => r.sections.engagement.refusal.code === 'out_of_envelope'],
+    // Not given at all is still "insufficient data", with the field named as missing.
+    [{ ...M8_25_LUB, joint: 'nut', screw_len_mm: 20 }, (r) => r.sections.protrusion.refusal.code === 'insufficient_data'],
+  ];
+  cases.forEach(([inp, ok], i) => {
+    const r = TR.receipt(ctx, inp);
+    assert.ok(ok(r), `review case ${i}: ${JSON.stringify(r.refusal || r.sections).slice(0, 300)}`);
+    assert.ok(numbersIn(r).every(Number.isFinite), `review case ${i}: every number on the receipt is finite`);
+  });
+  // A sweep of absurd but typeable inputs across every size: no non-finite number reaches a receipt.
+  for (const s of TR.sizes(ctx)) {
+    for (const T of [1e-9, 1, 1e6, 1e300]) {
+      const r = TR.receipt(ctx, { size: s.key, grade: s.system === 'metric' ? '12.9' : 'J429-8', torque_Nm: T, condition: 'dry', Fext_N: 1e300, joint: 'nut', screw_len_mm: 1e300, stack_mm: 1 });
+      assert.ok(numbersIn(r).every(Number.isFinite), `${s.key} at ${T} N·m`);
+    }
+  }
+});
+
+test('independent review: the J429 size ranges are read from notes (7), not typed, and a range change moves the refusal', () => {
+  // Hand-read from the sentence: "grade 5, 1/4-1 in", "grade 8, 1/4-1-1/2 in".
+  assert.deepEqual([ctx.unGrades['J429-5'].minD_in, ctx.unGrades['J429-5'].maxD_in, ctx.unGrades['J429-5'].range], [0.25, 1, '1/4-1 in']);
+  assert.deepEqual([ctx.unGrades['J429-8'].minD_in, ctx.unGrades['J429-8'].maxD_in, ctx.unGrades['J429-8'].range], [0.25, 1.5, '1/4-1-1/2 in']);
+  // Every inch row in the table is within 1/2 in, so the upper limit is exercised on a copy of the
+  // notes whose grade 5 range is cut to 1/4-3/8 in.
+  const n7 = data.fasteners_un.notes_paragraphs['7'];
+  assert.ok(n7.includes('SAE J429 grade 5, 1/4-1 in:'));
+  const un2 = { ...data.fasteners_un, notes_paragraphs: { ...data.fasteners_un.notes_paragraphs, 7: n7.replace('SAE J429 grade 5, 1/4-1 in:', 'SAE J429 grade 5, 1/4-3/8 in:') } };
+  const ctx2 = TR.makeContext({ ...data, fasteners_un: un2 });
+  assert.equal(ctx2.unGrades['J429-5'].maxD_in, 0.375);
+  const big = TR.receipt(ctx2, { size: '1/2-13', grade: 'J429-5', torque_Nm: 10, condition: 'dry' });
+  assert.ok(!big.ok && big.refusal.code === 'out_of_envelope' && /1\/4-3\/8 in/.test(big.refusal.reason), JSON.stringify(big.refusal));
+  assert.ok(TR.receipt(ctx2, { size: '3/8-16', grade: 'J429-5', torque_Nm: 10, condition: 'dry' }).ok, '3/8 in is inside 1/4-3/8 in');
+  assert.ok(TR.receipt(ctx, { size: '1/2-13', grade: 'J429-5', torque_Nm: 10, condition: 'dry' }).ok, '1/2 in is inside the real 1/4-1 in');
+});
+
+test('independent review: the illustration presets take their torques from the tables, not from typed numbers', () => {
+  const P = TR.presets(ctx);
+  // The M6 cell of the guide column, read straight from the snapshot's JSON (not through findSize).
+  const m6Cell = data.fasteners_metric.json.rows.find((r) => r.key === 'M6').torque_guide_8_8_dry_Nm;
+  assert.equal(P['m6-through'].input.torque_Nm, m6Cell);
+  assert.equal(m6Cell, 9.79);
+  // 1/4-20 grade 5 dry, hand-worked: 0.20 x 0.70 x 586 MPa x 20.52 mm2 x 6.35 mm = 10.69 N·m -> 10.7.
+  close(0.20 * 0.70 * 586 * 20.52 * 0.00635, 10.6898, 1e-3, 'hand-worked T_mid');
+  assert.equal(P['quarter-20'].input.torque_Nm, 10.7);
+  assert.match(TR.receipt(ctx, P['m6-through'].input).sections.preload.T_src, /torque_guide_8_8_dry_Nm/);
+});
+
 test('the CLI: exit codes, the end cap receipt, the guide table, and example.txt is its real output', () => {
   const cli = (...a) => spawnSync('node', [path.join(here, 'torque-receipt.mjs'), ...a], { encoding: 'utf8' });
   const help = cli('--help');
@@ -332,6 +397,10 @@ test('the CLI: exit codes, the end cap receipt, the guide table, and example.txt
   assert.equal(cli('--size', 'M7', '--grade', '8.8', '--torque', '5').status, 2, 'an unknown size exits 2');
   assert.equal(cli('--bogus').status, 3, 'usage error exits 3');
   assert.equal(cli('--torque').status, 3, 'a flag missing its value exits 3');
+  const sweepNoT = cli('--size', 'M8', '--grade', '8.8', '--sweep');
+  assert.equal(sweepNoT.status, 2, 'a sweep with no torque is refused (exit 2), not printed as "undefined N·m"');
+  assert.doesNotMatch(sweepNoT.stdout, /undefined/);
+  assert.equal(cli('--preset', 'endcap', '--sweep').status, 0);
   const guide = cli('--guide');
   assert.equal(guide.status, 0);
   assert.equal(guide.stdout.trim().split('\n').length, 2 + 12);

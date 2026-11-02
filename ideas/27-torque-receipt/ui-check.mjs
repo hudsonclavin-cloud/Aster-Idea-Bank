@@ -78,6 +78,8 @@ async function shot(page, name) { if (outDir) { const f = path.join(outDir, name
   ok(bar.w > 20 && Math.abs((dot - bar.x) / bar.w - 0.5) < 0.02, `nominal dot at the middle of the scatter bar (${((dot - bar.x) / bar.w).toFixed(3)})`);
   const td = await txt(page, '#today');
   ok(td.includes('shear SF ' + today.r.sf_shear.toFixed(2)) && td.includes('passes') && td.includes('index.html:4733'), `today card (${td.slice(0, 120)})`);
+  ok(td.includes('scatter ' + endcap.sections.assembly.word + ' (σ ' + TR.fmtMPa(endcap.sections.assembly.sigma_MPa) + ', proof SF ' + endcap.sections.assembly.sf_proof.toFixed(2) + ')'), 'the today card\'s verdict on the fixture note is the kernel\'s, not typed text');
+  ok(rc.includes('table note: d <= 16 mm'), 'the grade\'s own table note rides on the receipt');
   const svg = await page.locator('#chart svg').getAttribute('aria-label');
   ok(/^Preload scatter 15\.6 kN to 26\.0 kN against proof 21\.2 kN, yield 23\.4 kN, UTS 29\.3 kN; with the external load 32\.1 kN$/.test(svg), `chart label (${svg})`);
   ok((await page.locator('#chart .scatter').count()) === 1 && (await page.locator('#chart .svc').count()) === 1, 'chart draws the scatter bar and the service point');
@@ -109,6 +111,19 @@ async function shot(page, name) { if (outDir) { const f = path.join(outDir, name
   ok(rc3.includes('70.0 % of proof') || rc3.includes('69.9 % of proof') || rc3.includes('70.1 % of proof'), '17.8 N·m lands at about 70 % of proof');
   ok(!(await overflow(page)), 'no overflow after edits');
   await shot(page, 'phone-dark-edited');
+  // Independent review: absurd but typeable numbers are refused, never drawn as Infinity or NaN.
+  const nonFinite = async () => page.evaluate(() => /NaN|Infinity|∞|undefined/.test(document.body.innerText + document.getElementById('chart').innerHTML));
+  await page.locator('#torque').fill('1e306');
+  await page.waitForTimeout(80);
+  ok((await page.locator('#headline.refused').count()) === 1 && /out_of_envelope|too large to represent/.test(await txt(page, '#receipt')), 'a torque of 1e306 N·m is refused as out of envelope');
+  ok(!(await nonFinite()), 'no NaN, Infinity or ∞ on the page at 1e306 N·m');
+  await page.locator('#torque').fill('25');
+  await page.locator('#fext').fill('1e306');
+  await page.waitForTimeout(80);
+  ok(!(await nonFinite()), 'a 1e306 N external load draws no Infinity or NaN into the chart');
+  await page.locator('#fext').fill('6080');
+  await page.waitForTimeout(60);
+  ok(errors.length === 0, `absurd inputs log no console errors: ${errors.slice(0, 3).join(' | ')}`);
   ok(errors.length === 0, `no console errors (phone): ${errors.join(' | ')}`);
   await context.close();
 }

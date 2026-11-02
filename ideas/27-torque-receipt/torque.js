@@ -34,6 +34,18 @@
     return m;
   }
   function num(s) { return parseFloat(s); }
+  // "1/4" -> 0.25, "1" -> 1, "1-1/2" -> 1.5 (inch sizes as the fastener notes write them).
+  function inchValue(s) {
+    var m = /^(\d+)-(\d+)\/(\d+)$/.exec(s);
+    if (m) return num(m[1]) + num(m[2]) / num(m[3]);
+    m = /^(\d+)\/(\d+)$/.exec(s);
+    if (m) return num(m[1]) / num(m[2]);
+    return num(s);
+  }
+  // A typed value that is present (not null, undefined or blank).
+  function given(v) { return v !== null && v !== undefined && String(v).trim() !== ''; }
+  // A present value that is a finite number greater than zero.
+  function finitePos(v) { return given(v) && isFinite(+v) && +v > 0; }
 
   /* ------------------------------------------------------------------------------------------
    * Context: everything parsed once from the snapshots. Numbers are READ from the tables' own
@@ -74,12 +86,15 @@
     };
     ctx.stainlessDryK = { lo: num(uk[6]), hi: num(uk[7]), quote: uk[6] + '-' + uk[7] + ' stainless-on-stainless dry' };
     ctx.unKLabel = /\(K values: (\w+)\)/.test(n6) ? /\(K values: (\w+)\)/.exec(n6)[1] : 'unlabelled';
-    var g5 = must(/SAE J429 grade 5, 1\/4-1 in: proof \d+ ksi \((\d+) MPa\), yield \d+ \((\d+)\), UTS \d+ \((\d+)\)[^\[]*\[(\w+), ([^\]]+)\]/.exec(n7), 'SAE J429 grade 5 in fasteners_un notes (7)');
-    var g8 = must(/SAE J429 grade 8, 1\/4-1-1\/2 in: proof \d+ \((\d+)\), yield \d+ \((\d+)\), UTS \d+ \((\d+)\)[^\[]*\[(\w+), ([^\]]+)\]/.exec(n7), 'SAE J429 grade 8 in fasteners_un notes (7)');
+    // Each grade's size range is read from the same sentence ("grade 5, 1/4-1 in", "grade 8,
+    // 1/4-1-1/2 in"), never typed here: an inch size written as "1", "1/4" or "1-1/2".
+    var INCH = '(\\d+(?:-\\d+\\/\\d+)?|\\d+\\/\\d+)';
+    var g5 = must(new RegExp('SAE J429 grade 5, ' + INCH + '-' + INCH + ' in: proof \\d+ ksi \\((\\d+) MPa\\), yield \\d+ \\((\\d+)\\), UTS \\d+ \\((\\d+)\\)[^\\[]*\\[(\\w+), ([^\\]]+)\\]').exec(n7), 'SAE J429 grade 5 in fasteners_un notes (7)');
+    var g8 = must(new RegExp('SAE J429 grade 8, ' + INCH + '-' + INCH + ' in: proof \\d+ \\((\\d+)\\), yield \\d+ \\((\\d+)\\), UTS \\d+ \\((\\d+)\\)[^\\[]*\\[(\\w+), ([^\\]]+)\\]').exec(n7), 'SAE J429 grade 8 in fasteners_un notes (7)');
     var gs = must(/J429 grades start at 1\/4 in; #2-#12 machine screws are NOT graded to J429/.exec(n7), 'the J429 size floor in fasteners_un notes (7)');
     ctx.unGrades = {
-      'J429-5': { proof_MPa: num(g5[1]), yield_MPa: num(g5[2]), uts_MPa: num(g5[3]), confidence: g5[4], source: g5[5] + ' (fasteners_un.json notes (7), prose, not a column)', minD_in: 0.25, maxD_in: 1, label: 'SAE J429 grade 5' },
-      'J429-8': { proof_MPa: num(g8[1]), yield_MPa: num(g8[2]), uts_MPa: num(g8[3]), confidence: g8[4], source: g8[5] + ' (fasteners_un.json notes (7), prose, not a column)', minD_in: 0.25, maxD_in: 1.5, label: 'SAE J429 grade 8' },
+      'J429-5': { proof_MPa: num(g5[3]), yield_MPa: num(g5[4]), uts_MPa: num(g5[5]), confidence: g5[6], source: g5[7] + ' (fasteners_un.json notes (7), prose, not a column)', minD_in: inchValue(g5[1]), maxD_in: inchValue(g5[2]), range: g5[1] + '-' + g5[2] + ' in', label: 'SAE J429 grade 5' },
+      'J429-8': { proof_MPa: num(g8[3]), yield_MPa: num(g8[4]), uts_MPa: num(g8[5]), confidence: g8[6], source: g8[7] + ' (fasteners_un.json notes (7), prose, not a column)', minD_in: inchValue(g8[1]), maxD_in: inchValue(g8[2]), range: g8[1] + '-' + g8[2] + ' in', label: 'SAE J429 grade 8' },
     };
     ctx.unGradeFloorQuote = gs[0];
 
@@ -171,8 +186,10 @@
       var d = input.declared || {};
       var p = +d.proof_MPa, y = +d.yield_MPa, u = +d.uts_MPa, s = String(d.source || '').trim();
       var miss = [];
-      if (!(p > 0)) miss.push('proof_MPa'); if (!(y > 0)) miss.push('yield_MPa'); if (!(u > 0)) miss.push('uts_MPa'); if (!s) miss.push('source');
+      if (!given(d.proof_MPa)) miss.push('proof_MPa'); if (!given(d.yield_MPa)) miss.push('yield_MPa'); if (!given(d.uts_MPa)) miss.push('uts_MPa'); if (!s) miss.push('source');
       if (miss.length) return { refusal: refusal('insufficient_data', 'A declared grade needs a positive proof, yield and UTS and the document they came from (' + miss.join(', ') + ' missing).', 'Give all three strengths in MPa and name the standard or certificate, e.g. "ASTM F837 CW, vendor cert 1234".', miss) };
+      var bad = ['proof_MPa', 'yield_MPa', 'uts_MPa'].filter(function (k) { return !finitePos(d[k]) || !isFinite(+d[k] * size.As_mm2); });
+      if (bad.length) return { refusal: refusal('out_of_envelope', 'A declared strength must be a finite positive number of MPa (' + bad.join(', ') + ': ' + bad.map(function (k) { return '"' + d[k] + '"'; }).join(', ') + ').', 'Give the strengths in MPa as the certificate or standard states them.', bad) };
       if (!(p <= y && y <= u)) return { refusal: refusal('out_of_envelope', 'Proof ' + p + ' ≤ yield ' + y + ' ≤ UTS ' + u + ' does not hold, so these are not one fastener\'s properties.', 'Check which number is which: proof is the lowest, UTS the highest.', ['proof_MPa', 'yield_MPa', 'uts_MPa']) };
       return { grade: { key: 'declared', label: 'declared', proof_MPa: p, yield_MPa: y, uts_MPa: u, confidence: 'user', source: 'declared by the user: ' + s,
         proofLoad_N: p * size.As_mm2, proofLoadSrc: 'computed: declared proof ' + p + ' MPa × As ' + size.As_mm2 + ' mm²' } };
@@ -202,7 +219,7 @@
     }
     var U = ctx.unGrades[g];
     if (!U) return { refusal: refusal('not_found', 'Grade "' + g + '" has no strengths in fasteners_un.json. The table has no proof column; its notes (7) give SAE J429 grades 5 and 8 only, and A574 and F837 proof values there are recall.', 'Use J429-5 or J429-8 (1/4 in and up), or declare proof, yield and UTS with their source.', ['grade']) };
-    if (size.D_in < U.minD_in - 1e-9 || size.D_in > U.maxD_in + 1e-9) return { refusal: refusal('out_of_envelope', size.key + ' is outside ' + U.label + '\'s size range. fasteners_un notes (7): "' + ctx.unGradeFloorQuote + '".', 'Declare proof, yield and UTS for this screw from its certificate or standard.', ['grade']) };
+    if (size.D_in < U.minD_in - 1e-9 || size.D_in > U.maxD_in + 1e-9) return { refusal: refusal('out_of_envelope', size.key + ' is outside ' + U.label + '\'s size range (' + U.range + ' in fasteners_un notes (7)). The notes also say: "' + ctx.unGradeFloorQuote + '".', 'Declare proof, yield and UTS for this screw from its certificate or standard.', ['grade']) };
     return { grade: { key: g, label: U.label, proof_MPa: U.proof_MPa, yield_MPa: U.yield_MPa, uts_MPa: U.uts_MPa, confidence: U.confidence, source: U.source,
       proofLoad_N: U.proof_MPa * size.As_mm2, proofLoadSrc: 'computed: proof ' + U.proof_MPa + ' MPa × As ' + size.As_mm2 + ' mm² (fasteners_un has no proof-load column)' } };
   }
@@ -216,8 +233,9 @@
     var Kr, kSrc, kLabel;
     if (c === 'declared') {
       var K = +input.K, ks = String(input.K_source || '').trim();
-      var miss = []; if (!(K > 0)) miss.push('K'); if (!ks) miss.push('K_source');
+      var miss = []; if (!given(input.K)) miss.push('K'); if (!ks) miss.push('K_source');
       if (miss.length) return { refusal: refusal('insufficient_data', 'A declared nut factor needs a positive K and where it came from (' + miss.join(', ') + ' missing).', 'Give K and its source (a torque-tension test of this batch is the only real one).', miss) };
+      if (!finitePos(input.K)) return { refusal: refusal('out_of_envelope', 'A declared nut factor must be a finite positive number (got "' + input.K + '").', 'Give K as the torque-tension test of this batch measured it.', ['K']) };
       if (!(input.lubricated === true || input.lubricated === false)) return { refusal: refusal('insufficient_data', 'A declared K still needs to say whether the threads are lubricated at assembly: that picks the ±25 % or ±35 % scatter row.', 'Say lubricated or not.', ['lubricated']) };
       Kr = { lo: K, hi: K, quote: 'declared K = ' + K };
       kSrc = 'declared by the user: ' + ks; kLabel = 'user';
@@ -282,14 +300,16 @@
 
     // Preload.
     var T = input.torque_Nm;
-    var hasT = !input.byFeel && T !== null && T !== undefined && String(T).trim() !== '' && isFinite(+T) && +T > 0;
     var tq = null;
     if (input.byFeel) {
       tq = refusal('insufficient_data', 'Tightened by feel: there is no torque, so there is no preload to compute. design_factors_nasa.json ' + ctx.uLub.key + ': "' + ctx.uLub.note + '"', 'Tighten with a calibrated torque wrench to a stated torque, then enter it. The torque window above says what to set.', ['torque_Nm']);
-    } else if (!hasT) {
-      tq = (T !== null && T !== undefined && String(T).trim() !== '' && !(+T > 0))
-        ? refusal('out_of_envelope', 'Torque must be a positive number of N·m (got "' + T + '").', 'Enter the torque the assembly instruction or the wrench setting gives.', ['torque_Nm'])
-        : refusal('insufficient_data', 'No tightening torque was given, so there is no preload to compute.', 'Enter the torque the assembly instruction or the wrench setting gives. The torque window above says what to set.', ['torque_Nm']);
+    } else if (!given(T)) {
+      tq = refusal('insufficient_data', 'No tightening torque was given, so there is no preload to compute.', 'Enter the torque the assembly instruction or the wrench setting gives. The torque window above says what to set.', ['torque_Nm']);
+    } else if (!finitePos(T)) {
+      tq = refusal('out_of_envelope', 'Torque must be a finite positive number of N·m (got "' + T + '").', 'Enter the torque the assembly instruction or the wrench setting gives.', ['torque_Nm']);
+    } else if (!isFinite(+T / (t.K * d_m) * (1 + t.u) / size.As_mm2)) {
+      // Finite inputs whose preload overflows double precision: no number on the receipt would mean anything.
+      tq = refusal('out_of_envelope', 'A torque of ' + T + ' N·m at K ' + t.K + ' gives a preload too large to represent; it is not a tightening torque for any bolt.', 'Check the torque and its units (N·m).', ['torque_Nm']);
     }
     if (tq) {
       S.preload = { status: 'refused', refusal: tq };
@@ -305,16 +325,17 @@
       var Ksens = null;
       if (t.Krange.lo !== t.Krange.hi) Ksens = { K_lo: t.Krange.lo, F_at_Klo: T / (t.Krange.lo * d_m), K_hi: t.Krange.hi, F_at_Khi: T / (t.Krange.hi * d_m) };
       S.preload = { status: 'computed', state: pState, word: pWord, T_Nm: T, F_nom_N: Fn, F_min_N: Fmin, F_max_N: Fmax, ratio_proof: ratio, Ksens: Ksens,
-        T_lbfin: size.system === 'un' ? T / NM_PER_LBFIN : null,
+        T_lbfin: size.system === 'un' ? T / NM_PER_LBFIN : null, T_src: String(input.torque_source || '').trim() || null,
         formula: 'F = T / (K · d) = ' + T + ' / (' + round(t.K, 4) + ' × ' + size.d_mm / 1000 + ' m); band F·(1 ∓ ' + t.u + ')' };
       var asm = stressBlock(Fmax, size, g);
       asm.status = 'computed';
       asm.formula = 'σ = F_max / As';
       S.assembly = asm;
       var Fe = input.Fext_N;
-      var hasFe = Fe !== null && Fe !== undefined && String(Fe).trim() !== '' && isFinite(+Fe);
-      if (!hasFe) {
+      if (!given(Fe)) {
         S.service = { status: 'refused', refusal: refusal('insufficient_data', 'No external load per bolt was declared, so the in-service line is not computed. Enter 0 if the joint carries none.', 'Give the axial load each bolt carries (total ÷ bolt count) and where it came from.', ['Fext_N']) };
+      } else if (!isFinite(+Fe) || !isFinite((Fmax + (+Fe)) / size.As_mm2)) {
+        S.service = { status: 'refused', refusal: refusal('out_of_envelope', 'The external load per bolt must be a finite number of N (got "' + Fe + '").', 'Enter the axial tension per bolt in N, or 0.', ['Fext_N']) };
       } else if (+Fe < 0) {
         S.service = { status: 'refused', refusal: refusal('out_of_envelope', 'An external load per bolt below zero is not a tension load (got ' + Fe + ' N).', 'Enter the axial tension per bolt as a positive number, or 0.', ['Fext_N']) };
       } else {
@@ -374,9 +395,11 @@
   function protrusion(ctx, size, input) {
     var L = input.screw_len_mm, st = input.stack_mm;
     var miss = [];
-    if (!(+L > 0)) miss.push('screw_len_mm');
-    if (!(+st > 0)) miss.push('stack_mm');
+    if (!given(L)) miss.push('screw_len_mm');
+    if (!given(st)) miss.push('stack_mm');
     if (miss.length) return { status: 'refused', refusal: refusal('insufficient_data', 'The protrusion check needs the screw length (under the head) and the clamped stack thickness (' + miss.join(', ') + ' missing).', 'Give both in mm. The stack is the parts between the washers, as drawn.', miss) };
+    var badP = [['screw_len_mm', L], ['stack_mm', st]].filter(function (x) { return !finitePos(x[1]); });
+    if (badP.length) return { status: 'refused', refusal: refusal('out_of_envelope', 'A screw length and a stack thickness must be finite positive numbers of mm (' + badP.map(function (x) { return x[0] + ' "' + x[1] + '"'; }).join(', ') + ').', 'Give both in mm, as drawn.', badP.map(function (x) { return x[0]; })) };
     var nut = nutFor(ctx, size, input);
     if (nut.refusal) return { status: 'refused', refusal: nut.refusal };
     var nw = (input.washer_head ? 1 : 0) + (input.washer_nut ? 1 : 0);
@@ -401,9 +424,10 @@
     var matKey = String(input.material || '');
     var M = ctx.code.FLIGHT_MATERIALS[matKey];
     var miss = [];
-    if (!(Le > 0)) miss.push('engagement_mm');
+    if (!given(input.engagement_mm)) miss.push('engagement_mm');
     if (!M) miss.push('material');
     if (miss.length) return { status: 'refused', refusal: refusal('insufficient_data', 'The strip check needs the thread engagement length and the tapped part\'s material from FLIGHT_MATERIALS (' + miss.join(', ') + ' missing).', 'Give the engaged thread length in mm and pick the tapped material.', miss) };
+    if (!finitePos(input.engagement_mm)) return { status: 'refused', refusal: refusal('out_of_envelope', 'The thread engagement must be a finite positive number of mm (got "' + input.engagement_mm + '").', 'Give the engaged thread length in mm.', ['engagement_mm']) };
     if (M.kind !== 'metal') return { status: 'refused', refusal: refusal('out_of_envelope', M.name + ' is not a metal; threadCheck\'s shear model is for tapped metal.', 'Use a threaded insert and check the insert, or pick a metal.', ['material']) };
     var reach = null, notes = [];
     if (+input.screw_len_mm > 0 && +input.stack_mm > 0) {
@@ -506,16 +530,22 @@
     };
   }
 
-  // The worked examples the page and the CLI share.
+  // The worked examples the page and the CLI share. The end cap is read from the fixture. The two
+  // illustrations take their torques from the tables (the M6 cell of torque_guide_8_8_dry_Nm, and
+  // the 0.70-proof point of the 1/4-20 grade 5 dry window to 3 sf); their loads, screw lengths and
+  // stacks are declared example inputs, labelled "example load", not PartForge numbers.
   function presets(ctx) {
     var endcap = endcapInput(ctx);
     var ex = function (o) { return Object.assign({}, endcap, o); };
+    var m6Guide = must(findSize(ctx, 'M6'), 'the M6 row').row.torque_guide_8_8_dry_Nm;
+    var q20 = { size: '1/4-20', grade: 'J429-5', condition: 'dry', K_pick: 'mid' };
+    var q20Mid = sig(receipt(ctx, q20).sections.window.T_mid_Nm, 3);
     return {
       'endcap': { label: 'End cap as written', input: endcap },
       'endcap-dry': { label: 'Same torque, dry', input: ex({ condition: 'dry' }) },
       'by-feel': { label: 'Tightened by feel', input: ex({ byFeel: true, torque_Nm: null }) },
-      'm6-through': { label: 'M6 through-bolt', input: { size: 'M6', grade: '8.8', torque_Nm: 9.79, condition: 'dry', K_pick: 'mid', Fext_N: 500, Fext_source: 'example load', joint: 'nut', nut: 'iso4032', screw_len_mm: 20, stack_mm: 10, washer_head: false, washer_nut: true } },
-      'quarter-20': { label: '1/4-20 grade 5', input: { size: '1/4-20', grade: 'J429-5', torque_Nm: 10.7, condition: 'dry', K_pick: 'mid', Fext_N: 2500, Fext_source: 'example load', joint: 'nut', nut: 'hex', screw_len_mm: 25.4, stack_mm: 12.7, washer_head: false, washer_nut: true } },
+      'm6-through': { label: 'M6 through-bolt', input: { size: 'M6', grade: '8.8', torque_Nm: m6Guide, torque_source: 'fasteners_metric.json M6.torque_guide_8_8_dry_Nm', condition: 'dry', K_pick: 'mid', Fext_N: 500, Fext_source: 'example load', joint: 'nut', nut: 'iso4032', screw_len_mm: 20, stack_mm: 10, washer_head: false, washer_nut: true } },
+      'quarter-20': { label: '1/4-20 grade 5', input: Object.assign({}, q20, { torque_Nm: q20Mid, torque_source: 'the 0.70-proof point of this receipt\'s dry window at K 0.20, 3 sf', Fext_N: 2500, Fext_source: 'example load', joint: 'nut', nut: 'hex', screw_len_mm: 25.4, stack_mm: 12.7, washer_head: false, washer_nut: true }) },
     };
   }
 

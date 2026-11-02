@@ -171,7 +171,9 @@
     var top = Math.max(Fu, have ? S.preload.F_max_N : 0, svcOn ? S.service.F_N : 0);
     var step = niceStep(top * 1.05, W < 420 ? 4 : 6);
     var xmax = Math.ceil(top * 1.05 / step) * step;
-    var L = 10, R = 10, x = function (F) { return L + (W - L - R) * F / xmax; };
+    if (!isFinite(xmax) || !(xmax > 0)) { host.appendChild(el('p', { cls: 'small', text: 'Nothing to draw: the forces on this receipt are outside any drawable range.' })); return; }
+    // F / xmax first: (W - L - R) * F can overflow for a huge but finite force.
+    var L = 10, R = 10, x = function (F) { return L + (W - L - R) * (F / xmax); };
     var s = svg('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, role: 'img',
       'aria-label': have ? ('Preload scatter ' + kN(S.preload.F_min_N) + ' to ' + kN(S.preload.F_max_N) + ' against proof ' + kN(Fp) + ', yield ' + kN(Fy) + ', UTS ' + kN(Fu) + (svcOn ? '; with the external load ' + kN(S.service.F_N) : '')) : 'No preload: proof ' + kN(Fp) + ', yield ' + kN(Fy) + ', UTS ' + kN(Fu) });
     // target band
@@ -273,7 +275,7 @@
     rc.appendChild(item('Fastener', null, 'As ' + z.As_mm2 + ' mm² · d ' + z.d_mm + ' mm · p ' + z.p_mm + ' mm', null, [z.asSrc, z.dSrc]));
     rc.appendChild(item('Grade', null, 'proof ' + g.proof_MPa + ' · yield ' + g.yield_MPa + ' · UTS ' + g.uts_MPa + ' MPa',
       ['proof load ' + TR.fmtN(g.proofLoad_N) + ' = As × proof' + (g.proofLoadColumn ? ' (table column ' + g.proofLoadColumn.field + ': ' + TR.fmtN(g.proofLoadColumn.N) + ')' : '')],
-      [g.source + ' [' + g.confidence + ']']));
+      [g.source + ' [' + g.confidence + ']', g.note ? 'table note: ' + g.note : null]));
     rc.appendChild(item('Nut factor', null, 'K ' + t.K + (t.Krange.lo !== t.Krange.hi ? ' (' + t.Kpick + ' of ' + t.Krange.lo + '–' + t.Krange.hi + ')' : ''), t.notes, [t.Ksrc + ' [' + t.Kconf + ']']));
     rc.appendChild(item('Preload scatter', null, '±' + Math.round(t.u * 100) + ' %', null,
       [t.uSrc + ': "' + t.uRow.quote + '"', 'Spaceflight criteria, used as the table uses them: a citable floor, not a requirement an amateur rocket must meet.']));
@@ -286,7 +288,7 @@
       rc.appendChild(item('Preload', p, 'F = T/(K·d) = ' + TR.fmtN(p.F_nom_N),
         ['T ' + TR.fmtNm(p.T_Nm) + (p.T_lbfin ? ' (' + p.T_lbfin.toFixed(1) + ' lbf·in)' : '') + ' → ' + pct(p.ratio_proof) + ' of proof; scatter ' + TR.fmtN(p.F_min_N) + ' – ' + TR.fmtN(p.F_max_N),
           p.Ksens ? 'across the table\'s K range: ' + TR.fmtN(p.Ksens.F_at_Klo) + ' at K ' + p.Ksens.K_lo + ', ' + TR.fmtN(p.Ksens.F_at_Khi) + ' at K ' + p.Ksens.K_hi : null],
-        [p.formula]));
+        [p.T_src ? 'torque from: ' + p.T_src : null, p.formula]));
       var a = S.assembly;
       rc.appendChild(item('At assembly (top of the scatter)', a, 'σ = ' + TR.fmtMPa(a.sigma_MPa),
         ['SF ' + a.sf_proof.toFixed(2) + ' on proof · ' + a.sf_yield.toFixed(2) + ' on yield · ' + a.sf_uts.toFixed(2) + ' on UTS'], [a.formula + ' — proof, yield and UTS are printed separately because confusing them inflates a margin by 10–40 %.']));
@@ -350,10 +352,11 @@
     var box = $('today'); box.textContent = '';
     if (!activePreset || !/^(endcap|endcap-dry|by-feel)$/.test(activePreset)) { box.hidden = true; return; }
     var t = TR.endcapToday(ctx), e = TR.readEndcap(ctx);
+    var ec = TR.receipt(ctx, TR.endcapInput(ctx)), ea = ec.sections.assembly;
     box.hidden = false;
     box.appendChild(el('h2', { text: 'The same joint, as PartForge checks it today' }));
     box.appendChild(el('p', { text: 'tests/dryrun/endcap.scad:' + e.lines.bolt_shear + ' declares the pressure load on the cap, ' + e.bolt_shear.force_N + ' N over ' + e.bolt_shear.n + ' bolts, as bolt_shear. Run through PartForge\'s own boltShear() and GRADE_SY (cut verbatim from index.html), that row reports shear SF ' + t.r.sf_shear.toFixed(2) + ' and bearing SF ' + t.r.sf_bearing.toFixed(2) + ' against its sf_min ' + t.sf_min + ', so it ' + (t.passes ? 'passes' : 'fails') + '.' }));
-    box.appendChild(el('p', { text: 'The load is axial: it pulls the bolts in tension. The fixture\'s own assembly note (line ' + e.lines.torque + ', "' + e.quote + '") puts the top of the preload scatter past proof before the tank is pressurised, which no shear check can see. PartForge\'s loads whitelist has no tension kind (index.html:4733), so there is nowhere to declare it.' }));
+    box.appendChild(el('p', { text: 'The load is axial: it pulls the bolts in tension. The fixture\'s own assembly note (line ' + e.lines.torque + ', "' + e.quote + '") ' + (ea.state === 'over' ? 'puts the top of the preload scatter ' + ea.word + ' (σ ' + TR.fmtMPa(ea.sigma_MPa) + ', proof SF ' + ea.sf_proof.toFixed(2) + ') before the tank is pressurised, which no shear check can see.' : 'keeps the top of the preload scatter ' + ea.word + ' (σ ' + TR.fmtMPa(ea.sigma_MPa) + ', proof SF ' + ea.sf_proof.toFixed(2) + '); the shear check still cannot see the tension.') + ' PartForge\'s loads whitelist has no tension kind (index.html:4733), so there is nowhere to declare it.' }));
     box.appendChild(el('p', { cls: 'small', text: 'Line ' + e.lines.perBolt + ' of the fixture: "' + e.perBoltText + '"' }));
   }
 

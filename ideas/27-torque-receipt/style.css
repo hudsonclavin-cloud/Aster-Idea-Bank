@@ -157,6 +157,8 @@ a { color: var(--s1); }
 .item-name { font-weight: 600; font-size: 0.9rem; }
 .item-val { font-variant-numeric: tabular-nums; font-size: 0.95rem; text-align: right; overflow-wrap: anywhere; }
 .item .why { font-size: 0.78rem; color: var(--muted); margin: 3px 0 0; overflow-wrap: anywhere; }
+/* Notes that ride on the whole receipt (not one line of it): the same caption style as a line's sources. */
+.receipt > .why { font-size: 0.8rem; color: var(--muted); margin: 10px 0 0; overflow-wrap: anywhere; }
 .item .detail { font-size: 0.85rem; margin: 3px 0 0; color: var(--ink-2); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .stamps { display: inline-flex; flex-wrap: wrap; gap: 4px; }
 .stamp {

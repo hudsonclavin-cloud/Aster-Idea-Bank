@@ -144,6 +144,7 @@ function text(r, inp) {
     L.push(`PRELOAD    ${stamp(p)} · ${p.word}`);
     L.push(`  T ${TR.fmtNm(p.T_Nm)}${p.T_lbfin ? ` (${p.T_lbfin.toFixed(1)} lbf·in)` : ''} → F = T/(K·d) = ${TR.fmtN(p.F_nom_N)}, ${(p.ratio_proof * 100).toFixed(1)} % of proof`);
     L.push(`  scatter ${TR.fmtN(p.F_min_N)} – ${TR.fmtN(p.F_max_N)}`);
+    if (p.T_src) L.push(wrap(`torque from: ${p.T_src}`, '  '));
     if (p.Ksens) L.push(`  across the K range: ${TR.fmtN(p.Ksens.F_at_Klo)} at K ${p.Ksens.K_lo}, ${TR.fmtN(p.Ksens.F_at_Khi)} at K ${p.Ksens.K_hi}`);
     const a = S.assembly;
     L.push(`ASSEMBLY   ${stamp(a)} · ${a.word}`);
@@ -198,7 +199,14 @@ function main() {
   try { inp = inputFrom(o); } catch (e) { console.error(e.message); process.exit(3); }
   if (!inp.size) { console.error('give --size or --preset\n\n' + HELP); process.exit(3); }
   if (o.flags.has('--sweep')) {
-    console.log(`Same torque (${inp.torque_Nm} N·m on ${inp.size} ${inp.grade}), every condition with a table nut factor (mid K):`);
+    // The sweep needs a preload: with no torque (or a refused fastener) say why and exit 2.
+    const base = TR.receipt(ctx, inp);
+    if (!base.ok || base.sections.preload.status !== 'computed') {
+      const rf = base.ok ? base.sections.preload.refusal : base.refusal;
+      console.log(`SWEEP REFUSED (${rf.code})\n${wrap(rf.reason)}\n${wrap('What would help: ' + rf.what_would_help)}`);
+      process.exit(2);
+    }
+    console.log(`Same torque (${base.sections.preload.T_Nm} N·m on ${inp.size} ${inp.grade}), every condition with a table nut factor (mid K):`);
     for (const s of TR.conditionSweep(ctx, inp)) console.log(s.ok ? `  ${s.label.padEnd(34)} K ${String(s.K).padEnd(5)} ±${Math.round(s.u * 100)} %  F ${TR.fmtN(s.F_nom_N).padStart(9)} (${(s.ratio * 100).toFixed(1)} % proof)  σ_max ${TR.fmtMPa(s.sigma_max_MPa)} ${s.word}` : `  ${s.label}: refused`);
     process.exit(0);
   }
