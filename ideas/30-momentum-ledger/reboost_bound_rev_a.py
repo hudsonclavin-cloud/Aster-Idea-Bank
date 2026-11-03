@@ -183,14 +183,28 @@ def recovery_days(E: float, p_w: float, eta: float, duty: float) -> float:
     return E / (p_w * eta * duty) / DAY_S
 
 
+BELOW_GROUND = ("one throw takes the lower tip's lowest point below the ground: the tether would meet the atmosphere "
+                "long before, and this drag-free ledger means nothing there, so it gives no perigee or tip altitude")
+
+
 def ledger_one(s: dict) -> dict:
     t = throw(s, s["R"], s["v"])
-    return {"M_t": s["M"] / 1e3, "da_km": (s["R"] - t["a1"]) / 1e3, "perigee_drop_km": (s["R"] - t["rp"]) / 1e3,
-            "apogee_drop_km": (s["R"] - t["ra"]) / 1e3, "tip_lowest_alt_km": (t["rp"] - s["L"] - s["RE"]) / 1e3,
-            "tip_alt_before_km": (s["R"] - s["L"] - s["RE"]) / 1e3, "dv_equiv_ms": t["dv"]}
+    out = {"M_t": s["M"] / 1e3, "da_km": (s["R"] - t["a1"]) / 1e3, "perigee_drop_km": (s["R"] - t["rp"]) / 1e3,
+           "apogee_drop_km": (s["R"] - t["ra"]) / 1e3, "tip_lowest_alt_km": (t["rp"] - s["L"] - s["RE"]) / 1e3,
+           "tip_alt_before_km": (s["R"] - s["L"] - s["RE"]) / 1e3, "dv_equiv_ms": t["dv"]}
+    if out["tip_lowest_alt_km"] < 0:  # the same out_of_envelope refusal ledger.js belowGroundRefusal gives
+        out["perigee_drop_km"] = out["tip_lowest_alt_km"] = None
+        out["refused"] = {"code": "out_of_envelope", "reason": BELOW_GROUND,
+                          "what_would_help": "a heavier hub (the page computes the smallest one)"}
+    return out
 
 
 def floor_count(s: dict, floor_m: float, phasing: str, max_n: int = 500) -> int:
+    if not math.isfinite(floor_m):
+        raise Refused("invalid_input", "the floor must be a finite altitude", "a lower-tip floor in km")
+    if floor_m < 0:
+        raise Refused("out_of_envelope", "a floor below the ground: this drag-free ledger means nothing under the surface",
+                      "a lower-tip floor at or above 0 km")
     if floor_m >= s["R"] - s["L"] - s["RE"]:
         raise Refused("out_of_envelope", "a floor at or above the design tip altitude allows no throw",
                       "a floor below the design lower-tip altitude")
@@ -264,6 +278,10 @@ def self_checks(res: dict) -> list[str]:
     return bad
 
 
+def count_text(n: int, max_n: int = 500) -> str:
+    return f"{n} or more" if n >= max_n else str(n)
+
+
 def render(res: dict, prov: dict) -> str:
     s, en, led = res["system"], res["energy"], res["ledger"]
     lo, hi = res["intervals_d"]
@@ -312,11 +330,14 @@ def render(res: dict, prov: dict) -> str:
     out += ["", "LEDGER: ONE THROW FROM THE CANON CIRCULAR ORBIT, NO REBOOST",
             f"- system mass {led['M_t']:.1f} t ({s['M'] / s['m']:.1f}x the payload)",
             f"- semi-major axis drop {led['da_km']:.2f} km; energy-equivalent reboost dv {led['dv_equiv_ms']:.2f} m/s",
-            f"- throw point drops {led['apogee_drop_km']:.2f} km; half an orbit later the CoM is {led['perigee_drop_km']:.2f} km lower",
-            f"- lower tip: {led['tip_alt_before_km']:.0f} km design altitude -> lowest {led['tip_lowest_alt_km']:.1f} km after the throw",
+            f"- throw point drops {led['apogee_drop_km']:.2f} km; " +
+            (f"half an orbit later the CoM is {led['perigee_drop_km']:.2f} km lower" if "refused" not in led else
+             f"half an orbit later: refused ({led['refused']['code']}): {led['refused']['reason']}"),
+            f"- lower tip: {led['tip_alt_before_km']:.0f} km design altitude -> " +
+            (f"lowest {led['tip_lowest_alt_km']:.1f} km after the throw" if "refused" not in led else "below the ground after the throw (refused, see above)"),
             f"- throws before the lower tip would pass below {res['floor_km']:g} km: " +
             ("refused: " + res["throws_above_floor"]["refused"] if "refused" in res["throws_above_floor"] else
-             f"{res['throws_above_floor']['apogee']} (each at apogee), {res['throws_above_floor']['perigee']} (each at perigee)"),
+             f"{count_text(res['throws_above_floor']['apogee'])} (each at apogee), {count_text(res['throws_above_floor']['perigee'])} (each at perigee)"),
             "", "LOAD-BEARING PARAMETERS",
             "- hub mass [Speculative - tether_dynamics.py placeholder until a hub mass budget exists]",
             "- eta = MP-001 section 3a ladder [FLAGGED - wall-to-momentum efficiency]; duty = reboost_bound.py brackets [FLAGGED]",
@@ -346,6 +367,8 @@ def main(argv=None) -> int:
     ap.add_argument("--json", action="store_true", help="print the results as JSON")
     args = ap.parse_args(argv)
     try:
+        if not math.isfinite(args.floor_km):
+            raise Refused("invalid_input", f"--floor-km must be a finite altitude, not {args.floor_km}", "a lower-tip floor in km")
         rev_a, cited, prov = load_inputs(Path(args.skyhook).resolve() if args.skyhook else None)
         res = compute(rev_a, cited, args)
     except Refused as r:

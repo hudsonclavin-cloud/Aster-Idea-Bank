@@ -3,7 +3,7 @@
 Run from the bank root: python3 -m unittest discover -s ideas/30-momentum-ledger -p 'test_*.py'
 
 Teeth: the Python and the JavaScript are written separately; these tests make them agree to 1e-9 on
-five configurations, pin the Python to params/rev_a.json's printed C3 and apogee, and check the CLI's
+six configurations (one with the tip below the ground, where both refuse), pin the Python to params/rev_a.json's printed C3 and apogee, and check the CLI's
 exit codes and that example.txt is its current output.
 """
 import contextlib
@@ -27,6 +27,7 @@ CONFIGS = [
     ("reference", "0.15", 0.0, "loaded"),
     ("cislunar", "0.3", 200.0, "canon"),
     ("phase3", "0.3", 1000.0, "loaded"),
+    ("reference", "0.3", 0.0, "loaded"),
 ]
 
 
@@ -87,14 +88,14 @@ class CanonPins(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("node"), "node not installed")
 class AgreesWithJavaScript(unittest.TestCase):
-    def test_five_configurations(self):
+    def test_six_configurations(self):
         script = r"""
 const K=require(process.argv[1]+'/ledger.js'), D=require(process.argv[1]+'/data.js');
 const RE=parseFloat(D.values['skyhook_physics.r_earth_km'].text);
 const out=JSON.parse(process.argv[2]).map(([tier,derate,hub,release])=>{
   const s=K.system(D.revA,{tier,derate,hubKg:hub*1e3,earthRadiusKm:RE,release});
   const e=K.energy(s), l=K.ledger(s);
-  return {perKg:e.perKg, c3:e.c3, M:s.M, da:l.da, rp:l.perigeeDrop, ra:l.apogeeDrop, tip:l.tipLowestAfter, dv:l.dvEquiv,
+  return {perKg:e.perKg, c3:e.c3, M:s.M, da:l.da, rp:l.perigeeDrop, ra:l.apogeeDrop, tip:l.tipLowestAfter, dv:l.dvEquiv, below:l.belowGround,
           floorA:K.catchesToFloor(s,150e3,'apogee').count, floorP:K.catchesToFloor(s,150e3,'perigee').count};
 });
 console.log(JSON.stringify(out));
@@ -108,8 +109,14 @@ console.log(JSON.stringify(out));
             p = json.loads(out)
             pairs = [(p["energy"]["dE_per_kg_MJ"] * 1e6, j["perKg"]), (p["energy"]["c3_km2s2"] * 1e6, j["c3"]),
                      (p["ledger"]["M_t"] * 1e3, j["M"]), (p["ledger"]["da_km"] * 1e3, j["da"]),
-                     (p["ledger"]["perigee_drop_km"] * 1e3, j["rp"]), (p["ledger"]["apogee_drop_km"] * 1e3, j["ra"]),
-                     (p["ledger"]["tip_lowest_alt_km"] * 1e3, j["tip"]), (p["ledger"]["dv_equiv_ms"], j["dv"])]
+                     (p["ledger"]["apogee_drop_km"] * 1e3, j["ra"]), (p["ledger"]["dv_equiv_ms"], j["dv"])]
+            # below the ground both refuse the perigee and the tip altitude; above it both give the same numbers
+            self.assertEqual("refused" in p["ledger"], j["below"], cfg)
+            if j["below"]:
+                self.assertIsNone(p["ledger"]["tip_lowest_alt_km"])
+                self.assertEqual(p["ledger"]["refused"]["code"], "out_of_envelope")
+            else:
+                pairs += [(p["ledger"]["perigee_drop_km"] * 1e3, j["rp"]), (p["ledger"]["tip_lowest_alt_km"] * 1e3, j["tip"])]
             for py, jv in pairs:
                 self.assertTrue(math.isclose(py, jv, rel_tol=1e-9, abs_tol=1e-6), f"{cfg}: python {py} vs js {jv}")
             self.assertEqual(p["throws_above_floor"], {"apogee": j["floorA"], "perigee": j["floorP"]}, cfg)
@@ -138,6 +145,23 @@ class CommandLine(unittest.TestCase):
         code, out, _ = run_cli("--json", "--floor-km", "290")
         self.assertEqual(code, 0)
         self.assertIn("refused", json.loads(out)["throws_above_floor"])
+
+    def test_floor_below_ground_or_not_a_number_is_refused(self):  # review: nan printed 239 / 271 throws
+        code, out, _ = run_cli("--floor-km", "nan")
+        self.assertEqual(code, 2)
+        self.assertEqual(json.loads(out)["code"], "invalid_input")
+        code, out, _ = run_cli("--json", "--floor-km", "-50")
+        self.assertEqual(code, 0)
+        self.assertIn("below the ground", json.loads(out)["throws_above_floor"]["refused"])
+
+    def test_a_tip_below_the_ground_is_refused_not_printed(self):  # review: printed "lowest -197.6 km"
+        code, out, _ = run_cli("--hub-t", "0", "--derate", "0")
+        self.assertEqual(code, 0)
+        self.assertIn("refused (out_of_envelope)", out)
+        self.assertIn("below the ground after the throw", out)
+        self.assertNotRegex(out, r"lowest -\d")
+        code, out, _ = run_cli("--hub-t", "1e9")
+        self.assertIn("500 or more (each at apogee)", out)
 
     def test_example_txt_is_the_current_output(self):
         code, out, _ = run_cli()

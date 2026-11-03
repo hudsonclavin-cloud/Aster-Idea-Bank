@@ -55,6 +55,11 @@
     return sig(w / 1e3, 3) + ' kW';
   }
   function pct(x) { return n(x * 100, x * 100 % 1 ? 1 : 0) + ' %'; }
+  function kg(x) { return x >= 10 ? n(x, 0) : String(Number(x.toPrecision(3))); } // a typed 0.001 kg payload is not "0 kg"
+  function joules(x) { // the per-throw tile, in a unit that keeps three figures for a small payload
+    var u = x >= 1e9 ? [1e9, 'GJ'] : x >= 1e6 ? [1e6, 'MJ'] : x >= 1e3 ? [1e3, 'kJ'] : [1, 'J'];
+    return (x >= 1e11 ? n(x / u[0], 0) : sig(x / u[0], 3)) + ' <small>' + u[1] + '</small>';
+  }
   function tile(k, v, s, extra) {
     return '<div class="tile"' + (extra || '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
   }
@@ -265,7 +270,7 @@
     var canon = K.energy(sysFor({ release: 'canon' })), loaded = K.energy(sysFor({ release: 'loaded' }));
     var h = '<div class="tiles">' +
       tile('Energy per kg thrown', n(e.perKg / 1e6, 2) + ' <small>MJ/kg</small>', '= ' + n(e.kWhPerKg, 2) + ' kWh/kg of orbital energy', ' id="t-perkg"') +
-      tile('Energy per throw', n(e.perThrow / 1e9, 0) + ' <small>GJ</small>', sci(e.perThrow, 3) + ' J for ' + n(s.m, 0) + ' kg', ' id="t-perthrow"') +
+      tile('Energy per throw', joules(e.perThrow), sci(e.perThrow, 3) + ' J for ' + kg(s.m) + ' kg', ' id="t-perthrow"') +
       tile('Reboost Δv per throw', n(l.dvEquiv, 1) + ' <small>m/s</small>', 'energy-equivalent, on the whole tether system', ' id="t-dv"') +
       tile('Tether system mass', n(s.M / 1e3, 1) + ' <small>t</small>', n(s.hubKg / 1e3, 1) + ' t hub + ' + n(s.fibreKg / 1e3, 1) + ' t fibre = ' + n(s.M / s.m, 0) + '× the payload', ' id="t-mass"') +
       '</div>';
@@ -282,7 +287,7 @@
       '</tbody></table></div>' +
       '<p class="small">Idea 14 (Whose Earth) already reconciles these four in full, including a 144-reading sweep for 44.8. This page books the orbital-energy figure and does not re-argue it.</p>';
     var sL = sysFor({ release: 'loaded' });
-    h += '<div class="verdict mid" id="loaded-note"><span class="ic" aria-hidden="true">!</span><div><b>The canon release state assumes an infinitely heavy tether.</b> At the canon spin rate this ' + n(sL.M / 1e3, 1) + ' t system lets a ' + n(sL.m, 0) +
+    h += '<div class="verdict mid" id="loaded-note"><span class="ic" aria-hidden="true">!</span><div><b>The canon release state assumes an infinitely heavy tether.</b> At the canon spin rate this ' + n(sL.M / 1e3, 1) + ' t system lets a ' + kg(sL.m) +
       ' kg payload go at C3 ' + n(loaded.c3 / 1e6, 2) + ' km²/s² (apogee ' + (isFinite(loaded.apogeeAltKm) ? n(loaded.apogeeAltKm, 0) + ' km' : 'escape') + '), not the canon\'s ' + n(canon.c3 / 1e6, 2) + ' km²/s² (' +
       (isFinite(canon.apogeeAltKm) ? n(canon.apogeeAltKm, 0) + ' km' : 'escape') + '): the loaded tether turns about a centre of mass ' + n(sL.m * sL.L / (sL.M + sL.m) / 1e3, 2) + ' km below its own. Skyhook\'s own tether model agrees (section 3). <span class="tag">[Likely]</span></div></div>';
     el.innerHTML = h;
@@ -329,7 +334,7 @@
     var frac = p1 * ETA_MP[1] * DUTY_RB[1] * DAY / E;
     h += '<p>The founding document says ' + V('project_instructions.ed_p_lo_kw') + ' kW–' + V('project_instructions.ed_p_hi_mw') + ' MW "yield meaningful daily momentum restoration" (<code>' + cite('project_instructions.ed_p_lo_kw') +
       '</code>) and puts the hub\'s arrays at "hundreds of kW in Phase 2" (<code>docs/project_instructions.md:118</code>), and it calls this geometry "our Phase 2 reference design" (<code>:42</code>). At ' + power(p1) + ', ' + pct(ETA_MP[1]) + ' and duty ' + DUTY_RB[1] +
-      ' a day restores <b id="frac-day">' + n(frac * 100, 1) + ' %</b> of one ' + n(s.m, 0) + ' kg throw at this tier. <span class="tag">[Likely]</span></p>';
+      ' a day restores <b id="frac-day">' + n(frac * 100, 1) + ' %</b> of one ' + kg(s.m) + ' kg throw at this tier. <span class="tag">[Likely]</span></p>';
     // the program-site sketch's reboost button, on this system
     var siteKms2 = V('program_site.site_boost_accel_kms2');
     var push = K.constantPush(s, E, Number(siteKms2) * 1e3); // the sketch works in km (MU = 398600 km^3/s^2 on :794)
@@ -392,12 +397,15 @@
     }
     $('twin-run').disabled = twinBusy;
     if (K.isRefusal(l)) { el.innerHTML = refusalHTML(l, 'The tether has no orbit after this throw'); fl.innerHTML = ''; return; }
-    el.innerHTML = '<div class="tiles">' +
-      tile('Semi-major axis drop', n(l.da / 1e3, 1) + ' <small>km</small>', 'from ' + n(s.R / 1e3 - s.RE / 1e3, 0) + ' km circular; Δv to undo ≈ ' + n(l.dvEquiv, 1) + ' m/s', ' id="t-da"') +
-      tile('At the throw point', '−' + n(l.apogeeDrop / 1e3, 1) + ' <small>km</small>', 'the centre of mass ends 2mL/(M+m) lower; this becomes the ' + l.throw.throwPointIs, ' id="t-throwpt"') +
-      tile('Half an orbit later', '−' + n(l.perigeeDrop / 1e3, 1) + ' <small>km</small>', 'centre of mass at the new perigee, ' + n(l.halfOrbitS / 60, 0) + ' min after the throw', ' id="t-perigee"') +
-      tile('Lower tip, lowest point', n(l.tipLowestAfter / 1e3, 1) + ' <small>km</small>', 'down from ' + n(l.tipAltBefore / 1e3, 0) + ' km; perigee − L; Skyhook\'s tether model lands within about 10 km', ' id="t-tip"') +
-      '</div><p class="small">The orbit drop scales as 1/M: ballast at the hub "improves catch dynamics" (<code>docs/project_instructions.md:118</code>), and so does the heavier conservative tether. The lighter, less-derated tethers are the hardest to keep up. <span class="tag">[Likely]</span></p>';
+    var tiles = tile('Semi-major axis drop', n(l.da / 1e3, 1) + ' <small>km</small>', 'from ' + n(s.R / 1e3 - s.RE / 1e3, 0) + ' km circular; Δv to undo ≈ ' + n(l.dvEquiv, 1) + ' m/s', ' id="t-da"') +
+      tile('At the throw point', '−' + n(l.apogeeDrop / 1e3, 1) + ' <small>km</small>', 'the centre of mass ends 2mL/(M+m) lower; this becomes the ' + l.throw.throwPointIs, ' id="t-throwpt"');
+    if (!l.belowGround) {
+      tiles += tile('Half an orbit later', '−' + n(l.perigeeDrop / 1e3, 1) + ' <small>km</small>', 'centre of mass at the new perigee, ' + n(l.halfOrbitS / 60, 0) + ' min after the throw', ' id="t-perigee"') +
+        tile('Lower tip, lowest point', n(l.tipLowestAfter / 1e3, 1) + ' <small>km</small>', 'down from ' + n(l.tipAltBefore / 1e3, 0) + ' km; perigee − L; Skyhook\'s tether model lands within about 10 km', ' id="t-tip"');
+    }
+    el.innerHTML = '<div class="tiles">' + tiles + '</div>' +
+      (l.belowGround ? '<div id="ground-refusal">' + refusalHTML(K.belowGroundRefusal(revA, { tier: state.tier, derate: state.derate, payloadKg: state.payloadKg, earthRadiusKm: RE, release: state.release }), 'Half an orbit later the lower tip is underground') + '</div>' : '') +
+      '<p class="small">The orbit drop scales as 1/M: ballast at the hub "improves catch dynamics" (<code>docs/project_instructions.md:118</code>), and so does the heavier conservative tether. The lighter, less-derated tethers are the hardest to keep up. <span class="tag">[Likely]</span></p>';
     var floorM = state.floorKm * 1e3;
     var ca = K.catchesToFloor(s, floorM, 'apogee'), cp = K.catchesToFloor(s, floorM, 'perigee');
     var hub = K.minHubForFloor(revA, { tier: state.tier, derate: state.derate, payloadKg: state.payloadKg, earthRadiusKm: RE, release: state.release }, floorM);
@@ -442,10 +450,13 @@
     var tw = twinResult && twinKey === configKey() ? twinResult : null;
     var stale = twinResult && !tw;
     var tcell = function (v) { return tw ? v(tw) : (stale ? '<span class="small">ran for another setup</span>' : '<span class="small">not run</span>'); };
+    // an altitude below the surface is not a number this drag-free model can stand behind
+    var alt = function (m) { return m < 0 ? '<span class="small">below the ground</span>' : n(m / 1e3, 1) + ' km'; };
+    var drop = function (m, under) { return under ? '<span class="small">refused: tip below the ground</span>' : '−' + n(m / 1e3, 1) + ' km'; };
     var h = '<div class="tw"><table id="models-table"><thead><tr><th></th><th>Ledger, canon release</th><th>Ledger, at canon spin</th><th>Proposal\'s impulsive model</th><th>Skyhook\'s tether model</th></tr></thead><tbody>' +
       '<tr><td>Semi-major axis drop</td><td>' + n(lc.da / 1e3, 2) + ' km</td><td>' + n(ll.da / 1e3, 2) + ' km</td><td>' + n(imp.da / 1e3, 2) + ' km</td><td id="tw-da">' + tcell(function (t) { return n(t.daAtRelease / 1e3, 2) + ' km at release; ' + n(t.da / 1e3, 2) + ' km mean over the orbit'; }) + '</td></tr>' +
-      '<tr><td>Centre of mass, half an orbit later</td><td>−' + n(lc.perigeeDrop / 1e3, 1) + ' km</td><td>−' + n(ll.perigeeDrop / 1e3, 1) + ' km</td><td>−' + n(imp.perigeeDrop / 1e3, 1) + ' km</td><td>' + tcell(function (t) { return '−' + n(t.perigeeDrop / 1e3, 1) + ' km (lowest over the orbit)'; }) + '</td></tr>' +
-      '<tr><td>Lower tip, lowest</td><td>' + n(lc.tipLowestAfter / 1e3, 1) + ' km</td><td>' + n(ll.tipLowestAfter / 1e3, 1) + ' km</td><td>' + n(imp.tipLowestAfter / 1e3, 1) + ' km</td><td id="tw-tip">' + tcell(function (t) { return n(t.lowestNodeAltM / 1e3, 1) + ' km (lowest node)'; }) + '</td></tr>' +
+      '<tr><td>Centre of mass, half an orbit later</td><td>' + drop(lc.perigeeDrop, lc.belowGround) + '</td><td>' + drop(ll.perigeeDrop, ll.belowGround) + '</td><td>' + drop(imp.perigeeDrop, imp.tipLowestAfter < 0) + '</td><td>' + tcell(function (t) { return '−' + n(t.perigeeDrop / 1e3, 1) + ' km (lowest over the orbit)'; }) + '</td></tr>' +
+      '<tr><td>Lower tip, lowest</td><td id="m-tip-canon">' + alt(lc.tipLowestAfter) + '</td><td>' + alt(ll.tipLowestAfter) + '</td><td>' + alt(imp.tipLowestAfter) + '</td><td id="tw-tip">' + tcell(function (t) { return t.lowestNodeAltM < 0 ? alt(t.lowestNodeAltM) : n(t.lowestNodeAltM / 1e3, 1) + ' km (lowest node)'; }) + '</td></tr>' +
       '<tr><td>Payload release C3</td><td>' + n(ec.c3 / 1e6, 2) + '</td><td>' + n(el2.c3 / 1e6, 2) + '</td><td>not modelled</td><td id="tw-c3">' + tcell(function (t) { return n(t.payloadC3 / 1e6, 2); }) + '</td></tr>' +
       '<tr><td>Energy check</td><td colspan="3" class="wrap">the tether loses m·ΔE: ' + sci(ec.perThrow, 4) + ' J (canon)</td><td id="tw-energy">' + tcell(function (t) { return 'tether lost ' + n(t.tetherEnergyLossPerKgPayload / 1e6, 3) + ' MJ per payload kg; payload gained ' + n(t.payloadGainPerKg / 1e6, 3) + '; integrator drift ' + t.energyDriftRel.toExponential(0); }) + '</td></tr>' +
       '</tbody></table></div><p class="small">The impulsive model (two co-located impulses m·v<sub>tip</sub>/(M+m) + m·v<sub>tip</sub>/M, perigee drop 2Δa) leaves out the payload\'s lift through the gravity well, about 12 % of the energy, and the centre of mass\'s drop at the flip. The twin is <code>tools/twin/physics.js</code> verbatim (17 nodes, RK4, step 0.1 s), with the payload added to the lower-tip node at the canon catch state and removed at the top of the swing.</p>';

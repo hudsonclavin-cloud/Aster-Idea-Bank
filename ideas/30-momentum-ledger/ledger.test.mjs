@@ -259,6 +259,48 @@ test('minimum hub for a floor: the boundary is where the tip lands on the floor'
   assert.equal(K.minHubForFloor(revA, opts, 290e3).refused, true);
 });
 
+test('below the ground the ledger refuses: a light tether\'s tip, the throw sequence and a sub-surface floor (review)', () => {
+  // 0 % derate with no hub: one throw takes the tip's lowest point under the surface, so no altitude is quoted
+  const light = K.ledger(sys({ derate: '0', hubKg: 0 }));
+  assert.equal(light.belowGround, true);
+  assert.ok(light.tipLowestAfter < 0);
+  assert.equal(K.ledger(sys({ derate: '0' })).belowGround, false, 'the 200 t hub keeps it above (40.7 km)');
+  assert.equal(K.ledger(sys()).belowGround, false);
+  const r = K.belowGroundRefusal(revA, { tier: 'reference', derate: '0', earthRadiusKm: RE });
+  assert.equal(r.code, 'out_of_envelope');
+  const hub0 = K.minHubForFloor(revA, { tier: 'reference', derate: '0', earthRadiusKm: RE }, 0);
+  assert.equal(Math.round(hub0 / 1e3), 143);
+  assert.ok(r.what_would_help.includes(`${Math.ceil(hub0 / 1e3)} t`), r.what_would_help);
+  const at = K.ledger(sys({ derate: '0', hubKg: hub0 })).tipLowestAfter;
+  assert.ok(at >= 0 && at < 1, `the minimum hub lands the tip on the ground (${at} m)`);
+  // the throw sequence stops before the throw that would take the tip underground, and only then
+  for (const ph of ['apogee', 'perigee']) {
+    const seq = K.throwSequence(sys(), ph, 10);
+    assert.ok(seq.length < 11, `${ph}: the reference runs out of altitude within 10 throws`);
+    for (const p of seq) assert.ok(p.tipLowest >= 0, `${ph} throw ${p.n} stays above ground`);
+    const last = seq[seq.length - 1];
+    const next = K.throwAt(sys(), ph === 'perigee' ? last.rp : last.ra, Math.sqrt(MU * (2 / (ph === 'perigee' ? last.rp : last.ra) - 1 / last.a)));
+    assert.ok(next.rp - sys().L - sys().RE < 0, `${ph}: the next throw would put it underground`);
+  }
+  // a floor below the ground, or no number at all, is refused rather than counted
+  assert.equal(K.catchesToFloor(sys(), -50e3, 'apogee').code, 'out_of_envelope');
+  assert.equal(K.catchesToFloor(sys(), NaN, 'apogee').code, 'invalid_input');
+  assert.equal(K.minHubForFloor(revA, { tier: 'reference', derate: '0.3', earthRadiusKm: RE }, -1).code, 'out_of_envelope');
+  assert.equal(K.minHubForFloor(revA, { tier: 'reference', derate: '0.3', earthRadiusKm: RE }, NaN).code, 'invalid_input');
+  assert.equal(K.catchesToFloor(sys(), 0, 'apogee').refused, undefined, 'a floor at the ground itself is allowed');
+});
+
+test('the angular-momentum consistency check holds with the loaded release too, for every tier (review)', () => {
+  // measured at most 7.0e-6 (reference, canon release); 1.5e-5 is tight enough that a release speed
+  // that forgets the loaded factor f (its residual is 2.7e-5) fails here
+  for (const tier of ['reference', 'cislunar', 'phase3']) {
+    for (const release of ['canon', 'loaded']) {
+      const l = K.ledger(sys({ tier, release }));
+      assert.ok(Math.abs(l.throw.hResidual) < 1.5e-5, `${tier} ${release}: ${l.throw.hResidual}`);
+    }
+  }
+});
+
 // ---------------------------------------------------------------------------------------------
 // Skyhook's own model. One run per configuration, shared by the assertions below.
 const TWIN_CASES = [

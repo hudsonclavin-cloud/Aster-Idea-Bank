@@ -293,6 +293,7 @@
     var t = throwAt(sys, sys.R, sys.vCom);
     if (isRefusal(t)) return t;
     var tipAlt0 = sys.R - sys.L - sys.RE;
+    var tipLowest = t.rp - sys.L - sys.RE;
     return {
       throw: t,
       M: sys.M,
@@ -302,10 +303,25 @@
       apogeeDrop: sys.R - t.ra,
       dvEquiv: t.dvEquiv,
       tipAltBefore: tipAlt0,
-      tipLowestAfter: t.rp - sys.L - sys.RE,
+      tipLowestAfter: tipLowest,
+      // below the surface a drag-free Keplerian ledger means nothing: callers show belowGroundRefusal() instead
+      belowGround: tipLowest < 0,
       halfOrbitS: Math.PI * Math.sqrt(Math.pow(t.a1, 3) / sys.mu),
       impulsive: impulsive(sys)
     };
+  }
+
+  /**
+   * The structured refusal a caller shows in place of the post-throw perigee and tip altitude when one throw
+   * takes the lower tip's lowest point below the ground (ledger(sys).belowGround). What would help names the
+   * smallest hub that keeps it above the surface, from minHubForFloor at a 0 m floor.
+   */
+  function belowGroundRefusal(revA, opts) {
+    var hub = minHubForFloor(revA, opts, 0);
+    return refusal('out_of_envelope',
+      'one throw takes the lower tip\'s lowest point below the ground: the tether would meet the atmosphere long before, ' +
+      'and this drag-free ledger means nothing there, so it gives no perigee or tip altitude',
+      isRefusal(hub) ? 'a heavier tether system' : 'a hub of at least ' + Math.ceil(hub / 1e3) + ' t keeps the tip above the ground for one throw (a floor below sets a stricter minimum)');
   }
 
   /** The proposal's model: two tangential impulses at one point, perigee drop = 2 da. Kept for comparison. */
@@ -314,6 +330,11 @@
     var dv = m * vt / (M + m) + m * vt / M;
     var da = 2 * sys.R * dv / sys.vCom;
     return { dv: dv, da: da, perigeeDrop: 2 * da, tipLowestAfter: sys.R - 2 * da - sys.L - sys.RE };
+  }
+
+  function groundFloorRefusal() {
+    return refusal('out_of_envelope', 'a floor below the ground: this drag-free ledger means nothing under the surface',
+      'a lower-tip floor at or above 0 km');
   }
 
   /**
@@ -326,6 +347,7 @@
     maxN = maxN || 500;
     if (phasing !== 'apogee' && phasing !== 'perigee') return refusal('invalid_input', 'phasing must be "apogee" or "perigee"', 'choose where in the orbit each catch happens');
     if (typeof floorAltM !== 'number' || !isFinite(floorAltM)) return refusal('invalid_input', 'no floor given', 'a lower-tip altitude floor in metres');
+    if (floorAltM < 0) return groundFloorRefusal();
     var tip0 = sys.R - sys.L - sys.RE;
     if (floorAltM >= tip0) {
       return refusal('out_of_envelope',
@@ -370,6 +392,8 @@
   function minHubForFloor(revA, opts, floorAltM) {
     var base = system(revA, Object.assign({}, opts, { hubKg: 0 }));
     if (isRefusal(base)) return base;
+    if (typeof floorAltM !== 'number' || !isFinite(floorAltM)) return refusal('invalid_input', 'no floor given', 'a lower-tip altitude floor in metres');
+    if (floorAltM < 0) return groundFloorRefusal();
     var tip0 = base.R - base.L - base.RE;
     if (!(floorAltM < tip0)) {
       return refusal('out_of_envelope', 'no hub is heavy enough: every throw lowers the tip below its design altitude (' + (tip0 / 1e3).toFixed(0) + ' km)',
@@ -459,6 +483,7 @@
     constantPush: constantPush,
     throwAt: throwAt,
     ledger: ledger,
+    belowGroundRefusal: belowGroundRefusal,
     impulsive: impulsive,
     catchesToFloor: catchesToFloor,
     throwSequence: throwSequence,

@@ -220,7 +220,23 @@ const setRange = (page, sel, v) => page.evaluate(([s, val]) => {
   await page.waitForTimeout(80);
   c = await text(page, '#cost-body');
   ok(/invalid_input/.test(c) && /hub mass/.test(c), 'a blank hub mass is refused, not read as zero');
+  // review: a light tether whose tip one throw takes underground gets a refusal, not a negative altitude
+  await page.locator('#derate label').nth(0).tap();
+  await page.locator('#hub').fill('0');
+  await page.waitForTimeout(100);
+  const hubGround = K.minHubForFloor(revA, { tier: 'reference', derate: '0', earthRadiusKm: RE }, 0);
+  const gr = await page.locator('#ground-refusal').count() ? await text(page, '#ground-refusal') : '';
+  ok(/out_of_envelope/.test(gr) && gr.includes(`${Math.ceil(hubGround / 1e3)} t`), `0 % derate, no hub: the underground tip is refused, naming the ${Math.ceil(hubGround / 1e3)} t hub that keeps it up (${gr.slice(0, 80)})`);
+  ok((await page.locator('#t-tip').count()) === 0 && (await page.locator('#t-perigee').count()) === 0 && (await page.locator('#t-da').count()) === 1, 'and no perigee or tip tile is printed, while the semi-major-axis drop still is');
+  const tipRow = await page.locator('#models-table tbody tr').nth(2).innerText();
+  ok(/below the ground/.test(await text(page, '#m-tip-canon')) && !/−\d/.test(tipRow) && !/Lower tip, lowest point/.test(await text(page, '#orbit-body')), `the models table says "below the ground" and no negative tip altitude appears (${tipRow.replace(/\s+/g, ' ')})`);
+  await page.locator('#derate label').nth(2).tap();
+  // a tiny typed payload keeps its figures
   await page.locator('#hub').fill('200');
+  await page.locator('#payload').fill('0.001');
+  await page.waitForTimeout(80);
+  ok(/for 0\.001 kg/.test(await text(page, '#t-perthrow')), `a 0.001 kg payload is not shown as "0 kg" (${(await text(page, '#t-perthrow')).replace(/\s+/g, ' ')})`);
+  await page.locator('#payload').fill('5000');
   await page.waitForTimeout(80);
   ok((await tileV(page, 't-perkg')).startsWith('43.03'), 'back to 43.03 MJ/kg');
   // Phase 3 escapes

@@ -154,6 +154,7 @@ tbody tr:last-child td { border-bottom: 0; }
 td.wrap, th.wrap { white-space: normal; min-width: 12em; text-align: left; }
 #energy-table td:first-child { white-space: normal; min-width: 9em; }
 #cad-table th, #models-table th { white-space: normal; vertical-align: bottom; }
+#cad-table th { min-width: 6.5em; }
 #models-table td:last-child { white-space: normal; min-width: 11em; text-align: left; }
 tr.hl td { background: var(--accent-wash); }
 td.yes, span.yes { color: var(--good); font-weight: 600; }
