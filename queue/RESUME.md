@@ -1,5 +1,7 @@
 # Held for next week
 
+> **Update 2026-11-03: ideas 20-30 are finished.** All eleven are on `main`, each committed, independently reviewed and fixed, and in the gallery (see the README's review-status note). The table below is the state they were held in on 2026-10-26, kept as history. What is still open: the independent review of ideas 11, 12 and 14-19, and the waitlist in `waitlist.json`.
+
 On 2026-10-26 the owner asked to stop spending on ideas 20 and above and to save the work rather than discard it. This folder and the branch `hold/ideas-20-30` hold everything needed to pick up where it stopped. Nothing here is in the gallery yet; `tools/check.mjs` only scans `ideas/`.
 
 ## Status of every queued idea

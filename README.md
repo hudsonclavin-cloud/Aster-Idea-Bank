@@ -9,9 +9,9 @@ Browse the ideas as a gallery by opening [`index.html`](index.html) (or serve th
 
 ## The ledger
 
-**Review status.** Every idea was built and checked by its own builder (`node tools/check.mjs` passes). Ideas **01-10, 13 and 31-50** were then attacked by an independent reviewer and fixed; every one of those reviews found at least one real error (a wrong number, a false citation, a crash, a claim labelled certain that was not), and each README records what changed. Ideas **11, 12 and 14-19** have **not** been independently reviewed yet; read them as first drafts.
+**Review status.** Every idea was built and checked by its own builder (`node tools/check.mjs` passes). Ideas **01-10, 13 and 20-50** were then attacked by an independent reviewer and fixed; every one of those reviews found at least one real error (a wrong number, a false citation, a crash, a claim labelled certain that was not), and each README records what changed. Ideas **11, 12 and 14-19** have **not** been independently reviewed yet; read them as first drafts.
 
-**Where are 20-30?** Not lost: held at the owner's request on 2026-10-26 to save tokens, on the branch [`hold/ideas-20-30`](https://github.com/hudsonclavin-cloud/Aster-Idea-Bank/tree/hold/ideas-20-30/ideas). Four are finished but unreviewed (20, 22, 23, 26), 21 is nearly done, 24, 25, 27, 28 and 30 stop partway, and 29 was never started. [`queue/RESUME.md`](queue/RESUME.md) gives each one's state and how to bring it in.
+Ideas 20-30 were held on 2026-10-26 to save tokens and finished on 2026-11-02 and 03: the four that were already built (20, 22, 23, 26) were reviewed, the six part-built ones (21, 24, 25, 27, 28, 30) were finished from where their builders stopped and then reviewed, and 29 was built from its proposal and reviewed. The branch `hold/ideas-20-30` is now only history.
 
 **Ideas 31-50 are one mission,** *The Long Way Round*: twenty chained simulations from the propellant mixture to the capsule landing, each usable on its own and each handing a sourced result to the next ([`queue/SERIES_LONG_WAY_ROUND.md`](queue/SERIES_LONG_WAY_ROUND.md)). Start at [31 Mixture](ideas/31-mixture/index.html), or see the whole mission flown in [50 The Long Way Round](ideas/50-the-long-way-round/index.html).
 
