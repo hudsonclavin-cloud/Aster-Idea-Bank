@@ -16,7 +16,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { loadCheckout, loadSnapshots, viewModule, sha256, TABLES_DIR } from './checkout.mjs';
+import { loadCheckout, loadSnapshots, viewModule, sha256, pageViewList, TABLES_DIR } from './checkout.mjs';
 
 const require = createRequire(import.meta.url);
 const C = require('./census.js');
@@ -94,6 +94,18 @@ test('documentation rules: undocumented field (defect), unused column (info), no
   assert.match(f[0].detail, /no YYYY-MM-DD in table, license_note, columns, notes$/);
 });
 
+test('no-rows: a table with no rows array, a non-array or an empty one is a defect, never a silent pass (added in review)', () => {
+  let t = clean(); delete t.rows;
+  let f = lint(t).filter((x) => x.rule === 'no-rows');
+  assert.deepEqual(f.map((x) => [x.severity, x.detail]), [['defect', 'the table has no `rows` key']]);
+  t = clean(); t.rows = { a: 1 };
+  assert.deepEqual(lint(t).filter((x) => x.rule === 'no-rows').map((x) => x.detail), ['`rows` is an object, not an array']);
+  t = clean(); t.rows = [];
+  assert.deepEqual(lint(t).filter((x) => x.rule === 'no-rows').map((x) => x.detail), ['`rows` is an empty array']);
+  assert.ok(!('rows_invalid' in C.viewOf('demo', clean())), 'a well-formed table\'s view carries no rows_invalid key');
+  assert.deepEqual(C.lintTable(C.viewOf('arr', [1, 2])).filter((x) => x.severity === 'defect').map((x) => x.rule).sort(), ['no-columns', 'no-license-note', 'no-rows']);   // a JSON array is not a table
+});
+
 test('findDates takes calendar dates only', () => {
   assert.deepEqual(C.findDates('ASME B94.11M-1993; fetched 2026-09-17 and 2026-09-17, then 2026-13-01 and 2026-02-30x'), ['2026-09-17']);
   assert.deepEqual(C.findDates({ a: ['2025-01-31', '1999-12-01'] }), ['1999-12-01', '2025-01-31']);
@@ -107,6 +119,8 @@ test('inch/mm: an edited value is review, a rounding-chain step is info, an exac
   t = clean(); t.rows[0].d_mm = 6.3509;                      // 0.0009 mm: past half a unit, within one
   f = lint(t);
   assert.deepEqual(f.map((x) => [x.rule, x.severity]), [['inch-mm', 'info']]);
+  t = clean(); t.rows[0].d_mm = 6.3511;                      // 0.0011 mm: just past one full unit (2 × budget) is review
+  assert.deepEqual(lint(t).map((x) => [x.rule, x.severity]), [['inch-mm', 'review']]);
   t = clean(); t.columns.d_in = 'd_mm / 25.4 rounded to 3 decimals'; t.columns.d_mm = 'mm, as ThrustCurve stores it';
   Object.assign(t.rows[0], { d_mm: 117, d_in: 4.606 });     // the motors shape: 4.606 in x 25.4 = 116.9924, inside 0.0127 mm
   assert.deepEqual(lint(t), []);
@@ -216,6 +230,72 @@ test('a policy table the parser cannot find is "could not reconcile" (info), nev
   assert.match(r.findings[0].detail, /^could not reconcile: data\/README\.md: the "\| table \| what \| rows \| confidence policy \|" header was not found$/);
 });
 
+// Planted tables and policy lines with one statement of every countable kind (added in review: the real
+// documents only contradict an 'all' and a vendor claim, so an always-"match" evaluator passed every test).
+function policyFixture() {
+  const alpha = {
+    table: 'alpha', license_note: 'fixture', columns: {},
+    rows: [
+      { key: 'a1', confidence: 'certain', source: 's', vendor: 'Acme', current: 1, current_upstream_main: 1, disputed: [{ field: 'x', value: '1' }] },
+      { key: 'a2', confidence: 'likely', source: 's', vendor: 'Acme Co', current: 0, current_upstream_main: 1 },
+      { key: 'a3', confidence: 'recall', source: 's', vendor: 'Bolt', current: 0, current_upstream_main: 0 },
+    ],
+    supplement: [{ key: 's1', confidence: 'likely', source: 's' }, { key: 's2', confidence: 'recall', source: 's' }],
+  };
+  const beta = { table: 'beta', license_note: 'fixture', columns: {}, rows: [{ key: 'b1', confidence: 'likely', source: 's' }, { key: 'b2', confidence: 'likely', source: 's' }], fits: [{}, {}], disputed: [{ field: 'IT7', value: 'q' }] };
+  const readme = [
+    '| table | what | rows | confidence policy |', '|---|---|---|---|',
+    '| `alpha` | demo | 3 (2 current) + 2 supplement | 1 `certain`; 2 `likely`/`recall`; Bolt `recall`; 1 row flagged `disputed` |',
+    '| `beta` | demo | 2 steps + 2 fits | `likely`; 1 value withheld |',
+  ];
+  const prov = ['## 1. alpha — demo', '**Overall confidence:** certain (1 row), likely (1), recall (1 rows); likely for `a2`.', '## 2. beta — demo', '**Overall confidence:** likely (all 2 rows), certain 0.'];
+  const lines = (a) => a.map((text, i) => ({ n: i + 1, text }));
+  return { views: [C.viewOf('alpha', alpha), C.viewOf('beta', beta)], readme, prov, policy: (r, p) => ({ readme: { lines: lines(r) }, provenance: { lines: lines(p) } }) };
+}
+
+test('reconciliation: every kind of countable statement matches when true and is contradicted when one number is changed', () => {
+  const F = policyFixture();
+  const base = C.reconcile(F.policy(F.readme, F.prov), F.views);
+  assert.ok(base.reconciliation.every((r) => r.status === 'match'));
+  assert.equal(base.reconciliation.map((r) => r.cite.replace(/^.*\//, '') + ' ' + r.kind).join(', '),
+    'README.md:3 rows, README.md:3 current, README.md:3 supplement, README.md:3 count, README.md:3 count, README.md:3 disputed, README.md:3 subject, ' +
+    'README.md:4 rows, README.md:4 fits, README.md:4 all, README.md:4 withheld, PROVENANCE.md:2 count, PROVENANCE.md:2 count, PROVENANCE.md:2 count, ' +
+    'PROVENANCE.md:2 keys, PROVENANCE.md:4 all, PROVENANCE.md:4 count');
+  assert.deepEqual(base.findings, []);
+  // [document, line index, from, to, the kind that must now be the one contradiction]
+  const edits = [
+    ['readme', 2, '3 (2 current)', '4 (2 current)', 'rows'],
+    ['readme', 2, '(2 current)', '(3 current)', 'current'],
+    ['readme', 2, '+ 2 supplement', '+ 3 supplement', 'supplement'],
+    ['readme', 2, '1 `certain`', '2 `certain`', 'count'],
+    ['readme', 2, '2 `likely`/`recall`', '3 `likely`/`recall`', 'count'],
+    ['readme', 2, 'Bolt `recall`', 'Bolt `likely`', 'subject'],
+    ['readme', 2, '1 row flagged', '2 rows flagged', 'disputed'],
+    ['readme', 3, '2 steps', '3 steps', 'rows'],
+    ['readme', 3, '+ 2 fits', '+ 3 fits', 'fits'],
+    ['readme', 3, '| `likely`;', '| `certain`;', 'all'],
+    ['readme', 3, '1 value withheld', '2 values withheld', 'withheld'],
+    ['prov', 1, 'certain (1 row)', 'certain (2 rows)', 'count'],
+    ['prov', 1, 'likely for `a2`', 'likely for `a1`', 'keys'],
+    ['prov', 3, '(all 2 rows)', '(all 3 rows)', 'all'],
+    ['prov', 3, 'certain 0', 'likely 0', 'count'],
+  ];
+  for (const [doc, i, from, to, kind] of edits) {
+    const r = F.readme.slice(), p = F.prov.slice();
+    const arr = doc === 'readme' ? r : p;
+    assert.ok(arr[i].includes(from), from);
+    arr[i] = arr[i].replace(from, to);
+    const res = C.reconcile(F.policy(r, p), F.views);
+    const bad = res.reconciliation.filter((x) => x.status === 'mismatch');
+    const cite = (doc === 'readme' ? 'data/README.md:' : 'docs/data/PROVENANCE.md:') + (i + 1);
+    assert.deepEqual(bad.map((x) => [x.cite, x.kind]), [[cite, kind]], `${from} → ${to}`);
+    assert.deepEqual(res.findings.filter((x) => x.severity === 'defect').map((x) => [x.rule, x.cite]), [['policy-mismatch', cite]], `${from} → ${to} is a defect`);
+  }
+  // a subject that names a vendor and something that is not one is prose, never a vendor count
+  const r = F.readme.slice(); r[2] = r[2].replace('Bolt `recall`', 'Bolt and Nobody `recall`');
+  assert.deepEqual(C.reconcile(F.policy(r, F.prov), F.views).reconciliation.filter((x) => x.kind === 'subject').map((x) => x.status), ['not-reconciled']);
+});
+
 // ------------------------------------------------------------------ 2. pins to what PartForge says about itself
 test('row census reproduces the counts PartForge publishes', () => {
   // [table, label, n, where PartForge states it, the text that must be in the snapshot]
@@ -295,6 +375,25 @@ test('the snapshots equal a fresh build from a PartForge checkout with the same 
   assert.equal(C.serialize(C.run(fresh.views, fresh.policy)), fs.readFileSync(path.join(here, 'findings.json'), 'utf8'));
 });
 
+test('the snapshot set is whole: index.html loads exactly the views on disk, each with its sidecar; a partial set is refused (added in review)', () => {
+  const names = fs.readdirSync(path.join(here, 'snapshots', 'views')).filter((f) => f.endsWith('.js')).map((f) => f.slice(0, -3)).sort();
+  assert.equal(names.length, 14);
+  assert.deepEqual(pageViewList(fs.readFileSync(path.join(here, 'index.html'), 'utf8')), names);
+  for (const n of names) assert.ok(fs.existsSync(path.join(here, 'snapshots', 'views', n + '.js.provenance.json')), n);
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'census-snap-'));
+  try {
+    fs.cpSync(path.join(here, 'snapshots'), path.join(tmp, 'snapshots'), { recursive: true });
+    fs.copyFileSync(path.join(here, 'index.html'), path.join(tmp, 'index.html'));
+    assert.equal(loadSnapshots(tmp).views.length, 14);
+    fs.rmSync(path.join(tmp, 'snapshots', 'views', 'fasteners_un.js'));
+    assert.throws(() => loadSnapshots(tmp), /missing fasteners_un\.js .*refusing a census of fewer tables/);
+    fs.rmSync(path.join(tmp, 'snapshots', 'views', 'fasteners_un.js.provenance.json'));
+    assert.throws(() => loadSnapshots(tmp), /index\.html loads \[.*fasteners_un.*\] but snapshots\/views holds/);
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('CLI: --snapshot reproduces findings.json and exits 1; a clean checkout exits 0; usage errors exit 2', () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'census-'));
   try {
@@ -313,6 +412,14 @@ test('CLI: --snapshot reproduces findings.json and exits 1; a clean checkout exi
     assert.equal(r.status, 1);
     assert.equal(spawnSync(process.execPath, [cli], { encoding: 'utf8' }).status, 2);
     assert.equal(spawnSync(process.execPath, [cli, path.join(tmp, 'nowhere')], { encoding: 'utf8' }).status, 2);
+    // added in review: an empty tables directory is "nothing to census" (2), never a clean pass (0)
+    fs.mkdirSync(path.join(tmp, 'empty', 'data', 'tables'), { recursive: true });
+    r = spawnSync(process.execPath, [cli, path.join(tmp, 'empty')], { encoding: 'utf8' });
+    assert.equal(r.status, 2);
+    assert.match(r.stderr, /nothing to census/);
+    assert.equal(spawnSync(process.execPath, [cli, '--snapshot', '--json', '--quiet'], { encoding: 'utf8', cwd: tmp }).status, 2);   // a flag is not a file name
+    assert.ok(!fs.existsSync(path.join(tmp, '--quiet')));
+    assert.equal(spawnSync(process.execPath, [cli, '--snapshot', path.join(tmp, 'pf')], { encoding: 'utf8' }).status, 2);
     assert.equal(spawnSync(process.execPath, [cli, '--help'], { encoding: 'utf8' }).status, 0);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });

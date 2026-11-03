@@ -10,7 +10,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { loadCheckout, viewModule, policyModule, README_PATH, PROVENANCE_PATH } from './checkout.mjs';
+import { loadCheckout, viewModule, policyModule, pageViewList, README_PATH, PROVENANCE_PATH } from './checkout.mjs';
 
 const require = createRequire(import.meta.url);
 const Census = require('./census.js');
@@ -18,11 +18,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const bank = path.resolve(here, '..', '..');
 const repo = path.resolve(process.argv[2] || '/home/user/Partforge');
 
-const VIEW_NOTE = 'derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script. Kept: every row\'s key (front-coded), confidence, ' +
-  'source text (a sorted, front-coded dictionary of its "; "-separated segments; lossless), its field-name set, disputed entries and field_confidence ' +
-  '(deduplicated), numeric inch/mm pair values, *_confidence fields and vendor / len_mm / len_variants / current / current_upstream_main; the columns keys ' +
-  '(description text kept only for inch/mm pair fields); the ISO dates found in each metadata block; the supplement\'s keys, labels and source presence; ' +
-  'license_note length; table-level disputed, fits count and field_confidence. Values are not edited.';
+// The full list of what a view keeps is census.js viewOf() and README "How it works"; the sidecar
+// note names the rule once rather than repeating that list in all fourteen sidecars.
+const VIEW_NOTE = 'derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script: every row\'s key, confidence and full ' +
+  'source text plus the fields the census rules read, packed losslessly (README "How it works" lists them). Values are not edited.';
 
 function sidecar(rel, dest, note) {
   execFileSync(process.execPath, [path.join(bank, 'tools', 'snapshot.mjs'), repo, rel, dest, '--sidecar-only', '--note', note], { stdio: ['ignore', 'ignore', 'inherit'] });
@@ -47,4 +46,11 @@ sidecar(PROVENANCE_PATH, pp, `derived by build-data.mjs: the ${policy.provenance
 const res = Census.run(views, policy);
 fs.writeFileSync(path.join(here, 'findings.json'), Census.serialize(res));
 fs.writeFileSync(path.join(here, 'example.txt'), `$ node ideas/29-confidence-census/census.mjs /home/user/Partforge\n` + Census.toMarkdown(res) + `(exit ${res.summary.exit})\n`);
+const listed = pageViewList(fs.readFileSync(path.join(here, 'index.html'), 'utf8'));
+const built = views.map((v) => v.table).sort();
+if (JSON.stringify(listed) !== JSON.stringify(built)) {
+  // The page refuses (and loadSnapshots throws) until its <script> tags name exactly the views built here.
+  console.error(`index.html loads [${listed.join(', ')}] but this build wrote [${built.join(', ')}]: update its snapshots/views/<table>.js script tags`);
+  process.exitCode = 1;
+}
 console.log(`wrote ${views.length} views, 2 policy extracts, findings.json (${res.summary.findings} findings: ${JSON.stringify(res.summary.by_severity)}), example.txt`);

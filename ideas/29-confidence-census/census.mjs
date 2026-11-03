@@ -30,7 +30,8 @@ Usage:
   --md <file>           write the Markdown summary to a file
   --quiet               do not print the summary
 
-Exit: 1 if any finding has severity "defect", 0 if none, 2 on a usage or input error.
+Exit: 1 if any finding has severity "defect", 0 if none, 2 on a usage or input error (including a
+checkout with no data/tables/*.json, and a snapshot set with a view missing).
 Rules and severities: see README.md "How it works".`;
 
 function main(argv) {
@@ -38,15 +39,19 @@ function main(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') { console.log(HELP); return 0; }
-    else if (a === '--json') opts.json = argv[++i];
-    else if (a === '--md') opts.md = argv[++i];
+    else if (a === '--json' || a === '--md') {
+      const v = argv[++i];
+      // a missing value, or the next option taken as a file name, is a usage error
+      if (v === undefined || v.startsWith('-')) { console.error(`${a} needs a file\n\n${HELP}`); return 2; }
+      opts[a.slice(2)] = v;
+    }
     else if (a === '--quiet') opts.quiet = true;
     else if (a === '--snapshot') opts.snapshot = true;
     else if (a.startsWith('-')) { console.error(`unknown option ${a}\n\n${HELP}`); return 2; }
     else if (!opts.repo) opts.repo = a;
     else { console.error(`one checkout only\n\n${HELP}`); return 2; }
   }
-  if ((opts.json === undefined) || (opts.md === undefined)) { console.error(`--json and --md need a file\n\n${HELP}`); return 2; }
+  if (opts.snapshot && opts.repo) { console.error(`--snapshot reads the committed snapshots; it takes no checkout (got ${opts.repo})\n\n${HELP}`); return 2; }
   if (!opts.snapshot && !opts.repo) { console.error(HELP); return 2; }
   let input;
   try {

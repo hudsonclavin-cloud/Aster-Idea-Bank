@@ -8,9 +8,9 @@
   "readBlob": "efb752096d84dc5030e5a968f510dadd7f5821ae",
   "sourceSha256": "42609fe54339dd20515b2ed73f81bbf52ecc1c55bad04331725bb2ecfd382ba3",
   "sourceBytes": 742332,
-  "copiedAt": "2026-11-02T23:54:41.972Z",
+  "copiedAt": "2026-11-03T00:10:59.692Z",
   "mode": "derived",
-  "note": "derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script. Kept: every row's key (front-coded), confidence, source text (a sorted, front-coded dictionary of its \"; \"-separated segments; lossless), its field-name set, disputed entries and field_confidence (deduplicated), numeric inch/mm pair values, *_confidence fields and vendor / len_mm / len_variants / current / current_upstream_main; the columns keys (description text kept only for inch/mm pair fields); the ISO dates found in each metadata block; the supplement's keys, labels and source presence; license_note length; table-level disputed, fits count and field_confidence. Values are not edited.",
+  "note": "derived by build-data.mjs: census.js viewOf() of this table, wrapped as a UMD script: every row's key, confidence and full source text plus the fields the census rules read, packed losslessly (README \"How it works\" lists them). Values are not edited.",
   "readMatchesCommitted": true,
   "writtenSha256": "6ecf706007dd2c3e4e18f522803337f55e2f285b7b5f700a415be476f3722f6c",
   "writtenBytes": 41905

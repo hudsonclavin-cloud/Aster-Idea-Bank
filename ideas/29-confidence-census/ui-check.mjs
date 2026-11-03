@@ -2,7 +2,7 @@
 // ui-check.mjs — drives index.html in headless Chromium and compares what the page shows with what
 // census.js computes in Node from the same snapshots: the severity counts, the census rows, the two
 // contradicted statements, the findings filters, the ledger, keyboard use, phone width, dark mode,
-// and the refusal when the snapshots do not load. Run from the bank root:
+// and the refusals when the snapshots do not load or only some of them do. Run from the bank root:
 //   node ideas/29-confidence-census/ui-check.mjs
 // (check.mjs runs it for tools/check.mjs). Uses the globally installed Playwright; prints "skipped"
 // and exits 0 if it is absent.
@@ -130,6 +130,18 @@ async function main() {
       ok(/no table views were found/.test(await p.textContent('#summary .refuse')), 'and says what is missing and how to rebuild');
       ok(await count(p, '#census tr') === 0 && await count(p, '#findings li') === 0 && await count(p, '#summary .chip') === 0, 'and shows no number');
       ok(errors.length === 0, 'the refusal raises no console error');
+      await ctx.close();
+    }
+    // ------------------------------------------------------------ refusal: one view of fourteen did not load (added in review)
+    {
+      // Each view registers itself with (root.CENSUS_VIEWS = root.CENSUS_VIEWS || {})[table] = view; this drops one.
+      const drop = () => { window.CENSUS_VIEWS = new Proxy({}, { set(t, k, v) { if (k !== 'fasteners_un') t[k] = v; return true; } }); };
+      const { ctx, p, errors } = await open(browser, { viewport: { width: 1280, height: 900 } }, drop);
+      ok(await count(p, '#summary .refuse') === 1, 'with 13 of 14 views the page refuses instead of counting 13 tables');
+      const why = (await p.$('#summary .refuse')) ? await p.textContent('#summary .refuse') : '';
+      ok(/1 of 14 table views did not load \(fasteners_un\)/.test(why), 'and names the missing table');
+      ok(await count(p, '#census tr') === 0 && await count(p, '#findings li') === 0 && await count(p, '#summary .chip') === 0 && await count(p, '#claims li') === 0, 'and shows no number, no claim and no finding');
+      ok(errors.length === 0, 'the partial refusal raises no console error');
       await ctx.close();
     }
   } finally {

@@ -30,6 +30,7 @@
 
   // id → severity, one-line title, and where the rule's expectation comes from.
   var RULES = {
+    'no-rows': ['defect', 'table has no rows', 'data/README.md:22 — every table carries `rows`, and every row carries `key`, `confidence` and `source`'],
     'key-missing': ['defect', 'row has no key', 'data/README.md:22-23 — every row carries `key`'],
     'key-duplicate': ['defect', 'key used by more than one row', 'a key is the row\'s address; two rows cannot share one'],
     'confidence-invalid': ['defect', 'confidence outside certain / likely / recall', 'data/README.md:23 — `certain` / `likely` / `recall`'],
@@ -213,7 +214,7 @@
     // (front coding is lossless only for strings; a table with a missing or non-string key keeps the raw column)
     if (packed.key.every(function (k) { return typeof k === 'string'; })) { packed.key = frontCode(packed.key); packed.key_coded = 1; }
 
-    return {
+    var view = {
       table: name,
       source: { path: info.path || null, commit: info.commit || null, sha256: info.sha256 || null },
       meta_keys: Object.keys(t || {}),
@@ -229,6 +230,9 @@
       rows: packed,
       supplement: supplement
     };
+    // Only for a broken table (`rows` not an array), for the no-rows rule; well-formed views lack the key.
+    if (t && own(t, 'rows') && !Array.isArray(t.rows)) view.rows_invalid = t.rows === null ? 'null' : typeof t.rows;
+    return view;
   }
 
   // Unpack a view's rows into objects {key, confidence, s, f, d, fc, x} (cached per view).
@@ -338,6 +342,10 @@
     var out = [];
     var T = v.table;
     var R = rowsOf(v);
+    // -- table shape: a table with no rows would otherwise pass every row rule by having nothing to check
+    if (v.meta_keys.indexOf('rows') < 0) out.push(finding(T, null, 'no-rows', 'the table has no `rows` key'));
+    else if (v.rows_invalid) out.push(finding(T, null, 'no-rows', '`rows` is ' + (v.rows_invalid === 'object' ? 'an object' : v.rows_invalid) + ', not an array'));
+    else if (!R.length) out.push(finding(T, null, 'no-rows', '`rows` is an empty array'));
     // -- row shape
     var seen = {};
     R.forEach(function (r, i) {
@@ -657,7 +665,7 @@
     var inputs = views.map(function (v) { return { path: v.source.path, sha256: v.source.sha256 }; });
     if (policy) ['readme', 'provenance'].forEach(function (k) { if (policy[k]) inputs.push({ path: policy[k].path, sha256: policy[k].sha256 }); });
     return {
-      meta: { tool: 'confidence-census', ruleset: 1, commits: commits, length_tolerance: LENGTH_TOLERANCE, inputs: inputs },
+      meta: { tool: 'confidence-census', ruleset: 2, commits: commits, length_tolerance: LENGTH_TOLERANCE, inputs: inputs },
       summary: { tables: views.length, findings: findings.length, by_severity: bySeverity, by_rule: byRule, exit: bySeverity.defect ? 1 : 0 },
       census: views.map(censusTable),
       reconciliation: r.reconciliation,

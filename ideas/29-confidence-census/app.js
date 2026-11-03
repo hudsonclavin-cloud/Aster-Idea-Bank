@@ -29,12 +29,21 @@
   }
 
   var views = Object.keys(VIEWS).sort().map(function (k) { return VIEWS[k]; });
-  if (!C || !views.length || !POLICY.readme || !POLICY.provenance) {
+  // The <script> tags under snapshots/views/ are the manifest: a partial load is refused like an empty
+  // one, since a census of fewer tables would undercount and call the missing ones absent from PartForge.
+  var expected = Array.prototype.map.call(document.querySelectorAll('script[src^="snapshots/views/"]'), function (s) {
+    var m = /([^\/]+)\.js$/.exec(s.getAttribute('src'));
+    return m ? m[1] : null;
+  }).filter(Boolean);
+  var missing = expected.filter(function (t) { return !VIEWS[t]; });
+  if (!C || !views.length || missing.length || !POLICY.readme || !POLICY.provenance) {
     $('stamp').textContent = '';
     $('summary').appendChild(el('div', { cls: 'refuse', role: 'alert' }, [
       el('strong', { text: 'No census: the snapshots did not load. ' }),
       'This page computes everything from census.js and the files under snapshots/ beside it; ' + (!C ? 'census.js is missing. ' : '') +
-      (!views.length ? 'no table views were found. ' : '') + (!POLICY.readme || !POLICY.provenance ? 'a policy extract is missing. ' : '') +
+      (!views.length ? 'no table views were found. ' : missing.length ? missing.length + ' of ' + expected.length + ' table views did not load (' + missing.join(', ') +
+        '), and a census of the rest would report wrong totals and call those tables absent from PartForge. ' : '') +
+      (!POLICY.readme || !POLICY.provenance ? 'a policy extract is missing. ' : '') +
       'Rebuild them with node build-data.mjs from a PartForge checkout.'
     ]));
     return;
@@ -185,7 +194,7 @@
       ul.appendChild(el('li', null, [det]));
     });
     $('l-count').textContent = L.rows.length + ' row' + (L.rows.length === 1 ? '' : 's') + ' with ' + L.entries + ' entr' + (L.entries === 1 ? 'y' : 'ies') + (L.table_level.length ? ', plus ' + L.table_level.length + ' table-level' : '') +
-      '. Most contested: ' + L.fields.slice(0, 3).map(function (x) { return x[0] + ' (' + x[1] + ')'; }).join(', ') + '.';
+      '.' + (L.fields.length ? ' Most contested: ' + L.fields.slice(0, 3).map(function (x) { return x[0] + ' (' + x[1] + ')'; }).join(', ') + '.' : '');
   }
   $('l-table').addEventListener('change', renderLedger);
   renderLedger();

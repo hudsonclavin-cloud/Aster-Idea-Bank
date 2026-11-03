@@ -8,7 +8,7 @@
   "readBlob": "c1fa11473b7da4462dc3899d69ce664514658ee7",
   "sourceSha256": "736169cd6aae64d481fb8fc2f4bf2803353946aa79ece3778e982793a1681657",
   "sourceBytes": 12106,
-  "copiedAt": "2026-11-02T23:54:42.360Z",
+  "copiedAt": "2026-11-03T00:11:00.099Z",
   "mode": "derived",
   "note": "derived by build-data.mjs: lines 30-45 of data/README.md (the confidence-policy table) verbatim with their line numbers, wrapped as a UMD script",
   "readMatchesCommitted": true,

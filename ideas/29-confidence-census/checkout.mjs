@@ -44,8 +44,11 @@ export function loadCheckout(repo) {
   const commit = headCommit(repo);
   const dir = path.join(repo, TABLES_DIR);
   if (!fs.existsSync(dir)) throw new Error(`no ${TABLES_DIR} under ${repo}`);
+  const files = fs.readdirSync(dir).filter((x) => x.endsWith('.json')).sort();
+  // Nothing to count is a refusal, not a clean bill: a census of zero tables would exit 0.
+  if (!files.length) throw new Error(`no ${TABLES_DIR}/*.json under ${repo}: nothing to census`);
   const views = [];
-  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.json')).sort()) {
+  for (const f of files) {
     const buf = fs.readFileSync(path.join(dir, f));
     let t;
     try {
@@ -78,10 +81,33 @@ export function policyModule(kind, p) {
     JSON.stringify(p, null, 1) + ');\n';
 }
 
-// The committed snapshots, read back in Node (the CLI's --snapshot mode and the tests).
+// The table views the page loads: the <script src="snapshots/views/<table>.js"> tags of index.html.
+// They are the folder's manifest; the page refuses if any of them did not register.
+export function pageViewList(html) {
+  return [...html.matchAll(/<script src="snapshots\/views\/([^"/]+)\.js"><\/script>/g)].map((m) => m[1]).sort();
+}
+
+// The committed snapshots, read back in Node (--snapshot and the tests). Refuses a partial set (view
+// without sidecar, sidecar without view, or views other than index.html's), never counting fewer tables.
 export function loadSnapshots(here) {
   const dir = path.join(here, 'snapshots', 'views');
-  const views = fs.readdirSync(dir).filter((f) => f.endsWith('.js')).sort().map((f) => require(path.join(dir, f)));
+  if (!fs.existsSync(dir)) throw new Error(`no snapshots/views under ${here}`);
+  const files = fs.readdirSync(dir);
+  const names = files.filter((f) => f.endsWith('.js')).map((f) => f.slice(0, -3)).sort();
+  const sidecars = files.filter((f) => f.endsWith('.js.provenance.json')).map((f) => f.slice(0, -'.js.provenance.json'.length)).sort();
+  const noSidecar = names.filter((n) => !sidecars.includes(n));
+  const noView = sidecars.filter((n) => !names.includes(n));
+  if (noView.length) throw new Error(`snapshots/views is missing ${noView.map((n) => n + '.js').join(', ')} (the provenance sidecar is there): refusing a census of fewer tables`);
+  if (noSidecar.length) throw new Error(`snapshots/views/${noSidecar.join('.js, ')}.js has no provenance sidecar`);
+  const page = path.join(here, 'index.html');
+  if (fs.existsSync(page)) {
+    const listed = pageViewList(fs.readFileSync(page, 'utf8'));
+    if (JSON.stringify(listed) !== JSON.stringify(names)) {
+      throw new Error(`index.html loads [${listed.join(', ')}] but snapshots/views holds [${names.join(', ')}]: add or remove the <script> tags so the page counts the same tables`);
+    }
+  }
+  if (!names.length) throw new Error('snapshots/views holds no table view');
+  const views = names.map((n) => require(path.join(dir, n + '.js')));
   const policy = { readme: require(path.join(here, 'snapshots', 'readme-policy.js')), provenance: require(path.join(here, 'snapshots', 'provenance-overall.js')) };
   return { views, policy };
 }
