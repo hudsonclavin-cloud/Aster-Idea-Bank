@@ -1,0 +1,8 @@
+{
+  "path": "tests/test_analysis_layer.py",
+  "lines": {
+    "77": "    assert bound.dE_throw_j == pytest.approx(1.056547e11, rel=0.001)",
+    "78": "    assert reboost_bound.min_power_for_56_kw(bound, ref, 0.5, 0.5) == pytest.approx(150.0, rel=0.01)",
+    "79": "    assert reboost_bound.min_power_for_56_kw(bound, ref, 0.3, 0.3) == pytest.approx(416.6, rel=0.01)"
+  }
+}

@@ -1,0 +1,115 @@
+# ED Reboost Energy Bound - Rev A ladder (idea-bank prototype; not a Skyhook artefact)
+Inputs: snapshots of Skyhook 34935cb. Earth radius physics/skyhook_physics.py:40; hub default physics/tether_dynamics.py:77; efficiency ladder docs/research/mp001_market_pricing.md:37; duty finance/reboost_bound.py:32; sizing rule docs/project_instructions.md:145.
+Reference config: tier reference, derate 30%, payload 5000 kg, fibre 609.1 t (canon), hub 200.0 t [Speculative], system mass 809.1 t, release model canon.
+
+ENERGY SUMMARY
+- r_catch = 6661.0 km; r_release = 7301.0 km; v_catch = 5.056311 km/s; v_release = 10.056311 km/s
+- E_in = -47,057,724 J/kg; E_out = -4,030,565 J/kg (C3 -8.061 km^2/s^2, apogee altitude 85,222 km)
+- dE per kg = 43.0272 MJ/kg = 11.952 kWh/kg (momentum view 2 v_orb v_tip 37.7816 + lift term 5.2456 MJ/kg)
+- dE_throw = 2.151358e+11 J
+
+Sizing rule intervals (docs/project_instructions.md:145): 5 and 10 days, 1 day at maturity, with 30% margin: supportable means 1.3 x t_rec <= interval.
+
+RECOVERY-TIME GRID
+| eta | duty | installed power kW | t_rec days | supportability |
+|---:|---:|---:|---:|---|
+| 0.15 | 0.3 | 50 | 1106.7 | neither |
+| 0.15 | 0.3 | 100 | 553.3 | neither |
+| 0.15 | 0.3 | 250 | 221.3 | neither |
+| 0.15 | 0.3 | 500 | 110.7 | neither |
+| 0.15 | 0.3 | 1000 | 55.3 | neither |
+| 0.15 | 0.3 | 2500 | 22.1 | neither |
+| 0.15 | 0.3 | 5000 | 11.1 | neither |
+| 0.15 | 0.3 | 10000 | 5.5 | 10 d only |
+| 0.15 | 0.3 | 25000 | 2.2 | both |
+| 0.15 | 0.3 | 50000 | 1.1 | both |
+| 0.15 | 0.5 | 50 | 664.0 | neither |
+| 0.15 | 0.5 | 100 | 332.0 | neither |
+| 0.15 | 0.5 | 250 | 132.8 | neither |
+| 0.15 | 0.5 | 500 | 66.4 | neither |
+| 0.15 | 0.5 | 1000 | 33.2 | neither |
+| 0.15 | 0.5 | 2500 | 13.3 | neither |
+| 0.15 | 0.5 | 5000 | 6.6 | 10 d only |
+| 0.15 | 0.5 | 10000 | 3.3 | both |
+| 0.15 | 0.5 | 25000 | 1.3 | both |
+| 0.15 | 0.5 | 50000 | 0.7 | both |
+| 0.26 | 0.3 | 50 | 638.5 | neither |
+| 0.26 | 0.3 | 100 | 319.2 | neither |
+| 0.26 | 0.3 | 250 | 127.7 | neither |
+| 0.26 | 0.3 | 500 | 63.8 | neither |
+| 0.26 | 0.3 | 1000 | 31.9 | neither |
+| 0.26 | 0.3 | 2500 | 12.8 | neither |
+| 0.26 | 0.3 | 5000 | 6.4 | 10 d only |
+| 0.26 | 0.3 | 10000 | 3.2 | both |
+| 0.26 | 0.3 | 25000 | 1.3 | both |
+| 0.26 | 0.3 | 50000 | 0.6 | both |
+| 0.26 | 0.5 | 50 | 383.1 | neither |
+| 0.26 | 0.5 | 100 | 191.5 | neither |
+| 0.26 | 0.5 | 250 | 76.6 | neither |
+| 0.26 | 0.5 | 500 | 38.3 | neither |
+| 0.26 | 0.5 | 1000 | 19.2 | neither |
+| 0.26 | 0.5 | 2500 | 7.7 | 10 d only |
+| 0.26 | 0.5 | 5000 | 3.8 | both |
+| 0.26 | 0.5 | 10000 | 1.9 | both |
+| 0.26 | 0.5 | 25000 | 0.8 | both |
+| 0.26 | 0.5 | 50000 | 0.4 | both |
+| 0.40 | 0.3 | 50 | 415.0 | neither |
+| 0.40 | 0.3 | 100 | 207.5 | neither |
+| 0.40 | 0.3 | 250 | 83.0 | neither |
+| 0.40 | 0.3 | 500 | 41.5 | neither |
+| 0.40 | 0.3 | 1000 | 20.7 | neither |
+| 0.40 | 0.3 | 2500 | 8.3 | neither |
+| 0.40 | 0.3 | 5000 | 4.1 | 10 d only |
+| 0.40 | 0.3 | 10000 | 2.1 | both |
+| 0.40 | 0.3 | 25000 | 0.8 | both |
+| 0.40 | 0.3 | 50000 | 0.4 | both |
+| 0.40 | 0.5 | 50 | 249.0 | neither |
+| 0.40 | 0.5 | 100 | 124.5 | neither |
+| 0.40 | 0.5 | 250 | 49.8 | neither |
+| 0.40 | 0.5 | 500 | 24.9 | neither |
+| 0.40 | 0.5 | 1000 | 12.4 | neither |
+| 0.40 | 0.5 | 2500 | 5.0 | 10 d only |
+| 0.40 | 0.5 | 5000 | 2.5 | both |
+| 0.40 | 0.5 | 10000 | 1.2 | both |
+| 0.40 | 0.5 | 25000 | 0.5 | both |
+| 0.40 | 0.5 | 50000 | 0.2 | both |
+
+MINIMUM INSTALLED POWER FOR THE SIZING RULE (margin included)
+| eta | duty | 5-day kW | 10-day kW | 1-day kW |
+|---:|---:|---:|---:|---:|
+| 0.15 | 0.3 | 14,387 | 7,193 | 71,933 |
+| 0.15 | 0.5 | 8,632 | 4,316 | 43,160 |
+| 0.26 | 0.3 | 8,300 | 4,150 | 41,500 |
+| 0.26 | 0.5 | 4,980 | 2,490 | 24,900 |
+| 0.40 | 0.3 | 5,395 | 2,697 | 26,975 |
+| 0.40 | 0.5 | 3,237 | 1,618 | 16,185 |
+
+AT THE WORKBOOK'S MATURE CADENCE (Assumptions rows 6 and 11; margin included)
+| column | eta | catches/day | MW at duty 0.3 | MW at duty 0.5 |
+|---|---:|---:|---:|---:|
+| Conservative | 0.15 | 1 | 71.9 | 43.2 |
+| Baseline | 0.20 | 2 | 107.9 | 64.7 |
+| Optimistic | 0.30 | 3 | 107.9 | 64.7 |
+
+POWER-SYSTEM MASS CHECK (array specific power from reboost_bound.py:33)
+| installed power MW | W/kg | array mass t | vs hub |
+|---:|---:|---:|---:|
+| 71.9 | 50 | 1,439 | 7.2x |
+| 71.9 | 100 | 719 | 3.6x |
+| 43.2 | 50 | 863 | 4.3x |
+| 43.2 | 100 | 432 | 2.2x |
+
+LEDGER: ONE THROW FROM THE CANON CIRCULAR ORBIT, NO REBOOST
+- system mass 809.1 t (161.8x the payload)
+- semi-major axis drop 64.42 km; energy-equivalent reboost dv 35.19 m/s
+- throw point drops 3.93 km; half an orbit later the CoM is 124.91 km lower
+- lower tip: 290 km design altitude -> lowest 165.1 km after the throw
+- throws before the lower tip would pass below 200 km: 0 (each at apogee), 0 (each at perigee)
+
+LOAD-BEARING PARAMETERS
+- hub mass [Speculative - tether_dynamics.py placeholder until a hub mass budget exists]
+- eta = MP-001 section 3a ladder [FLAGGED - wall-to-momentum efficiency]; duty = reboost_bound.py brackets [FLAGGED]
+- installed powers above 500 kW (1000, 2500, 5000, 10000, 25000, 50000 kW) added by this script [FLAGGED]
+- ledger: spin assumed to end where it started; tip lowest altitude = CoM perigee - L [Likely, within ~10 km of Skyhook's own 17-node twin]
+- no $/kg: params/rev_a.json carries no electricity price [refused]
+

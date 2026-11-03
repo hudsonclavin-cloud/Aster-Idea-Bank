@@ -1,0 +1,8 @@
+{
+  "path": "tools/sims/skyhook_program_site.html",
+  "lines": {
+    "794": "  var MU=398600, RE=6371;",
+    "801": "    var alt=610, R=RE+alt, vorb=Math.sqrt(MU/R), vtip=2.5, L=mid*l0, om=vtip/L;",
+    "847": "      if(boost){ var sp=Math.hypot(st.vx[i],st.vy[i]); ax+=2e-6*st.vx[i]/sp; ay+=2e-6*st.vy[i]/sp; }"
+  }
+}

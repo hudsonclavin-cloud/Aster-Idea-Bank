@@ -1,0 +1,8 @@
+{
+  "path": "finance/skyhook_finance.py",
+  "lines": {
+    "211": "    Reboost energy 2*v_orb*v_tip MJ/kg (workbook EQ-5 momentum view);",
+    "215": "    reboost_MJ_per_kg = 2.0 * v_orb * s.tip_speed_kms",
+    "216": "    elec = reboost_MJ_per_kg / s.power_chain_efficiency / 3.6 * s.electricity_per_kwh"
+  }
+}

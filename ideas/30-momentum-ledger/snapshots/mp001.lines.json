@@ -1,0 +1,6 @@
+{
+  "path": "docs/research/mp001_market_pricing.md",
+  "lines": {
+    "37": "**3a · Reboost coefficient grounded [Anchored].** Rev A imparts 44.8 MJ/kg = 12.4 kWh/kg of mechanical energy to the payload. Our 48 kWh/kg electrical placeholder therefore implies **~26% wall-to-momentum ED-reboost efficiency** — a derivable, defensible middle. Ladder at 15% / 26% / 40% efficiency → 83 / 48 / 31 kWh/kg → **$7.60 / $4.40 / $2.85 per kg** at 9.17¢/kWh. Reboost stays a rounding error; the coefficient is no longer a magic number."
+  }
+}

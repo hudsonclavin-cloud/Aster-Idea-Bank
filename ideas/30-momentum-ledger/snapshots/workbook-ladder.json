@@ -1,0 +1,48 @@
+{
+  "path": "tools/financial/skyhook_financial_model.xlsx",
+  "sheet": "Assumptions",
+  "rows": {
+    "2": {
+      "label": "Parameter",
+      "Conservative": "Conservative",
+      "Baseline": "Baseline",
+      "Optimistic": "Optimistic",
+      "note": "Source / note"
+    },
+    "6": {
+      "label": "Power chain efficiency (ED reboost)",
+      "Conservative": 0.15,
+      "Baseline": 0.2,
+      "Optimistic": 0.3,
+      "note": "array->PMAD->thrust, MXER studies"
+    },
+    "7": {
+      "label": "Electricity cost ($/kWh, amortized array)",
+      "Conservative": 0.08,
+      "Baseline": 0.06,
+      "Optimistic": 0.04,
+      "note": "labeled assumption"
+    },
+    "9": {
+      "label": "Hardware mass factor (x tether launch cost)",
+      "Conservative": 1.8,
+      "Baseline": 1.6,
+      "Optimistic": 1.4,
+      "note": "hub/arrays/tips, Part 7.2"
+    },
+    "11": {
+      "label": "Mature cadence (catches/day)",
+      "Conservative": 1.0,
+      "Baseline": 2.0,
+      "Optimistic": 3.0,
+      "note": "Part 7.3"
+    },
+    "12": {
+      "label": "Payload per catch (kg)",
+      "Conservative": 5000.0,
+      "Baseline": 5000.0,
+      "Optimistic": 5000.0,
+      "note": "Phase 3 reference"
+    }
+  }
+}

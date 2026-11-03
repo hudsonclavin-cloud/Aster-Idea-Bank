@@ -1,0 +1,7 @@
+{
+  "path": "docs/glossary.md",
+  "lines": {
+    "35": "**Momentum bank / Momentum ledger**",
+    "36": "The accounting framework for the skyhook's orbital energy. Every catch-and-throw of an upbound payload is a \"withdrawal\" (tether orbit drops). Every catch of a downbound payload (returning capsules, lunar exports, deorbiting satellites) is a \"deposit\" (orbit rises). ED reboost is the interest-rate mechanism. Balanced two-way traffic allows near-indefinite operation with minimal electric energy expenditure."
+  }
+}
