@@ -1,0 +1,44 @@
+Both Ends: 128 JPL NHATS min-dv round trips (Aster fixtures @ b902c59) on the three tether tiers of Skyhook rev_a.json @ 34935cb
+Two-body, impulsive, energy only; entry speed read at 125 km. Plane, phase, launcher, catch and price are refused (see --des).
+
+tier        top C3   ratio   throws  catches  both   throw burn km/s      catch burn km/s      caught of 5,000 kg   energy returned
+            km2/s2      x     free    free    free   min   median  max    min   median  max    min   median  max    median
+reference    -8.06   121.83      0       0      0   0.395 0.636 1.766   0.396 0.676 1.261     224  2,287  3,384   45.7 %
+cislunar     -1.94   295.27      0       0      0   0.095 0.336 1.466   0.096 0.376 0.961     273  2,796  4,136   55.9 %
+phase3       13.05  3085.95    120     108    106   0.000 0.000 0.766   0.000 0.000 0.261     417  3,511  4,485   70.6 %
+
+For scale, Aster's injection burn from 200 km LEO on the same trips: 3.226 to 4.535 km/s, median 3.456 (paid by the launch vehicle).
+"free" = the tip itself has the needed orbital energy somewhere on its swing, so no burn is owed at that end.
+101955 Bennu (1999 RQ36)   NHATS min-dv round trip, launch 2036-03-21, 362 days
+Tether: Phase 3 3.5 km/s (Mars-class growth option, not the near-term reference); release C3 at the top 13.05 km2/s2; mass ratio 3085.95x
+
+OUT   needs C3 17.629   Aster injection from 200 km LEO 3.998 km/s (launch vehicle pays)
+      tether: released at the top, then a 0.205 km/s burn (spacecraft pays)
+AT    rendezvous 1.501  departure 1.533  stationkeeping 0.150 km/s, 5 % margin, Isp 320 s
+HOME  entry 11.832 km/s at 125 km  ->  v-infinity 4.172 km/s
+      tether: a 0.195 km/s braking burn, then caught at the top
+      handed down at the lower tip: 4.06 km/s at 290 km, against a direct entry at 11.832 km/s
+
+MASS  tether path: 5,000 kg released -> 2,693 at the asteroid -> 1,511 kg caught
+      Falcon Heavy Expendable  10,644 kg injected ->  3,677 kg home, direct entry
+      Falcon Heavy Recovery     4,150 kg injected ->  1,433 kg home, direct entry
+      Vulcan VC2                3,957 kg injected ->  1,367 kg home, direct entry
+      Vulcan VC4                6,179 kg injected ->  2,134 kg home, direct entry
+      Vulcan VC6                7,986 kg injected ->  2,759 kg home, direct entry
+      New Glenn Standard        2,973 kg injected ->  1,027 kg home, direct entry
+      Falcon 9 FT ASDS         REFUSED: C3 beyond its published curve (ends at 10)
+      Falcon 9 FT RTLS         REFUSED: C3 beyond its published curve (ends at 10)
+
+ENERGY the tether lends 290.7 GJ (58.14 MJ/kg) and gets back 87.8 GJ: 30.2 % returned, 202.9 GJ left to reboost
+
+NOT ANSWERED
+  Plane: rev_a.json has no orbit inclination for the tether, so the departure asymptote's declination (-39.4°) and the arrival's (-37.5°) cannot be tested against its orbit plane. A tether throws and catches only in its own plane; an asymptote is reachable from it only if |declination| ≤ inclination.
+    would help: an inclination (and node history) in params/rev_a.json
+  Phase and date: the tip must be at the right swing angle, at the right point of the orbit, on the NHATS launch and return dates. Nothing here says the tether is there then, or how long the wait is.
+    would help: a tether ephemeris: epoch, node, argument of latitude, spin phase
+  Getting to the lower tip: the outbound payload must first be delivered to the lower tip at 290 km moving 4.06 km/s (inertial). Neither repository carries a launcher payload curve to that state, so the tether path has no launch mass, vehicle or price to set beside Aster's vehicles.
+    would help: a suborbital payload-to-lower-tip curve for a named vehicle
+  The catch itself: an inbound payload on a hyperbola meets the tip with matched velocity for an instant, with no second pass. Skyhook's ~1 m/s, 3 to 10 s capture requirement is written for an ascending payload; nothing in either repository shows an interplanetary arrival can be navigated to it. Tip acceleration there is 3.90 g.
+    would help: a terminal-guidance error budget for a hyperbolic arrival
+  Price: no cost is computed. Skyhook's finance model prices throws for a GTO-class market, not catches or asteroid payloads.
+    would help: a priced catch service in finance/decision_grid.json

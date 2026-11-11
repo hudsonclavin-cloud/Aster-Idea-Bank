@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Both Ends</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">Aster + Skyhook · idea 51 · prototype</p>
+    <h1>Both Ends</h1>
+    <p class="lede">Aster plans a round trip to a near-Earth asteroid. Skyhook's tether throws the craft out and catches it coming home. This page flies one trip through both, and says what each program's numbers leave owed.</p>
+  </header>
+
+  <section class="controls" aria-label="Mission">
+    <label>Asteroid (JPL NHATS cheapest round trip)
+      <select id="body"></select>
+    </label>
+    <fieldset>
+      <legend>Tether tier (tip speed, km/s)</legend>
+      <div class="seg" id="tiers"></div>
+    </fieldset>
+    <label>Sample picked up, kg
+      <input id="sample" type="number" min="0" step="10" value="0" inputmode="decimal">
+    </label>
+    <label>Entry speed is read at
+      <select id="reading">
+        <option value="entry-125">125 km (NHATS entry altitude)</option>
+        <option value="reentry-200">200 km (Trajectory Browser)</option>
+      </select>
+    </label>
+  </section>
+
+  <div id="refusal" class="refusal" hidden></div>
+
+  <div id="result">
+    <p id="trip" class="trip"></p>
+    <section class="headline" id="headline" aria-live="polite"></section>
+
+    <section class="swing">
+      <svg id="diagram" viewBox="0 0 340 300" role="img" aria-labelledby="diagTitle"><title id="diagTitle">Where on the tether's swing the craft is released and caught</title></svg>
+      <div id="tierfacts" class="facts"></div>
+    </section>
+
+    <section>
+      <h2>The trip, leg by leg</h2>
+      <div class="legs" id="legs"></div>
+    </section>
+
+    <section>
+      <h2>What comes home</h2>
+      <p class="note" id="massnote"></p>
+      <div class="scroll"><table id="mass"></table></div>
+    </section>
+
+    <section>
+      <h2>What the tether lends and gets back</h2>
+      <div id="energy"></div>
+    </section>
+
+    <section>
+      <h2>Not answered</h2>
+      <p class="note">These decide whether the trip can be flown at all. Neither repository holds what would settle them, so the page gives no number.</p>
+      <ul class="refused" id="refused"></ul>
+    </section>
+  </div>
+
+  <section>
+    <h2>All 128 trips, all three tiers</h2>
+    <div class="scroll"><table id="census"></table></div>
+    <p class="note">"No burn" means the tip itself has the needed orbital energy somewhere on its swing. Burns are per end, before Aster's 5 % margin.</p>
+  </section>
+
+  <footer id="foot"></footer>
+</main>
+<script src="snapshots/data.js"></script>
+<script src="both-ends.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

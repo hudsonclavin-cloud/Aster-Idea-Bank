@@ -1,0 +1,14 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner + https://github.com/hudsonclavin-cloud/skyhook",
+  "path": "tests/fixtures/v2/nhats-validation-targets + tests/fixtures/v2/oq7-nhats-coorbital + the four whole-file copies in this snapshots/ folder",
+  "commit": "aster b902c591f632cae873838c007f07b39c9d624f77; skyhook 34935cb1f67a8422a9fd49481e080faade2c0d92",
+  "commitDate": "2026-11-09T13:18:10-05:00",
+  "committedTree": "tests/fixtures/v2/nhats-validation-targets=f9b8499c69da422b587c9e2cca92221c8518dd6e tests/fixtures/v2/oq7-nhats-coorbital=3300f3673c56403f566590376a2523a9b6403807",
+  "sourceFiles": 135,
+  "copiedAt": "2026-11-11T22:06:35.546Z",
+  "mode": "derived",
+  "note": "derived by build-data.mjs --aster: 128 unique NHATS bodies from 135 fixture files (5 API error records listed, not kept; duplicates folded), fields launch, c3, v_dep_earth, dv_dep_park, dec_dep, vrel_arr_neo, vrel_dep_neo, v_arr_earth, dec_arr, dur_out, dur_at, dur_ret, dur_total, dv_total kept as the strings the API returned; the whole rev_a.json; R_EARTH_KM from skyhook_physics.py; Aster constants and 8 launch-vehicle curves (38 anchors) parsed from the TypeScript copies; four cited altitudes whose quoted text the build re-finds. Sidecar written by build-data.mjs in tools/snapshot.mjs's schema (the tool has no multi-file mode).",
+  "readMatchesCommitted": true,
+  "writtenSha256": "59b4a5261d390e75b48870741f25d108c2eb84ed535880054c3f9c430af8c4b3",
+  "writtenBytes": 62373
+}

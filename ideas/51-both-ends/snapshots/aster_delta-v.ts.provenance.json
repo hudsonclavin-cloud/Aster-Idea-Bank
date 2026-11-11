@@ -1,0 +1,17 @@
+{
+  "repo": "https://github.com/hudsonclavin-cloud/asteroid-mining-planner",
+  "path": "src/v2/porkchop/delta-v.ts",
+  "commit": "b902c591f632cae873838c007f07b39c9d624f77",
+  "commitDate": "2026-11-09T13:18:10-05:00",
+  "pathLastChanged": "c980393 2026-10-13T18:48:48-04:00",
+  "committedBlob": "8d8646b179df0ecdde23d4fdf9d9a456478e4a55",
+  "readBlob": "8d8646b179df0ecdde23d4fdf9d9a456478e4a55",
+  "sourceSha256": "a58421c647110c0cbe2eea4a4d16ab53eeb7336f21b484c295911c6e63b6a2db",
+  "sourceBytes": 1963,
+  "copiedAt": "2026-11-11T22:05:51.392Z",
+  "mode": "copy",
+  "note": "Whole file: Aster's Earth mu, LEO parking radius and injection formula.",
+  "readMatchesCommitted": true,
+  "writtenSha256": "a58421c647110c0cbe2eea4a4d16ab53eeb7336f21b484c295911c6e63b6a2db",
+  "writtenBytes": 1963
+}
